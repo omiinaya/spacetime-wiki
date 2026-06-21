@@ -1,0 +1,166 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0.09 0.004 285.823;
+  --foreground: 0.97 0 0;
+  --card: 0.13 0.005 285.885;
+  --primary: 0.62 0.19 262.881;
+  --secondary: 0.18 0.006 286.033;
+  --muted: 0.15 0.005 286.033;
+  --muted-foreground: 0.6 0.015 286.067;
+  --border: 0.18 0.005 286.033;
+  --sidebar: 0.07 0.003 285.823;
+  --destructive: 0.55 0.21 21.519;
+  --radius: 0.5rem;
+}
+
+* {
+  border-color: oklch(var(--border));
+}
+
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: oklch(var(--background));
+  color: oklch(var(--foreground));
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(var(--muted));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Tiptap editor styles */
+.ProseMirror {
+  outline: none;
+  min-height: 200px;
+  padding: 1rem 0;
+}
+
+.ProseMirror h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror p {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror li {
+  margin-bottom: 0.25rem;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid oklch(var(--border));
+  padding-left: 1rem;
+  margin-left: 0;
+  color: oklch(var(--muted-foreground));
+}
+
+.ProseMirror code {
+  background: oklch(var(--muted));
+  padding: 0.15em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+.ProseMirror pre {
+  background: oklch(var(--muted));
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.ProseMirror a {
+  color: oklch(var(--primary));
+  text-decoration: underline;
+}
+
+.ProseMirror hr {
+  border: none;
+  border-top: 1px solid oklch(var(--border));
+  margin: 2rem 0;
+}
+
+/* Task list */
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.ProseMirror ul[data-type="taskList"] li label {
+  margin-top: 0.2em;
+}
+
+/* Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: oklch(var(--muted-foreground) / 0.5);
+  float: left;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Reading mode (non-editable) */
+.ProseMirror[contenteditable="false"] {
+  cursor: default;
+}
+
+.ProseMirror[contenteditable="false"] p.is-editor-empty:first-child::before {
+  content: none;
+}
