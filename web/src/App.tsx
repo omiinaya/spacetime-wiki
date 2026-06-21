@@ -402,9 +402,9 @@ function LoginView() {
       if (isRegister) {
         await api.users.register(name, email, password);
       }
-      const result = await api.users.login(email, password);
-      const userId = typeof result === "string" ? result : String((result as any)[0] || result);
-      localStorage.setItem("sw_user_id", userId);
+      const user = await api.users.login(email, password);
+      if (!user) throw new Error("Login failed");
+      localStorage.setItem("sw_user_id", user.id);
       navigate("/");
     } catch (err: any) {
       setError(String(err));
