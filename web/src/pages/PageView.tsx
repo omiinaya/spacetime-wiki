@@ -95,7 +95,13 @@ export function PageView({ pageId, userId }: Props) {
   useEffect(() => {
     if (editor && page) {
       try {
-        editor.commands.setContent(JSON.parse(page.content || "{}"));
+        const parsed = JSON.parse(page.content || "{}");
+        if (parsed && parsed.type === "doc") {
+          editor.commands.setContent(parsed);
+        } else {
+          // Default to empty document
+          editor.commands.setContent({ type: "doc", content: [{ type: "paragraph" }] });
+        }
       } catch {
         editor.commands.setContent(page.content || "");
       }

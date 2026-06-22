@@ -42,9 +42,12 @@ function AppLayout() {
     new Set(),
   );
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(
-    localStorage.getItem("sw_user_id"),
-  );
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Sync with localStorage on mount and after navigation (login sets it)
+  useEffect(() => {
+    setUserId(localStorage.getItem("sw_user_id"));
+  }, [location.pathname]);
 
   // Load data
   const loadData = useCallback(async () => {
