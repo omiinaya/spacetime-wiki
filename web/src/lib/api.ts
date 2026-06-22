@@ -9,6 +9,27 @@ function genId(prefix: string): string {
   return `${prefix}_${rand}`;
 }
 
+// ─── Row mappers (STDB returns positional arrays, not objects) ──────────────
+
+function mapPage(row: unknown[]): Page {
+  return {
+    id: String(row[0] ?? ""), title: String(row[1] ?? ""), slug: String(row[2] ?? ""),
+    content: String(row[3] ?? ""), text_content: String(row[4] ?? ""),
+    collection_id: String(row[5] ?? ""), parent_page_id: String(row[6] ?? ""),
+    status: String(row[7] ?? ""), icon: String(row[8] ?? ""), color: String(row[9] ?? ""),
+    full_width: Boolean(row[10]), is_template: Boolean(row[11]),
+    template_id: String(row[12] ?? ""), sort_order: Number(row[13]) || 0,
+    created_by: String(row[14] ?? ""), updated_by: String(row[15] ?? ""),
+    created_at: Number(row[16]) || 0, updated_at: Number(row[17]) || 0,
+    published_at: Number(row[18]) || 0, deleted_at: Number(row[19]) || 0,
+  };
+}
+function mapCollection(row: unknown[]): Collection { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), description: String(row[3]??""), parent_id: String(row[4]??""), icon: String(row[5]??""), color: String(row[6]??""), sort_order: Number(row[7])||0, created_by: String(row[8]??""), created_at: Number(row[9])||0, updated_at: Number(row[10])||0 }; }
+function mapUser(row: unknown[]): User { const u: any = { id: String(row[0]??""), name: String(row[1]??""), email: String(row[2]??""), role: String(row[4]??""), avatar_url: String(row[5]??"") }; return u as User; }
+function mapRevision(row: unknown[]): PageRevision { return { id: String(row[0]??""), page_id: String(row[1]??""), title: String(row[2]??""), content: String(row[3]??""), edited_by: String(row[4]??""), created_at: Number(row[5])||0, revision_number: Number(row[6])||0 }; }
+function mapComment(row: unknown[]): Comment { return { id: String(row[0]??""), page_id: String(row[1]??""), parent_comment_id: String(row[2]??""), user_id: String(row[3]??""), body: String(row[4]??""), is_resolved: Boolean(row[5]), created_at: Number(row[6])||0, updated_at: Number(row[7])||0 }; }
+function mapTag(row: unknown[]): PageTag { return { id: String(row[0]??""), page_id: String(row[1]??""), name: String(row[2]??""), value: String(row[3]??"") }; }
+
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
 async function sqlQuery(sql: string): Promise<Record<string, unknown>[]> {
@@ -86,15 +107,15 @@ export const api = {
       if (status) conditions.push(`status = '${status}'`);
       else conditions.push("status != 'deleted'");
       if (conditions.length) sql += " WHERE " + conditions.join(" AND ");
-      return sqlQuery(sql) as unknown as Page[];
+      return sqlQuery(sql).then((rows) => (rows as unknown[][]).map(mapPage));
     },
     get: (id: string) =>
       sqlQuery(`SELECT * FROM page WHERE id = '${id}'`).then(
-        (rows) => (rows[0] as Page) || null,
+        (rows) => ((rows as unknown[][])[0] ? mapPage((rows as unknown[][])[0]) : null),
       ),
     getBySlug: (slug: string) =>
       sqlQuery(`SELECT * FROM page WHERE slug = '${slug}'`).then(
-        (rows) => (rows[0] as Page) || null,
+        (rows) => ((rows as unknown[][])[0] ? mapPage((rows as unknown[][])[0]) : null),
       ),
     create: (
       title: string,
@@ -124,10 +145,10 @@ export const api = {
   },
 
   collections: {
-    list: () => sqlQuery("SELECT * FROM collection") as unknown as Collection[],
+    list: () => sqlQuery("SELECT * FROM collection").then((rows) => (rows as unknown[][]).map(mapCollection)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM collection WHERE id = '${id}'`).then(
-        (rows) => (rows[0] as Collection) || null,
+        (rows) => ((rows as unknown[][])[0] ? mapCollection((rows as unknown[][])[0]) : null),
       ),
     create: (
       name: string,
@@ -152,16 +173,14 @@ export const api = {
 
   revisions: {
     list: (pageId: string) =>
-      sqlQuery(
-        `SELECT * FROM page_revision WHERE page_id = '${pageId}'`,
-      ) as unknown as PageRevision[],
+      sqlQuery(`SELECT * FROM page_revision WHERE page_id = '${pageId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapRevision)),
   },
 
   comments: {
     list: (pageId: string) =>
-      sqlQuery(
-        `SELECT * FROM comment WHERE page_id = '${pageId}'`,
-      ) as unknown as Comment[],
+      sqlQuery(`SELECT * FROM comment WHERE page_id = '${pageId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapComment)),
     add: (
       pageId: string, parentCommentId: string, userId: string, body: string,
     ) => {
@@ -176,9 +195,8 @@ export const api = {
 
   tags: {
     list: (pageId: string) =>
-      sqlQuery(
-        `SELECT * FROM page_tag WHERE page_id = '${pageId}'`,
-      ) as unknown as PageTag[],
+      sqlQuery(`SELECT * FROM page_tag WHERE page_id = '${pageId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapTag)),
     add: (pageId: string, name: string, value: string) => {
       const id = genId("tag");
       return callReducer("add_tag", [id, pageId, name, value]).then(() => id);
@@ -202,17 +220,16 @@ export const api = {
     },
     login: async (email: string, password: string) => {
       await callReducer("login_user", [email, password]);
-      // Login succeeded — look up user by email
       const rows = await sqlQuery(`SELECT * FROM user WHERE email = '${email}'`);
-      return (rows[0] as unknown as User) || null;
+      return (rows as unknown[][])[0] ? mapUser((rows as unknown[][])[0]) : null;
     },
     get: (id: string) =>
       sqlQuery(`SELECT * FROM user WHERE id = '${id}'`).then(
-        (rows) => (rows[0] as User) || null,
+        (rows) => ((rows as unknown[][])[0] ? mapUser((rows as unknown[][])[0]) : null),
       ),
     getByEmail: (email: string) =>
       sqlQuery(`SELECT * FROM user WHERE email = '${email}'`).then(
-        (rows) => (rows[0] as User) || null,
+        (rows) => ((rows as unknown[][])[0] ? mapUser((rows as unknown[][])[0]) : null),
       ),
   },
 };
