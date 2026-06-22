@@ -12,13 +12,16 @@ import { TableCell } from "@tiptap/extension-table-cell";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
-import Underline from "@tiptap/extension-underline";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
-  MessageSquare, Clock, Send, History, RotateCcw, X,
+  MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight,
 } from "lucide-react";
-import { api, Page, PageRevision, Comment } from "../lib/api";
+import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
+
+const lowlight = createLowlight(common);
 
 interface Props {
   pageId: string;
@@ -37,6 +40,7 @@ export function PageView({ pageId, userId }: Props) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [showConfirm, setShowConfirm] = useState<"publish" | "archive" | "delete" | null>(null);
+  const [collection, setCollection] = useState<Collection | null>(null);
 
   useEffect(() => { loadPage(); }, [pageId]);
 
@@ -45,6 +49,10 @@ export function PageView({ pageId, userId }: Props) {
       const p = await api.pages.get(pageId);
       if (!p) { setError("Page not found"); setLoading(false); return; }
       setPage(p);
+      // Load collection if page has one
+      if (p.collection_id) {
+        api.collections.get(p.collection_id).then(setCollection);
+      }
       const [revs, coms] = await Promise.all([
         api.revisions.list(pageId),
         api.comments.list(pageId),
@@ -57,9 +65,10 @@ export function PageView({ pageId, userId }: Props) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }), Placeholder,
+      StarterKit.configure({ heading: { levels: [1, 2, 3] }, codeBlock: false, link: false }), Placeholder,
       Link, ImageExtension, Table.configure({ resizable: true }), TableRow, TableHeader, TableCell,
-      TaskList, TaskItem.configure({ nested: true }), Highlight, Underline,
+      TaskList, TaskItem.configure({ nested: true }), Highlight,
+      CodeBlockLowlight.configure({ lowlight }),
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
@@ -235,6 +244,14 @@ export function PageView({ pageId, userId }: Props) {
 
       {/* Title + meta */}
       <div className="px-4 md:px-8 pt-8">
+        {/* Breadcrumbs */}
+        {collection && (
+          <div className="flex items-center gap-1.5 mb-2 text-[11px] text-muted-foreground">
+            <span className="hover:text-foreground cursor-pointer transition-colors">{collection.icon || "📁"} {collection.name}</span>
+            <ChevronRight className="h-3 w-3" />
+            <span className="text-foreground/80">{page.title}</span>
+          </div>
+        )}
         <h1 className="text-3xl font-bold">{page.title}</h1>
         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
           {page.published_at > 0 && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Published {formatDate(page.published_at)}</span>}
