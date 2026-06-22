@@ -142,6 +142,43 @@ function AppLayout() {
     await loadData();
   };
 
+  // ─── Drag-and-drop ─────────────────────────────────────────────────────
+
+  const [dragPageId, setDragPageId] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, pageId: string) => {
+    setDragPageId(pageId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", pageId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropOnCollection = async (e: React.DragEvent, colId: string) => {
+    e.preventDefault();
+    const pageId = e.dataTransfer.getData("text/plain") || dragPageId;
+    if (pageId && pageId !== colId) {
+      await api.pages.move(pageId, colId, "");
+      setDragPageId(null);
+      await loadData();
+    }
+  };
+
+  const handleDropOnPage = async (e: React.DragEvent, targetPageId: string) => {
+    e.preventDefault();
+    const pageId = e.dataTransfer.getData("text/plain") || dragPageId;
+    if (pageId && pageId !== targetPageId) {
+      // Move after the target page (reorder within collection)
+      const colId = pages.find(p => p.id === targetPageId)?.collection_id || "";
+      await api.pages.move(pageId, colId, targetPageId);
+      setDragPageId(null);
+      await loadData();
+    }
+  };
+
   const movePageToCollection = async (pageId: string, newColId: string) => {
     await api.pages.move(pageId, newColId, "");
     await loadData();
@@ -213,6 +250,8 @@ function AppLayout() {
                           e.preventDefault();
                           setContextMenu({ x: e.clientX, y: e.clientY, colId: col.id });
                         }}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDropOnCollection(e, col.id)}
                         className="flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left"
                       >
                         {expanded ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
@@ -232,6 +271,10 @@ function AppLayout() {
                         <button
                           key={page.id}
                           onClick={() => navigate(`/page/${page.id}`)}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, page.id)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDropOnPage(e, page.id)}
                           className={cn(
                             "w-full flex items-center gap-2 pl-8 pr-2 py-1 rounded-md text-xs transition-colors text-left",
                             isActive(page.id)
@@ -269,6 +312,10 @@ function AppLayout() {
                       <button
                         key={page.id}
                         onClick={() => navigate(`/page/${page.id}`)}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, page.id)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDropOnPage(e, page.id)}
                         className={cn(
                           "w-full flex items-center gap-2 pl-8 pr-2 py-1 rounded-md text-xs transition-colors text-left",
                           isActive(page.id) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",

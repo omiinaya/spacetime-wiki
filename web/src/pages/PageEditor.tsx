@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
+import { createPortal } from "react-dom";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
@@ -39,28 +40,18 @@ import {
   Copy,
   Loader2,
   Highlighter,
+  X,
 } from "lucide-react";
 import { api, Page } from "../lib/api";
 import { cn } from "../lib/utils";
 
 const lowlight = createLowlight(common);
 
-// ─── Slash command suggestion ────────────────────────────────────────────────
+// ─── Slash command items ─────────────────────────────────────────────────────
+// Keyboard handler in the editor detects "/" and shows a dropdown.
+// No tippy/ReactRenderer dependency — just portals + DOM coordinates.
 
-import { Extension } from "@tiptap/core";
-import { ReactRenderer } from "@tiptap/react";
-import Suggestion from "@tiptap/suggestion";
-import tippy, { type Instance as TippyInstance, type Props as TippyProps } from "tippy.js";
-import "tippy.js/dist/tippy.css";
-
-interface SlashItem {
-  title: string;
-  description: string;
-  icon: string;
-  command: (editor: ReturnType<typeof useEditor>) => void;
-}
-
-const slashItems: SlashItem[] = [
+const SLASH_COMMANDS = [
   { title: "Heading 1", description: "Large section heading", icon: "H1", command: (e) => e?.chain().focus().toggleHeading({ level: 1 }).run() },
   { title: "Heading 2", description: "Medium section heading", icon: "H2", command: (e) => e?.chain().focus().toggleHeading({ level: 2 }).run() },
   { title: "Heading 3", description: "Small section heading", icon: "H3", command: (e) => e?.chain().focus().toggleHeading({ level: 3 }).run() },
@@ -73,119 +64,6 @@ const slashItems: SlashItem[] = [
   { title: "Image", description: "Insert an image", icon: "🖼", command: (e) => { const url = prompt("Image URL:"); if (url) e?.chain().focus().setImage({ src: url }).run(); } },
   { title: "Divider", description: "Insert a horizontal divider", icon: "—", command: (e) => e?.chain().focus().setHorizontalRule().run() },
 ];
-
-const SlashCommand = Extension.create({
-  name: "slashCommand",
-  addProseMirrorPlugins() {
-    return [
-      Suggestion({
-        editor: this.editor,
-        char: "/",
-        command: ({ editor, range, props }) => {
-          props.command(editor);
-          editor.chain().focus().deleteRange(range).run();
-        },
-        items: ({ query }) => {
-          return slashItems
-            .filter((item) => item.title.toLowerCase().startsWith(query.toLowerCase()))
-            .slice(0, 10);
-        },
-        render: () => {
-          let component: ReactRenderer | null = null;
-          let popup: TippyInstance<TippyProps>[] | null = null;
-
-          return {
-            onStart: (props) => {
-              component = new ReactRenderer(SlashList, {
-                props,
-                editor: props.editor,
-              });
-              if (!props.clientRect) return;
-              popup = tippy("body", {
-                getReferenceClientRect: props.clientRect as () => DOMRect,
-                appendTo: () => document.body,
-                content: component.element,
-                showOnCreate: true,
-                interactive: true,
-                trigger: "manual",
-                placement: "bottom-start",
-              });
-            },
-            onUpdate(props) {
-              component?.updateProps(props);
-              if (!props.clientRect) return;
-              popup?.[0]?.setProps({
-                getReferenceClientRect: props.clientRect as () => DOMRect,
-              });
-            },
-            onKeyDown(props) {
-              if (props.event.key === "Escape") {
-                popup?.[0]?.hide();
-                return true;
-              }
-              return (component?.ref as any)?.onKeyDown?.(props) ?? false;
-            },
-            onExit() {
-              popup?.[0]?.destroy();
-              component?.destroy();
-            },
-          };
-        },
-      }),
-    ];
-  },
-});
-
-// Slash command popup component
-function SlashList(props: { items: SlashItem[]; command: (item: SlashItem) => void; editor: any }) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [props.items]);
-
-  const onKeyDown = ({ event }: { event: KeyboardEvent }) => {
-    if (event.key === "ArrowUp") {
-      setSelectedIndex((i) => (i <= 0 ? props.items.length - 1 : i - 1));
-      return true;
-    }
-    if (event.key === "ArrowDown") {
-      setSelectedIndex((i) => (i >= props.items.length - 1 ? 0 : i + 1));
-      return true;
-    }
-    if (event.key === "Enter") {
-      props.command(props.items[selectedIndex]);
-      return true;
-    }
-    return false;
-  };
-
-  // Expose onKeyDown to parent
-  (props as any).onKeyDown = onKeyDown;
-
-  return (
-    <div className="w-64 py-1.5 rounded-lg border border-border bg-[#161616] shadow-2xl overflow-hidden">
-      {props.items.map((item, i) => (
-        <button
-          key={item.title}
-          onClick={() => props.command(item)}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-2 text-left transition-colors",
-            i === selectedIndex ? "bg-muted" : "hover:bg-muted/50",
-          )}
-        >
-          <span className="w-8 h-8 rounded flex items-center justify-center bg-muted text-xs font-mono text-muted-foreground shrink-0">
-            {item.icon}
-          </span>
-          <div>
-            <div className="text-sm font-medium text-foreground">{item.title}</div>
-            <div className="text-[11px] text-muted-foreground">{item.description}</div>
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 // ─── Selection Floating Toolbar ──────────────────────────────────────────────
 
@@ -265,6 +143,20 @@ export function PageEditor({ userId }: Props) {
   const [preview, setPreview] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // Slash menu state
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
+  const [slashIndex, setSlashIndex] = useState(0);
+  const [slashPos, setSlashPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  // Tags state
+  const [tags, setTags] = useState<{ id: string; name: string; value: string }[]>([]);
+  const [tagInput, setTagInput] = useState("");
+
+  // Keyboard shortcuts modal
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Load existing page
   useEffect(() => {
@@ -278,6 +170,24 @@ export function PageEditor({ userId }: Props) {
       });
     }
   }, [id]);
+
+  // Load tags when editing existing page
+  useEffect(() => {
+    if (id) api.tags.list(id).then(setTags);
+  }, [id, page]);
+
+  const handleAddTag = async () => {
+    const name = tagInput.trim();
+    if (!name || !id) return;
+    const tagId = await api.tags.add(id, name, "");
+    setTags([...tags, { id: tagId, name, value: "" }]);
+    setTagInput("");
+  };
+
+  const handleRemoveTag = async (tagId: string) => {
+    await api.tags.remove(tagId);
+    setTags(tags.filter((t) => t.id !== tagId));
+  };
 
   // ─── Editor ──────────────────────────────────────────────────────────────
 
@@ -299,7 +209,7 @@ export function PageEditor({ userId }: Props) {
       TaskItem.configure({ nested: true }),
       Highlight,
       CodeBlockLowlight.configure({ lowlight }),
-      // SlashCommand, // TODO: fix ReactRenderer compatibility
+      // Slash commands handled via keydown listener below
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,
     editable: !preview,
@@ -429,10 +339,93 @@ export function PageEditor({ userId }: Props) {
         e.preventDefault();
         handleSave();
       }
+      if (e.key === "?" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+          e.preventDefault();
+          setShowShortcuts(true);
+        }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [handleSave]);
+
+  // Slash command: detect "/" in editor
+  const filteredCommands = SLASH_COMMANDS.filter((c) =>
+    c.title.toLowerCase().includes(slashQuery.toLowerCase()),
+  );
+
+  const closeSlash = () => { setSlashOpen(false); setSlashQuery(""); setSlashIndex(0); };
+
+  const executeSlashCommand = (idx: number) => {
+    const cmd = filteredCommands[idx];
+    if (cmd && editor) {
+      // Remove the "/" character(s) typed
+      const { from } = editor.state.selection;
+      const $pos = editor.state.doc.resolve(from);
+      const nodeStart = $pos.start();
+      const textBefore = editor.state.doc.textBetween(nodeStart, from);
+      const slashIdx = textBefore.lastIndexOf("/");
+      if (slashIdx >= 0) {
+        editor.chain().focus().deleteRange({ from: nodeStart + slashIdx, to: from }).run();
+      }
+      cmd.command(editor);
+    }
+    closeSlash();
+  };
+
+  // Listen for / in the editor
+  useEffect(() => {
+    if (!editor || preview) return;
+    const handler = (view: any, event: KeyboardEvent) => {
+      if (event.key === "/" && !slashOpen) {
+        const { from } = view.state.selection;
+        const $pos = view.state.doc.resolve(from);
+        const nodeStart = $pos.start();
+        const text = view.state.doc.textBetween(nodeStart, from);
+        // Only trigger at line start or after whitespace
+        if (text.trim() === "" || text.endsWith(" ")) {
+          const coords = view.coordsAtPos(from);
+          setSlashPos({ top: coords.top + 24, left: coords.left });
+          setSlashOpen(true);
+          setSlashQuery("");
+          setSlashIndex(0);
+          return false; // let the "/" be typed
+        }
+      }
+      if (slashOpen) {
+        if (event.key === "ArrowDown") { event.preventDefault(); setSlashIndex(i => Math.min(i + 1, filteredCommands.length - 1)); return true; }
+        if (event.key === "ArrowUp") { event.preventDefault(); setSlashIndex(i => Math.max(i - 1, 0)); return true; }
+        if (event.key === "Enter" && filteredCommands.length > 0) { event.preventDefault(); executeSlashCommand(slashIndex); return true; }
+        if (event.key === "Escape") { event.preventDefault(); closeSlash(); return true; }
+        // Track typed query
+        if (event.key.length === 1) {
+          setTimeout(() => {
+            const sel = editor.state.selection;
+            const text = editor.state.doc.textBetween(Math.max(0, sel.from - 20), sel.from);
+            const slashIdx = text.lastIndexOf("/");
+            if (slashIdx >= 0) setSlashQuery(text.slice(slashIdx + 1));
+          }, 10);
+        } else if (event.key === "Backspace") {
+          setTimeout(() => {
+            setSlashQuery(q => q.slice(0, -1));
+          }, 10);
+        }
+        return false;
+      }
+      return false;
+    };
+    editor.view.dom.addEventListener("keydown", handler as any, true);
+    return () => editor.view.dom.removeEventListener("keydown", handler as any, true);
+  }, [editor, slashOpen, preview, filteredCommands, slashIndex]);
+
+  // Close slash menu on click outside
+  useEffect(() => {
+    if (!slashOpen) return;
+    const handler = (e: MouseEvent) => closeSlash();
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [slashOpen]);
 
   if (loading) {
     return (
@@ -597,6 +590,43 @@ export function PageEditor({ userId }: Props) {
         />
       </div>
 
+      {/* Tags */}
+      {!isNew && !preview && (
+        <div className="px-4 md:px-8 pt-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {tags.map((tag) => (
+              <span key={tag.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-xs text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground/60">#</span>
+                {tag.name}
+                <button onClick={() => handleRemoveTag(tag.id)} className="ml-0.5 hover:text-red-400 transition-colors">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(); } }}
+              placeholder={tags.length === 0 ? "Add tags..." : "+ tag"}
+              className="h-6 px-2 rounded-md border border-transparent bg-transparent text-xs text-muted-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-border focus:bg-muted/50 w-24"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Tags display (view mode in page view) */}
+      {!isNew && preview && tags.length > 0 && (
+        <div className="px-4 md:px-8 pt-2 flex items-center gap-2 flex-wrap">
+          {tags.map((tag) => (
+            <span key={tag.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-xs text-muted-foreground">
+              <span className="text-[10px] text-muted-foreground/60">#</span>
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Editor content */}
       <div className="px-4 md:px-8 pb-32">
         {editor && <EditorContent editor={editor} />}
@@ -605,6 +635,100 @@ export function PageEditor({ userId }: Props) {
       {error && (
         <div className="fixed bottom-4 right-4 px-4 py-2 rounded-md bg-red-500/10 border border-red-500/30 text-sm text-red-400">
           {error}
+        </div>
+      )}
+
+      {/* Slash command dropdown */}
+      {slashOpen && createPortal(
+        <div
+          className="fixed z-[100] w-64 py-1.5 rounded-lg border border-border bg-[#161616] shadow-2xl overflow-hidden"
+          style={{ top: slashPos.top, left: slashPos.left }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {filteredCommands.length === 0 && (
+            <div className="px-3 py-4 text-xs text-muted-foreground text-center">No results</div>
+          )}
+          {filteredCommands.map((item, i) => (
+            <button
+              key={item.title}
+              onClick={() => executeSlashCommand(i)}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2 text-left transition-colors",
+                i === slashIndex ? "bg-muted" : "hover:bg-muted/50",
+              )}
+            >
+              <span className="w-8 h-8 rounded flex items-center justify-center bg-muted text-xs font-mono text-muted-foreground shrink-0">
+                {item.icon}
+              </span>
+              <div>
+                <div className="text-sm font-medium text-foreground">{item.title}</div>
+                <div className="text-[11px] text-muted-foreground">{item.description}</div>
+              </div>
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcuts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowShortcuts(false)}>
+          <div className="w-full max-w-lg p-6 rounded-xl border border-border bg-card shadow-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Keyboard Shortcuts</h2>
+              <button onClick={() => setShowShortcuts(false)} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid gap-3">
+              {[
+                ["Navigation", [
+                  ["Go back", "⌫ or click Back"],
+                  ["Open page", "Click in sidebar"],
+                  ["Home", "Click Spacetime Wiki logo"],
+                ]],
+                ["Editor", [
+                  ["Bold", "Cmd+B"],
+                  ["Italic", "Cmd+I"],
+                  ["Underline", "Cmd+U"],
+                  ["Strikethrough", "Cmd+Shift+X"],
+                  ["Heading 1", "Cmd+Alt+1"],
+                  ["Heading 2", "Cmd+Alt+2"],
+                  ["Heading 3", "Cmd+Alt+3"],
+                  ["Bullet list", "Cmd+Shift+8"],
+                  ["Ordered list", "Cmd+Shift+7"],
+                  ["Blockquote", "Cmd+Shift+B"],
+                  ["Code block", "Cmd+Alt+C"],
+                  ["Save", "Cmd+S"],
+                ]],
+                ["Slash Commands", [
+                  ["Open menu", "Type / at start of line"],
+                  ["Navigate", "↑ ↓"],
+                  ["Select", "Enter"],
+                  ["Close", "Escape"],
+                ]],
+                ["Page Actions", [
+                  ["Edit page", "Click Edit icon"],
+                  ["Publish", "Click Publish button"],
+                  ["Archive", "Click Archive button"],
+                  ["View history", "Click History icon"],
+                  ["Duplicate", "Click Copy icon"],
+                ]],
+              ].map(([section, items]) => (
+                <div key={section as string}>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">{section}</h3>
+                  <div className="space-y-1">
+                    {(items as string[][]).map(([label, key]) => (
+                      <div key={label} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{label}</span>
+                        <kbd className="px-2 py-0.5 rounded bg-muted text-xs font-mono text-muted-foreground">{key}</kbd>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

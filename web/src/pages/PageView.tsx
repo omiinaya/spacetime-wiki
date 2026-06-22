@@ -16,12 +16,143 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
-  MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight,
+  MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
 
 const lowlight = createLowlight(common);
+
+// ─── Markdown export helper ──────────────────────────────────────────────────
+
+function tiptapToMarkdown(doc: any): string {
+  const lines: string[] = [];
+  function walk(node: any, depth = 0) {
+    if (!node) return;
+    if (node.type === "doc" || node.type === "tableRow" || node.type === "tableHeader") {
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "paragraph") {
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "text") {
+          let t = c.text || "";
+          if (c.marks) {
+            c.marks.forEach((m: any) => {
+              if (m.type === "bold") t = `**${t}**`;
+              if (m.type === "italic") t = `_${t}_`;
+              if (m.type === "strike") t = `~~${t}~~`;
+              if (m.type === "code") t = `\`${t}\``;
+              if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
+            });
+          }
+          text += t;
+        } else if (c.type === "image") {
+          text += `![${c.attrs?.alt || ""}](${c.attrs?.src || ""})`;
+        } else if (c.type === "hardBreak") {
+          text += "\n";
+        }
+      });
+      lines.push(text);
+      lines.push("");
+    } else if (node.type === "heading") {
+      const level = node.attrs?.level || 1;
+      let text = "";
+      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      lines.push(`${"#".repeat(level)} ${text}`);
+      lines.push("");
+    } else if (node.type === "bulletList" || node.type === "orderedList") {
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "listItem") {
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "paragraph") {
+          c.content?.forEach((cc: any) => {
+            if (cc.type === "text") {
+              let t = cc.text || "";
+              if (cc.marks) {
+                cc.marks.forEach((m: any) => {
+                  if (m.type === "bold") t = `**${t}**`;
+                  if (m.type === "italic") t = `_${t}_`;
+                  if (m.type === "code") t = `\`${t}\``;
+                  if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
+                });
+              }
+              text += t;
+            }
+          });
+        }
+      });
+      lines.push(`- ${text}`);
+    } else if (node.type === "codeBlock") {
+      let text = "";
+      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      const lang = node.attrs?.language || "";
+      lines.push(`\`\`\`${lang}`);
+      lines.push(text);
+      lines.push("```");
+      lines.push("");
+    } else if (node.type === "blockquote") {
+      node.content?.forEach((c: any) => {
+        const before = lines.length;
+        walk(c, depth + 1);
+        for (let i = before; i < lines.length; i++) {
+          if (lines[i]) lines[i] = `> ${lines[i]}`;
+        }
+      });
+    } else if (node.type === "horizontalRule") {
+      lines.push("---");
+      lines.push("");
+    } else if (node.type === "taskList") {
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "taskItem") {
+      const checked = node.attrs?.checked ? "x" : " ";
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "paragraph") {
+          c.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+        }
+      });
+      lines.push(`- [${checked}] ${text}`);
+    } else if (node.type === "table") {
+      // Basic table export
+      const rows: string[][] = [];
+      node.content?.forEach((row: any) => {
+        const cells: string[] = [];
+        row.content?.forEach((cell: any) => {
+          let text = "";
+          cell.content?.forEach((p: any) => {
+            p.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+          });
+          cells.push(text);
+        });
+        rows.push(cells);
+      });
+      if (rows.length > 0) {
+        const colCount = rows[0].length;
+        rows.forEach((row, i) => {
+          lines.push("| " + row.join(" | ") + " |");
+          if (i === 0) lines.push("| " + "---".repeat(colCount) + " |");
+        });
+        lines.push("");
+      }
+    } else {
+      // Unknown node — recurse into content
+      node.content?.forEach((c: any) => walk(c, depth));
+    }
+  }
+  walk(doc);
+  return lines.join("\n").trim();
+}
+
+function downloadFile(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 interface Props {
   pageId: string;
@@ -41,6 +172,10 @@ export function PageView({ pageId, userId }: Props) {
   const [restoring, setRestoring] = useState(false);
   const [showConfirm, setShowConfirm] = useState<"publish" | "archive" | "delete" | null>(null);
   const [collection, setCollection] = useState<Collection | null>(null);
+  const [showExport, setShowExport] = useState(false);
+  const [attachments, setAttachments] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const attachInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadPage(); }, [pageId]);
 
@@ -59,6 +194,8 @@ export function PageView({ pageId, userId }: Props) {
       ]);
       setRevisions(revs);
       setComments(coms);
+      // Load attachments
+      api.attachments.list(pageId).then((rows) => setAttachments(rows as any[]));
     } catch (err: any) { setError(String(err)); }
     finally { setLoading(false); }
   };
@@ -116,6 +253,55 @@ export function PageView({ pageId, userId }: Props) {
     if (!userId) return;
     await api.favorites.toggle(userId, pageId);
     setIsFavorite(!isFavorite);
+  };
+
+  // ─── Export ──────────────────────────────────────────────────────────────
+
+  const handleExportMD = async () => {
+    if (!page) return;
+    try {
+      const json = JSON.parse(page.content || "{}");
+      const md = tiptapToMarkdown(json);
+      downloadFile(md, `${page.title || "Untitled"}.md`, "text/markdown");
+    } catch { downloadFile(page.content || "", `${page.title || "Untitled"}.md`, "text/markdown"); }
+    setShowExport(false);
+  };
+
+  const handleExportHTML = async () => {
+    if (!page) return;
+    try {
+      const json = JSON.parse(page.content || "{}");
+      const md = tiptapToMarkdown(json);
+      const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>${page.title || "Untitled"}</title></head>
+<body>
+${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length || 1}>${l.replace(/^#+\s*/, "")}</h${l.match(/^#+/)?.[0]?.length || 1}>` : l.startsWith("- ") ? `<li>${l.slice(2)}</li>` : l.startsWith("> ") ? `<blockquote>${l.slice(2)}</blockquote>` : l.startsWith("```") ? "<pre><code>" : l ? `<p>${l}</p>` : "<br>").join("\n")}
+</body>
+</html>`;
+      downloadFile(html, `${page.title || "Untitled"}.html`, "text/html");
+    } catch { /* fallback */ }
+    setShowExport(false);
+  };
+
+  // ─── Attachments ─────────────────────────────────────────────────────────
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !page || !userId) return;
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
+        reader.readAsDataURL(file);
+      });
+      await api.attachments.add(pageId, file.name, file.type, file.size, base64, userId);
+      const rows = await api.attachments.list(pageId);
+      setAttachments(rows as any[]);
+    } catch (err) { console.error(err); }
+    finally { setUploading(false); }
+    e.target.value = "";
   };
 
   // ─── Comments ───────────────────────────────────────────────────────────
@@ -217,6 +403,23 @@ export function PageView({ pageId, userId }: Props) {
               <Copy className="h-4 w-4" />
             </button>
 
+            {/* Export dropdown */}
+            <div className="relative">
+              <button onClick={() => setShowExport(!showExport)} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", showExport && "text-primary bg-primary/10")} title="Export">
+                <Download className="h-4 w-4" />
+              </button>
+              {showExport && (
+                <div className="absolute right-0 top-full mt-1 w-40 py-1 rounded-lg border border-border bg-card shadow-xl z-20" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={handleExportMD} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left">
+                    Export as Markdown
+                  </button>
+                  <button onClick={handleExportHTML} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left">
+                    Export as HTML
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Lifecycle buttons */}
             {page.status === "draft" && (
               <button onClick={() => setShowConfirm("publish")} className="ml-2 h-7 px-3 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90">
@@ -302,6 +505,64 @@ export function PageView({ pageId, userId }: Props) {
                 <p className="text-sm">{com.body}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Attachments */}
+      <div className="px-4 md:px-8 pb-8 border-t border-border">
+        <div className="pt-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <Paperclip className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold">Attachments ({attachments.length})</h3>
+          </div>
+
+          {userId && (
+            <div>
+              <input
+                ref={attachInputRef}
+                type="file"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => attachInputRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
+                {uploading ? "Uploading..." : "Upload file"}
+              </button>
+            </div>
+          )}
+
+          <div className="grid gap-2">
+            {attachments.map((att: any) => (
+              <div key={att[0]} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+                <a
+                  href={`data:${att[3] || "application/octet-stream"};base64,${att[5] || ""}`}
+                  download={att[2] || "file"}
+                  className="flex items-center gap-2 text-sm text-primary hover:underline"
+                >
+                  <Paperclip className="h-3.5 w-3.5" />
+                  {att[2] || "file"}
+                  <span className="text-[10px] text-muted-foreground">
+                    ({att[4] ? `${(att[4] / 1024).toFixed(1)} KB` : ""})
+                  </span>
+                </a>
+                {userId && (
+                  <button
+                    onClick={async () => { await api.attachments.delete(att[0]); setAttachments(atts => atts.filter((a: any) => a[0] !== att[0])); }}
+                    className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+            {attachments.length === 0 && (
+              <p className="text-xs text-muted-foreground py-2">No attachments yet.</p>
+            )}
           </div>
         </div>
       </div>

@@ -213,6 +213,21 @@ export const api = {
     },
   },
 
+  attachments: {
+    list: (pageId: string) =>
+      sqlQuery(`SELECT * FROM attachment WHERE page_id = '${pageId}'`),
+    add: (
+      pageId: string, filename: string, mimeType: string, sizeBytes: number,
+      storageKey: string, uploadedBy: string,
+    ) => {
+      const id = genId("att");
+      return callReducer("add_attachment", [
+        id, pageId, filename, mimeType, sizeBytes, storageKey, uploadedBy,
+      ]).then(() => id);
+    },
+    delete: (id: string) => callReducer("delete_attachment", [id]),
+  },
+
   users: {
     register: (name: string, email: string, password: string) => {
       const id = genId("user");
