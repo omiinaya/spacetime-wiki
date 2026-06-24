@@ -19,10 +19,11 @@ import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
-  List, FileText, Link2, LayoutTemplate,
+  List, FileText, Link2, LayoutTemplate, Shield,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
+import { PagePermissions } from "../components/PagePermissions";
 
 const lowlight = createLowlight(common);
 
@@ -247,6 +248,7 @@ export function PageView({ pageId, userId }: Props) {
 
   // Share state
   const [showShare, setShowShare] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
   const [sharePassword, setSharePassword] = useState("");
   const [shareDays, setShareDays] = useState(0);
   const [shareUrl, setShareUrl] = useState("");
@@ -545,6 +547,11 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
               <Link2 className="h-4 w-4" />
             </button>
 
+            {/* Permissions button */}
+            <button onClick={() => setShowPermissions(true)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Permissions">
+              <Shield className="h-4 w-4" />
+            </button>
+
             {/* Template toggle */}
             <button onClick={async () => { await api.pages.markAsTemplate(pageId || "", !page?.is_template); setPage(prev => prev ? { ...prev, is_template: !prev.is_template } : prev); }}
               className={`p-1.5 rounded hover:bg-muted ${page?.is_template ? 'text-purple-400 bg-purple-500/10' : 'text-muted-foreground hover:text-foreground'}`}
@@ -820,6 +827,15 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             ))}
           </div>
         </div>
+      )}
+
+      {/* Page Permissions Dialog */}
+      {showPermissions && (
+        <PagePermissions
+          pageId={pageId}
+          userId={userId}
+          onClose={() => setShowPermissions(false)}
+        />
       )}
     </div>
   );
