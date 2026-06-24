@@ -198,6 +198,8 @@ export const api = {
       callReducer("reorder_pages", [orderedIds]),
     setIcon: (id: string, icon: string) =>
       callReducer("set_page_icon", [id, icon]),
+    setFullWidth: (id: string, fullWidth: boolean) =>
+      callReducer("set_page_full_width", [id, fullWidth]),
     markAsTemplate: (id: string, isTemplate: boolean) =>
       callReducer("mark_as_template", [id, isTemplate]),
     createFromTemplate: (templateId: string, title: string, collectionId: string, createdBy: string) => {

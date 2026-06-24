@@ -19,7 +19,7 @@ import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
-  List, FileText, Link2, LayoutTemplate, Shield,
+  List, FileText, Link2, LayoutTemplate, Shield, Maximize2,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
@@ -519,7 +519,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className={cn(page?.full_width ? "mx-auto px-4 md:px-8" : "max-w-4xl mx-auto")}>
       <ConfirmDialog />
 
       {/* Header bar */}
@@ -543,6 +543,21 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             </button>
             <button onClick={() => setShowToc(!showToc)} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", showToc && "text-primary bg-primary/10")} title="Table of Contents">
               <List className="h-4 w-4" />
+            </button>
+            {/* Full-width toggle */}
+            <button
+              onClick={async () => {
+                const newVal = !page.full_width;
+                await api.pages.setFullWidth(pageId, newVal);
+                setPage(prev => prev ? { ...prev, full_width: newVal } : prev);
+              }}
+              className={cn(
+                "p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted",
+                page.full_width && "text-primary bg-primary/10",
+              )}
+              title={page.full_width ? "Constrain width" : "Full width"}
+            >
+              <Maximize2 className="h-4 w-4" />
             </button>
             <button onClick={() => navigate(`/page/${pageId}/edit`)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Edit">
               <Edit3 className="h-4 w-4" />

@@ -8,20 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Image lightbox viewer
-Click on an image in the editor/page view to open a fullscreen lightbox.
-Should support zoom, pan, and keyboard navigation (Escape to close).
-Files: web/src/components/ImageLightbox.tsx, web/src/components/EditorContent.tsx
-Difficulty: Easy
-Est: 1h
-
-### P3 — Full-width page toggle
-Add a toggle in the page header to switch between normal (constrained) and full-width layout.
-Store preference per-page via the `full_width` column already on the page table.
-Files: web/src/pages/PageView.tsx, web/src/pages/PageEditor.tsx
-Difficulty: Easy
-Est: 0.5h
-
 ### P3 — Mermaid diagrams in editor
 Mermaid.js integration as a custom Tiptap node. Add/edit diagrams.
 Files: web/src/extensions/Mermaid.ts, web/src/components/Editor.tsx
@@ -58,32 +44,31 @@ Est: 4-5h
 
 ## Recently Completed
 
-### P2 — Search filters (collection, date, user)
-**Done**: SearchFilters component with collection dropdown, author/user selector, date range picker with from/to inputs, active filter chips with individual clear buttons, clear-all button, and clear button on search input. Filters client-side against loaded pages leveraging STDB page columns (collection_id, updated_at, created_by). Integrated into sidebar search area.
-Files: web/src/components/SearchFilters.tsx, web/src/App.tsx
-Commit: aea33b4
+### P3 — Full-width page toggle
+**Done**: Toggle in page header (PageView + PageEditor) to switch between normal (max-w-4xl constrained) and full-width layout. Pref stored per-page via existing `full_width` column on page table. Uses Maximize2 icon with active state highlighting.
+Files: web/src/pages/PageView.tsx, web/src/pages/PageEditor.tsx, web/src/lib/api.ts, server/spacetimedb/src/lib.rs
 
-### P2 — Revisions diff view (visual diff between versions)
-**Done**: RevisionDiff component with line-by-line diff using jsdiff. Shows added/removed lines with green/red highlighting, title change tracking, addition/removal counts. Accessible via "Diff" button on each revision in the history panel. Compares against current version. Overlay panel with full-width diff display.
-Files: web/src/components/RevisionDiff.tsx, web/src/pages/PageView.tsx
-Commit: dc798c0
-
-### P2 — Page-level permissions (override collection defaults)
-**Done**: PagePermission STDB table + CRUD reducers. Frontend PagePermissions component with user/group permission management, role assignment (viewer/editor/admin), and permission removal. Wired into PageView toolbar.
-Files: server/spacetimedb/src/lib.rs, web/src/components/PagePermissions.tsx, web/src/lib/api.ts, web/src/pages/PageView.tsx
-Commit: 32a593e
-
-### P2 — Groups/teams for collaborative access
-**Done**: Group table + member management. Group CRUD, member assignment with admin/member roles, and collection-level group permissions. Admin panel tab with Groups UI, member management with role dropdowns and add/remove.
-Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/App.tsx
-Commit: 922a2c3
+### P1 — Drag-and-drop block reordering within editor
+**Done**: Draggable grip handles (⋮⋮) on top-level blocks. Drag to reorder using ProseMirror native drag-and-drop.
+Files: web/src/extensions/DragHandle.ts
+Commit: c7daa63
 
 ### P1 — Floating image toolbar (resize, align, caption)
 **Done**: Custom ImageEnhanced Tiptap extension with React node view. Floating toolbar with alignment (left/center/right), resize presets (S/M/L/XL/Full), custom width input, draggable corner resize handle, and click-to-edit caption support.
 Files: web/src/extensions/ImageEnhanced.tsx, web/src/pages/PageEditor.tsx
 Commit: 2bcf4e2
 
-### P1 — Drag-and-drop block reordering within editor
-**Done**: Draggable grip handles (⋮⋮) on top-level blocks. Drag to reorder using ProseMirror native drag-and-drop.
-Files: web/src/extensions/DragHandle.ts
-Commit: c7daa63
+### P2 — Groups/teams for collaborative access
+**Done**: Group table + member management. Group CRUD, member assignment with admin/member roles, and collection-level group permissions. Admin panel tab with Groups UI, member management with role dropdowns and add/remove.
+Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/App.tsx
+Commit: 922a2c3
+
+### P2 — Page-level permissions (override collection defaults)
+**Done**: PagePermission STDB table + CRUD reducers. Frontend PagePermissions component with user/group permission management, role assignment (viewer/editor/admin), and permission removal. Wired into PageView toolbar.
+Files: server/spacetimedb/src/lib.rs, web/src/components/PagePermissions.tsx, web/src/lib/api.ts, web/src/pages/PageView.tsx
+Commit: 32a593e
+
+### P2 — Revisions diff view (visual diff between versions)
+**Done**: RevisionDiff component with line-by-line diff using jsdiff. Shows added/removed lines with green/red highlighting, title change tracking, addition/removal counts. Accessible via "Diff" button on each revision in the history panel. Compares against current version. Overlay panel with full-width diff display.
+Files: web/src/components/RevisionDiff.tsx, web/src/pages/PageView.tsx
+Commit: dc798c0
