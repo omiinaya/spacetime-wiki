@@ -32,6 +32,7 @@ function mapTag(row: unknown[]): PageTag { return { id: String(row[0]??""), page
 function mapAttachment(row: unknown[]): Attachment { return { id: String(row[0]??""), page_id: String(row[1]??""), filename: String(row[2]??""), mime_type: String(row[3]??""), size_bytes: Number(row[4])||0, storage_key: String(row[5]??""), uploaded_by: String(row[6]??""), created_at: Number(row[7])||0 }; }
 function mapCollectionMember(row: unknown[]): CollectionMember { return { id: String(row[0]??""), collection_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
 function mapShareLink(row: unknown[]): ShareLink { return { id: String(row[0]??""), page_id: String(row[1]??""), token: String(row[2]??""), password_hash: String(row[3]??""), created_by: String(row[4]??""), expires_at: Number(row[5])||0, created_at: Number(row[6])||0, visit_count: Number(row[7])||0 }; }
+function mapApiKey(row: unknown[]): ApiKey { return { id: String(row[0]??""), user_id: String(row[1]??""), name: String(row[2]??""), key_hash: String(row[3]??""), key_prefix: String(row[4]??""), last_used_at: Number(row[5])||0, created_at: Number(row[6])||0, expires_at: Number(row[7])||0, is_revoked: Boolean(row[8]) }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -113,6 +114,12 @@ export interface CollectionMember {
 export interface ShareLink {
   id: string; page_id: string; token: string; password_hash: string;
   created_by: string; expires_at: number; created_at: number; visit_count: number;
+}
+
+export interface ApiKey {
+  id: string; user_id: string; name: string; key_hash: string;
+  key_prefix: string; last_used_at: number; created_at: number;
+  expires_at: number; is_revoked: boolean;
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -306,5 +313,16 @@ export const api = {
       ),
     updateRole: (userId: string, newRole: string, updatedBy: string) =>
       callReducer("update_user_role", [userId, newRole, updatedBy]),
+  },
+
+  apiKeys: {
+    list: (userId: string) =>
+      sqlQuery(`SELECT * FROM api_key WHERE user_id = '${userId}' AND is_revoked = false`)
+        .then((rows) => (rows as unknown[][]).map(mapApiKey)),
+    create: (userId: string, name: string, keyHash: string, keyPrefix: string, expiresDays: number) => {
+      const id = genId("apk");
+      return callReducer("create_api_key", [id, userId, name, keyHash, keyPrefix, expiresDays]).then(() => id);
+    },
+    revoke: (id: string) => callReducer("revoke_api_key", [id]),
   },
 };
