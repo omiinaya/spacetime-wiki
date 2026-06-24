@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Mermaid diagrams in editor
-Mermaid.js integration as a custom Tiptap node. Add/edit diagrams.
-Files: web/src/extensions/Mermaid.ts, web/src/components/Editor.tsx
-Difficulty: Medium
-Est: 2-3h
-
 ### P3 — Math (LaTeX/KaTeX) in editor
 KaTeX integration as custom inline and block nodes.
 Files: web/src/extensions/Math.ts, web/src/components/Editor.tsx
@@ -40,9 +34,26 @@ Files: server/spacetimedb/src/auth.rs, web/src/components/SSOSettings.tsx
 Difficulty: Hard
 Est: 4-5h
 
+### P3 — Draw.io/diagrams.net integration
+Embedded diagrams.net (draw.io) editor alongside Mermaid for visual diagram editing. Uses iframe-based draw.io embedding with export to SVG/PNG stored in doc content.
+Files: web/src/extensions/Drawio.tsx, web/src/pages/PageEditor.tsx
+Difficulty: Medium
+Est: 2-3h
+
+### P2 — Responsive/mobile-friendly layout
+Ensure the UI works well on tablets and mobile devices. Collapsible sidebar auto-hides on small screens, editor adapts to viewport, touch-friendly controls.
+Files: web/src/App.tsx, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
+Difficulty: Medium
+Est: 2h
+
 ---
 
 ## Recently Completed
+
+### P3 — Mermaid diagrams in editor
+**Done**: Mermaid.js integration as a custom Tiptap node. React node view with inline source editor, dark-themed rendering using mermaid library, and slash command (/diagram). Double-click to edit source. Auto-renders on update.
+Files: web/src/extensions/Mermaid.tsx, web/src/pages/PageEditor.tsx
+Commit: 4f4c899
 
 ### P3 — Full-width page toggle
 **Done**: Toggle in page header (PageView + PageEditor) to switch between normal (max-w-4xl constrained) and full-width layout. Pref stored per-page via existing `full_width` column on page table. Uses Maximize2 icon with active state highlighting.
