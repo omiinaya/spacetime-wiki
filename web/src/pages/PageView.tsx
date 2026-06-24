@@ -18,7 +18,7 @@ import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
-  List, FileText, Link2,
+  List, FileText, Link2, LayoutTemplate,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
@@ -471,6 +471,13 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             {/* Share button */}
             <button onClick={() => setShowShare(true)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Share">
               <Link2 className="h-4 w-4" />
+            </button>
+
+            {/* Template toggle */}
+            <button onClick={async () => { await api.pages.markAsTemplate(pageId || "", !page?.is_template); setPage(prev => prev ? { ...prev, is_template: !prev.is_template } : prev); }}
+              className={`p-1.5 rounded hover:bg-muted ${page?.is_template ? 'text-purple-400 bg-purple-500/10' : 'text-muted-foreground hover:text-foreground'}`}
+              title={page?.is_template ? "Remove from templates" : "Save as template"}>
+              <LayoutTemplate className="h-4 w-4" />
             </button>
 
             {/* Lifecycle buttons */}
