@@ -24,6 +24,7 @@ import {
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
 import { PagePermissions } from "../components/PagePermissions";
+import { RevisionDiff } from "../components/RevisionDiff";
 
 const lowlight = createLowlight(common);
 
@@ -246,6 +247,10 @@ export function PageView({ pageId, userId }: Props) {
   const [showExport, setShowExport] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
 
+  // Diff state
+  const [diffOldRev, setDiffOldRev] = useState<PageRevision | null>(null);
+  const [diffNewRev, setDiffNewRev] = useState<PageRevision | null>(null);
+
   // Share state
   const [showShare, setShowShare] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
@@ -441,6 +446,16 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
       setShowRevisions(false);
     } catch (e) { console.error(e); }
     finally { setRestoring(false); }
+  };
+
+  const handleCompareRevisions = (oldRev: PageRevision, newRev: PageRevision) => {
+    setDiffOldRev(oldRev);
+    setDiffNewRev(newRev);
+  };
+
+  const handleCloseDiff = () => {
+    setDiffOldRev(null);
+    setDiffNewRev(null);
   };
 
   // ─── Render states ──────────────────────────────────────────────────────
@@ -812,21 +827,43 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                   <span className="text-[10px] text-muted-foreground">{formatDate(rev.created_at)}</span>
                 </div>
                 <div className="text-xs text-muted-foreground mb-2">by {rev.edited_by}</div>
-                {i === revisions.length - 1 ? (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-500">Current</span>
-                ) : (
-                  <button
-                    onClick={() => handleRestoreRevision(rev)}
-                    disabled={restoring}
-                    className="text-[10px] px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 flex items-center gap-1"
-                  >
-                    <RotateCcw className="h-2.5 w-2.5" /> Restore this version
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {i === revisions.length - 1 ? (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-500">Current</span>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleRestoreRevision(rev)}
+                        disabled={restoring}
+                        className="text-[10px] px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <RotateCcw className="h-2.5 w-2.5" /> Restore
+                      </button>
+                      <button
+                        onClick={() => handleCompareRevisions(rev, revisions[revisions.length - 1])}
+                        className="text-[10px] px-2 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 flex items-center gap-1"
+                      >
+                        <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                        Diff
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </div>
+      )}
+
+      {/* Revision Diff Panel */}
+      {diffOldRev && diffNewRev && (
+        <RevisionDiff
+          oldRev={diffOldRev}
+          newRev={diffNewRev}
+          onClose={handleCloseDiff}
+        />
       )}
 
       {/* Page Permissions Dialog */}
