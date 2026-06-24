@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   BrowserRouter, Routes, Route, useNavigate, useParams, useLocation,
 } from "react-router-dom";
 import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
-  MoreHorizontal, Pencil, FolderPlus, Trash2,
+  MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
+  Upload, Loader2,
 } from "lucide-react";
 import { api, Page, Collection } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -146,6 +147,12 @@ function AppLayout() {
 
   const [dragPageId, setDragPageId] = useState<string | null>(null);
 
+  // ─── Command palette (Cmd+K) ────────────────────────────────────────────
+
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteQuery, setPaletteQuery] = useState("");
+  const [paletteIndex, setPaletteIndex] = useState(0);
+
   const handleDragStart = (e: React.DragEvent, pageId: string) => {
     setDragPageId(pageId);
     e.dataTransfer.effectAllowed = "move";
@@ -183,6 +190,65 @@ function AppLayout() {
     await api.pages.move(pageId, newColId, "");
     await loadData();
   };
+
+  // ─── Command palette handlers ───────────────────────────────────────────
+
+  const collectionLabel = (colId: string) => collections.find(c => c.id === colId)?.name || "";
+
+  const closePalette = () => { setPaletteOpen(false); setPaletteQuery(""); setPaletteIndex(0); };
+
+  const paletteItems = (() => {
+    const q = paletteQuery.toLowerCase();
+    const results: { type: "page" | "collection" | "action"; id?: string; label: string; subtitle: string; icon: React.ReactNode; action: () => void }[] = [];
+
+    // Pages
+    for (const p of pages.filter(x => x.status !== "deleted" && (x.title.toLowerCase().includes(q) || q === ""))) {
+      results.push({
+        type: "page", id: p.id, label: p.title,
+        subtitle: `${p.status === "draft" ? "Draft" : p.status === "archived" ? "Archived" : ""} ${collectionLabel(p.collection_id)}`.trim(),
+        icon: <FileText className="h-4 w-4" />,
+        action: () => navigate(`/page/${p.id}`),
+      });
+    }
+    // Collections
+    for (const c of collections.filter(x => x.name.toLowerCase().includes(q))) {
+      results.push({
+        type: "collection", id: c.id, label: c.name,
+        subtitle: `${c.icon || "📁"} Collection`,
+        icon: <BookOpen className="h-4 w-4" />,
+        action: () => { navigate("/"); toggleCollection(c.id); },
+      });
+    }
+    // Actions
+    const actions = [
+      { label: "New page", subtitle: "Create a new document", icon: <Plus className="h-4 w-4" />, action: () => { closePalette(); navigate("/new"); } },
+      { label: "New collection", subtitle: "Create a new collection", icon: <FolderPlus className="h-4 w-4" />, action: () => { closePalette(); openCreateCol(); } },
+    ];
+    for (const a of actions) {
+      if (a.label.toLowerCase().includes(q) || q === "") results.push({ type: "action", label: a.label, subtitle: a.subtitle, icon: a.icon, action: a.action });
+    }
+    return results.slice(0, 15);
+  })();
+
+  const executePalette = (idx: number) => {
+    const item = paletteItems[idx];
+    if (item) { closePalette(); item.action(); }
+  };
+
+  // Cmd+K keyboard handler
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setPaletteOpen(true); return; }
+      if (paletteOpen) {
+        if (e.key === "ArrowDown") { e.preventDefault(); setPaletteIndex(i => Math.min(i + 1, paletteItems.length - 1)); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); setPaletteIndex(i => Math.max(i - 1, 0)); }
+        else if (e.key === "Enter") { e.preventDefault(); executePalette(paletteIndex); }
+        else if (e.key === "Escape") { e.preventDefault(); closePalette(); }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [paletteOpen, paletteIndex, paletteItems.length]);
 
   return (
     <div className="flex h-screen bg-background" onClick={() => setContextMenu(null)}>
@@ -430,6 +496,54 @@ function AppLayout() {
           <Route path="/login" element={<LoginView />} />
         </Routes>
       </main>
+
+      {/* Command Palette Modal */}
+      {paletteOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/60" onClick={closePalette}>
+          <div className="w-full max-w-xl rounded-xl border border-border bg-card shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 px-4 h-12 border-b border-border">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
+                type="text"
+                value={paletteQuery}
+                onChange={(e) => { setPaletteQuery(e.target.value); setPaletteIndex(0); }}
+                placeholder="Search pages, collections, or actions..."
+                autoFocus
+                className="flex-1 h-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none border-none"
+              />
+              <kbd className="px-1.5 py-0.5 rounded bg-muted text-[10px] text-muted-foreground font-mono">esc</kbd>
+            </div>
+            <div className="max-h-[50vh] overflow-y-auto">
+              {paletteItems.length === 0 && (
+                <div className="px-4 py-6 text-center text-xs text-muted-foreground">No results for "{paletteQuery}"</div>
+              )}
+              {paletteItems.map((item, i) => (
+                <button
+                  key={item.type + (item.id || item.label)}
+                  onClick={() => executePalette(i)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
+                    i === paletteIndex ? "bg-primary/10" : "hover:bg-muted/50",
+                  )}
+                >
+                  <span className="text-muted-foreground shrink-0">{item.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">{item.label}</div>
+                    <div className="text-[11px] text-muted-foreground">{item.subtitle}</div>
+                  </div>
+                  {item.type === "page" && <span className="text-[10px] text-muted-foreground/50">Page</span>}
+                  {item.type === "collection" && <span className="text-[10px] text-muted-foreground/50">Collection</span>}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-4 px-4 h-9 border-t border-border text-[10px] text-muted-foreground">
+              <span>↑↓ navigate</span>
+              <span>↵ open</span>
+              <span>esc close</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -439,6 +553,8 @@ function AppLayout() {
 function HomeView() {
   const navigate = useNavigate();
   const [recentPages, setRecentPages] = useState<Page[]>([]);
+  const [importing, setImporting] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     api.pages.list().then((pages) => {
@@ -450,6 +566,36 @@ function HomeView() {
       );
     });
   }, []);
+
+  const handleImportMD = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const title = file.name.replace(/\.md$/i, "");
+      const lines = text.split("\n");
+      const content: any[] = [];
+      let codeBlock: string[] = [];
+      let inCode = false;
+      for (const line of lines) {
+        if (line.startsWith("```")) {
+          if (inCode) { content.push({ type: "codeBlock", attrs: { language: "" }, content: [{ type: "text", text: codeBlock.join("\n") }] }); codeBlock = []; inCode = false; }
+          else { inCode = true; }
+        } else if (inCode) { codeBlock.push(line); }
+        else if (line.startsWith("# ")) content.push({ type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: line.slice(2) }] });
+        else if (line.startsWith("## ")) content.push({ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: line.slice(3) }] });
+        else if (line.startsWith("### ")) content.push({ type: "heading", attrs: { level: 3 }, content: [{ type: "text", text: line.slice(4) }] });
+        else if (line.startsWith("- ")) content.push({ type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: line.slice(2) }] }] }] });
+        else if (line.startsWith("> ")) content.push({ type: "blockquote", content: [{ type: "paragraph", content: [{ type: "text", text: line.slice(2) }] }] });
+        else if (line.trim()) content.push({ type: "paragraph", content: [{ type: "text", text: line }] });
+        else content.push({ type: "paragraph" });
+      }
+      const id = await api.pages.create(title, JSON.stringify({ type: "doc", content }), "", "", "anonymous");
+      navigate(`/page/${id}`);
+    } catch (err) { console.error(err); }
+    finally { setImporting(false); e.target.value = ""; }
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto">
@@ -492,6 +638,15 @@ function HomeView() {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-3.5 w-3.5" /> New Page
+        </button>
+        <input ref={importRef} type="file" accept=".md,.txt" onChange={handleImportMD} className="hidden" />
+        <button
+          onClick={() => importRef.current?.click()}
+          disabled={importing}
+          className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+        >
+          {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+          Import MD
         </button>
       </div>
     </div>
