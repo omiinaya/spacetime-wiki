@@ -8,6 +8,27 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
+### P2 — Search filters (collection, date, user)
+Add filter controls to the search interface — filter by collection, date range, and author.
+Leverages existing STDB page table columns (collection_id, updated_at, created_by).
+Files: web/src/components/SearchFilters.tsx, web/src/pages/SearchResults.tsx
+Difficulty: Medium
+Est: 2h
+
+### P3 — Image lightbox viewer
+Click on an image in the editor/page view to open a fullscreen lightbox.
+Should support zoom, pan, and keyboard navigation (Escape to close).
+Files: web/src/components/ImageLightbox.tsx, web/src/components/EditorContent.tsx
+Difficulty: Easy
+Est: 1h
+
+### P3 — Full-width page toggle
+Add a toggle in the page header to switch between normal (constrained) and full-width layout.
+Store preference per-page via the `full_width` column already on the page table.
+Files: web/src/pages/PageView.tsx, web/src/pages/PageEditor.tsx
+Difficulty: Easy
+Est: 0.5h
+
 ### P3 — Mermaid diagrams in editor
 Mermaid.js integration as a custom Tiptap node. Add/edit diagrams.
 Files: web/src/extensions/Mermaid.ts, web/src/components/Editor.tsx
@@ -26,6 +47,13 @@ with a paste-to-embed flow.
 Files: web/src/extensions/YouTube.ts, web/src/components/Editor.tsx
 Difficulty: Easy
 Est: 1h
+
+### P3 — Webhooks (HTTP callbacks)
+Add webhook support — register URLs that receive POST notifications on page create,
+update, delete events. Store webhooks in a new STDB table.
+Files: server/spacetimedb/src/webhooks.rs, web/src/components/WebhookSettings.tsx
+Difficulty: Hard
+Est: 3h
 
 ### P3 — OIDC generic SSO support
 Generic OpenID Connect provider integration alongside Google OAuth.
