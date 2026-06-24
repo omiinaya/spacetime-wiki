@@ -8,13 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Video embeds (YouTube, Vimeo, Loom)
-Expand the YouTube extension to support Vimeo, Loom, and other providers
-with a paste-to-embed flow.
-Files: web/src/extensions/YouTube.ts, web/src/components/Editor.tsx
-Difficulty: Easy
-Est: 1h
-
 ### P3 — Webhooks (HTTP callbacks)
 Add webhook support — register URLs that receive POST notifications on page create,
 update, delete events. Store webhooks in a new STDB table.
@@ -43,6 +36,11 @@ Est: 2h
 ---
 
 ## Recently Completed
+
+### P3 — Video embeds (YouTube, Vimeo, Loom, Twitch)
+**Done**: Unified VideoEmbed Tiptap extension supporting YouTube, Vimeo, Loom, and Twitch providers. Regex-based URL detection from clipboard paste for automatic embed conversion. Slash command (/video) to insert video via URL prompt. Each provider renders proper iframe with provider-specific attributes (allowfullscreen, allow policies). Provider label bar with icon shows which service is embedded. Replaces old YouTube-only extension.
+Files: web/src/extensions/VideoEmbed.ts, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
+Commit: 4db980e
 
 ### P3 — Math (LaTeX/KaTeX) in editor
 **Done**: KaTeX integration with inline ($...$) and block ($$...$$) math nodes. Custom Tiptap extension with React node view for block math — inline KaTeX rendering in both editor and page view, inline source editor with double-click to edit, slash command (/math), and dark-themed output using KaTeX library.
