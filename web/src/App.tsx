@@ -5,7 +5,7 @@ import {
 import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
-  Upload, Loader2,
+  Upload, Loader2, Shield, Link2, RefreshCw,
 } from "lucide-react";
 import { api, Page, Collection } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -35,6 +35,21 @@ function AppLayout() {
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; colId: string } | null>(null);
+
+  // Trash state
+  const [trashPages, setTrashPages] = useState<Page[]>([]);
+  const [trashLoading, setTrashLoading] = useState(false);
+
+  // Admin state
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
+
+  // Share state
+  const [shareDialog, setShareDialog] = useState<{ pageId: string; pageTitle: string } | null>(null);
+  const [sharePassword, setSharePassword] = useState("");
+  const [shareDays, setShareDays] = useState(0);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string }[]>([]);
 
   useEffect(() => {
     setUserId(localStorage.getItem("sw_user_id"));
@@ -141,6 +156,89 @@ function AppLayout() {
     setContextMenu(null);
     await api.collections.delete(id);
     await loadData();
+  };
+
+  // ─── Trash handlers ─────────────────────────────────────────────────────
+
+  const loadTrashPage = async () => {
+    setTrashLoading(true);
+    try {
+      const deleted = await api.pages.listDeleted();
+      setTrashPages(deleted);
+    } catch (e) { console.error(e); }
+    finally { setTrashLoading(false); }
+    navigate("/trash");
+  };
+
+  const restorePage = async (id: string) => {
+    await api.pages.restore(id);
+    setTrashPages(prev => prev.filter(p => p.id !== id));
+    await loadData();
+  };
+
+  const permanentDelete = async (id: string) => {
+    if (!confirm("Permanently delete this page? This cannot be undone.")) return;
+    await api.pages.delete(id);
+    setTrashPages(prev => prev.filter(p => p.id !== id));
+    await loadData();
+  };
+
+  const emptyTrash = async () => {
+    if (!confirm("Permanently delete ALL pages in trash? This cannot be undone.")) return;
+    await api.pages.emptyTrash();
+    setTrashPages([]);
+    await loadData();
+  };
+
+  // ─── Admin handlers ─────────────────────────────────────────────────────
+
+  const openAdmin = async () => {
+    try {
+      const users = await api.users.list();
+      setAllUsers(users);
+    } catch (e) { console.error(e); }
+    setAdminOpen(true);
+    navigate("/admin");
+  };
+
+  const updateUserRole = async (userId: string, newRole: string) => {
+    const currentUser = localStorage.getItem("sw_user_id") || "";
+    try {
+      await api.users.updateRole(userId, newRole, currentUser);
+      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    } catch (e) { alert(String(e)); }
+  };
+
+  // ─── Share handlers ─────────────────────────────────────────────────────
+
+  const openShareDialog = async (pageId: string, pageTitle: string) => {
+    try {
+      const links = await api.shareLinks.list(pageId);
+      setShareLinks(links);
+    } catch { /* noop */ }
+    setShareDialog({ pageId, pageTitle });
+    setSharePassword("");
+    setShareDays(0);
+    setShareUrl("");
+  };
+
+  const createShare = async () => {
+    if (!shareDialog) return;
+    try {
+      const result = await api.shareLinks.create(shareDialog.pageId, sharePassword, userId || "anon", shareDays);
+      const host = window.location.host;
+      setShareUrl(`http://${host}/shared/${result.token}`);
+      const links = await api.shareLinks.list(shareDialog.pageId);
+      setShareLinks(links);
+    } catch (e) { alert(String(e)); }
+  };
+
+  const deleteShare = async (linkId: string) => {
+    await api.shareLinks.delete(linkId);
+    if (shareDialog) {
+      const links = await api.shareLinks.list(shareDialog.pageId);
+      setShareLinks(links);
+    }
   };
 
   // ─── Drag-and-drop ─────────────────────────────────────────────────────
@@ -401,8 +499,14 @@ function AppLayout() {
           )}
         </nav>
 
-        <div className="px-3 py-2 border-t border-border">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="px-3 py-2 border-t border-border space-y-1">
+          <button onClick={loadTrashPage} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+            <Trash2 className="h-3 w-3" /> Trash
+          </button>
+          <button onClick={openAdmin} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+            <Shield className="h-3 w-3" /> Admin
+          </button>
+          <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
             {userId ? (
               <span className="truncate">Logged in</span>
             ) : (
@@ -434,6 +538,133 @@ function AppLayout() {
           >
             <Trash2 className="h-3 w-3" /> Delete
           </button>
+        </div>
+      )}
+
+      {/* Trash panel */}
+      {location.pathname === "/trash" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => navigate("/")}>
+          <div className="w-full max-w-lg mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2"><Trash2 className="h-4 w-4 text-red-400" /> Trash</h3>
+              <button onClick={() => navigate("/")} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
+            </div>
+            {trashLoading ? (
+              <div className="py-8 text-center text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" /> Loading...</div>
+            ) : trashPages.length === 0 ? (
+              <div className="py-8 text-center text-xs text-muted-foreground">Trash is empty</div>
+            ) : (
+              <>
+                <div className="space-y-1 mb-4">
+                  {trashPages.map(p => (
+                    <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/30 transition-colors">
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-xs truncate flex-1">{p.title}</span>
+                      <span className="text-[10px] text-muted-foreground/60 shrink-0">{timeAgo(p.deleted_at)}</span>
+                      <button onClick={() => restorePage(p.id)} className="p-1 rounded text-xs text-primary hover:bg-primary/10 shrink-0">Restore</button>
+                      <button onClick={() => permanentDelete(p.id)} className="p-1 rounded text-xs text-red-400 hover:bg-red-500/10 shrink-0">Delete</button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={emptyTrash}
+                  className="w-full py-2 rounded-md text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors border border-red-500/20"
+                >
+                  Empty trash
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Admin panel */}
+      {location.pathname === "/admin" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => { setAdminOpen(false); navigate("/"); }}>
+          <div className="w-full max-w-2xl mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> Admin — User Management</h3>
+              <button onClick={() => { setAdminOpen(false); navigate("/"); }} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-1">
+              {allUsers.map(u => (
+                <div key={u.id} className="flex items-center gap-3 px-3 py-2 rounded-md border border-border hover:bg-muted/30 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{u.name}</p>
+                    <p className="text-[10px] text-muted-foreground/60 truncate">{u.email}</p>
+                  </div>
+                  <select
+                    value={u.role}
+                    onChange={(e) => updateUserRole(u.id, e.target.value)}
+                    className="h-7 pl-2 pr-6 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="member">Member</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </div>
+              ))}
+              {allUsers.length === 0 && (
+                <div className="py-8 text-center text-xs text-muted-foreground">No users found</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share dialog */}
+      {shareDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShareDialog(null)}>
+          <div className="w-full max-w-sm mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2"><Link2 className="h-4 w-4 text-primary" /> Share "{shareDialog.pageTitle}"</h3>
+              <button onClick={() => setShareDialog(null)} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Password (optional)</label>
+                <input
+                  type="text" value={sharePassword} onChange={(e) => setSharePassword(e.target.value)}
+                  placeholder="Leave empty for public link"
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Expires in days (0 = never)</label>
+                <input
+                  type="number" value={shareDays} onChange={(e) => setShareDays(parseInt(e.target.value) || 0)} min={0}
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+              </div>
+              <button
+                onClick={createShare}
+                className="w-full h-8 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Create share link
+              </button>
+              {shareUrl && (
+                <div className="p-2 rounded-md bg-primary/5 border border-primary/20">
+                  <p className="text-[10px] text-muted-foreground/60 mb-1">Share URL</p>
+                  <input readOnly value={shareUrl} onClick={(e) => (e.target as HTMLInputElement).select()}
+                    className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground font-mono"
+                  />
+                </div>
+              )}
+              {shareLinks.length > 0 && (
+                <div className="space-y-1 pt-2 border-t border-border">
+                  <p className="text-[10px] text-muted-foreground/60 mb-1">Active shares</p>
+                  {shareLinks.map(s => (
+                    <div key={s.id} className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground font-mono truncate flex-1">{s.token.slice(0, 12)}...</span>
+                      <span className="text-[10px] text-muted-foreground/60">{s.visit_count} views</span>
+                      {s.password_hash && <span className="text-[10px]">🔒</span>}
+                      <button onClick={() => deleteShare(s.id)} className="text-red-400 hover:text-red-300 text-[10px]">×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -675,7 +906,7 @@ function LoginView() {
     e.preventDefault();
     setError("");
     try {
-      if (isRegister) await api.users.register(name, email, password);
+      if (isRegister) await api.users.register(name, email, password, "member");
       const user = await api.users.login(email, password);
       if (!user) throw new Error("Login failed");
       localStorage.setItem("sw_user_id", user.id);
