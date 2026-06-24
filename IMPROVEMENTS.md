@@ -8,13 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — Callouts/Notices (info, warning, tip, danger)
-Custom Tiptap node extension for colored callout/notice blocks with icons.
-Present in Outline, Docmost, Wiki.js, and BookStack.
-Files: web/src/extensions/Callout.ts, web/src/components/Editor.tsx
-Difficulty: Easy
-Est: 1h
-
 ### P1 — Drag-and-drop block reordering within editor
 Allow reordering blocks (paragraphs, headings, etc.) by dragging.
 Present in Outline and Docmost.
