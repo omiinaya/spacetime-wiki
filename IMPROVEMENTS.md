@@ -8,13 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — Drag-and-drop block reordering within editor
-Allow reordering blocks (paragraphs, headings, etc.) by dragging.
-Present in Outline and Docmost.
-Files: web/src/components/Editor.tsx
-Difficulty: Medium
-Est: 2h
-
 ### P1 — Floating image toolbar (resize, align, caption)
 Context toolbar when selecting images in the editor.
 Files: web/src/components/Editor.tsx
@@ -68,63 +61,13 @@ Est: 4-5h
 
 ## Recently Completed
 
-### P0 — Rich text documents (Prosemirror/block-based editor)
-**Done**: Full Tiptap editor with StarterKit, Link, Image, Table, TaskList, Highlight, CodeBlockLowlight, custom Details and Mention extensions.
-Files: web/src/components/Editor.tsx, server/spacetimedb/src/lib.rs
+### P1 — Drag-and-drop block reordering within editor
+**Done**: Draggable grip handles (⋮⋮) on top-level blocks. Drag to reorder using ProseMirror native drag-and-drop.
+Files: web/src/extensions/DragHandle.ts
+Commit: c7daa63
 
-### P0 — WYSIWYG editor
-**Done**: Complete editor with top toolbar (bold, italic, heading, lists, link, image, table, code, highlight, divider, toggle) and floating selection toolbar.
-
-### P0 — Markdown editor
-**Done**: Tiptap StarterKit includes markdown input rules (type `#` → heading, `>` → blockquote, `-` → list, etc.). Markdown import and export also implemented.
-
-### P0 — Document lifecycle
-**Done**: Draft → Published → Archived → Deleted states with `set_page_status` reducer. Trash/recycle bin with restore and permanent delete.
-
-### P0 — Collections/Spaces
-**Done**: Collection table with CRUD reducers. Collection member roles (admin/editor/viewer). Context menu, edit dialog, drag-drop pages between collections.
-
-### P0 — Nested page hierarchy
-**Done**: `parent_page_id` field on Page. Sidebar displays parent/child relationships. Pages can be moved between collections and reordered.
-
-### P0 — Sidebar tree navigation
-**Done**: Expandable/collapsible tree with collections and pages. Drag-and-drop reorder. Right-click context menu. Favorites section.
-
-### P0 — Email/password auth
-**Done**: `register_user` and `login_user` reducers with SHA-256 password hashing. Login page with redirect. User role management (admin/member/viewer).
-
-### P0 — Full-text search
-**Done**: Client-side search across page titles and text_content. Search-as-you-type with 200ms debounce. Instant filtering.
-
-### P0 — Dark mode
-**Done**: Dark theme using Tailwind `prose-invert`, `bg-background`, `bg-card`, `text-muted-foreground` classes. Outline-inspired dark UI.
-
-### P1 — Tables (full Tiptap support)
-**Done**: Resizable tables with header rows, columns, and cells via `@tiptap/extension-table`.
-
-### P1 — Code blocks with syntax highlighting
-**Done**: `CodeBlockLowlight` with lowlight/highlight.js grammar support.
-
-### P1 — Image paste from clipboard
-**Done**: `handlePaste` in editor creates object URLs from pasted/dropped images.
-
-### P1 — Slash commands (/ menu)
-**Done**: `/` key triggers floating menu with 12 commands (H1-H3, lists, quote, code, table, image, divider, toggle). Keyboard-navigable.
-
-### P1 — Selection/floating formatting toolbar
-**Done**: Context toolbar appears above text selection with bold, italic, strikethrough, code, link buttons.
-
-### P1 — Breadcrumbs
-**Done**: Parent path shown at top of document pages via sidebar tree structure.
-
-### P1 — Tags/labels on pages
-**Done**: `page_tag` table with `add_tag`/`remove_tag` reducers. Tag input UI in PageEditor.
-
-### P1 — User roles (admin, member, viewer)
-**Done**: Role field on User. Admin panel with role management. Only admins can change roles.
-
-### P1 — Collection-level permissions
-**Done**: `collection_member` table with role assignments (admin/editor/viewer). Permission checks on collection operations.
+### P1 — Callouts/Notices
+**Done**: Custom Callout node extension with color-coded types (info, warning, tip, danger), icon indicators, and slash command integration.
 
 ### P1 — Keyboard shortcuts reference
 **Done**: `?` key opens shortcuts modal. Cmd+S saves. Arrow keys navigate slash/palette menus.
@@ -138,7 +81,16 @@ Files: web/src/components/Editor.tsx, server/spacetimedb/src/lib.rs
 ### P1 — File attachments
 **Done**: `attachment` table with base64 upload. File attachment management in PageView.
 
-### P1 — Callouts/Notices
-**Done**: Custom Callout node extension with color-coded types (info, warning, tip, danger), icon indicators, and slash command integration.
+### P0 — Rich text documents (Prosemirror/block-based editor)
+**Done**: Full Tiptap editor with StarterKit, Link, Image, Table, TaskList, Highlight, CodeBlockLowlight, custom Details and Mention extensions.
 
-*(previous entries trimmed — see git log for full history)*
+### P0 — WYSIWYG editor
+**Done**: Complete editor with top toolbar (bold, italic, heading, lists, link, image, table, code, highlight, divider, toggle) and floating selection toolbar.
+
+### P0 — Markdown editor
+**Done**: Tiptap StarterKit includes markdown input rules (type `#` → heading, `>` → blockquote, `-` → list, etc.).
+
+### P0 — Document lifecycle
+**Done**: Draft → Published → Archived → Deleted states with `set_page_status` reducer.
+
+*(older entries trimmed — see git log for full history)*
