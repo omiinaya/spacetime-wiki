@@ -33,6 +33,9 @@ function mapAttachment(row: unknown[]): Attachment { return { id: String(row[0]?
 function mapCollectionMember(row: unknown[]): CollectionMember { return { id: String(row[0]??""), collection_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
 function mapShareLink(row: unknown[]): ShareLink { return { id: String(row[0]??""), page_id: String(row[1]??""), token: String(row[2]??""), password_hash: String(row[3]??""), created_by: String(row[4]??""), expires_at: Number(row[5])||0, created_at: Number(row[6])||0, visit_count: Number(row[7])||0 }; }
 function mapApiKey(row: unknown[]): ApiKey { return { id: String(row[0]??""), user_id: String(row[1]??""), name: String(row[2]??""), key_hash: String(row[3]??""), key_prefix: String(row[4]??""), last_used_at: Number(row[5])||0, created_at: Number(row[6])||0, expires_at: Number(row[7])||0, is_revoked: Boolean(row[8]) }; }
+function mapGroup(row: unknown[]): Group { return { id: String(row[0]??""), name: String(row[1]??""), description: String(row[2]??""), created_by: String(row[3]??""), created_at: Number(row[4])||0, updated_at: Number(row[5])||0 }; }
+function mapGroupMember(row: unknown[]): GroupMember { return { id: String(row[0]??""), group_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
+function mapCollectionGroupPermission(row: unknown[]): CollectionGroupPermission { return { id: String(row[0]??""), collection_id: String(row[1]??""), group_id: String(row[2]??""), role: String(row[3]??""), created_at: Number(row[4])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -120,6 +123,21 @@ export interface ApiKey {
   id: string; user_id: string; name: string; key_hash: string;
   key_prefix: string; last_used_at: number; created_at: number;
   expires_at: number; is_revoked: boolean;
+}
+
+export interface Group {
+  id: string; name: string; description: string;
+  created_by: string; created_at: number; updated_at: number;
+}
+
+export interface GroupMember {
+  id: string; group_id: string; user_id: string; role: string;
+  added_by: string; created_at: number;
+}
+
+export interface CollectionGroupPermission {
+  id: string; collection_id: string; group_id: string; role: string;
+  created_at: number;
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -333,5 +351,39 @@ export const api = {
       return callReducer("create_api_key", [id, userId, name, keyHash, keyPrefix, expiresDays]).then(() => id);
     },
     revoke: (id: string) => callReducer("revoke_api_key", [id]),
+  },
+
+  groups: {
+    list: () => sqlQuery("SELECT * FROM `group`").then((rows) => (rows as unknown[][]).map(mapGroup)),
+    get: (id: string) =>
+      sqlQuery(`SELECT * FROM \`group\` WHERE id = '${id}'`).then(
+        (rows) => ((rows as unknown[][])[0] ? mapGroup((rows as unknown[][])[0]) : null),
+      ),
+    create: (name: string, description: string, createdBy: string) => {
+      const id = genId("grp");
+      return callReducer("create_group", [id, name, description, createdBy]).then(() => id);
+    },
+    update: (id: string, name: string, description: string) =>
+      callReducer("update_group", [id, name, description]),
+    delete: (id: string) => callReducer("delete_group", [id]),
+    listMembers: (groupId: string) =>
+      sqlQuery(`SELECT * FROM group_member WHERE group_id = '${groupId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapGroupMember)),
+    addMember: (groupId: string, userId: string, role: string, addedBy: string) => {
+      const id = genId("gm");
+      return callReducer("add_group_member", [id, groupId, userId, role, addedBy]);
+    },
+    updateMemberRole: (id: string, newRole: string) =>
+      callReducer("update_group_member_role", [id, newRole]),
+    removeMember: (id: string) => callReducer("remove_group_member", [id]),
+    listCollectionPermissions: (collectionId: string) =>
+      sqlQuery(`SELECT * FROM collection_group_permission WHERE collection_id = '${collectionId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapCollectionGroupPermission)),
+    setCollectionPermission: (collectionId: string, groupId: string, role: string) => {
+      const id = genId("cgp");
+      return callReducer("set_collection_group_permission", [id, collectionId, groupId, role]);
+    },
+    removeCollectionPermission: (id: string) =>
+      callReducer("remove_collection_group_permission", [id]),
   },
 };
