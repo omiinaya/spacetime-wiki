@@ -17,6 +17,7 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Details } from "../extensions/Details";
 import { Callout, CALLOUT_TYPES } from "../extensions/Callout";
 import { Mention } from "../extensions/Mention";
+import { DragHandle } from "../extensions/DragHandle";
 import { common, createLowlight } from "lowlight";
 import {
   Bold,
@@ -207,6 +208,7 @@ export function PageEditor({ userId }: Props) {
         codeBlock: false, // replaced by CodeBlockLowlight
         link: false,     // use explicit Link.configure below
       }),
+      DragHandle,
       Placeholder.configure({ placeholder: "Start writing... or type / for commands" }),
       Link.configure({ openOnClick: false }),
       ImageExtension,
