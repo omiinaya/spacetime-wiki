@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Math (LaTeX/KaTeX) in editor
-KaTeX integration as custom inline and block nodes.
-Files: web/src/extensions/Math.ts, web/src/components/Editor.tsx
-Difficulty: Medium
-Est: 2h
-
 ### P3 — Video embeds (YouTube, Vimeo, Loom)
 Expand the YouTube extension to support Vimeo, Loom, and other providers
 with a paste-to-embed flow.
@@ -49,6 +43,11 @@ Est: 2h
 ---
 
 ## Recently Completed
+
+### P3 — Math (LaTeX/KaTeX) in editor
+**Done**: KaTeX integration with inline ($...$) and block ($$...$$) math nodes. Custom Tiptap extension with React node view for block math — inline KaTeX rendering in both editor and page view, inline source editor with double-click to edit, slash command (/math), and dark-themed output using KaTeX library.
+Files: web/src/extensions/Math.tsx, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
+Commit: [pending]
 
 ### P3 — Mermaid diagrams in editor
 **Done**: Mermaid.js integration as a custom Tiptap node. React node view with inline source editor, dark-themed rendering using mermaid library, and slash command (/diagram). Double-click to edit source. Auto-renders on update.

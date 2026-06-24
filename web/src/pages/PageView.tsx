@@ -15,6 +15,7 @@ import Highlight from "@tiptap/extension-highlight";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Details } from "../extensions/Details";
 import { Callout } from "../extensions/Callout";
+import { MathInline, MathBlock } from "../extensions/Math";
 import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
@@ -330,6 +331,8 @@ export function PageView({ pageId, userId }: Props) {
       CodeBlockLowlight.configure({ lowlight }),
       Details,
       Callout,
+      MathInline,
+      MathBlock,
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
