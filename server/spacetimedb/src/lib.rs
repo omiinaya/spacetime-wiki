@@ -202,6 +202,18 @@ pub struct ShareLink {
     pub visit_count: u32,
 }
 
+#[table(accessor = page_permission, public)]
+#[derive(Debug, Clone)]
+pub struct PagePermission {
+    #[primary_key]
+    pub id: String,
+    pub page_id: String,
+    pub user_id: String,
+    pub group_id: String,
+    pub role: String,
+    pub created_at: u64,
+}
+
 #[table(accessor = api_key, public)]
 #[derive(Debug, Clone)]
 pub struct ApiKey {
@@ -1083,5 +1095,54 @@ pub fn set_collection_group_permission(
 #[reducer]
 pub fn remove_collection_group_permission(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.collection_group_permission().id().delete(&id);
+    Ok(())
+}
+
+// ─── Page Permissions ────────────────────────────────────────────────────────
+
+#[reducer]
+pub fn set_page_permission(
+    ctx: &ReducerContext,
+    id: String,
+    page_id: String,
+    user_id: String,
+    group_id: String,
+    role: String,
+) -> Result<(), String> {
+    let page_exists = ctx.db.page().iter().any(|p| p.id == page_id);
+    if !page_exists {
+        return Err("Page not found".into());
+    }
+    let valid_roles = ["admin", "editor", "viewer"];
+    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
+
+    // Check if permission already exists for this page+user (if user_id) or page+group (if group_id)
+    let existing = ctx.db.page_permission().iter().find(|p| {
+        p.page_id == page_id &&
+        (if !user_id.is_empty() { p.user_id == user_id } else { false }) &&
+        (if !group_id.is_empty() { p.group_id == group_id } else { false })
+    });
+
+    if let Some(perm) = existing {
+        let mut p = perm;
+        p.role = role_clean.clone();
+        ctx.db.page_permission().id().update(p);
+        return Ok(());
+    }
+
+    ctx.db.page_permission().insert(PagePermission {
+        id,
+        page_id,
+        user_id,
+        group_id,
+        role: role_clean,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn remove_page_permission(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    ctx.db.page_permission().id().delete(&id);
     Ok(())
 }

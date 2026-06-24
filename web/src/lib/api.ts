@@ -36,6 +36,7 @@ function mapApiKey(row: unknown[]): ApiKey { return { id: String(row[0]??""), us
 function mapGroup(row: unknown[]): Group { return { id: String(row[0]??""), name: String(row[1]??""), description: String(row[2]??""), created_by: String(row[3]??""), created_at: Number(row[4])||0, updated_at: Number(row[5])||0 }; }
 function mapGroupMember(row: unknown[]): GroupMember { return { id: String(row[0]??""), group_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
 function mapCollectionGroupPermission(row: unknown[]): CollectionGroupPermission { return { id: String(row[0]??""), collection_id: String(row[1]??""), group_id: String(row[2]??""), role: String(row[3]??""), created_at: Number(row[4])||0 }; }
+function mapPagePermission(row: unknown[]): PagePermission { return { id: String(row[0]??""), page_id: String(row[1]??""), user_id: String(row[2]??""), group_id: String(row[3]??""), role: String(row[4]??""), created_at: Number(row[5])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -138,6 +139,11 @@ export interface GroupMember {
 export interface CollectionGroupPermission {
   id: string; collection_id: string; group_id: string; role: string;
   created_at: number;
+}
+
+export interface PagePermission {
+  id: string; page_id: string; user_id: string; group_id: string;
+  role: string; created_at: number;
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -385,5 +391,16 @@ export const api = {
     },
     removeCollectionPermission: (id: string) =>
       callReducer("remove_collection_group_permission", [id]),
+  },
+
+  pagePermissions: {
+    list: (pageId: string) =>
+      sqlQuery(`SELECT * FROM page_permission WHERE page_id = '${pageId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapPagePermission)),
+    set: (pageId: string, userId: string, groupId: string, role: string) => {
+      const id = genId("pp");
+      return callReducer("set_page_permission", [id, pageId, userId, groupId, role]);
+    },
+    remove: (id: string) => callReducer("remove_page_permission", [id]),
   },
 };
