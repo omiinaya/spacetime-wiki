@@ -47,6 +47,7 @@ import {
   Highlighter,
   X,
   ChevronDown,
+  Maximize2,
 } from "lucide-react";
 import { api, Page } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -640,7 +641,7 @@ export function PageEditor({ userId }: Props) {
   );
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className={cn(page?.full_width ? "mx-auto px-4 md:px-8" : "max-w-4xl mx-auto")}>
       {/* Hidden file input for image upload */}
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
 
@@ -664,6 +665,23 @@ export function PageEditor({ userId }: Props) {
                 <button onClick={() => setPreview(!preview)} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", preview && "text-primary bg-primary/10")} title="Preview">
                   <Eye className="h-4 w-4" />
                 </button>
+                {/* Full-width toggle */}
+                {page && (
+                  <button
+                    onClick={async () => {
+                      const newVal = !page.full_width;
+                      await api.pages.setFullWidth(id || page.id, newVal);
+                      setPage(prev => prev ? { ...prev, full_width: newVal } : prev);
+                    }}
+                    className={cn(
+                      "p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted",
+                      page?.full_width && "text-primary bg-primary/10",
+                    )}
+                    title={page?.full_width ? "Constrain width" : "Full width"}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </button>
+                )}
                 {!preview && (
                   <>
                     <button onClick={handleDuplicate} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Duplicate">

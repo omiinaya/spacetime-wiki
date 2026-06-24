@@ -666,6 +666,19 @@ pub fn set_page_icon(ctx: &ReducerContext, id: String, icon: String) -> Result<(
     Ok(())
 }
 
+#[reducer]
+pub fn set_page_full_width(ctx: &ReducerContext, id: String, full_width: bool) -> Result<(), String> {
+    let found = ctx.db.page().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("Page not found".into());
+    }
+    let mut page = found.unwrap();
+    page.full_width = full_width;
+    page.updated_at = now_ms(ctx);
+    ctx.db.page().id().update(page);
+    Ok(())
+}
+
 // ─── Comments ────────────────────────────────────────────────────────────────
 
 #[reducer]
