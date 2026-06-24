@@ -15,6 +15,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Details } from "../extensions/Details";
+import { Mention } from "../extensions/Mention";
 import { common, createLowlight } from "lowlight";
 import {
   Bold,
@@ -214,6 +215,7 @@ export function PageEditor({ userId }: Props) {
       CodeBlockLowlight.configure({ lowlight }),
       // Slash commands handled via keydown listener below
       Details,
+      Mention.configure({ HTMLAttributes: { class: 'mention' } }),
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,
     editable: !preview,
@@ -645,8 +647,34 @@ export function PageEditor({ userId }: Props) {
         </div>
       )}
 
-      {/* Slash command dropdown */}
-      {slashOpen && createPortal(
+      {/* Mention popup */}
+      {showMention && (
+        <div className="fixed z-50 w-56 py-1 rounded-lg border border-border bg-card shadow-xl max-h-48 overflow-y-auto"
+          style={{ bottom: "auto", left: "50%", transform: "translateX(-50%)", marginTop: "4px" }}
+          onClick={(e) => e.stopPropagation()}>
+          {[
+            ...allPages.filter(p => p.title.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 8).map(p => ({ type: "page" as const, id: p.id, label: p.title, icon: "📄" })),
+            ...allUsers.filter(u => u.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 4).map(u => ({ type: "user" as const, id: u.id, label: u.name, icon: "👤" })),
+          ].length === 0 ? (
+          <div className="px-3 py-2 text-xs text-muted-foreground/60">No matches</div>
+          ) : (
+          [{ type: "page" as const, id: "", label: "", icon: "" }, ...allPages.filter(p => p.title.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 8).map(p => ({ type: "page" as const, id: p.id, label: p.title, icon: "📄" })),
+          ...allUsers.filter(u => u.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 4).map(u => ({ type: "user" as const, id: u.id, label: u.name, icon: "👤" })),
+          ].filter(m => m.label).map((m, i) => (
+              <button key={m.id}
+                onClick={() => { editor?.chain().focus().insertMention({ id: m.id, label: m.label }).run(); setShowMention(false); }}
+                className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left ${i === mentionPos ? "bg-muted" : ""}`}>
+                <span>{m.icon}</span>
+                <span className="truncate">{m.label}</span>
+                <span className="text-[10px] text-muted-foreground/60 ml-auto">{m.type}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Slash command popup */}
+      {showSlash && editor && (
         <div
           className="fixed z-[100] w-64 py-1.5 rounded-lg border border-border bg-[#161616] shadow-2xl overflow-hidden"
           style={{ top: slashPos.top, left: slashPos.left }}
@@ -673,8 +701,7 @@ export function PageEditor({ userId }: Props) {
               </div>
             </button>
           ))}
-        </div>,
-        document.body,
+        </div>
       )}
 
       {/* Keyboard Shortcuts Modal */}

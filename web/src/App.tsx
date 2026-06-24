@@ -71,6 +71,18 @@ function AppLayout() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData, location.pathname]);
+  
+  // Load favorites for sidebar
+  const [favoritePages, setFavoritePages] = useState<Page[]>([]);
+  useEffect(() => {
+    if (!userId) { setFavoritePages([]); return; }
+    api.favorites.list(userId).then((rows: any) => {
+      const favPageIds = new Set((rows as any[][] || []).map((r: any) => String(r[2])));
+      api.pages.list().then(allPages => {
+        setFavoritePages(allPages.filter(p => favPageIds.has(p.id)));
+      });
+    }).catch(() => {});
+  }, [userId, location.pathname]);
 
   const toggleCollection = (id: string) => {
     setExpandedCollections((prev) => {
@@ -422,6 +434,25 @@ function AppLayout() {
             <FolderPlus className="h-3.5 w-3.5" /> New collection
           </button>
         </div>
+
+        {/* Favorites */}
+        {favoritePages.length > 0 && (
+          <div className="px-2 py-1 mb-1">
+            <p className="text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider px-2 mb-1">Favorites</p>
+            {favoritePages.map(p => (
+              <button key={p.id}
+                onClick={() => navigate(`/page/${p.id}`)}
+                className={cn("w-full flex items-center gap-2 pl-2 pr-2 py-1 rounded-md text-xs transition-colors text-left",
+                  isActive(p.id) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                {p.icon || <Star className="h-3.5 w-3.5 text-yellow-500 shrink-0" fill="currentColor" />}
+                <span className="truncate">{p.title}</span>
+              </button>
+            ))}
+            <div className="h-px bg-border/50 mx-2 mt-2 mb-1" />
+          </div>
+        )}
 
         {/* Collections + Pages tree */}
         <nav className="flex-1 overflow-y-auto px-2 py-1">
