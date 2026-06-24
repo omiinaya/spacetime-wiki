@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
-import ImageExtension from "@tiptap/extension-image";
+import { ImageEnhanced } from "../extensions/ImageEnhanced";
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
@@ -66,7 +66,7 @@ const SLASH_COMMANDS = [
   { title: "Blockquote", description: "Capture a quote", icon: "❝", command: (e) => e?.chain().focus().toggleBlockquote().run() },
   { title: "Code Block", description: "Capture a code snippet", icon: "</>", command: (e) => e?.chain().focus().toggleCodeBlock().run() },
   { title: "Table", description: "Add a table", icon: "⊞", command: (e) => e?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
-  { title: "Image", description: "Insert an image", icon: "🖼", command: (e) => { const url = prompt("Image URL:"); if (url) e?.chain().focus().setImage({ src: url }).run(); } },
+  { title: "Image", description: "Insert an image", icon: "🖼", command: (e) => { const url = prompt("Image URL:"); if (url) e?.chain().focus().setImageEnhanced({ src: url }).run(); } },
   { title: "Divider", description: "Insert a horizontal divider", icon: "—", command: (e) => e?.chain().focus().setHorizontalRule().run() },
   { title: "Toggle", description: "Collapsible toggle block", icon: "▶", command: (e) => e?.chain().focus().toggleDetails().run() },
   { title: "Info Callout", description: "Blue info notice block", icon: "ℹ️", command: (e) => e?.chain().focus().toggleCallout("info").run() },
@@ -133,6 +133,165 @@ function SelectionToolbar({
         <LinkIcon className="h-3.5 w-3.5" />
       </button>
     </div>
+  );
+}
+
+// ─── Image Floating Toolbar ───────────────────────────────────────────────────
+
+function ImageToolbar({
+  editor,
+}: {
+  editor: ReturnType<typeof useEditor>;
+}) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [widthInput, setWidthInput] = useState("");
+
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => {
+      const { selection } = editor.state;
+      if (selection.type.name !== "NodeSelection") {
+        setPos(null);
+        return;
+      }
+      const node = selection.node;
+      if (!node || (node.type.name !== "imageEnhanced")) {
+        setPos(null);
+        return;
+      }
+      const view = editor.view;
+      const from = selection.from;
+      const coords = view.coordsAtPos(from);
+      setPos({
+        top: coords.top - 56,
+        left: coords.left + (view.dom.getBoundingClientRect().width / 2),
+      });
+      setWidthInput(node.attrs.width || "");
+    };
+    editor.on("selectionUpdate", update);
+    editor.on("blur", () => setTimeout(() => setPos(null), 200));
+    // Also update on click
+    editor.view.dom.addEventListener("mouseup", update);
+    return () => {
+      editor.off("selectionUpdate", update);
+      editor.off("blur", () => setPos(null));
+      editor.view.dom.removeEventListener("mouseup", update);
+    };
+  }, [editor]);
+
+  if (!pos || !editor) return null;
+
+  const { selection } = editor.state;
+  if (selection.type.name !== "NodeSelection") return null;
+  const node = selection.node;
+  if (!node || node.type.name !== "imageEnhanced") return null;
+
+  const currentAttrs = node.attrs;
+  const align = currentAttrs.align || "center";
+  const width = currentAttrs.width || "";
+
+  const setAlign = (newAlign: "left" | "center" | "right") => {
+    editor.chain().focus().updateAttributes("imageEnhanced", { align: newAlign }).run();
+  };
+
+  const resizePresets = [
+    { label: "S", width: "200px" },
+    { label: "M", width: "400px" },
+    { label: "L", width: "600px" },
+    { label: "XL", width: "800px" },
+    { label: "Full", width: "100%" },
+  ];
+
+  const handleWidthApply = () => {
+    const val = widthInput.trim();
+    if (val) {
+      const num = parseInt(val);
+      if (!isNaN(num) && num > 0) {
+        editor.chain().focus().updateAttributes("imageEnhanced", { width: `${num}px` }).run();
+      } else if (val.endsWith("%") || val.endsWith("px")) {
+        editor.chain().focus().updateAttributes("imageEnhanced", { width: val }).run();
+      }
+    }
+  };
+
+  return createPortal(
+    <div
+      className="fixed z-50 flex items-center gap-1 px-2 py-1.5 rounded-lg border border-border bg-[#1a1a1a] shadow-2xl"
+      style={{
+        top: pos.top,
+        left: "50%",
+        transform: "translateX(-50%)",
+      }}
+      contentEditable={false}
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      {/* Alignment */}
+      <div className="flex items-center gap-0.5 mr-1">
+        <button
+          onClick={() => setAlign("left")}
+          className={`p-1 rounded transition-colors ${align === "left" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+          title="Align left"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="17" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="17" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
+          </svg>
+        </button>
+        <button
+          onClick={() => setAlign("center")}
+          className={`p-1 rounded transition-colors ${align === "center" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+          title="Align center"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="10" x2="6" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="18" y1="14" x2="6" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
+          </svg>
+        </button>
+        <button
+          onClick={() => setAlign("right")}
+          className={`p-1 rounded transition-colors ${align === "right" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+          title="Align right"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="21" y1="10" x2="7" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="7" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <span className="w-px h-5 bg-border mx-0.5" />
+
+      {/* Resize presets */}
+      <div className="flex items-center gap-0.5">
+        {resizePresets.map((preset) => (
+          <button
+            key={preset.label}
+            onClick={() => editor.chain().focus().updateAttributes("imageEnhanced", { width: preset.width }).run()}
+            className={`px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors ${
+              width === preset.width
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+            title={`${preset.label} (${preset.width})`}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Custom width input */}
+      <div className="flex items-center gap-1 ml-1">
+        <input
+          type="text"
+          value={widthInput}
+          onChange={(e) => setWidthInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); handleWidthApply(); }
+            if (e.key === "Escape") { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
+          }}
+          placeholder="Width"
+          className="w-16 h-6 px-1.5 rounded border border-border/50 bg-transparent text-[11px] text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/50 text-center"
+        />
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -211,7 +370,7 @@ export function PageEditor({ userId }: Props) {
       DragHandle,
       Placeholder.configure({ placeholder: "Start writing... or type / for commands" }),
       Link.configure({ openOnClick: false }),
-      ImageExtension,
+      ImageEnhanced,
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
@@ -237,7 +396,7 @@ export function PageEditor({ userId }: Props) {
             const file = item.getAsFile();
             if (file) {
               const url = URL.createObjectURL(file);
-              editor?.chain().focus().setImage({ src: url }).run();
+              editor?.chain().focus().setImageEnhanced({ src: url }).run();
             }
             return true;
           }
@@ -251,7 +410,7 @@ export function PageEditor({ userId }: Props) {
           if (file.type.startsWith("image/")) {
             event.preventDefault();
             const url = URL.createObjectURL(file);
-            editor?.chain().focus().setImage({ src: url }).run();
+            editor?.chain().focus().setImageEnhanced({ src: url }).run();
             return true;
           }
         }
@@ -304,13 +463,12 @@ export function PageEditor({ userId }: Props) {
     }
   }, [editor, title, isNew, id, userId, navigate]);
 
-  // Image insert via file picker
   const handleImageUpload = () => fileInputRef.current?.click();
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      editor?.chain().focus().setImage({ src: url }).run();
+      editor?.chain().focus().setImageEnhanced({ src: url }).run();
     }
     e.target.value = "";
   };
@@ -594,6 +752,9 @@ export function PageEditor({ userId }: Props) {
 
       {/* Floating format toolbar on text selection */}
       {editor && !preview && <SelectionToolbar editor={editor} handleAddLink={handleAddLink} />}
+
+      {/* Floating image toolbar when an image is selected */}
+      {editor && !preview && <ImageToolbar editor={editor} />}
 
       {/* Title */}
       <div className="px-4 md:px-8 pt-6">
