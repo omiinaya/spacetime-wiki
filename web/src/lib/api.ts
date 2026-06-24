@@ -1,5 +1,5 @@
 const STDB_HOST = "192.168.1.10:3001";
-const DB_ID = "c200c57a64ba1ecd91b4b95cebe440a6c79e2d6f12085a0c18934f6474aa905f";
+const DB_ID = "c2003d19339f9932811b3d54bf9b15e18ae48a47a8c8b7135a47367faa03481e";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -25,10 +25,13 @@ function mapPage(row: unknown[]): Page {
   };
 }
 function mapCollection(row: unknown[]): Collection { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), description: String(row[3]??""), parent_id: String(row[4]??""), icon: String(row[5]??""), color: String(row[6]??""), sort_order: Number(row[7])||0, created_by: String(row[8]??""), created_at: Number(row[9])||0, updated_at: Number(row[10])||0 }; }
-function mapUser(row: unknown[]): User { const u: any = { id: String(row[0]??""), name: String(row[1]??""), email: String(row[2]??""), role: String(row[4]??""), avatar_url: String(row[5]??"") }; return u as User; }
+function mapUser(row: unknown[]): User { return { id: String(row[0]??""), name: String(row[1]??""), email: String(row[2]??""), role: String(row[4]??""), avatar_url: String(row[5]??""), created_at: Number(row[6])||0 }; }
 function mapRevision(row: unknown[]): PageRevision { return { id: String(row[0]??""), page_id: String(row[1]??""), title: String(row[2]??""), content: String(row[3]??""), edited_by: String(row[4]??""), created_at: Number(row[5])||0, revision_number: Number(row[6])||0 }; }
 function mapComment(row: unknown[]): Comment { return { id: String(row[0]??""), page_id: String(row[1]??""), parent_comment_id: String(row[2]??""), user_id: String(row[3]??""), body: String(row[4]??""), is_resolved: Boolean(row[5]), created_at: Number(row[6])||0, updated_at: Number(row[7])||0 }; }
 function mapTag(row: unknown[]): PageTag { return { id: String(row[0]??""), page_id: String(row[1]??""), name: String(row[2]??""), value: String(row[3]??"") }; }
+function mapAttachment(row: unknown[]): Attachment { return { id: String(row[0]??""), page_id: String(row[1]??""), filename: String(row[2]??""), mime_type: String(row[3]??""), size_bytes: Number(row[4])||0, storage_key: String(row[5]??""), uploaded_by: String(row[6]??""), created_at: Number(row[7])||0 }; }
+function mapCollectionMember(row: unknown[]): CollectionMember { return { id: String(row[0]??""), collection_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
+function mapShareLink(row: unknown[]): ShareLink { return { id: String(row[0]??""), page_id: String(row[1]??""), token: String(row[2]??""), password_hash: String(row[3]??""), created_by: String(row[4]??""), expires_at: Number(row[5])||0, created_at: Number(row[6])||0, visit_count: Number(row[7])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -92,8 +95,24 @@ export interface PageTag {
   id: string; page_id: string; name: string; value: string;
 }
 
+export interface Attachment {
+  id: string; page_id: string; filename: string; mime_type: string;
+  size_bytes: number; storage_key: string; uploaded_by: string; created_at: number;
+}
+
 export interface User {
   id: string; name: string; email: string; role: string; avatar_url: string;
+  created_at: number;
+}
+
+export interface CollectionMember {
+  id: string; collection_id: string; user_id: string; role: string;
+  added_by: string; created_at: number;
+}
+
+export interface ShareLink {
+  id: string; page_id: string; token: string; password_hash: string;
+  created_by: string; expires_at: number; created_at: number; visit_count: number;
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -109,6 +128,8 @@ export const api = {
       if (conditions.length) sql += " WHERE " + conditions.join(" AND ");
       return sqlQuery(sql).then((rows) => (rows as unknown[][]).map(mapPage));
     },
+    listDeleted: () =>
+      sqlQuery("SELECT * FROM page WHERE status = 'deleted'").then((rows) => (rows as unknown[][]).map(mapPage)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM page WHERE id = '${id}'`).then(
         (rows) => ((rows as unknown[][])[0] ? mapPage((rows as unknown[][])[0]) : null),
@@ -134,6 +155,8 @@ export const api = {
     setStatus: (id: string, status: string) =>
       callReducer("set_page_status", [id, status]),
     delete: (id: string) => callReducer("delete_page_permanent", [id]),
+    restore: (id: string) => callReducer("restore_page", [id]),
+    emptyTrash: () => callReducer("empty_trash", []),
     duplicate: (id: string, createdBy: string) => {
       const newId = genId("page");
       return callReducer("duplicate_page", [newId, id, createdBy]).then(() => newId);
@@ -142,6 +165,8 @@ export const api = {
       callReducer("move_page", [id, newCollectionId, newParentPageId]),
     reorder: (orderedIds: string[]) =>
       callReducer("reorder_pages", [orderedIds]),
+    setIcon: (id: string, icon: string) =>
+      callReducer("set_page_icon", [id, icon]),
   },
 
   collections: {
@@ -169,6 +194,19 @@ export const api = {
     delete: (id: string) => callReducer("delete_collection", [id]),
     reorder: (orderedIds: string[]) =>
       callReducer("reorder_collections", [orderedIds]),
+  },
+
+  members: {
+    list: (collectionId: string) =>
+      sqlQuery(`SELECT * FROM collection_member WHERE collection_id = '${collectionId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapCollectionMember)),
+    add: (collectionId: string, userId: string, role: string, addedBy: string) => {
+      const id = genId("cm");
+      return callReducer("add_collection_member", [id, collectionId, userId, role, addedBy]);
+    },
+    updateRole: (id: string, newRole: string) =>
+      callReducer("update_collection_member_role", [id, newRole]),
+    remove: (id: string) => callReducer("remove_collection_member", [id]),
   },
 
   revisions: {
@@ -215,7 +253,8 @@ export const api = {
 
   attachments: {
     list: (pageId: string) =>
-      sqlQuery(`SELECT * FROM attachment WHERE page_id = '${pageId}'`),
+      sqlQuery(`SELECT * FROM attachment WHERE page_id = '${pageId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapAttachment)),
     add: (
       pageId: string, filename: string, mimeType: string, sizeBytes: number,
       storageKey: string, uploadedBy: string,
@@ -228,16 +267,35 @@ export const api = {
     delete: (id: string) => callReducer("delete_attachment", [id]),
   },
 
+  shareLinks: {
+    list: (pageId: string) =>
+      sqlQuery(`SELECT * FROM share_link WHERE page_id = '${pageId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapShareLink)),
+    create: (pageId: string, password: string, createdBy: string, expiresDays: number) => {
+      const id = genId("share");
+      const token = crypto.randomUUID ? crypto.randomUUID() : genId("sh");
+      return callReducer("create_share_link", [
+        id, pageId, token, password, createdBy, expiresDays,
+      ]).then(() => ({ id, token }));
+    },
+    delete: (id: string) => callReducer("delete_share_link", [id]),
+    verify: (token: string, password: string) =>
+      callReducer("verify_share_password", [token, password]),
+    visit: (token: string) =>
+      callReducer("visit_share_link", [token]),
+  },
+
   users: {
-    register: (name: string, email: string, password: string) => {
+    register: (name: string, email: string, password: string, role: string) => {
       const id = genId("user");
-      return callReducer("register_user", [id, name, email, password]);
+      return callReducer("register_user", [id, name, email, password, role]);
     },
     login: async (email: string, password: string) => {
       await callReducer("login_user", [email, password]);
       const rows = await sqlQuery(`SELECT * FROM user WHERE email = '${email}'`);
       return (rows as unknown[][])[0] ? mapUser((rows as unknown[][])[0]) : null;
     },
+    list: () => sqlQuery("SELECT * FROM user").then((rows) => (rows as unknown[][]).map(mapUser)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM user WHERE id = '${id}'`).then(
         (rows) => ((rows as unknown[][])[0] ? mapUser((rows as unknown[][])[0]) : null),
@@ -246,5 +304,7 @@ export const api = {
       sqlQuery(`SELECT * FROM user WHERE email = '${email}'`).then(
         (rows) => ((rows as unknown[][])[0] ? mapUser((rows as unknown[][])[0]) : null),
       ),
+    updateRole: (userId: string, newRole: string, updatedBy: string) =>
+      callReducer("update_user_role", [userId, newRole, updatedBy]),
   },
 };

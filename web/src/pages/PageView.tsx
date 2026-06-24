@@ -18,7 +18,7 @@ import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
-  List, FileText,
+  List, FileText, Link2,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
@@ -175,6 +175,13 @@ export function PageView({ pageId, userId }: Props) {
   const [showConfirm, setShowConfirm] = useState<"publish" | "archive" | "delete" | null>(null);
   const [collection, setCollection] = useState<Collection | null>(null);
   const [showExport, setShowExport] = useState(false);
+
+  // Share state
+  const [showShare, setShowShare] = useState(false);
+  const [sharePassword, setSharePassword] = useState("");
+  const [shareDays, setShareDays] = useState(0);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string }[]>([]);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
@@ -459,6 +466,11 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                 </div>
               )}
             </div>
+
+            {/* Share button */}
+            <button onClick={() => setShowShare(true)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Share">
+              <Link2 className="h-4 w-4" />
+            </button>
 
             {/* Lifecycle buttons */}
             {page.status === "draft" && (

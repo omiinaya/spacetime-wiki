@@ -54,6 +54,18 @@ pub struct Collection {
     pub updated_at: u64,
 }
 
+#[table(accessor = collection_member, public)]
+#[derive(Debug, Clone)]
+pub struct CollectionMember {
+    #[primary_key]
+    pub id: String,
+    pub collection_id: String,
+    pub user_id: String,
+    pub role: String,
+    pub added_by: String,
+    pub created_at: u64,
+}
+
 #[table(accessor = page, public)]
 #[derive(Debug, Clone)]
 pub struct Page {
@@ -141,6 +153,20 @@ pub struct Favorite {
     pub created_at: u64,
 }
 
+#[table(accessor = share_link, public)]
+#[derive(Debug, Clone)]
+pub struct ShareLink {
+    #[primary_key]
+    pub id: String,
+    pub page_id: String,
+    pub token: String,
+    pub password_hash: String,
+    pub created_by: String,
+    pub expires_at: u64,
+    pub created_at: u64,
+    pub visit_count: u32,
+}
+
 // ─── Helper: sort orders ────────────────────────────────────────────────────
 
 fn next_sort_order(ctx: &ReducerContext, collection_id: &str, parent_page_id: &str) -> u32 {
@@ -168,16 +194,19 @@ pub fn register_user(
     name: String,
     email: String,
     password: String,
+    role: String,
 ) -> Result<(), String> {
     let existing = ctx.db.user().iter().find(|u| u.email == email);
     if existing.is_some() {
         return Err("Email already registered".into());
     }
+    let valid_roles = ["admin", "member", "viewer"];
+    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "member".into() };
     let now = now_ms(ctx);
     let password_hash = hash_password(&password);
     ctx.db.user().insert(User {
         id, name, email, password_hash,
-        role: "member".into(),
+        role: role_clean,
         avatar_url: String::new(),
         created_at: now, updated_at: now,
     });
@@ -199,6 +228,33 @@ pub fn login_user(
     Ok(())
 }
 
+#[reducer]
+pub fn update_user_role(
+    ctx: &ReducerContext,
+    user_id: String,
+    new_role: String,
+    updated_by: String,
+) -> Result<(), String> {
+    // Only admins can change roles
+    let updater = ctx.db.user().iter().find(|u| u.id == updated_by);
+    if updater.is_none() || updater.unwrap().role != "admin" {
+        return Err("Only admins can change roles".into());
+    }
+    let valid_roles = ["admin", "member", "viewer"];
+    if !valid_roles.contains(&new_role.as_str()) {
+        return Err("Invalid role. Must be admin, member, or viewer".into());
+    }
+    let found = ctx.db.user().iter().find(|u| u.id == user_id);
+    if found.is_none() {
+        return Err("User not found".into());
+    }
+    let mut user = found.unwrap();
+    user.role = new_role;
+    user.updated_at = now_ms(ctx);
+    ctx.db.user().id().update(user);
+    Ok(())
+}
+
 // ─── Collections ─────────────────────────────────────────────────────────────
 
 #[reducer]
@@ -216,9 +272,18 @@ pub fn create_collection(
     let now = now_ms(ctx);
     let sort_order = next_col_sort_order(ctx, &parent_id);
     ctx.db.collection().insert(Collection {
-        id, name, slug, description, parent_id, icon, color,
-        sort_order, created_by,
+        id: id.clone(), name, slug, description, parent_id, icon, color,
+        sort_order, created_by: created_by.clone(),
         created_at: now, updated_at: now,
+    });
+    // Creator gets admin access
+    ctx.db.collection_member().insert(CollectionMember {
+        id: make_id("cm", ctx),
+        collection_id: id,
+        user_id: created_by,
+        role: "admin".into(),
+        added_by: String::new(),
+        created_at: now,
     });
     Ok(())
 }
@@ -272,6 +337,57 @@ pub fn reorder_collections(ctx: &ReducerContext, ordered_ids: Vec<String>) -> Re
     Ok(())
 }
 
+// ─── Collection Members ──────────────────────────────────────────────────────
+
+#[reducer]
+pub fn add_collection_member(
+    ctx: &ReducerContext,
+    id: String,
+    collection_id: String,
+    user_id: String,
+    role: String,
+    added_by: String,
+) -> Result<(), String> {
+    let existing = ctx.db.collection_member().iter()
+        .find(|m| m.collection_id == collection_id && m.user_id == user_id);
+    if existing.is_some() {
+        return Err("User is already a member of this collection".into());
+    }
+    let valid_roles = ["admin", "editor", "viewer"];
+    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
+    ctx.db.collection_member().insert(CollectionMember {
+        id, collection_id, user_id, role: role_clean, added_by,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_collection_member_role(
+    ctx: &ReducerContext,
+    id: String,
+    new_role: String,
+) -> Result<(), String> {
+    let valid_roles = ["admin", "editor", "viewer"];
+    if !valid_roles.contains(&new_role.as_str()) {
+        return Err("Invalid role. Must be admin, editor, or viewer".into());
+    }
+    let found = ctx.db.collection_member().iter().find(|m| m.id == id);
+    if found.is_none() {
+        return Err("Member not found".into());
+    }
+    let mut member = found.unwrap();
+    member.role = new_role;
+    ctx.db.collection_member().id().update(member);
+    Ok(())
+}
+
+#[reducer]
+pub fn remove_collection_member(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    ctx.db.collection_member().id().delete(&id);
+    Ok(())
+}
+
 // ─── Pages ───────────────────────────────────────────────────────────────────
 
 #[reducer]
@@ -301,7 +417,6 @@ pub fn create_page(
         created_at: now, updated_at: now, published_at: 0, deleted_at: 0,
     });
 
-    // Initial revision
     ctx.db.page_revision().insert(PageRevision {
         id: make_id("rev", ctx), page_id: id, title, content,
         edited_by: created_by, created_at: now, revision_number: 1,
@@ -337,7 +452,6 @@ pub fn update_page(
     page.updated_at = now;
     ctx.db.page().id().update(page);
 
-    // Create revision
     let max_rev = ctx.db.page_revision().iter()
         .filter(|r| r.page_id == id)
         .map(|r| r.revision_number).max().unwrap_or(0);
@@ -356,6 +470,10 @@ pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Resu
     }
     let mut page = found.unwrap();
     let now = now_ms(ctx);
+    let valid_statuses = ["draft", "published", "archived", "deleted"];
+    if !valid_statuses.contains(&status.as_str()) {
+        return Err("Invalid status".into());
+    }
     page.status = status;
     page.updated_at = now;
     if page.status == "published" && page.published_at == 0 {
@@ -364,6 +482,23 @@ pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Resu
     if page.status == "deleted" {
         page.deleted_at = now;
     }
+    if page.status != "deleted" {
+        page.deleted_at = 0;
+    }
+    ctx.db.page().id().update(page);
+    Ok(())
+}
+
+#[reducer]
+pub fn restore_page(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    let found = ctx.db.page().iter().find(|p| p.id == id && p.status == "deleted");
+    if found.is_none() {
+        return Err("Page not found or not in trash".into());
+    }
+    let mut page = found.unwrap();
+    page.status = "draft".into();
+    page.deleted_at = 0;
+    page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
     Ok(())
 }
@@ -385,7 +520,22 @@ pub fn delete_page_permanent(ctx: &ReducerContext, id: String) -> Result<(), Str
     for fav in ctx.db.favorite().iter().filter(|f| f.page_id == id) {
         ctx.db.favorite().id().delete(&fav.id);
     }
+    for share in ctx.db.share_link().iter().filter(|s| s.page_id == id) {
+        ctx.db.share_link().id().delete(&share.id);
+    }
     ctx.db.page().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn empty_trash(ctx: &ReducerContext) -> Result<(), String> {
+    let deleted_pages: Vec<String> = ctx.db.page().iter()
+        .filter(|p| p.status == "deleted")
+        .map(|p| p.id.clone())
+        .collect();
+    for page_id in deleted_pages {
+        let _ = delete_page_permanent(ctx, page_id);
+    }
     Ok(())
 }
 
@@ -438,6 +588,19 @@ pub fn reorder_pages(ctx: &ReducerContext, ordered_ids: Vec<String>) -> Result<(
             ctx.db.page().id().update(page);
         }
     }
+    Ok(())
+}
+
+#[reducer]
+pub fn set_page_icon(ctx: &ReducerContext, id: String, icon: String) -> Result<(), String> {
+    let found = ctx.db.page().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("Page not found".into());
+    }
+    let mut page = found.unwrap();
+    page.icon = icon;
+    page.updated_at = now_ms(ctx);
+    ctx.db.page().id().update(page);
     Ok(())
 }
 
@@ -545,5 +708,94 @@ pub fn add_attachment(
 #[reducer]
 pub fn delete_attachment(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.attachment().id().delete(&id);
+    Ok(())
+}
+
+// ─── Share Links ─────────────────────────────────────────────────────────────
+
+#[reducer]
+pub fn create_share_link(
+    ctx: &ReducerContext,
+    id: String,
+    page_id: String,
+    token: String,
+    password: String,
+    created_by: String,
+    expires_days: u32,
+) -> Result<(), String> {
+    let page_exists = ctx.db.page().iter().any(|p| p.id == page_id);
+    if !page_exists {
+        return Err("Page not found".into());
+    }
+    let now = now_ms(ctx);
+    let expires_at = if expires_days > 0 {
+        now + (expires_days as u64) * 86_400_000
+    } else {
+        0 // never expires
+    };
+    let password_hash = if password.is_empty() {
+        String::new()
+    } else {
+        hash_password(&password)
+    };
+    ctx.db.share_link().insert(ShareLink {
+        id, page_id, token, password_hash, created_by,
+        expires_at, created_at: now, visit_count: 0,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_share_link(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    ctx.db.share_link().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn verify_share_password(
+    ctx: &ReducerContext,
+    token: String,
+    password: String,
+) -> Result<(), String> {
+    let found = ctx.db.share_link().iter()
+        .find(|s| s.token == token);
+    if found.is_none() {
+        return Err("Invalid share link".into());
+    }
+    let share = found.unwrap();
+    let now = now_ms(ctx);
+    if share.expires_at > 0 && now > share.expires_at {
+        return Err("Share link has expired".into());
+    }
+    if !share.password_hash.is_empty() {
+        if hash_password(&password) != share.password_hash {
+            return Err("Incorrect password".into());
+        }
+    }
+    // Increment visit count
+    let mut share_mut = share;
+    share_mut.visit_count += 1;
+    ctx.db.share_link().id().update(share_mut);
+    Ok(())
+}
+
+#[reducer]
+pub fn visit_share_link(ctx: &ReducerContext, token: String) -> Result<(), String> {
+    let found = ctx.db.share_link().iter()
+        .find(|s| s.token == token);
+    if found.is_none() {
+        return Err("Invalid share link".into());
+    }
+    let share = found.unwrap();
+    let now = now_ms(ctx);
+    if share.expires_at > 0 && now > share.expires_at {
+        return Err("Share link has expired".into());
+    }
+    if !share.password_hash.is_empty() {
+        return Err("Password required".into());
+    }
+    let mut share_mut = share;
+    share_mut.visit_count += 1;
+    ctx.db.share_link().id().update(share_mut);
     Ok(())
 }
