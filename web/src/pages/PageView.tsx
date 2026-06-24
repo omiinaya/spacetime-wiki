@@ -175,6 +175,7 @@ export function PageView({ pageId, userId }: Props) {
   const [showConfirm, setShowConfirm] = useState<"publish" | "archive" | "delete" | null>(null);
   const [collection, setCollection] = useState<Collection | null>(null);
   const [showExport, setShowExport] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
 
   // Share state
   const [showShare, setShowShare] = useState(false);
@@ -507,7 +508,27 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             <span className="text-foreground/80">{page.title}</span>
           </div>
         )}
-        <h1 className="text-3xl font-bold">{page.title}</h1>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <button onClick={() => setShowEmoji(!showEmoji)} className="text-2xl hover:scale-110 transition-transform">
+            {page.icon || "📄"}
+          </button>
+          {page.title}
+        </h1>
+        {showEmoji && (
+          <div className="absolute mt-1 p-2 rounded-lg border border-border bg-card shadow-xl z-30" onClick={(e) => e.stopPropagation()}>
+            <div className="grid grid-cols-8 gap-1">
+              {["📄","📝","📋","📌","📎","🔖","📚","📖","📕","📗","📘","📙","🗂️","📁","📂","🗃️",
+                "⭐","💡","🔧","⚙️","🚀","🎯","✅","❌","⚠️","🔒","🔑","💬","📊","📈","📉","🏗️",
+                "🧪","🔬","🛠️","📡","🎨","💻","🖥️","⌨️","🖱️","🔗","🌐","📱","🤖","🧠","💪","🔥"].map(emoji => (
+                <button key={emoji} onClick={async () => {
+                  await api.pages.setIcon(pageId || "", emoji);
+                  setPage(prev => prev ? { ...prev, icon: emoji } : prev);
+                  setShowEmoji(false);
+                }} className="w-8 h-8 flex items-center justify-center rounded hover:bg-muted text-lg">{emoji}</button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
           {page.published_at > 0 && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Published {formatDate(page.published_at)}</span>}
           <span>Updated {timeAgo(page.updated_at)}</span>
