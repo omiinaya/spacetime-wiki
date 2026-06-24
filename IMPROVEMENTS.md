@@ -8,18 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Page-level permissions (override collection defaults)
-Per-page role assignments on top of collection-level permissions.
-Files: server/spacetimedb/src/permission.rs, web/src/components/PagePermissions.tsx
-Difficulty: Medium
-Est: 3h
-
-### P2 — Revisions diff view (visual diff between versions)
-Show added/removed lines when comparing page revisions.
-Files: web/src/components/RevisionDiff.tsx
-Difficulty: Medium
-Est: 2h
-
 ### P3 — Mermaid diagrams in editor
 Mermaid.js integration as a custom Tiptap node. Add/edit diagrams.
 Files: web/src/extensions/Mermaid.ts, web/src/components/Editor.tsx
@@ -49,6 +37,16 @@ Est: 4-5h
 
 ## Recently Completed
 
+### P2 — Revisions diff view (visual diff between versions)
+**Done**: RevisionDiff component with line-by-line diff using jsdiff. Shows added/removed lines with green/red highlighting, title change tracking, addition/removal counts. Accessible via "Diff" button on each revision in the history panel. Compares against current version. Overlay panel with full-width diff display.
+Files: web/src/components/RevisionDiff.tsx, web/src/pages/PageView.tsx
+Commit: dc798c0
+
+### P2 — Page-level permissions (override collection defaults)
+**Done**: PagePermission STDB table + CRUD reducers. Frontend PagePermissions component with user/group permission management, role assignment (viewer/editor/admin), and permission removal. Wired into PageView toolbar.
+Files: server/spacetimedb/src/lib.rs, web/src/components/PagePermissions.tsx, web/src/lib/api.ts, web/src/pages/PageView.tsx
+Commit: 32a593e
+
 ### P2 — Groups/teams for collaborative access
 **Done**: Group table + member management. Group CRUD, member assignment with admin/member roles, and collection-level group permissions. Admin panel tab with Groups UI, member management with role dropdowns and add/remove.
 Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/App.tsx
@@ -63,9 +61,3 @@ Commit: 2bcf4e2
 **Done**: Draggable grip handles (⋮⋮) on top-level blocks. Drag to reorder using ProseMirror native drag-and-drop.
 Files: web/src/extensions/DragHandle.ts
 Commit: c7daa63
-
-### P1 — Callouts/Notices
-**Done**: Custom Callout node extension with color-coded types (info, warning, tip, danger), icon indicators, and slash command integration.
-
-### P1 — Keyboard shortcuts reference
-**Done**: `?` key opens shortcuts modal. Cmd+S saves. Arrow keys navigate slash/palette menus.
