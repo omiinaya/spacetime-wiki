@@ -15,6 +15,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Details } from "../extensions/Details";
+import { Callout, CALLOUT_TYPES } from "../extensions/Callout";
 import { Mention } from "../extensions/Mention";
 import { common, createLowlight } from "lowlight";
 import {
@@ -67,6 +68,10 @@ const SLASH_COMMANDS = [
   { title: "Image", description: "Insert an image", icon: "🖼", command: (e) => { const url = prompt("Image URL:"); if (url) e?.chain().focus().setImage({ src: url }).run(); } },
   { title: "Divider", description: "Insert a horizontal divider", icon: "—", command: (e) => e?.chain().focus().setHorizontalRule().run() },
   { title: "Toggle", description: "Collapsible toggle block", icon: "▶", command: (e) => e?.chain().focus().toggleDetails().run() },
+  { title: "Info Callout", description: "Blue info notice block", icon: "ℹ️", command: (e) => e?.chain().focus().toggleCallout("info").run() },
+  { title: "Warning Callout", description: "Amber warning notice block", icon: "⚠️", command: (e) => e?.chain().focus().toggleCallout("warning").run() },
+  { title: "Tip Callout", description: "Green tip notice block", icon: "💡", command: (e) => e?.chain().focus().toggleCallout("tip").run() },
+  { title: "Danger Callout", description: "Red danger notice block", icon: "🚨", command: (e) => e?.chain().focus().toggleCallout("danger").run() },
 ];
 
 // ─── Selection Floating Toolbar ──────────────────────────────────────────────
@@ -215,6 +220,7 @@ export function PageEditor({ userId }: Props) {
       CodeBlockLowlight.configure({ lowlight }),
       // Slash commands handled via keydown listener below
       Details,
+      Callout,
       Mention.configure({ HTMLAttributes: { class: 'mention' } }),
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,

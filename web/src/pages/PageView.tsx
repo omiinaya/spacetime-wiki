@@ -14,6 +14,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Details } from "../extensions/Details";
+import { Callout } from "../extensions/Callout";
 import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
@@ -104,6 +105,11 @@ function tiptapToMarkdown(doc: any): string {
     } else if (node.type === "horizontalRule") {
       lines.push("---");
       lines.push("");
+    } else if (node.type === "callout") {
+      const ctype = node.attrs?.type || "info";
+      lines.push(`> [!${ctype.toUpperCase()}]`);
+      node.content?.forEach((c: any) => walk(c, depth + 1));
+      lines.push("");
     } else if (node.type === "taskList") {
       node.content?.forEach((c: any) => walk(c, depth));
     } else if (node.type === "taskItem") {
@@ -184,6 +190,19 @@ function tiptapToHTML(doc: any): string {
       case "horizontalRule":
         html += "<hr />\n";
         break;
+      case "callout": {
+        const ctype = node.attrs?.type || "info";
+        const colorClass = ctype === "warning" ? "border-amber-500 bg-amber-50" :
+          ctype === "tip" ? "border-emerald-500 bg-emerald-50" :
+          ctype === "danger" ? "border-red-500 bg-red-50" :
+          "border-blue-500 bg-blue-50";
+        const icon = ctype === "warning" ? "⚠️" : ctype === "tip" ? "💡" : ctype === "danger" ? "🚨" : "ℹ️";
+        html += `<div class="callout ${colorClass}" style="border-left:4px solid;padding:12px;margin:12px 0;border-radius:6px">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;font-weight:600;text-transform:uppercase">`;
+        html += `<span>${icon}</span><span>${ctype}</span></div>`;
+        html += `<div>${node.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || n.text || "").join("") || ""}</div></div>\n`;
+        break;
+      }
       case "image":
         html += `<img src="${node.attrs?.src || ""}" alt="${node.attrs?.alt || ""}" />\n`;
         break;
@@ -300,6 +319,7 @@ export function PageView({ pageId, userId }: Props) {
       TaskList, TaskItem.configure({ nested: true }), Highlight,
       CodeBlockLowlight.configure({ lowlight }),
       Details,
+      Callout,
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
