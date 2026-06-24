@@ -20,6 +20,7 @@ import { Mention } from "../extensions/Mention";
 import { DragHandle } from "../extensions/DragHandle";
 import { Mermaid } from "../extensions/Mermaid";
 import { MathInline, MathBlock } from "../extensions/Math";
+import { VideoEmbed, detectProvider } from "../extensions/VideoEmbed";
 import { ImageLightbox } from "../components/ImageLightbox";
 import { common, createLowlight } from "lowlight";
 import {
@@ -79,6 +80,7 @@ const SLASH_COMMANDS = [
   { title: "Danger Callout", description: "Red danger notice block", icon: "🚨", command: (e) => e?.chain().focus().toggleCallout("danger").run() },
   { title: "Diagram", description: "Insert a Mermaid diagram", icon: "📊", command: (e) => e?.chain().focus().setMermaid({ src: "graph TD\\n  A[Start] --> B[Process]\\n  B --> C[End]" }).run() },
   { title: "Math Block", description: "Insert LaTeX math (KaTeX)", icon: "∑", command: (e) => e?.chain().focus().setMathBlock({ tex: "E = mc^2" }).run() },
+  { title: "Video", description: "Insert a video embed (YouTube, Vimeo, Loom)", icon: "🎬", command: (e) => { const url = prompt("Video URL:"); if (url) e?.chain().focus().setVideoEmbed({ src: url }).run(); } },
 ];
 
 // ─── Selection Floating Toolbar ──────────────────────────────────────────────
@@ -393,6 +395,7 @@ export function PageEditor({ userId }: Props) {
       Mermaid,
       MathInline,
       MathBlock,
+      VideoEmbed,
       Mention.configure({ HTMLAttributes: { class: 'mention' } }),
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,
@@ -401,6 +404,7 @@ export function PageEditor({ userId }: Props) {
       handlePaste: (_, event) => {
         const items = event.clipboardData?.items;
         if (!items) return false;
+        // Check for pasted images first
         for (const item of items) {
           if (item.type.startsWith("image/")) {
             event.preventDefault();
@@ -410,6 +414,20 @@ export function PageEditor({ userId }: Props) {
               editor?.chain().focus().setImageEnhanced({ src: url }).run();
             }
             return true;
+          }
+        }
+        // Check for pasted video URLs (text)
+        const text = event.clipboardData?.getData("text");
+        if (text) {
+          // Check each line for video URLs
+          const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+          for (const line of lines) {
+            const provider = detectProvider(line);
+            if (provider) {
+              event.preventDefault();
+              editor?.chain().focus().setVideoEmbed({ src: line }).run();
+              return true;
+            }
           }
         }
         return false;

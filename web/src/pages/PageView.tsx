@@ -16,6 +16,7 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Details } from "../extensions/Details";
 import { Callout } from "../extensions/Callout";
 import { MathInline, MathBlock } from "../extensions/Math";
+import { VideoEmbed } from "../extensions/VideoEmbed";
 import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
@@ -333,6 +334,7 @@ export function PageView({ pageId, userId }: Props) {
       Callout,
       MathInline,
       MathBlock,
+      VideoEmbed,
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
