@@ -146,6 +146,55 @@ function tiptapToMarkdown(doc: any): string {
   return lines.join("\n").trim();
 }
 
+function tiptapToHTML(doc: any): string {
+  if (!doc || !doc.content) return "";
+  let html = "";
+  for (const node of doc.content) {
+    switch (node.type) {
+      case "heading": {
+        const level = node.attrs?.level || 1;
+        html += `<h${level}>${node.content?.map((n: any) => n.text || "").join("") || ""}</h${level}>\n`;
+        break;
+      }
+      case "paragraph":
+        html += `<p>${node.content?.map((n: any) => n.text || "").join("") || ""}</p>\n`;
+        break;
+      case "bulletList":
+        html += "<ul>\n";
+        for (const item of node.content || []) {
+          html += `<li>${item.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || n.text || "").join("") || ""}</li>\n`;
+        }
+        html += "</ul>\n";
+        break;
+      case "orderedList":
+        html += "<ol>\n";
+        for (const item of node.content || []) {
+          html += `<li>${item.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || n.text || "").join("") || ""}</li>\n`;
+        }
+        html += "</ol>\n";
+        break;
+      case "codeBlock":
+        html += `<pre><code>${node.content?.map((n: any) => n.text || "").join("") || ""}</code></pre>\n`;
+        break;
+      case "blockquote": {
+        const qText = node.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || "").join("") || "";
+        html += `<blockquote>${qText}</blockquote>\n`;
+        break;
+      }
+      case "horizontalRule":
+        html += "<hr />\n";
+        break;
+      case "image":
+        html += `<img src="${node.attrs?.src || ""}" alt="${node.attrs?.alt || ""}" />\n`;
+        break;
+      default:
+        if (node.text) html += node.text;
+        break;
+    }
+  }
+  return html;
+}
+
 function downloadFile(content: string, filename: string, mime: string) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -463,6 +512,9 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                   </button>
                   <button onClick={handleExportHTML} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left">
                     Export as HTML
+                  </button>
+                  <button onClick={handleExportPDF} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left">
+                    Export as PDF (print)
                   </button>
                 </div>
               )}
