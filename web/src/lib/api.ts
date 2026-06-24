@@ -174,6 +174,15 @@ export const api = {
       callReducer("reorder_pages", [orderedIds]),
     setIcon: (id: string, icon: string) =>
       callReducer("set_page_icon", [id, icon]),
+    markAsTemplate: (id: string, isTemplate: boolean) =>
+      callReducer("mark_as_template", [id, isTemplate]),
+    createFromTemplate: (templateId: string, title: string, collectionId: string, createdBy: string) => {
+      const newId = genId("page");
+      return callReducer("create_from_template", [newId, templateId, title, collectionId, createdBy]).then(() => newId);
+    },
+    listTemplates: () =>
+      sqlQuery("SELECT * FROM page WHERE is_template = true")
+        .then((rows) => (rows as unknown[][]).map(mapPage)),
   },
 
   collections: {

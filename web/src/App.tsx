@@ -5,7 +5,7 @@ import {
 import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
-  Upload, Loader2, Shield, Link2, RefreshCw, Key,
+  Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -239,6 +239,33 @@ function AppLayout() {
       const links = await api.shareLinks.list(shareDialog.pageId);
       setShareLinks(links);
     }
+  };
+
+  // ─── Template handlers ──────────────────────────────────────────────────
+
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [templates, setTemplates] = useState<Page[]>([]);
+  const [newPageTitle, setNewPageTitle] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+
+  const openTemplates = async () => {
+    try {
+      const tmpls = await api.pages.listTemplates();
+      setTemplates(tmpls);
+    } catch (e) { console.error(e); }
+    setTemplateModalOpen(true);
+  };
+
+  const createFromTemplate = async () => {
+    if (!selectedTemplate || !newPageTitle.trim()) return;
+    try {
+      const newId = await api.pages.createFromTemplate(selectedTemplate, newPageTitle, "", userId || "anon");
+      setTemplateModalOpen(false);
+      setNewPageTitle("");
+      setSelectedTemplate("");
+      await loadData();
+      navigate(`/page/${newId}`);
+    } catch (e) { alert(String(e)); }
   };
 
   // ─── Drag-and-drop ─────────────────────────────────────────────────────
@@ -500,6 +527,9 @@ function AppLayout() {
         </nav>
 
         <div className="px-3 py-2 border-t border-border space-y-1">
+          <button onClick={openTemplates} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+            <LayoutTemplate className="h-3 w-3" /> Templates
+          </button>
           <button onClick={loadTrashPage} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <Trash2 className="h-3 w-3" /> Trash
           </button>
@@ -609,6 +639,19 @@ function AppLayout() {
               )}
             </div>
             <div className="mt-6 pt-4 border-t border-border">
+              <h4 className="text-xs font-semibold mb-3">Google OAuth</h4>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text" id="googleClientId"
+                  defaultValue={localStorage.getItem("sw_google_client_id") || ""}
+                  onChange={(e) => localStorage.setItem("sw_google_client_id", e.target.value)}
+                  placeholder="Google OAuth Client ID"
+                  className="flex-1 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+              <p className="text-[10px] text-muted-foreground/60 mb-3">
+                Create a project at <a href="https://console.cloud.google.com/apis/credentials" target="_blank" className="text-primary hover:underline">Google Cloud Console</a>.
+                Add <code className="bg-muted px-1 rounded">{window.location.origin}/oauth/google/callback</code> as an authorized redirect URI.
+              </p>
               <h4 className="text-xs font-semibold mb-3 flex items-center gap-2"><Key className="h-3.5 w-3.5" /> API Keys</h4>
               <ApiKeySection userId={userId} />
             </div>
@@ -672,6 +715,46 @@ function AppLayout() {
         </div>
       )}
 
+      {/* Template picker dialog */}
+      {templateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setTemplateModalOpen(false)}>
+          <div className="w-full max-w-lg mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2"><LayoutTemplate className="h-4 w-4 text-purple-400" /> New from template</h3>
+              <button onClick={() => setTemplateModalOpen(false)} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
+            </div>
+            {templates.length === 0 ? (
+              <div className="py-8 text-center text-xs text-muted-foreground">No templates yet. Save any page as a template first!</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {templates.map(t => (
+                    <button key={t.id}
+                      onClick={() => { setSelectedTemplate(t.id); setNewPageTitle(t.title); }}
+                      className={`p-3 rounded-lg border text-left transition-colors ${selectedTemplate === t.id ? 'border-purple-500 bg-purple-500/10' : 'border-border hover:bg-muted/50'}`}>
+                      <p className="text-xs font-medium truncate">{t.icon || "📄"} {t.title}</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5 truncate">{t.text_content.slice(0, 60) || "No content"}</p>
+                    </button>
+                  ))}
+                </div>
+                {selectedTemplate && (
+                  <div className="space-y-2 pt-3 border-t border-border">
+                    <input
+                      value={newPageTitle} onChange={(e) => setNewPageTitle(e.target.value)}
+                      placeholder="New page title" autoFocus
+                      className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    <button onClick={createFromTemplate} disabled={!newPageTitle.trim()}
+                      className="w-full h-8 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
+                      Create from template
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Collection dialog */}
       {colDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setColDialogOpen(false)}>
@@ -729,6 +812,7 @@ function AppLayout() {
           <Route path="/page/:id" element={<PageViewWrapper userId={userId} />} />
           <Route path="/page/:id/edit" element={<PageEditor userId={userId} />} />
           <Route path="/p/:slug" element={<SlugView />} />
+          <Route path="/oauth/google/callback" element={<GoogleCallback />} />
           <Route path="/login" element={<LoginView />} />
         </Routes>
       </main>
@@ -899,6 +983,73 @@ function PageViewWrapper({ userId }: { userId: string | null }) {
 
 // ─── Login View ──────────────────────────────────────────────────────────────
 
+function GoogleCallback() {
+  const navigate = useNavigate();
+  const [status, setStatus] = useState("Completing sign-in...");
+  
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const error = params.get("error");
+    if (error || !code) { setStatus(`Authentication failed: ${error || "No authorization code"}`); return; }
+    
+    const code_verifier = localStorage.getItem("sw_oauth_verifier") || "";
+    localStorage.removeItem("sw_oauth_verifier");
+    
+    const GOOGLE_CLIENT_ID = localStorage.getItem("sw_google_client_id") || "";
+    const redirectUri = `${window.location.origin}/oauth/google/callback`;
+    
+    (async () => {
+      try {
+        setStatus("Exchanging code...");
+        const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            client_id: GOOGLE_CLIENT_ID,
+            code, code_verifier,
+            grant_type: "authorization_code",
+            redirect_uri: redirectUri,
+          }),
+        });
+        const tokens = await tokenRes.json();
+        if (tokens.error) { setStatus(`Token error: ${tokens.error_description || tokens.error}`); return; }
+        
+        setStatus("Fetching profile...");
+        const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${tokens.access_token}` },
+        });
+        const profile = await userRes.json();
+        if (!profile.email) { setStatus("Could not get email from Google"); return; }
+        
+        setStatus("Signing in...");
+        // Try to log in with existing account
+        const existing = await api.users.getByEmail(profile.email);
+        if (existing) {
+          localStorage.setItem("sw_user_id", existing.id);
+        } else {
+          // Auto-register with Google profile
+          const id = "user_" + Math.random().toString(36).slice(2, 8);
+          await callReducerLocal("register_user", [id, profile.name || profile.email.split("@")[0], profile.email, crypto.randomUUID(), "member"]);
+          localStorage.setItem("sw_user_id", id);
+        }
+        navigate("/", { replace: true });
+      } catch (err: any) {
+        setStatus(`Error: ${err.message || err}`);
+      }
+    })();
+  }, [navigate]);
+  
+  return <div className="flex items-center justify-center h-full"><div className="text-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" /><p className="text-xs text-muted-foreground">{status}</p></div></div>;
+}
+
+async function callReducerLocal(reducer: string, args: unknown[]) {
+  const DB_ID = "c2003d19339f9932811b3d54bf9b15e18ae48a47a8c8b7135a47367faa03481e";
+  await fetch(`http://192.168.1.10:3001/v1/database/${DB_ID}/call/${reducer}`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(args),
+  });
+}
+
 function SlugView() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -923,6 +1074,25 @@ function LoginView() {
   const [name, setName] = useState("");
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState("");
+
+  // Google OAuth
+  const handleGoogleSignIn = () => {
+    const GOOGLE_CLIENT_ID = localStorage.getItem("sw_google_client_id") || "";
+    if (!GOOGLE_CLIENT_ID) {
+      setError("Google OAuth is not configured. Ask your admin to set a Google Client ID in the admin panel.");
+      return;
+    }
+    const code_verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"[b % 66]).join("");
+    crypto.subtle.digest("SHA-256", new TextEncoder().encode(code_verifier)).then(hash => {
+      const code_challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      localStorage.setItem("sw_oauth_verifier", code_verifier);
+      const redirectUri = `${window.location.origin}/oauth/google/callback`;
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&code_challenge=${code_challenge}&code_challenge_method=S256`;
+      window.location.href = url;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -966,6 +1136,14 @@ function LoginView() {
           {error && <div className="text-xs text-red-400 bg-red-500/10 px-3 py-2 rounded-md">{error}</div>}
           <button type="submit" className="w-full h-9 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
             {isRegister ? "Create account" : "Sign in"}
+          </button>
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border"></div></div>
+            <div className="relative flex justify-center text-xs"><span className="bg-background px-2 text-muted-foreground">or</span></div>
+          </div>
+          <button onClick={handleGoogleSignIn} className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
+            <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Sign in with Google
           </button>
         </form>
         <p className="text-xs text-muted-foreground text-center">
