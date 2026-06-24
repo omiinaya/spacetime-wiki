@@ -8,13 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Search filters (collection, date, user)
-Add filter controls to the search interface — filter by collection, date range, and author.
-Leverages existing STDB page table columns (collection_id, updated_at, created_by).
-Files: web/src/components/SearchFilters.tsx, web/src/pages/SearchResults.tsx
-Difficulty: Medium
-Est: 2h
-
 ### P3 — Image lightbox viewer
 Click on an image in the editor/page view to open a fullscreen lightbox.
 Should support zoom, pan, and keyboard navigation (Escape to close).
@@ -64,6 +57,11 @@ Est: 4-5h
 ---
 
 ## Recently Completed
+
+### P2 — Search filters (collection, date, user)
+**Done**: SearchFilters component with collection dropdown, author/user selector, date range picker with from/to inputs, active filter chips with individual clear buttons, clear-all button, and clear button on search input. Filters client-side against loaded pages leveraging STDB page columns (collection_id, updated_at, created_by). Integrated into sidebar search area.
+Files: web/src/components/SearchFilters.tsx, web/src/App.tsx
+Commit: aea33b4
 
 ### P2 — Revisions diff view (visual diff between versions)
 **Done**: RevisionDiff component with line-by-line diff using jsdiff. Shows added/removed lines with green/red highlighting, title change tracking, addition/removal counts. Accessible via "Diff" button on each revision in the history panel. Compares against current version. Overlay panel with full-width diff display.
