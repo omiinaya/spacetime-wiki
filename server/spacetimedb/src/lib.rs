@@ -23,6 +23,41 @@ fn hash_password(password: &str) -> String {
 
 // ─── Tables ──────────────────────────────────────────────────────────────────
 
+#[table(accessor = group, public)]
+#[derive(Debug, Clone)]
+pub struct Group {
+    #[primary_key]
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[table(accessor = group_member, public)]
+#[derive(Debug, Clone)]
+pub struct GroupMember {
+    #[primary_key]
+    pub id: String,
+    pub group_id: String,
+    pub user_id: String,
+    pub role: String,
+    pub added_by: String,
+    pub created_at: u64,
+}
+
+#[table(accessor = collection_group_permission, public)]
+#[derive(Debug, Clone)]
+pub struct CollectionGroupPermission {
+    #[primary_key]
+    pub id: String,
+    pub collection_id: String,
+    pub group_id: String,
+    pub role: String,
+    pub created_at: u64,
+}
+
 #[table(accessor = user, public)]
 #[derive(Debug, Clone)]
 pub struct User {
@@ -897,5 +932,156 @@ pub fn create_from_template(
         new_page.template_id = template_id;
         ctx.db.page().id().update(new_page);
     }
+    Ok(())
+}
+
+// ─── Groups / Teams ──────────────────────────────────────────────────────────
+
+#[reducer]
+pub fn create_group(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    description: String,
+    created_by: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    ctx.db.group().insert(Group {
+        id: id.clone(),
+        name,
+        description,
+        created_by: created_by.clone(),
+        created_at: now,
+        updated_at: now,
+    });
+    // Creator becomes group admin
+    ctx.db.group_member().insert(GroupMember {
+        id: make_id("gm", ctx),
+        group_id: id,
+        user_id: created_by,
+        role: "admin".into(),
+        added_by: String::new(),
+        created_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_group(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    description: String,
+) -> Result<(), String> {
+    let found = ctx.db.group().iter().find(|g| g.id == id);
+    if found.is_none() {
+        return Err("Group not found".into());
+    }
+    let mut group = found.unwrap();
+    group.name = name;
+    group.description = description;
+    group.updated_at = now_ms(ctx);
+    ctx.db.group().id().update(group);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_group(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    // Remove all members
+    for member in ctx.db.group_member().iter().filter(|m| m.group_id == id) {
+        ctx.db.group_member().id().delete(&member.id);
+    }
+    // Remove all collection permissions for this group
+    for perm in ctx.db.collection_group_permission().iter().filter(|p| p.group_id == id) {
+        ctx.db.collection_group_permission().id().delete(&perm.id);
+    }
+    ctx.db.group().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn add_group_member(
+    ctx: &ReducerContext,
+    id: String,
+    group_id: String,
+    user_id: String,
+    role: String,
+    added_by: String,
+) -> Result<(), String> {
+    // Check user exists
+    let user_exists = ctx.db.user().iter().any(|u| u.id == user_id);
+    if !user_exists {
+        return Err("User not found".into());
+    }
+    let existing = ctx.db.group_member().iter()
+        .find(|m| m.group_id == group_id && m.user_id == user_id);
+    if existing.is_some() {
+        return Err("User is already a member of this group".into());
+    }
+    let valid_roles = ["admin", "member"];
+    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "member".into() };
+    ctx.db.group_member().insert(GroupMember {
+        id, group_id, user_id, role: role_clean, added_by,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_group_member_role(
+    ctx: &ReducerContext,
+    id: String,
+    new_role: String,
+) -> Result<(), String> {
+    let valid_roles = ["admin", "member"];
+    if !valid_roles.contains(&new_role.as_str()) {
+        return Err("Invalid role. Must be admin or member".into());
+    }
+    let found = ctx.db.group_member().iter().find(|m| m.id == id);
+    if found.is_none() {
+        return Err("Group member not found".into());
+    }
+    let mut member = found.unwrap();
+    member.role = new_role;
+    ctx.db.group_member().id().update(member);
+    Ok(())
+}
+
+#[reducer]
+pub fn remove_group_member(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    ctx.db.group_member().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn set_collection_group_permission(
+    ctx: &ReducerContext,
+    id: String,
+    collection_id: String,
+    group_id: String,
+    role: String,
+) -> Result<(), String> {
+    // Check if permission already exists for this collection+group
+    let existing = ctx.db.collection_group_permission().iter()
+        .find(|p| p.collection_id == collection_id && p.group_id == group_id);
+    if let Some(perm) = existing {
+        // Update role
+        let mut p = perm;
+        p.role = role;
+        ctx.db.collection_group_permission().id().update(p);
+        return Ok(());
+    }
+    let valid_roles = ["admin", "editor", "viewer"];
+    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
+    ctx.db.collection_group_permission().insert(CollectionGroupPermission {
+        id, collection_id, group_id, role: role_clean,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn remove_collection_group_permission(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    ctx.db.collection_group_permission().id().delete(&id);
     Ok(())
 }
