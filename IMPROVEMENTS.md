@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Groups/teams for collaborative access
-Group table + member management. Assign groups to collections/permissions.
-Files: server/spacetimedb/src/group.rs, web/src/components/GroupManager.tsx
-Difficulty: Hard
-Est: 4h
-
 ### P2 — Page-level permissions (override collection defaults)
 Per-page role assignments on top of collection-level permissions.
 Files: server/spacetimedb/src/permission.rs, web/src/components/PagePermissions.tsx
@@ -55,6 +49,11 @@ Est: 4-5h
 
 ## Recently Completed
 
+### P2 — Groups/teams for collaborative access
+**Done**: Group table + member management. Group CRUD, member assignment with admin/member roles, and collection-level group permissions. Admin panel tab with Groups UI, member management with role dropdowns and add/remove.
+Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/App.tsx
+Commit: 922a2c3
+
 ### P1 — Floating image toolbar (resize, align, caption)
 **Done**: Custom ImageEnhanced Tiptap extension with React node view. Floating toolbar with alignment (left/center/right), resize presets (S/M/L/XL/Full), custom width input, draggable corner resize handle, and click-to-edit caption support.
 Files: web/src/extensions/ImageEnhanced.tsx, web/src/pages/PageEditor.tsx
@@ -70,6 +69,3 @@ Commit: c7daa63
 
 ### P1 — Keyboard shortcuts reference
 **Done**: `?` key opens shortcuts modal. Cmd+S saves. Arrow keys navigate slash/palette menus.
-
-### P1 — Revisions/history
-**Done**: `page_revision` table with auto-save on every update. Revision panel with restore functionality.
