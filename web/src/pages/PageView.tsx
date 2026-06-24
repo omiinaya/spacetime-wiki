@@ -25,6 +25,7 @@ import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
 import { PagePermissions } from "../components/PagePermissions";
 import { RevisionDiff } from "../components/RevisionDiff";
+import { ImageLightbox } from "../components/ImageLightbox";
 
 const lowlight = createLowlight(common);
 
@@ -263,6 +264,8 @@ export function PageView({ pageId, userId }: Props) {
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [showToc, setShowToc] = useState(false);
   const [backlinks, setBacklinks] = useState<Page[]>([]);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxAlt, setLightboxAlt] = useState<string>("");
 
   useEffect(() => { loadPage(); }, [pageId]);
 
@@ -330,6 +333,17 @@ export function PageView({ pageId, userId }: Props) {
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
+    editorProps: {
+      handleClick: (_view, _pos, event) => {
+        const target = event.target as HTMLElement;
+        if (target.tagName === "IMG" && target.getAttribute("src")) {
+          setLightboxSrc(target.getAttribute("src")!);
+          setLightboxAlt(target.getAttribute("alt") || "");
+          return true;
+        }
+        return false;
+      },
+    },
   });
 
   useEffect(() => {
@@ -872,6 +886,15 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           pageId={pageId}
           userId={userId}
           onClose={() => setShowPermissions(false)}
+        />
+      )}
+
+      {/* Image Lightbox */}
+      {lightboxSrc && (
+        <ImageLightbox
+          src={lightboxSrc}
+          alt={lightboxAlt}
+          onClose={() => { setLightboxSrc(null); setLightboxAlt(""); }}
         />
       )}
     </div>

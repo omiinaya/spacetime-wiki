@@ -18,6 +18,7 @@ import { Details } from "../extensions/Details";
 import { Callout, CALLOUT_TYPES } from "../extensions/Callout";
 import { Mention } from "../extensions/Mention";
 import { DragHandle } from "../extensions/DragHandle";
+import { ImageLightbox } from "../components/ImageLightbox";
 import { common, createLowlight } from "lowlight";
 import {
   Bold,
@@ -326,6 +327,8 @@ export function PageEditor({ userId }: Props) {
 
   // Keyboard shortcuts modal
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxAlt, setLightboxAlt] = useState<string>("");
 
   // Load existing page
   useEffect(() => {
@@ -413,6 +416,15 @@ export function PageEditor({ userId }: Props) {
             editor?.chain().focus().setImageEnhanced({ src: url }).run();
             return true;
           }
+        }
+        return false;
+      },
+      handleClick: (_view, _pos, event) => {
+        const target = event.target as HTMLElement;
+        if (target.tagName === "IMG" && target.getAttribute("src")) {
+          setLightboxSrc(target.getAttribute("src")!);
+          setLightboxAlt(target.getAttribute("alt") || "");
+          return true;
         }
         return false;
       },
@@ -933,6 +945,15 @@ export function PageEditor({ userId }: Props) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Image Lightbox */}
+      {lightboxSrc && (
+        <ImageLightbox
+          src={lightboxSrc}
+          alt={lightboxAlt}
+          onClose={() => { setLightboxSrc(null); setLightboxAlt(""); }}
+        />
       )}
     </div>
   );
