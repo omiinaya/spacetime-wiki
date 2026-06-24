@@ -14,6 +14,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { Details } from "../extensions/Details";
 import { common, createLowlight } from "lowlight";
 import {
   Bold,
@@ -41,6 +42,7 @@ import {
   Loader2,
   Highlighter,
   X,
+  ChevronDown,
 } from "lucide-react";
 import { api, Page } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -63,6 +65,7 @@ const SLASH_COMMANDS = [
   { title: "Table", description: "Add a table", icon: "⊞", command: (e) => e?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
   { title: "Image", description: "Insert an image", icon: "🖼", command: (e) => { const url = prompt("Image URL:"); if (url) e?.chain().focus().setImage({ src: url }).run(); } },
   { title: "Divider", description: "Insert a horizontal divider", icon: "—", command: (e) => e?.chain().focus().setHorizontalRule().run() },
+  { title: "Toggle", description: "Collapsible toggle block", icon: "▶", command: (e) => e?.chain().focus().toggleDetails().run() },
 ];
 
 // ─── Selection Floating Toolbar ──────────────────────────────────────────────
@@ -210,6 +213,7 @@ export function PageEditor({ userId }: Props) {
       Highlight,
       CodeBlockLowlight.configure({ lowlight }),
       // Slash commands handled via keydown listener below
+      Details,
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,
     editable: !preview,
@@ -551,6 +555,9 @@ export function PageEditor({ userId }: Props) {
             <span className="w-px h-4 bg-border mx-0.5" />
             <EditorButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} title="Quote">
               <Quote className="h-3.5 w-3.5" />
+            </EditorButton>
+            <EditorButton onClick={() => editor.chain().focus().toggleDetails().run()} active={editor.isActive("details")} title="Toggle Block">
+              <ChevronDown className="h-3.5 w-3.5" />
             </EditorButton>
             <EditorButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive("codeBlock")} title="Code Block">
               <Code className="h-3.5 w-3.5" />

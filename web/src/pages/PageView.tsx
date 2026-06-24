@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -13,10 +13,12 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { Details } from "../extensions/Details";
 import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
+  List, FileText,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
@@ -176,8 +178,32 @@ export function PageView({ pageId, userId }: Props) {
   const [attachments, setAttachments] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
+  const [showToc, setShowToc] = useState(false);
+  const [backlinks, setBacklinks] = useState<Page[]>([]);
 
   useEffect(() => { loadPage(); }, [pageId]);
+
+  // ─── TOC: extract headings from page JSON ───────────────────────────────
+
+  function extractHeadings(doc: any): { level: number; text: string; id: string }[] {
+    const headings: { level: number; text: string; id: string }[] = [];
+    function walk(node: any) {
+      if (!node) return;
+      if (node.type === "heading") {
+        let text = "";
+        node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+        if (text) headings.push({ level: node.attrs?.level || 1, text, id: `h-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}` });
+      }
+      node.content?.forEach((c: any) => walk(c));
+    }
+    walk(doc);
+    return headings;
+  }
+
+  const toc = (() => {
+    if (!page) return [];
+    try { return extractHeadings(JSON.parse(page.content || "{}")); } catch { return []; }
+  })();
 
   const loadPage = async () => {
     try {
@@ -188,6 +214,16 @@ export function PageView({ pageId, userId }: Props) {
       if (p.collection_id) {
         api.collections.get(p.collection_id).then(setCollection);
       }
+      // Load backlinks
+      api.pages.list().then((allPages) => {
+        const links = allPages.filter(
+          (other) =>
+            other.id !== p.id &&
+            other.text_content.toLowerCase().includes(p.title.toLowerCase()) &&
+            other.status !== "deleted",
+        );
+        setBacklinks(links);
+      });
       const [revs, coms] = await Promise.all([
         api.revisions.list(pageId),
         api.comments.list(pageId),
@@ -206,6 +242,7 @@ export function PageView({ pageId, userId }: Props) {
       Link, ImageExtension, Table.configure({ resizable: true }), TableRow, TableHeader, TableCell,
       TaskList, TaskItem.configure({ nested: true }), Highlight,
       CodeBlockLowlight.configure({ lowlight }),
+      Details,
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
@@ -396,6 +433,9 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             <button onClick={() => setShowRevisions(!showRevisions)} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", showRevisions && "text-primary bg-primary/10")} title="History">
               <History className="h-4 w-4" />
             </button>
+            <button onClick={() => setShowToc(!showToc)} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", showToc && "text-primary bg-primary/10")} title="Table of Contents">
+              <List className="h-4 w-4" />
+            </button>
             <button onClick={() => navigate(`/page/${pageId}/edit`)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Edit">
               <Edit3 className="h-4 w-4" />
             </button>
@@ -566,6 +606,70 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           </div>
         </div>
       </div>
+
+      {/* Backlinks */}
+      {backlinks.length > 0 && (
+        <div className="px-4 md:px-8 pb-8 border-t border-border">
+          <div className="pt-6 space-y-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold">Backlinks ({backlinks.length})</h3>
+            </div>
+            <div className="grid gap-2">
+              {backlinks.map((bp) => (
+                <button
+                  key={bp.id}
+                  onClick={() => navigate(`/page/${bp.id}`)}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors text-left"
+                >
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">{bp.title}</div>
+                    <div className="text-[10px] text-muted-foreground">Updated {timeAgo(bp.updated_at)}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Table of Contents */}
+      {showToc && (
+        <div className="fixed inset-y-0 right-0 w-64 bg-sidebar border-l border-border z-20 overflow-y-auto">
+          <div className="sticky top-0 bg-sidebar z-10">
+            <div className="flex items-center justify-between px-4 h-12 border-b border-border">
+              <h3 className="text-sm font-semibold">Table of Contents</h3>
+              <button onClick={() => setShowToc(false)} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div className="p-3 space-y-0.5">
+            {toc.length === 0 && <p className="text-xs text-muted-foreground py-4 text-center">No headings found.</p>}
+            {toc.map((h, i) => (
+              <a
+                key={i}
+                href={`#${h.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  const editorEl = document.querySelector(".ProseMirror");
+                  const headings = editorEl?.querySelectorAll("h1, h2, h3");
+                  headings?.forEach((el) => {
+                    if (el.textContent?.trim() === h.text) {
+                      el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  });
+                }}
+                className="block px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                style={{ paddingLeft: `${8 + (h.level - 1) * 12}px` }}
+              >
+                {h.text}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Revisions panel */}
       {showRevisions && (
