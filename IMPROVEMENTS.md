@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — Floating image toolbar (resize, align, caption)
-Context toolbar when selecting images in the editor.
-Files: web/src/components/Editor.tsx
-Difficulty: Medium
-Est: 1-2h
-
 ### P2 — Groups/teams for collaborative access
 Group table + member management. Assign groups to collections/permissions.
 Files: server/spacetimedb/src/group.rs, web/src/components/GroupManager.tsx
@@ -61,6 +55,11 @@ Est: 4-5h
 
 ## Recently Completed
 
+### P1 — Floating image toolbar (resize, align, caption)
+**Done**: Custom ImageEnhanced Tiptap extension with React node view. Floating toolbar with alignment (left/center/right), resize presets (S/M/L/XL/Full), custom width input, draggable corner resize handle, and click-to-edit caption support.
+Files: web/src/extensions/ImageEnhanced.tsx, web/src/pages/PageEditor.tsx
+Commit: 2bcf4e2
+
 ### P1 — Drag-and-drop block reordering within editor
 **Done**: Draggable grip handles (⋮⋮) on top-level blocks. Drag to reorder using ProseMirror native drag-and-drop.
 Files: web/src/extensions/DragHandle.ts
@@ -74,23 +73,3 @@ Commit: c7daa63
 
 ### P1 — Revisions/history
 **Done**: `page_revision` table with auto-save on every update. Revision panel with restore functionality.
-
-### P1 — Links with preview
-**Done**: `@tiptap/extension-link` with `openOnClick: false` and prompt-based URL entry.
-
-### P1 — File attachments
-**Done**: `attachment` table with base64 upload. File attachment management in PageView.
-
-### P0 — Rich text documents (Prosemirror/block-based editor)
-**Done**: Full Tiptap editor with StarterKit, Link, Image, Table, TaskList, Highlight, CodeBlockLowlight, custom Details and Mention extensions.
-
-### P0 — WYSIWYG editor
-**Done**: Complete editor with top toolbar (bold, italic, heading, lists, link, image, table, code, highlight, divider, toggle) and floating selection toolbar.
-
-### P0 — Markdown editor
-**Done**: Tiptap StarterKit includes markdown input rules (type `#` → heading, `>` → blockquote, `-` → list, etc.).
-
-### P0 — Document lifecycle
-**Done**: Draft → Published → Archived → Deleted states with `set_page_status` reducer.
-
-*(older entries trimmed — see git log for full history)*
