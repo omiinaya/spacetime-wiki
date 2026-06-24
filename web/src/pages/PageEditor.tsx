@@ -18,6 +18,7 @@ import { Details } from "../extensions/Details";
 import { Callout, CALLOUT_TYPES } from "../extensions/Callout";
 import { Mention } from "../extensions/Mention";
 import { DragHandle } from "../extensions/DragHandle";
+import { Mermaid } from "../extensions/Mermaid";
 import { ImageLightbox } from "../components/ImageLightbox";
 import { common, createLowlight } from "lowlight";
 import {
@@ -75,6 +76,7 @@ const SLASH_COMMANDS = [
   { title: "Warning Callout", description: "Amber warning notice block", icon: "⚠️", command: (e) => e?.chain().focus().toggleCallout("warning").run() },
   { title: "Tip Callout", description: "Green tip notice block", icon: "💡", command: (e) => e?.chain().focus().toggleCallout("tip").run() },
   { title: "Danger Callout", description: "Red danger notice block", icon: "🚨", command: (e) => e?.chain().focus().toggleCallout("danger").run() },
+  { title: "Diagram", description: "Insert a Mermaid diagram", icon: "📊", command: (e) => e?.chain().focus().setMermaid({ src: "graph TD\n  A[Start] --> B[Process]\n  B --> C[End]" }).run() },
 ];
 
 // ─── Selection Floating Toolbar ──────────────────────────────────────────────
@@ -386,6 +388,7 @@ export function PageEditor({ userId }: Props) {
       // Slash commands handled via keydown listener below
       Details,
       Callout,
+      Mermaid,
       Mention.configure({ HTMLAttributes: { class: 'mention' } }),
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,
