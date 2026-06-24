@@ -11,6 +11,7 @@ import { api, Page, Collection, ApiKey } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
 import { PageEditor } from "./pages/PageEditor";
 import { PageView } from "./pages/PageView";
+import { SearchFilters, EMPTY_FILTERS, type SearchFilterState } from "./components/SearchFilters";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ function AppLayout() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [pages, setPages] = useState<Page[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchFilters, setSearchFilters] = useState<SearchFilterState>(EMPTY_FILTERS);
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -106,30 +108,46 @@ function AppLayout() {
     });
   };
 
-  // Search — query STDB when user types
+  // Search — query STDB when user types or filters change
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      loadData();
-      return;
-    }
     const timer = setTimeout(async () => {
       try {
-        // Search titles only for speed
         const results = await api.pages.list();
         setPages(results);
       } catch { /* keep existing */ }
     }, 200);
     return () => clearTimeout(timer);
-  }, [searchQuery, loadData]);
+  }, [searchQuery, searchFilters, loadData]);
 
-  // Filter pages client-side for instant feel
-  const filteredPages = searchQuery
-    ? pages.filter(
-        (p) =>
-          p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.text_content.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : pages;
+  // Filter pages client-side for instant feel (text + filters)
+  const filteredPages = pages.filter((p) => {
+    // Text filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchTitle = p.title.toLowerCase().includes(q);
+      const matchContent = p.text_content.toLowerCase().includes(q);
+      if (!matchTitle && !matchContent) return false;
+    }
+    // Collection filter
+    if (searchFilters.collectionId && p.collection_id !== searchFilters.collectionId) {
+      return false;
+    }
+    // Author filter
+    if (searchFilters.authorId && p.created_by !== searchFilters.authorId) {
+      return false;
+    }
+    // Date range filter (updated_at in ms)
+    if (searchFilters.dateFrom) {
+      const fromMs = new Date(searchFilters.dateFrom).getTime();
+      if (p.updated_at < fromMs) return false;
+    }
+    if (searchFilters.dateTo) {
+      // Include the entire "to" day (set to end of day)
+      const toMs = new Date(searchFilters.dateTo).getTime() + 86_400_000;
+      if (p.updated_at > toMs) return false;
+    }
+    return true;
+  });
 
   // Group pages by collection
   const pagesByCollection: Record<string, Page[]> = {};
@@ -432,6 +450,18 @@ function AppLayout() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-8 pl-8 pr-7 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded text-muted-foreground/60 hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+          {/* Filters toggle */}
+          <div className="mt-1">
+            <SearchFilters filters={searchFilters} onChange={setSearchFilters} />
           </div>
         </div>
 
