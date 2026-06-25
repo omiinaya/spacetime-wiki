@@ -406,6 +406,16 @@ function AppLayout() {
     } catch (err) { console.error(err); }
   };
 
+  const handleDuplicatePage = async (pageId: string) => {
+    try {
+      const newId = await api.pages.duplicate(pageId, userId || "anonymous");
+      addToast({ type: "success", title: "Page duplicated", duration: 3000 });
+      navigate(`/page/${newId}/edit`);
+    } catch (err) {
+      addToast({ type: "error", title: "Failed to duplicate page", message: String(err), duration: 5000 });
+    }
+  };
+
   // ─── Collection CRUD handlers ───────────────────────────────────────────
 
   const openCreateCol = () => {
@@ -1214,6 +1224,12 @@ function AppLayout() {
                 className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
               >
                 <Edit3 className="h-3 w-3" /> Edit
+              </button>
+              <button
+                onClick={() => { handleDuplicatePage(contextMenu.pageId!); setContextMenu(null); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+              >
+                <Copy className="h-3 w-3" /> Duplicate
               </button>
               <div className="h-px bg-border/50 mx-2 my-1" />
               <button
