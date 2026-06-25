@@ -14,6 +14,7 @@ import { PageEditor } from "./pages/PageEditor";
 import { PageView } from "./pages/PageView";
 import { SearchFilters, EMPTY_FILTERS, type SearchFilterState } from "./components/SearchFilters";
 import { WebhookSettings } from "./components/WebhookSettings";
+import { TemplatePicker } from "./components/TemplatePicker";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -78,6 +79,7 @@ function AppLayout() {
   const [shareDays, setShareDays] = useState(0);
   const [shareUrl, setShareUrl] = useState("");
   const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string }[]>([]);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
 
   useEffect(() => {
     setUserId(localStorage.getItem("sw_user_id"));
@@ -491,7 +493,7 @@ function AppLayout() {
         {/* New page + New collection buttons */}
         <div className="px-3 pb-2 space-y-1">
           <button
-            onClick={() => navigate("/new")}
+            onClick={() => setTemplatePickerOpen(true)}
             className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" /> New page
@@ -1289,6 +1291,15 @@ function AppLayout() {
           </div>
         </div>
       )}
+
+      {/* Template Picker */}
+      <TemplatePicker
+        open={templatePickerOpen}
+        onClose={() => setTemplatePickerOpen(false)}
+        collections={collections}
+        userId={userId}
+        navigate={navigate}
+      />
     </div>
   );
 }
