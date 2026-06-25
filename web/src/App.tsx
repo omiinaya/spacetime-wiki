@@ -507,6 +507,7 @@ function AppLayout() {
                 )}
               >
                 {p.icon || <Star className="h-3.5 w-3.5 text-yellow-500 shrink-0" fill="currentColor" />}
+                {p.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />}
                 <span className="truncate">{p.title}</span>
               </button>
             ))}
@@ -565,6 +566,7 @@ function AppLayout() {
                           )}
                         >
                           {page.icon || <FileText className="h-3.5 w-3.5 shrink-0" />}
+                          {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
                           <span className="truncate">{page.title}</span>
                           {page.status === "draft" && (
                             <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-yellow-500/10 text-yellow-500 shrink-0">Draft</span>
@@ -604,6 +606,7 @@ function AppLayout() {
                         )}
                       >
                         <FileText className="h-3.5 w-3.5 shrink-0" />
+                        {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
                         <span className="truncate">{page.title}</span>
                       </button>
                     ))}

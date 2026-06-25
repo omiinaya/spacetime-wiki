@@ -51,6 +51,7 @@ import {
   X,
   ChevronDown,
   Maximize2,
+  Palette,
 } from "lucide-react";
 import { api, Page } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -336,6 +337,7 @@ export function PageEditor({ userId }: Props) {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState<string>("");
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   // Load existing page
   useEffect(() => {
@@ -637,6 +639,14 @@ export function PageEditor({ userId }: Props) {
     return () => document.removeEventListener("click", handler);
   }, [slashOpen]);
 
+  // Close color picker on click outside
+  useEffect(() => {
+    if (!showColorPicker) return;
+    const handler = () => setShowColorPicker(false);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [showColorPicker]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -801,6 +811,51 @@ export function PageEditor({ userId }: Props) {
             >
               <TableIcon className="h-3.5 w-3.5" />
             </EditorButton>
+            <span className="w-px h-4 bg-border mx-0.5" />
+            {/* Page color accent */}
+            <div className="relative">
+              <button
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                className={cn(
+                  "p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors",
+                  page?.color && "text-primary",
+                )}
+                title="Page color accent"
+              >
+                <Palette className="h-3.5 w-3.5" />
+                {page?.color && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background"
+                    style={{ backgroundColor: page.color }}
+                  />
+                )}
+              </button>
+              {showColorPicker && (
+                <div className="absolute top-full left-0 mt-1 p-2 rounded-lg border border-border bg-card shadow-xl z-30 w-56"
+                  onClick={(e) => e.stopPropagation()}>
+                  <div className="grid grid-cols-8 gap-1">
+                    {["", "#ef4444","#f97316","#eab308","#22c55e","#06b6d4","#3b82f6","#8b5cf6",
+                      "#ec4899","#f43f5e","#a855f7","#6366f1","#00FFFF","#14b8a6","#84cc16","#d946ef",
+                      "#f59e0b","#64748b","#78716c","#b45309","#047857","#0d9488","#2563eb","#7c3aed",
+                    ].map(color => (
+                      <button key={color}
+                        onClick={async () => {
+                          if (page && id) {
+                            await api.pages.setColor(id, color);
+                            setPage(prev => prev ? { ...prev, color } : prev);
+                          }
+                          setShowColorPicker(false);
+                        }}
+                        className="w-6 h-6 rounded-md border border-border/50 hover:scale-110 transition-transform flex items-center justify-center"
+                        style={{ backgroundColor: color || "transparent" }}
+                        title={color || "No color"}
+                      >
+                        {color === "" && <X className="h-3 w-3 text-muted-foreground" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

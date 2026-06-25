@@ -21,7 +21,7 @@ import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
-  List, FileText, Link2, LayoutTemplate, Shield, Maximize2,
+  List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
@@ -525,6 +525,9 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
 
   return (
     <div className={cn(page?.full_width ? "mx-auto px-4 md:px-8" : "max-w-4xl mx-auto")}>
+      {page.color && (
+        <div className="h-1 w-full rounded-t-lg" style={{ backgroundColor: page.color }} />
+      )}
       <ConfirmDialog />
 
       {/* Header bar */}
