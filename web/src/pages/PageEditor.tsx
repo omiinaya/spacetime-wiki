@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import { ImageEnhanced } from "../extensions/ImageEnhanced";
+import { HeadingWithId } from "../extensions/HeadingWithId";
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
@@ -730,10 +731,11 @@ export function PageEditor({ userId }: Props) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
+        heading: false,
         codeBlock: false, // replaced by CodeBlockLowlight
         link: false,     // use explicit Link.configure below
       }),
+      HeadingWithId.configure({ levels: [1, 2, 3] }),
       DragHandle,
       Placeholder.configure({ placeholder: "Start writing... or type / for commands" }),
       Link.configure({ openOnClick: false }),

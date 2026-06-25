@@ -5,6 +5,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import ImageExtension from "@tiptap/extension-image";
+import { HeadingWithId } from "../extensions/HeadingWithId";
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
@@ -25,7 +26,7 @@ import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
   List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye,
-|} from "lucide-react";
+} from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
 import { PagePermissions } from "../components/PagePermissions";
@@ -360,7 +361,7 @@ export function PageView({ pageId, userId }: Props) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] }, codeBlock: false, link: false }), Placeholder,
+      StarterKit.configure({ heading: false, codeBlock: false, link: false }), HeadingWithId.configure({ levels: [1, 2, 3] }), Placeholder,
       Link, ImageExtension, Table.configure({ resizable: true }), TableRow, TableHeader, TableCell,
       TaskList, TaskItem.configure({ nested: true }), Highlight,
       CodeBlockLowlight.configure({ lowlight }),
@@ -419,6 +420,14 @@ export function PageView({ pageId, userId }: Props) {
           editor.commands.setContent({ type: "doc", content: [{ type: "paragraph" }] });
         }
       } catch { editor.commands.setContent(page.content || ""); }
+      // Scroll to heading from URL fragment on load
+      requestAnimationFrame(() => {
+        const hash = window.location.hash;
+        if (hash) {
+          const el = document.getElementById(hash.slice(1));
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
     }
   }, [editor, page]);
 
@@ -1129,13 +1138,11 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                 href={`#${h.id}`}
                 onClick={(e) => {
                   e.preventDefault();
-                  const editorEl = document.querySelector(".ProseMirror");
-                  const headings = editorEl?.querySelectorAll("h1, h2, h3");
-                  headings?.forEach((el) => {
-                    if (el.textContent?.trim() === h.text) {
-                      el.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }
-                  });
+                  const el = document.getElementById(h.id);
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    history.replaceState(null, "", `#${h.id}`);
+                  }
                 }}
                 className="block px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                 style={{ paddingLeft: `${8 + (h.level - 1) * 12}px` }}
