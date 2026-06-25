@@ -46,4 +46,4 @@ Est: 1h
 | 2026-06-25 | P1 — Floating formatting toolbar (Tiptap BubbleMenu with Underline) | 2aa081c |
 | 2026-06-25 | P2 — Page links autocomplete (search-as-you-type with [[ trigger) | 66e15f7 |
 | 2026-06-25 | P2 — Batch page operations in sidebar (multi-select, Cmd+click, batch archive/move/delete/tag) | 4828c80 |
-| 2026-06-25 | P2 — Notification system (toast for real-time events: page updates, connection state, import/export, batch ops, CRUD) | _(pending commit)_ |
+| 2026-06-25 | P2 — Notification system (toast for real-time events: page updates, connection state, import/export, batch ops, CRUD) | 9fffe1d |
