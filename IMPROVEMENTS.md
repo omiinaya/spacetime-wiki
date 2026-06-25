@@ -20,24 +20,6 @@ Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
 Difficulty: Medium
 Est: 1.5h
 
-### P3 — Comment reactions (emoji)
-Allow emoji reactions on comments (👍❤️🎉🚀👀). Extends Comment model with a `reactions` JSON string or separate `comment_reaction` STDB table. Click-to-react in the comment thread view.
-Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx
-Difficulty: Medium
-Est: 1h
-
-### P3 — Comment @mentions
-Notify users when they are mentioned in comments (via @username syntax). Extends existing Mention extension to work in comment fields. Shows user suggestions dropdown.
-Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
-Difficulty: Medium
-Est: 1.5h
-
-### P3 — Comment reactions (emoji)
-Allow emoji reactions on comments (👍❤️🎉🚀👀). Extends Comment model with a `reactions` JSON string or separate `comment_reaction` STDB table. Click-to-react in the comment thread view.
-Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx
-Difficulty: Medium
-Est: 1h
-
 ### P3 — ZIP export (pages + assets)
 Export selected pages + attachments as ZIP archive using JSZip library. Downloadable bundle with markdown/HTML content and embedded assets. Admin-level bulk export option.
 Files: web/src/components/ZipExport.tsx, web/src/lib/api.ts
@@ -47,6 +29,11 @@ Est: 2h
 ---
 
 ## Recently Completed
+
+### P3 — Comment reactions (emoji)
+**Done**: Added `CommentReaction` STDB table with `add_comment_reaction` reducer (toggle on/off per user+emoji). Frontend reactions via localStorage (`sw_reactions` key) with emoji pill buttons showing counts, quick reaction bar (👍❤️🎉🚀👀), click-to-toggle toggle. STDB module ready for future publish.
+Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx
+Commit: 98ef06d
 
 ### P3 — PDF export via window.print()
 **Done**: Added `handleExportPDF` handler to PageView.tsx (was referenced but undefined). Enhanced `@media print` CSS with proper typography (12pt font, heading sizes, page-break rules), hiding sidebar/toolbar/comments/attachments during print.
@@ -93,8 +80,3 @@ Files: web/src/extensions/Math.tsx, Commit: bf6ff5c
 
 ### P3 — Mermaid diagram extension
 **Done**: Mermaid Tiptap extension with custom node view. Inline source editor, dark theme support, slash command (/mermaid). Renders diagrams as SVG via Mermaid library.
-Files: web/src/extensions/Mermaid.tsx, Commit: 4f4c899
-
-### P2 — Search filters (collection, author, date range)
-**Done**: SearchFilters component with dropdowns for collection, author, and date range. Integrated into sidebar search. Clientside filtering in AppLayout.
-Files: web/src/components/SearchFilters.tsx, web/src/App.tsx, Commit: aea33b4
