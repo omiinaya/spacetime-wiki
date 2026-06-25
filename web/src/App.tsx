@@ -44,7 +44,7 @@ function AppLayout() {
   const [colColor, setColColor] = useState("");
 
   // Context menu state
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; colId: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; colId?: string; pageId?: string } | null>(null);
 
   // Trash state
   const [trashPages, setTrashPages] = useState<Page[]>([]);
@@ -101,6 +101,10 @@ function AppLayout() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return (localStorage.getItem("sw_theme") as "dark" | "light") || "dark";
   });
+
+  // Import MD state
+  const importRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
 
   // Apply theme class on mount and on change
   useEffect(() => {
@@ -275,6 +279,55 @@ function AppLayout() {
 
   const isActive = (pageId: string) =>
     location.pathname === `/page/${pageId}` || location.pathname.startsWith(`/page/${pageId}`);
+
+  // ─── Import/Export handlers ─────────────────────────────────────────────
+
+  const handleImportMD = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const title = file.name.replace(/\.md$/i, "");
+      const doc = markdownToProseMirror(text);
+      const id = await api.pages.create(title, JSON.stringify(doc), "", "", userId || "anonymous");
+      navigate(`/page/${id}`);
+    } catch (err) { console.error(err); }
+    finally { setImporting(false); e.target.value = ""; }
+  };
+
+  const handleExportPageMD = async (pageId: string) => {
+    try {
+      const page = pages.find(p => p.id === pageId);
+      if (!page) return;
+      const json = JSON.parse(page.content || "{}");
+      const md = tiptapToMarkdown(json);
+      const blob = new Blob([md], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${page.title || "Untitled"}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleExportPageHTML = async (pageId: string) => {
+    try {
+      const page = pages.find(p => p.id === pageId);
+      if (!page) return;
+      const json = JSON.parse(page.content || "{}");
+      const md = tiptapToMarkdown(json);
+      const html = `<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8"><title>${page.title || "Untitled"}</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}h1,h2,h3{color:#111}pre{background:#f5f5f5;padding:16px;border-radius:4px;overflow-x:auto}code{background:#f0f0f0;padding:2px 4px;border-radius:2px}blockquote{border-left:3px solid #ddd;margin:0;padding-left:16px;color:#666}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:8px}th{background:#f5f5f5}</style></head>\n<body>\n${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length || 1}>${l.replace(/^#+\s*/, "")}</h${l.match(/^#+/)?.[0]?.length || 1}>` : l.startsWith("- ") ? `<li>${l.slice(2)}</li>` : l.startsWith("> ") ? `<blockquote>${l.slice(2)}</blockquote>` : l.startsWith("```") ? "<pre><code>" : l === "```" ? "</code></pre>" : l ? `<p>${l}</p>` : "<br>").join("\n")}\n</body>\n</html>`;
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${page.title || "Untitled"}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) { console.error(err); }
+  };
 
   // ─── Collection CRUD handlers ───────────────────────────────────────────
 
@@ -665,6 +718,10 @@ function AppLayout() {
                           onDragStart={(e) => handleDragStart(e, page.id)}
                           onDragOver={handleDragOver}
                           onDrop={(e) => handleDropOnPage(e, page.id)}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            setContextMenu({ x: e.clientX, y: e.clientY, pageId: page.id });
+                          }}
                           className={cn(
                             "w-full flex items-center gap-2 pl-8 pr-2 py-1 rounded-md text-xs transition-colors text-left",
                             isActive(page.id)
@@ -717,6 +774,10 @@ function AppLayout() {
                         onDragStart={(e) => handleDragStart(e, page.id)}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDropOnPage(e, page.id)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          setContextMenu({ x: e.clientX, y: e.clientY, pageId: page.id });
+                        }}
                         className={cn(
                           "w-full flex items-center gap-2 pl-8 pr-2 py-1 rounded-md text-xs transition-colors text-left",
                           isActive(page.id) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
@@ -757,6 +818,15 @@ function AppLayout() {
           <button onClick={openAdmin} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <Shield className="h-3 w-3" /> Admin
           </button>
+          <input ref={importRef} type="file" accept=".md,.txt" onChange={handleImportMD} className="hidden" />
+          <button
+            onClick={() => importRef.current?.click()}
+            disabled={importing}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+          >
+            {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+            {importing ? "Importing..." : "Import MD"}
+          </button>
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -784,25 +854,57 @@ function AppLayout() {
       {/* Context menu */}
       {contextMenu && (
         <div
-          className="fixed z-50 w-40 py-1 rounded-lg border border-border bg-card shadow-xl"
+          className="fixed z-50 w-48 py-1 rounded-lg border border-border bg-card shadow-xl"
           style={{
-            left: Math.min(contextMenu.x, window.innerWidth - 160),
-            top: Math.min(contextMenu.y, window.innerHeight - 120),
+            left: Math.min(contextMenu.x, window.innerWidth - 192),
+            top: Math.min(contextMenu.y, window.innerHeight - 180),
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            onClick={() => { const col = collections.find(c => c.id === contextMenu.colId); if (col) openEditCol(col); }}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
-          >
-            <Pencil className="h-3 w-3" /> Edit
-          </button>
-          <button
-            onClick={() => deleteCollection(contextMenu.colId)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left"
-          >
-            <Trash2 className="h-3 w-3" /> Delete
-          </button>
+          {contextMenu.pageId ? (
+            <>
+              <button
+                onClick={() => { const page = pages.find(p => p.id === contextMenu.pageId); if (page) navigate(`/page/${page.id}`); setContextMenu(null); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+              >
+                <FileText className="h-3 w-3" /> Open
+              </button>
+              <button
+                onClick={() => { const page = pages.find(p => p.id === contextMenu.pageId); if (page) navigate(`/page/${page.id}/edit`); setContextMenu(null); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+              >
+                <Edit3 className="h-3 w-3" /> Edit
+              </button>
+              <div className="h-px bg-border/50 mx-2 my-1" />
+              <button
+                onClick={() => { handleExportPageMD(contextMenu.pageId!); setContextMenu(null); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+              >
+                <Download className="h-3 w-3" /> Export Markdown
+              </button>
+              <button
+                onClick={() => { handleExportPageHTML(contextMenu.pageId!); setContextMenu(null); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+              >
+                <Download className="h-3 w-3" /> Export HTML
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => { const col = collections.find(c => c.id === contextMenu.colId); if (col) openEditCol(col); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+              >
+                <Pencil className="h-3 w-3" /> Edit collection
+              </button>
+              <button
+                onClick={() => deleteCollection(contextMenu.colId!)}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left"
+              >
+                <Trash2 className="h-3 w-3" /> Delete collection
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -1603,24 +1705,8 @@ function HomeView() {
     try {
       const text = await file.text();
       const title = file.name.replace(/\.md$/i, "");
-      const lines = text.split("\n");
-      const content: any[] = [];
-      let codeBlock: string[] = [];
-      let inCode = false;
-      for (const line of lines) {
-        if (line.startsWith("```")) {
-          if (inCode) { content.push({ type: "codeBlock", attrs: { language: "" }, content: [{ type: "text", text: codeBlock.join("\n") }] }); codeBlock = []; inCode = false; }
-          else { inCode = true; }
-        } else if (inCode) { codeBlock.push(line); }
-        else if (line.startsWith("# ")) content.push({ type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: line.slice(2) }] });
-        else if (line.startsWith("## ")) content.push({ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: line.slice(3) }] });
-        else if (line.startsWith("### ")) content.push({ type: "heading", attrs: { level: 3 }, content: [{ type: "text", text: line.slice(4) }] });
-        else if (line.startsWith("- ")) content.push({ type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: line.slice(2) }] }] }] });
-        else if (line.startsWith("> ")) content.push({ type: "blockquote", content: [{ type: "paragraph", content: [{ type: "text", text: line.slice(2) }] }] });
-        else if (line.trim()) content.push({ type: "paragraph", content: [{ type: "text", text: line }] });
-        else content.push({ type: "paragraph" });
-      }
-      const id = await api.pages.create(title, JSON.stringify({ type: "doc", content }), "", "", "anonymous");
+      const doc = markdownToProseMirror(text);
+      const id = await api.pages.create(title, JSON.stringify(doc), "", "", "anonymous");
       navigate(`/page/${id}`);
     } catch (err) { console.error(err); }
     finally { setImporting(false); e.target.value = ""; }
@@ -2298,7 +2384,148 @@ function ApiKeySection({ userId }: { userId: string | null }) {
   );
 }
 
-// ─── Export helpers (duplicated from PageView to avoid export dependency) ──
+// ─── Markdown helpers (duplicated from PageEditor to avoid circular imports) ──
+
+function markdownToProseMirror(md: string): any {
+  const doc: any = { type: "doc", content: [] };
+  const lines = md.split("\n");
+  let i = 0;
+  let inCodeBlock = false;
+  let codeLang = "";
+  let codeLines: string[] = [];
+
+  function addParagraph(text: string) {
+    if (!text.trim()) return;
+    const content: any[] = [];
+    const parts = text.split(/(\*\*.*?\*\*|_.*?_|`.*?`|~~.*?~~|\[.*?\]\(.*?\))/g);
+    for (const part of parts) {
+      if (!part) continue;
+      if (part.startsWith("**") && part.endsWith("**")) {
+        content.push({ type: "text", text: part.slice(2, -2), marks: [{ type: "bold" }] });
+      } else if (part.startsWith("_") && part.endsWith("_")) {
+        content.push({ type: "text", text: part.slice(1, -1), marks: [{ type: "italic" }] });
+      } else if (part.startsWith("`") && part.endsWith("`")) {
+        content.push({ type: "text", text: part.slice(1, -1), marks: [{ type: "code" }] });
+      } else if (part.startsWith("~~") && part.endsWith("~~")) {
+        content.push({ type: "text", text: part.slice(2, -2), marks: [{ type: "strike" }] });
+      } else if (part.startsWith("[") && part.includes("](")) {
+        const match = part.match(/^\[(.*?)\]\((.*?)\)$/);
+        if (match) {
+          content.push({ type: "text", text: match[1], marks: [{ type: "link", attrs: { href: match[2] } }] });
+        } else {
+          content.push({ type: "text", text: part });
+        }
+      } else {
+        content.push({ type: "text", text: part });
+      }
+    }
+    if (content.length > 0) {
+      doc.content.push({ type: "paragraph", content });
+    }
+  }
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (inCodeBlock) {
+      if (line.startsWith("```")) {
+        doc.content.push({ type: "codeBlock", attrs: { language: codeLang }, content: [{ type: "text", text: codeLines.join("\n") }] });
+        codeLines = [];
+        codeLang = "";
+        inCodeBlock = false;
+        i++;
+        continue;
+      }
+      codeLines.push(line);
+      i++;
+      continue;
+    }
+
+    if (line.startsWith("```")) {
+      inCodeBlock = true;
+      codeLang = line.slice(3).trim();
+      i++;
+      continue;
+    }
+
+    if (!line.trim()) { i++; continue; }
+
+    // Heading
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const text = headingMatch[2];
+      doc.content.push({ type: "heading", attrs: { level }, content: [{ type: "text", text }] });
+      i++;
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^---+$/.test(line)) {
+      doc.content.push({ type: "horizontalRule" });
+      i++;
+      continue;
+    }
+
+    // Blockquote
+    if (line.startsWith("> ")) {
+      const text = line.slice(2);
+      doc.content.push({ type: "blockquote", content: [{ type: "paragraph", content: [{ type: "text", text }] }] });
+      i++;
+      continue;
+    }
+
+    // Unordered list
+    if (/^[-*+]\s+/.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^[-*+]\s+/.test(lines[i])) {
+        const itemText = lines[i].replace(/^[-*+]\s+/, "");
+        items.push({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: itemText }] }] });
+        i++;
+      }
+      doc.content.push({ type: "bulletList", content: items });
+      continue;
+    }
+
+    // Ordered list
+    if (/^\d+\.\s+/.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+        const itemText = lines[i].replace(/^\d+\.\s+/, "");
+        items.push({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: itemText }] }] });
+        i++;
+      }
+      doc.content.push({ type: "orderedList", content: items });
+      continue;
+    }
+
+    // Task list
+    if (/^\s*[-*+]\s+[[ x]\]]\s+/i.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^\s*[-*+]\s+[[ x]\]]\s+/i.test(lines[i])) {
+        const checked = lines[i].includes("[x]") || lines[i].includes("[X]");
+        const text = lines[i].replace(/^\s*[-*+]\s+[[ x]\]]\s+/i, "");
+        items.push({ type: "taskItem", attrs: { checked }, content: [{ type: "paragraph", content: [{ type: "text", text }] }] });
+        i++;
+      }
+      doc.content.push({ type: "taskList", content: items });
+      continue;
+    }
+
+    // Default: paragraph
+    addParagraph(line);
+    i++;
+  }
+
+  if (inCodeBlock && codeLines.length > 0) {
+    doc.content.push({ type: "codeBlock", attrs: { language: codeLang }, content: [{ type: "text", text: codeLines.join("\n") }] });
+  }
+
+  if (doc.content.length === 0) {
+    doc.content.push({ type: "paragraph", content: [] });
+  }
+  return doc;
+}
 
 function tiptapToMarkdown(doc: any): string {
   const lines: string[] = [];
