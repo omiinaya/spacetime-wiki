@@ -165,10 +165,13 @@ export class SubscriptionManager {
 export const defaultSubscriptionManager = new SubscriptionManager();
 
 // ─── React Hook ──────────────────────────────────────────────────────────────
+// STDB returns rows as positional arrays (unknown[][]), not objects.
+// The mapper receives each row as unknown[] and returns the typed result.
 
-export function useSubscription<T extends Record<string, unknown>>(
+export function useSubscription<T>(
   sql: string | null,
-  mapper: (row: Record<string, unknown>) => T,
+  mapper: (row: unknown[]) => T,
+  key?: string,
 ): { rows: T[]; connected: boolean; state: ConnectionState } {
   const [rows, setRows] = useState<T[]>([]);
   const [connected, setConnected] = useState(false);
@@ -189,7 +192,9 @@ export function useSubscription<T extends Record<string, unknown>>(
     return () => {
       unsubState();
     };
-  }, []);
+    // key allows hook to reconnect when the identity changes (e.g., different page ID)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   useEffect(() => {
     if (!sql) return;
@@ -197,7 +202,7 @@ export function useSubscription<T extends Record<string, unknown>>(
     const unsub = defaultSubscriptionManager.subscribe({
       sql,
       onRows: (rawRows) => {
-        const mapped = rawRows.map(mapper);
+        const mapped = (rawRows as unknown[][]).map(mapper);
         rowsRef.current = mapped;
         setRows([...mapped]);
       },
@@ -212,7 +217,7 @@ export function useSubscription<T extends Record<string, unknown>>(
     })
       .then((res) => res.json())
       .then((data) => {
-        const initialRows = ((data[0]?.rows || []) as Record<string, unknown>[]).map(mapper);
+        const initialRows = ((data[0]?.rows || []) as unknown[][]).map(mapper);
         rowsRef.current = initialRows;
         setRows([...initialRows]);
       })
@@ -221,7 +226,9 @@ export function useSubscription<T extends Record<string, unknown>>(
     return () => {
       unsub();
     };
-  }, [sql]);
+    // key triggers re-subscribe when the identity changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sql, key]);
 
   return { rows, connected, state };
 }

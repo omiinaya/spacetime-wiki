@@ -9,8 +9,9 @@ import {
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
   Sun, Moon, Keyboard, Eye,
 } from "lucide-react";
-import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider } from "./lib/api";
+import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, usePagesSubscription, useCollectionsSubscription } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
+import { connectSubscriptions, disconnectSubscriptions } from "./lib/subscriptions";
 import { PageEditor } from "./pages/PageEditor";
 import { PageView } from "./pages/PageView";
 import { SearchFilters, EMPTY_FILTERS, type SearchFilterState } from "./components/SearchFilters";
@@ -128,7 +129,60 @@ function AppLayout() {
     setUserId(localStorage.getItem("sw_user_id"));
   }, [location.pathname]);
 
-  const loadData = useCallback(async () => {
+  // ─── Real-time subscriptions ────────────────────────────────────────────
+  // Replace polling-based loadData() with STDB WebSocket subscriptions
+  // for real-time updates across browser tabs/users
+
+  // Connect on mount, disconnect on unmount
+  useEffect(() => {
+    connectSubscriptions();
+    return () => { disconnectSubscriptions(); };
+  }, []);
+
+  // Subscribe to pages (real-time)
+  const { rows: subPages, connected: pagesConnected } = usePagesSubscription();
+  // Subscribe to collections (real-time)
+  const { rows: subCollections, connected: colsConnected } = useCollectionsSubscription();
+
+  // Sync subscription data to local state
+  useEffect(() => {
+    setPages(subPages);
+  }, [subPages]);
+
+  useEffect(() => {
+    setCollections(subCollections);
+  }, [subCollections]);
+
+  // Stop loading once we have data from either source
+  useEffect(() => {
+    if ((pagesConnected || colsConnected) && (subPages.length > 0 || subCollections.length > 0)) {
+      setLoading(false);
+    }
+  }, [pagesConnected, colsConnected, subPages.length, subCollections.length]);
+
+  // Fallback: if subscriptions never connect after 5s, load via HTTP
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (loading) {
+        try {
+          const [cols, allPages] = await Promise.all([
+            api.collections.list(),
+            api.pages.list(),
+          ]);
+          setCollections(cols);
+          setPages(allPages);
+        } catch (e) {
+          console.error("Failed to load data:", e);
+        } finally {
+          setLoading(false);
+        }
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  // Manual data refresh for after CRUD operations (as backup to subscriptions)
+  const refreshData = useCallback(async () => {
     try {
       const [cols, allPages] = await Promise.all([
         api.collections.list(),
@@ -137,13 +191,9 @@ function AppLayout() {
       setCollections(cols);
       setPages(allPages);
     } catch (e) {
-      console.error("Failed to load data:", e);
-    } finally {
-      setLoading(false);
+      console.error("Failed to refresh data:", e);
     }
   }, []);
-
-  useEffect(() => { loadData(); }, [loadData, location.pathname]);
   
   // Load favorites for sidebar
   const [favoritePages, setFavoritePages] = useState<Page[]>([]);
@@ -175,7 +225,7 @@ function AppLayout() {
       } catch { /* keep existing */ }
     }, 200);
     return () => clearTimeout(timer);
-  }, [searchQuery, searchFilters, loadData]);
+  }, [searchQuery, searchFilters]);
 
   // Filter pages client-side for instant feel (text + filters)
   const filteredPages = pages.filter((p) => {
@@ -256,7 +306,7 @@ function AppLayout() {
         await api.collections.create(colName, colDesc, "", colIcon, colColor, userId || "anonymous");
       }
       setColDialogOpen(false);
-      await loadData();
+      await refreshData();
     } catch (e) { console.error(e); }
   };
 
@@ -264,7 +314,7 @@ function AppLayout() {
     if (!confirm("Archive this collection and all its pages?")) return;
     setContextMenu(null);
     await api.collections.delete(id);
-    await loadData();
+    await refreshData();
   };
 
   // ─── Trash handlers ─────────────────────────────────────────────────────
@@ -282,21 +332,21 @@ function AppLayout() {
   const restorePage = async (id: string) => {
     await api.pages.restore(id);
     setTrashPages(prev => prev.filter(p => p.id !== id));
-    await loadData();
+    await refreshData();
   };
 
   const permanentDelete = async (id: string) => {
     if (!confirm("Permanently delete this page? This cannot be undone.")) return;
     await api.pages.delete(id);
     setTrashPages(prev => prev.filter(p => p.id !== id));
-    await loadData();
+    await refreshData();
   };
 
   const emptyTrash = async () => {
     if (!confirm("Permanently delete ALL pages in trash? This cannot be undone.")) return;
     await api.pages.emptyTrash();
     setTrashPages([]);
-    await loadData();
+    await refreshData();
   };
 
   // ─── Admin handlers ─────────────────────────────────────────────────────
@@ -379,7 +429,7 @@ function AppLayout() {
       setTemplateModalOpen(false);
       setNewPageTitle("");
       setSelectedTemplate("");
-      await loadData();
+      await refreshData();
       navigate(`/page/${newId}`);
     } catch (e) { alert(String(e)); }
   };
@@ -411,7 +461,7 @@ function AppLayout() {
     if (pageId && pageId !== colId) {
       await api.pages.move(pageId, colId, "");
       setDragPageId(null);
-      await loadData();
+      await refreshData();
     }
   };
 
@@ -423,13 +473,13 @@ function AppLayout() {
       const colId = pages.find(p => p.id === targetPageId)?.collection_id || "";
       await api.pages.move(pageId, colId, targetPageId);
       setDragPageId(null);
-      await loadData();
+      await refreshData();
     }
   };
 
   const movePageToCollection = async (pageId: string, newColId: string) => {
     await api.pages.move(pageId, newColId, "");
-    await loadData();
+    await refreshData();
   };
 
   // ─── Command palette handlers ───────────────────────────────────────────
