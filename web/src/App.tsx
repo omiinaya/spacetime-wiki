@@ -5,13 +5,14 @@ import {
 import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
-  Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users,
+  Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
 import { PageEditor } from "./pages/PageEditor";
 import { PageView } from "./pages/PageView";
 import { SearchFilters, EMPTY_FILTERS, type SearchFilterState } from "./components/SearchFilters";
+import { WebhookSettings } from "./components/WebhookSettings";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ function AppLayout() {
   // Admin state
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups">("users");
+  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks">("users");
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; description: string; created_by: string; created_at: number; updated_at: number }[]>([]);
@@ -704,6 +705,10 @@ function AppLayout() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "groups" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <Users className="h-3 w-3 inline mr-1" />Groups
               </button>
+              <button onClick={() => setAdminTab("webhooks")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "webhooks" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <Send className="h-3 w-3 inline mr-1" />Webhooks
+              </button>
             </div>
 
             {adminTab === "users" && (
@@ -856,6 +861,9 @@ function AppLayout() {
                   )}
                 </div>
               </div>
+            )}
+            {adminTab === "webhooks" && (
+              <WebhookSettings userId={userId} />
             )}
           </div>
         </div>
