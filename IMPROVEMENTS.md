@@ -51,7 +51,7 @@ Est: 2-3h
 ### P3 — Webhooks UI (HTTP callbacks)
 **Done**: WebhookSettings React component with create/edit/delete webhooks, event type selection (page.create, page.update, page.delete, page.publish, page.archive, comment.create), test event firing, webhook events viewer with status tracking (pending/sent/failed), and response body inspection. Integrated as a "Webhooks" tab in the admin panel. Backend (STDB tables + reducers) and frontend API were already implemented in prior work.
 Files: web/src/components/WebhookSettings.tsx, web/src/App.tsx
-Commit: (pending commit)
+Commit: b921743
 
 ### P2 — Revisions diff view (visual diff between versions)
 **Done**: RevisionDiff component with line-by-line diff using jsdiff. Shows added/removed lines with green/red highlighting, title change tracking, addition/removal counts.
