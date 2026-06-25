@@ -222,6 +222,8 @@ export const api = {
       callReducer("set_page_icon", [id, icon]),
     setFullWidth: (id: string, fullWidth: boolean) =>
       callReducer("set_page_full_width", [id, fullWidth]),
+    setColor: (id: string, color: string) =>
+      callReducer("set_page_color", [id, color]),
     markAsTemplate: (id: string, isTemplate: boolean) =>
       callReducer("mark_as_template", [id, isTemplate]),
     createFromTemplate: (templateId: string, title: string, collectionId: string, createdBy: string) => {
