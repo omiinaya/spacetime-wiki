@@ -8,27 +8,20 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — ZIP export (pages + assets)
-Export selected pages + attachments as ZIP archive using JSZip library. Downloadable bundle with markdown/HTML content and embedded assets. Admin-level bulk export option.
-Files: web/src/components/ZipExport.tsx, web/src/lib/api.ts
-Difficulty: Medium
-Est: 2h
-
 ### P3 — SAML 2.0 SSO
 Add SAML 2.0 identity provider support alongside existing OIDC. Requires SAML library for handling SAML assertions, metadata XML, and callback endpoints. Admin panel SSO tab to include SAML provider configuration.
 Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/App.tsx
 Difficulty: Hard
 Est: 3h
 
-### P3 — Multiple editor modes (Markdown ↔ WYSIWYG toggle)
-Add tab-based editor mode switcher allowing users to toggle between WYSIWYG (current), Markdown source, and split-pane preview modes. Similar to Wiki.js dual-editor approach.
-Files: web/src/pages/PageEditor.tsx, web/src/styles/editor-modes.css
-Difficulty: Medium
-Est: 2h
-
 ---
 
 ## Recently Completed
+
+### P3 — Multiple editor modes (Markdown ↔ WYSIWYG toggle)
+**Done**: Three-mode editor tabs (WYSIWYG | Markdown | Split) with conversion between Tiptap ProseMirror JSON and Markdown source. `tiptapToMarkdown` handles headings, paragraphs, lists, code blocks, blockquotes, tables, task lists, callouts, details, horizontal rules, inline marks. `markdownToProseMirror` reverse parser reconstructs PM doc from Markdown input. Markdown mode: editable textarea with monospace font. Split mode: side-by-side WYSIWYG + read-only Markdown preview. Content always saved as PM JSON regardless of mode.
+Files: web/src/pages/PageEditor.tsx
+Commit: 67fb0da
 
 ### P3 — Comment @mentions
 **Done**: Added @mention detection in comment input with user suggestion dropdown (appears when typing @ after whitespace, filters by name). Dropdown shows avatar initials + username (up to 8 results). Selecting inserts @username into the text. @mentions rendered as highlighted spans (text-primary font-medium). All users loaded on mount via api.users.list().
@@ -38,6 +31,11 @@ Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
 **Done**: Tiptap extension with inline source editor, plantuml.com rendering via plantuml-encoder library, slash command (/plantuml), React node view with edit workflow, loading state, and error handling. Server URL is configurable via extension options.
 Files: web/src/extensions/PlantUML.tsx, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
 Commit: b84a9df
+
+### P3 — ZIP export (pages + assets)
+**Done**: Two ZIP export paths — per-page export in PageView.tsx (markdown, HTML, attachments, metadata) and bulk collection export in App.tsx admin panel (multi-page with index.json). Uses JSZip library. Wired to "Export as ZIP" button in the page export dropdown.
+Files: web/src/pages/PageView.tsx, web/src/App.tsx
+Commit: (included in f7fa047 and prior)
 
 ### P3 — Comment reactions (emoji)
 **Done**: Added `CommentReaction` STDB table with `add_comment_reaction` reducer (toggle on/off per user+emoji). Frontend reactions via localStorage (`sw_reactions` key) with emoji pill buttons showing counts, quick reaction bar (👍❤️🎉🚀👀), click-to-toggle toggle. STDB module ready for future publish.
