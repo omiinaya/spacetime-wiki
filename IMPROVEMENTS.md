@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — Keyboard shortcuts reference/guide
-Add a keyboard shortcuts dialog (triggered by `?` or via help menu) showing available shortcuts (Cmd+S save, Cmd+Shift+P command palette, Cmd+B bold, etc.). Include editor shortcuts and global app shortcuts.
-Files: web/src/App.tsx, web/src/components/KeyboardShortcuts.tsx
-Difficulty: Easy
-Est: 1h
-
 ### P3 — Rich embeds for 30+ providers
 Expand beyond the current YouTube/Vimeo/Loom/Twitch video embed to support 30+ embed providers like Outline (Figma, CodePen, Google Docs, Notion, etc.). Use oEmbed protocol or iframe-based embeds with a registry of known providers.
 Files: web/src/extensions/VideoEmbed.ts, web/src/extensions/Embed.tsx
@@ -38,6 +32,7 @@ Est: 4h
 
 | Date | Item | Commit | 
 |------|------|--------|
+| 2026-06-25 | P1 — Keyboard shortcuts reference/guide | 759f5e5 |
 | 2026-06-25 | P0 — Dark mode toggle (light ↔ dark theme) | 3856a17 |
 | 2026-06-25 | P2 — Link preview/unfurl on hover | 8061723 |
 | 2026-06-25 | P2 — Emoji picker (`:` colon syntax in editor) | f078ee0 (partial) |
@@ -46,5 +41,3 @@ Est: 4h
 | 2026-06-25 | P3 — Multiple editor modes (Markdown ↔ WYSIWYG toggle) | 67fb0da |
 | 2026-06-24 | P3 — PlantUML diagrams | b84a9df |
 | 2026-06-24 | P3 — ZIP export (pages + assets) | — |
-| 2026-06-24 | P3 — Comment reactions (emoji) | 98ef06d |
-| 2026-06-24 | P3 — PDF export via window.print() | f7fa047 |
