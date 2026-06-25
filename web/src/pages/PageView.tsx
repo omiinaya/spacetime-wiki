@@ -34,6 +34,7 @@ import { RevisionDiff } from "../components/RevisionDiff";
 import { ImageLightbox } from "../components/ImageLightbox";
 import { PageTags } from "../components/PageTags";
 import { MentionInput } from "../components/MentionInput";
+import { MediaManager } from "../components/MediaManager";
 
 const lowlight = createLowlight(common);
 
@@ -278,6 +279,7 @@ export function PageView({ pageId, userId }: Props) {
   const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [parentPages, setParentPages] = useState<Page[]>([]);
+  const [showMediaBrowser, setShowMediaBrowser] = useState(false);
 
   // Link preview tooltip
   const [linkPreview, setLinkPreview] = useState<{ x: number; y: number; title: string; url: string } | null>(null);
@@ -1055,7 +1057,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           </div>
 
           {userId && (
-            <div>
+            <div className="flex items-center gap-2">
               <input
                 ref={attachInputRef}
                 type="file"
@@ -1069,6 +1071,12 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
               >
                 {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
                 {uploading ? "Uploading..." : "Upload file"}
+              </button>
+              <button
+                onClick={() => setShowMediaBrowser(true)}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                Browse media
               </button>
             </div>
           )}
@@ -1103,6 +1111,15 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           </div>
         </div>
       </div>
+
+      {/* Media Browser Dialog */}
+      {showMediaBrowser && (
+        <MediaManager
+          pageId={pageId}
+          userId={userId}
+          onClose={() => setShowMediaBrowser(false)}
+        />
+      )}
 
       {/* Link preview tooltip */}
       {linkPreview && (
