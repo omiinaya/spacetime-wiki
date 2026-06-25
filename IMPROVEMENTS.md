@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Link preview/unfurl on hover
-When hovering over a link, show a tooltip with the page title (for internal wiki links) or a metadata preview card (for external URLs).
-Files: web/src/pages/PageView.tsx
-Difficulty: Medium
-Est: 1.5h
-
 ### P0 — Dark mode toggle (light ↔ dark theme switch)
 Add light/dark theme toggle with CSS variable switching. Currently only dark theme is implemented (OKLCH color variables). Need a theme toggle button, localStorage persistence, and a complementary light color palette.
 Files: web/src/index.css, web/src/App.tsx
@@ -50,6 +44,7 @@ Est: 4h
 
 | Date | Item | Commit | 
 |------|------|--------|
+| 2026-06-25 | P2 — Link preview/unfurl on hover | 8061723 |
 | 2026-06-25 | P2 — Emoji picker (`:` colon syntax in editor) | f078ee0 (partial) |
 | 2026-06-25 | P3 — SAML 2.0 SSO | f078ee0 |
 | 2026-06-25 | P2 — Page templates (template picker dialog) | bde9d16 |
@@ -59,4 +54,3 @@ Est: 4h
 | 2026-06-24 | P3 — Comment reactions (emoji) | 98ef06d |
 | 2026-06-24 | P3 — PDF export via window.print() | f7fa047 |
 | 2026-06-24 | P2 — Responsive/mobile-friendly layout | 5330ead |
-| 2026-06-24 | P3 — Draw.io/diagrams.net integration | 73afd15 |
