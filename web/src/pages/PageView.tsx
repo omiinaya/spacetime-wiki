@@ -31,6 +31,7 @@ import { cn, formatDate, timeAgo } from "../lib/utils";
 import { PagePermissions } from "../components/PagePermissions";
 import { RevisionDiff } from "../components/RevisionDiff";
 import { ImageLightbox } from "../components/ImageLightbox";
+import { PageTags } from "../components/PageTags";
 
 const lowlight = createLowlight(common);
 
@@ -867,6 +868,8 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             </span>
           )}
         </div>
+        {/* Tags */}
+        <PageTags pageId={pageId || ""} editable={!preview} userId={userId} />
       </div>
 
       {/* Content */}
