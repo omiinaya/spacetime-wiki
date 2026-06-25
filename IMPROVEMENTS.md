@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Responsive/mobile-friendly layout
-Ensure the UI works well on tablets and mobile devices. Collapsible sidebar auto-hides on small screens, editor adapts to viewport, touch-friendly controls.
-Files: web/src/App.tsx, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
-Difficulty: Medium
-Est: 2h
-
 ### P3 — PlantUML diagrams
 PlantUML rendering alongside Mermaid for text-based diagramming. Server-side rendering via plantuml.com proxy or local renderer. Custom Tiptap node similar to Mermaid extension.
 Files: web/src/extensions/PlantUML.tsx, web/src/pages/PageEditor.tsx
@@ -47,6 +41,11 @@ Est: 2h
 ---
 
 ## Recently Completed
+
+### P2 — Responsive/mobile-friendly layout
+**Done**: Full-screen dialogs on small screens (dialog-container/dialog-overlay CSS classes), scrollable formatting toolbar on mobile (editor-toolbar), page-actions horizontal scroll in PageView, side panels (TOC, revisions) go full-width on mobile, sidebar width increased to w-72 max-w-[85vw], viewport-bound context menu, safe-area padding support for notched phones, touch-friendly min-height targets, print media query stubs.
+Files: web/src/App.tsx, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx, web/src/index.css
+Commit: 5330ead
 
 ### P3 — Draw.io/diagrams.net integration
 **Done**: Tiptap extension with iframe-based draw.io editor, SVG preview, postMessage communication, inline source editor, create/edit workflow. Slash command (/drawio). React node view with toolbar and diagram preview.
