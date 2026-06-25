@@ -21,7 +21,7 @@ import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
-  List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette,
+  List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
@@ -545,6 +545,13 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           <div className="flex items-center gap-1">
             <button onClick={handleToggleFavorite} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", isFavorite && "text-yellow-500")} title="Favorite">
               <Star className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
+            </button>
+            <button onClick={async () => {
+              const newVal = !page?.is_pinned;
+              await api.pages.setPinned(pageId, newVal);
+              setPage(prev => prev ? { ...prev, is_pinned: newVal } : prev);
+            }} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", page?.is_pinned && "text-primary bg-primary/10")} title={page?.is_pinned ? "Unpin" : "Pin to top"}>
+              <Pin className="h-4 w-4" fill={page?.is_pinned ? "currentColor" : "none"} />
             </button>
             <button onClick={() => setShowRevisions(!showRevisions)} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", showRevisions && "text-primary bg-primary/10")} title="History">
               <History className="h-4 w-4" />
