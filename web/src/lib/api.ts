@@ -589,3 +589,26 @@ export const api = {
       callReducer("delete_saml_provider", [id]),
   },
 };
+
+// ─── Subscription helpers ────────────────────────────────────────────────────
+// These hooks wrap useSubscription with proper STDB positional-array mappers
+// for real-time data in App.tsx and other components.
+
+import { useSubscription } from "./subscriptions";
+
+export const SUBSCRIPTION_SQLS = {
+  pages: "SELECT * FROM page WHERE status != 'deleted'",
+  allPages: "SELECT * FROM page",
+  collections: "SELECT * FROM collection",
+  comments: (pageId: string) => `SELECT * FROM comment WHERE page_id = '${pageId}'`,
+  favorites: (userId: string) => `SELECT * FROM favorite WHERE user_id = '${userId}'`,
+  tags: (pageId: string) => `SELECT * FROM page_tag WHERE page_id = '${pageId}'`,
+} as const;
+
+export function usePagesSubscription() {
+  return useSubscription(SUBSCRIPTION_SQLS.pages, (row: unknown[]) => mapPage(row));
+}
+
+export function useCollectionsSubscription() {
+  return useSubscription(SUBSCRIPTION_SQLS.collections, (row: unknown[]) => mapCollection(row));
+}
