@@ -8,17 +8,17 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — Virtual scroll for long page lists
-When a collection has 1000+ pages, the current list rendering is slow. Implement virtual scrolling or pagination for the page list/collection view.
-Files: web/src/components/
-Difficulty: Medium
-Est: 2h
-
 ### P3 — Webhook management UI
 Add a panel in the admin settings to create, edit, test, and delete webhooks. Currently webhooks can only be managed via STDB SQL.
 Files: web/src/components/WebhookManager.tsx
 Difficulty: Medium
 Est: 2h
+
+### P3 — Page analytics (views, edits, trending)
+Track and display page view counts, edit frequency, and trending pages. Store view events via a lightweight reducer.
+Files: server/spacetimedb/src/lib.rs, web/src/components/
+Difficulty: Medium
+Est: 3h
 
 ---
 
@@ -26,6 +26,7 @@ Est: 2h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-25 | P1 — Virtual scroll / pagination for page lists | 2642781 |
 | 2026-06-25 | P1 — REST API layer for programmatic access | 2bac0e8 |
 | 2026-06-25 | P1 — Full-text search STDB reducer | 524ab77 |
 | 2026-06-25 | P3 — Rich embeds for 30+ providers | 524ab77 |
