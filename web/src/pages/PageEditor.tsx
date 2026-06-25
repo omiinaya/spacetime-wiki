@@ -651,8 +651,8 @@ export function PageEditor({ userId }: Props) {
 
   // Keyboard shortcuts modal
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
-  const [lightboxAlt, setLightboxAlt] = useState<string>("");
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[] | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [editorMode, setEditorMode] = useState<"wysiwyg" | "markdown" | "split">("wysiwyg");
   const [markdownSource, setMarkdownSource] = useState("");
@@ -778,8 +778,29 @@ export function PageEditor({ userId }: Props) {
       handleClick: (_view, _pos, event) => {
         const target = event.target as HTMLElement;
         if (target.tagName === "IMG" && target.getAttribute("src")) {
-          setLightboxSrc(target.getAttribute("src")!);
-          setLightboxAlt(target.getAttribute("alt") || "");
+          const clickedSrc = target.getAttribute("src")!;
+          const clickedAlt = target.getAttribute("alt") || "";
+          try {
+            const jsonContent = editor?.getJSON();
+            const images: { src: string; alt: string }[] = [];
+            const walkNodes = (node: any) => {
+              if (node.attrs?.src && typeof node.attrs.src === "string") {
+                images.push({ src: node.attrs.src, alt: node.attrs.alt || "" });
+              }
+              if (node.content) {
+                node.content.forEach(walkNodes);
+              }
+            };
+            if (jsonContent?.type === "doc" && jsonContent.content) {
+              jsonContent.content.forEach(walkNodes);
+            }
+            const idx = images.findIndex(i => i.src === clickedSrc);
+            setLightboxImages(images);
+            setLightboxIndex(idx >= 0 ? idx : 0);
+          } catch {
+            setLightboxImages([{ src: clickedSrc, alt: clickedAlt }]);
+            setLightboxIndex(0);
+          }
           return true;
         }
         return false;
