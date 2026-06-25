@@ -349,6 +349,49 @@ function markdownToProseMirror(md: string): any {
   return doc;
 }
 
+// ─── Emoji data ───────────────────────────────────────────────────────────────
+
+const EMOJI_LIST = [
+  ["😀", "grinning"], ["😄", "smile"], ["😁", "grin"], ["😅", "sweat_smile"], ["😂", "joy"],
+  ["🤣", "rofl"], ["😊", "blush"], ["😇", "innocent"], ["🙂", "slightly_smiling"], ["😉", "wink"],
+  ["😌", "relieved"], ["😍", "heart_eyes"], ["🥰", "smiling_hearts"], ["😘", "kissing_heart"],
+  ["😗", "kissing"], ["😋", "yum"], ["😛", "stuck_out_tongue"], ["😜", "wink_tongue"],
+  ["🤗", "hugs"], ["🤔", "thinking"], ["🤨", "raised_eyebrow"], ["😐", "neutral"],
+  ["😑", "expressionless"], ["😶", "no_mouth"], ["😏", "smirk"], ["😒", "unamused"],
+  ["🙄", "roll_eyes"], ["😬", "grimacing"], ["😮", "open_mouth"], ["😯", "hushed"],
+  ["😲", "astonished"], ["😳", "flushed"], ["🥺", "pleading"], ["😢", "cry"],
+  ["😭", "sob"], ["😤", "triumph"], ["😠", "angry"], ["😡", "rage"],
+  ["🤬", "cursing"], ["😈", "smiling_imp"], ["👿", "imp"], ["💀", "skull"],
+  ["☠️", "skull_crossbones"], ["💩", "poop"], ["🤡", "clown"], ["👹", "ogre"],
+  ["👺", "goblin"], ["👻", "ghost"], ["👽", "alien"], ["🤖", "robot"],
+  ["👍", "thumbsup"], ["👎", "thumbsdown"], ["👊", "fist"], ["✊", "raised_fist"],
+  ["🤛", "left_fist"], ["🤜", "right_fist"], ["👋", "wave"], ["✋", "raised_hand"],
+  ["🖐️", "splayed_hand"], ["✌️", "v"], ["🤞", "crossed_fingers"], ["🫰", "heart_hands"],
+  ["🤟", "love_you"], ["🤘", "metal"], ["🤙", "call_me"], ["👌", "ok_hand"],
+  ["✅", "check_mark"], ["❌", "cross_mark"], ["❤️", "heart"], ["🧡", "orange_heart"],
+  ["💛", "yellow_heart"], ["💚", "green_heart"], ["💙", "blue_heart"], ["💜", "purple_heart"],
+  ["🖤", "black_heart"], ["🤍", "white_heart"], ["💔", "broken_heart"], ["❤️‍🔥", "heart_fire"],
+  ["💖", "sparkling_heart"], ["💗", "growing_heart"], ["💓", "heartbeat"], ["💕", "two_hearts"],
+  ["💞", "revolving_hearts"], ["💌", "love_letter"], ["💋", "kiss"], ["💯", "100"],
+  ["🔥", "fire"], ["💪", "muscle"], ["🦄", "unicorn"], ["🤩", "star_struck"],
+  ["🎉", "tada"], ["🎊", "confetti"], ["🎈", "balloon"], ["🎁", "gift"],
+  ["🏆", "trophy"], ["⭐", "star"], ["🌟", "glowing_star"], ["✨", "sparkles"],
+  ["💡", "bulb"], ["📝", "memo"], ["📌", "pushpin"], ["🔗", "link"],
+  ["🚀", "rocket"], ["🛠️", "tools"], ["⚙️", "gear"], ["🔧", "wrench"],
+  ["📊", "bar_chart"], ["📈", "chart_up"], ["📉", "chart_down"], ["🗂️", "card_index"],
+  ["📁", "folder"], ["📂", "open_folder"], ["🗃️", "card_box"], ["📚", "books"],
+  ["📖", "book"], ["🔒", "lock"], ["🔓", "unlock"], ["🔑", "key"],
+  ["🛡️", "shield"], ["🚨", "alarm"], ["⚠️", "warning"], ["🚫", "prohibited"],
+  ["♻️", "recycle"], ["📣", "megaphone"], ["💬", "speech_bubble"], ["🗨️", "left_speech"],
+  ["👀", "eyes"], ["🧠", "brain"], ["💻", "laptop"], ["📱", "mobile"],
+  ["☕", "coffee"], ["🍕", "pizza"], ["🍔", "burger"], ["🍺", "beer"],
+  ["🎵", "music"], ["🎶", "musical_notes"], ["🎬", "clapper"], ["🎨", "palette"],
+  ["🏗️", "construction"], ["🧪", "test_tube"], ["🔬", "microscope"], ["📡", "satellite"],
+  ["🌐", "globe"], ["☁️", "cloud"], ["🌍", "earth"], ["🌈", "rainbow"],
+  ["⭐", "star2"], ["🌟", "star3"], ["🌙", "moon"], ["☀️", "sun"],
+  ["❄️", "snowflake"], ["🔥", "fire2"], ["💧", "droplet"], ["🌊", "wave2"],
+];
+
 // ─── Selection Floating Toolbar ──────────────────────────────────────────────
 
 function SelectionToolbar({
@@ -593,6 +636,12 @@ export function PageEditor({ userId }: Props) {
   const [slashQuery, setSlashQuery] = useState("");
   const [slashIndex, setSlashIndex] = useState(0);
   const [slashPos, setSlashPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  // Emoji picker state
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [emojiQuery, setEmojiQuery] = useState("");
+  const [emojiIndex, setEmojiIndex] = useState(0);
+  const [emojiPos, setEmojiPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   // Tags state
   const [tags, setTags] = useState<{ id: string; name: string; value: string }[]>([]);

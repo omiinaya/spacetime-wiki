@@ -8,7 +8,7 @@ import {
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
 } from "lucide-react";
-import { api, Page, Collection, ApiKey, OidcProvider } from "./lib/api";
+import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
 import { PageEditor } from "./pages/PageEditor";
 import { PageView } from "./pages/PageView";
@@ -73,7 +73,20 @@ function AppLayout() {
   const [oidcClientSecret, setOidcClientSecret] = useState("");
   const [oidcScopes, setOidcScopes] = useState("openid email profile");
 
-  // Share state
+  // SAML provider state
+  const [samlProviders, setSamlProviders] = useState<SamlProvider[]>([]);
+  const [samlDialogOpen, setSamlDialogOpen] = useState(false);
+  const [editingSaml, setEditingSaml] = useState<SamlProvider | null>(null);
+  const [samlName, setSamlName] = useState("");
+  const [samlSlug, setSamlSlug] = useState("");
+  const [samlEntityId, setSamlEntityId] = useState("");
+  const [samlSsoUrl, setSamlSsoUrl] = useState("");
+  const [samlCert, setSamlCert] = useState("");
+  const [samlNameIdFmt, setSamlNameIdFmt] = useState("urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
+  const [samlAttrMapping, setSamlAttrMapping] = useState('{"email":"email","name":"name"}');
+  const [samlAutoRegister, setSamlAutoRegister] = useState(true);
+
+  // OAuth state (login page)
   const [shareDialog, setShareDialog] = useState<{ pageId: string; pageTitle: string } | null>(null);
   const [sharePassword, setSharePassword] = useState("");
   const [shareDays, setShareDays] = useState(0);
@@ -266,6 +279,8 @@ function AppLayout() {
       setGroups(grps);
       const oidc = await api.oidc.list();
       setOidcProviders(oidc);
+      const saml = await api.saml.list();
+      setSamlProviders(saml);
     } catch (e) { console.error(e); }
     setAdminOpen(true);
     setAdminTab("users");
@@ -965,6 +980,66 @@ function AppLayout() {
                   </p>
                 </div>
               </div>
+              {/* ── SAML Providers ── */}
+              <div className="mt-6 pt-4 border-t border-border">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SAML 2.0 Providers</p>
+                  <button onClick={() => {
+                    setEditingSaml(null);
+                    setSamlName(""); setSamlSlug(""); setSamlEntityId(""); setSamlSsoUrl("");
+                    setSamlCert(""); setSamlNameIdFmt("urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
+                    setSamlAttrMapping('{"email":"email","name":"name"}'); setSamlAutoRegister(true);
+                    setSamlDialogOpen(true);
+                  }} className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                    <Plus className="h-3 w-3" /> Add Provider
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {samlProviders.map(p => (
+                    <div key={p.id} className="flex items-center gap-3 px-3 py-2 rounded-md border border-border hover:bg-muted/30 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate flex items-center gap-2">
+                          {p.name}
+                          {p.is_active ? (
+                            <span className="text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">Active</span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Disabled</span>
+                          )}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/60 truncate">Entity: {p.entity_id}</p>
+                      </div>
+                      <button onClick={() => {
+                        setEditingSaml(p);
+                        setSamlName(p.name); setSamlSlug(p.slug); setSamlEntityId(p.entity_id);
+                        setSamlSsoUrl(p.sso_url); setSamlCert(""); setSamlNameIdFmt(p.name_id_format);
+                        setSamlAttrMapping(p.attribute_mapping); setSamlAutoRegister(p.auto_register);
+                        setSamlDialogOpen(true);
+                      }} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button onClick={async () => {
+                        if (!confirm(`Delete SAML provider "${p.name}"?`)) return;
+                        await api.saml.delete(p.id);
+                        setSamlProviders(prev => prev.filter(x => x.id !== p.id));
+                      }} className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {samlProviders.length === 0 && (
+                    <div className="py-4 text-center text-xs text-muted-foreground">
+                      No SAML providers configured. Add one to enable SAML SSO login.
+                    </div>
+                  )}
+                </div>
+                <div className="pt-4 mt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold mb-2 text-muted-foreground">How it works</h4>
+                  <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                    Configure any SAML 2.0 identity provider (Keycloak, Okta, Azure AD, ADFS, etc.).
+                    The ACS (Assertion Consumer Service) URL is: <code className="bg-muted px-1 rounded">{window.location.origin}/auth/saml/callback</code>
+                  </p>
+                </div>
+              </div>
             )}
             {adminTab === "export" && <BulkExport />}
           </div>
@@ -1222,6 +1297,77 @@ function AppLayout() {
         </div>
       )}
 
+      {/* SAML Provider dialog */}
+      {samlDialogOpen && (
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSamlDialogOpen(false)}>
+          <div className="dialog-container w-full max-w-md p-5 rounded-xl border border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold mb-4">{editingSaml ? "Edit SAML Provider" : "Add SAML Provider"}</h3>
+            <div className="space-y-3">
+              <input type="text" value={samlName} onChange={(e) => setSamlName(e.target.value)}
+                placeholder="Provider name (e.g. Keycloak, Okta)" autoFocus
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <input type="text" value={samlSlug} onChange={(e) => setSamlSlug(e.target.value)}
+                placeholder="Slug (e.g. keycloak — appears in URL)"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <input type="text" value={samlEntityId} onChange={(e) => setSamlEntityId(e.target.value)}
+                placeholder="IdP Entity ID (issuer URI)"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <input type="text" value={samlSsoUrl} onChange={(e) => setSamlSsoUrl(e.target.value)}
+                placeholder="IdP SSO URL (e.g. https://idp.example.com/saml/sso)"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <textarea value={samlCert} onChange={(e) => setSamlCert(e.target.value)}
+                placeholder="IdP X.509 certificate (optional, for signature verification)"
+                rows={3}
+                className="w-full px-3 py-2 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none font-mono text-[11px]" />
+              <input type="text" value={samlNameIdFmt} onChange={(e) => setSamlNameIdFmt(e.target.value)}
+                placeholder="Name ID format (default: emailAddress)"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <input type="text" value={samlAttrMapping} onChange={(e) => setSamlAttrMapping(e.target.value)}
+                placeholder='Attribute mapping JSON, e.g. {"email":"email","name":"name"}'
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={samlAutoRegister} onChange={(e) => setSamlAutoRegister(e.target.checked)} className="rounded border-border" />
+                Auto-register new users
+              </label>
+              <div className="flex gap-2 justify-end pt-2">
+                <button onClick={() => setSamlDialogOpen(false)} className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button onClick={async () => {
+                  if (!samlName.trim() || !samlSlug.trim() || !samlEntityId.trim() || !samlSsoUrl.trim()) {
+                    alert("Name, slug, entity ID, and SSO URL are required.");
+                    return;
+                  }
+                  try {
+                    if (editingSaml) {
+                      await api.saml.update(editingSaml.id, samlName, samlSlug, samlEntityId, samlSsoUrl, samlCert, samlNameIdFmt, samlAttrMapping, samlAutoRegister, editingSaml.is_active);
+                      setSamlProviders(prev => prev.map(p => p.id === editingSaml.id ? {
+                        ...p, name: samlName, slug: samlSlug, entity_id: samlEntityId,
+                        sso_url: samlSsoUrl, name_id_format: samlNameIdFmt,
+                        attribute_mapping: samlAttrMapping, auto_register: samlAutoRegister,
+                        updated_at: Date.now(),
+                      } : p));
+                    } else {
+                      const id = await api.saml.create(samlName, samlSlug, samlEntityId, samlSsoUrl, samlCert, samlNameIdFmt, samlAttrMapping, samlAutoRegister, userId || "anon");
+                      setSamlProviders(prev => [...prev, {
+                        id, name: samlName, slug: samlSlug, entity_id: samlEntityId,
+                        sso_url: samlSsoUrl, certificate: samlCert, name_id_format: samlNameIdFmt,
+                        attribute_mapping: samlAttrMapping, auto_register: samlAutoRegister,
+                        is_active: true, created_by: userId || "anon", created_at: Date.now(), updated_at: Date.now(),
+                      }]);
+                    }
+                    setSamlDialogOpen(false);
+                  } catch (e: any) { alert(String(e)); }
+                }} disabled={!samlName.trim() || !samlSlug.trim() || !samlEntityId.trim() || !samlSsoUrl.trim()}
+                  className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                  {editingSaml ? "Save" : "Add"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <div className="md:hidden flex items-center gap-2 px-4 h-14 border-b border-border">
@@ -1240,6 +1386,7 @@ function AppLayout() {
           <Route path="/p/:slug" element={<SlugView />} />
           <Route path="/oauth/google/callback" element={<GoogleCallback />} />
           <Route path="/oauth/oidc/callback" element={<OidcCallback />} />
+          <Route path="/auth/saml/callback" element={<SamlCallback />} />
           <Route path="/login" element={<LoginView />} />
         </Routes>
       </main>
@@ -1580,6 +1727,157 @@ function OidcCallback() {
   return <div className="flex items-center justify-center h-full"><div className="text-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" /><p className="text-xs text-muted-foreground">{status}</p></div></div>;
 }
 
+// ─── SAML 2.0 Callback ─────────────────────────────────────────────────────────
+
+function SamlCallback() {
+  const navigate = useNavigate();
+  const [status, setStatus] = useState("Completing SAML sign-in...");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // SAML IdP POSTs a SAMLResponse to this page.
+        // The response is in the URL search params (GET after redirect)
+        // or in a form POST body. Most IdPs use POST binding.
+        const params = new URLSearchParams(window.location.search);
+        const samlResponse = params.get("SAMLResponse");
+        const relayState = params.get("RelayState");
+
+        if (!samlResponse) {
+          // Try to get from POST body — if this page was loaded via POST,
+          // we need to extract the form data. For SPA routing, we look at the hash or stored data.
+          setStatus("No SAMLResponse received. Ensure your IdP POSTs to this URL.");
+          return;
+        }
+
+        setStatus("Parsing SAML response...");
+
+        // Base64 decode the SAMLResponse
+        let decodedXml: string;
+        try {
+          const binaryStr = atob(samlResponse);
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let i = 0; i < binaryStr.length; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+          }
+          // Try to inflate (decompress) if deflated
+          const pako = await import("pako");
+          try {
+            const inflated = pako.inflate(bytes, { to: "string" });
+            decodedXml = inflated as string;
+          } catch {
+            // Not compressed, raw XML
+            decodedXml = new TextDecoder().decode(bytes);
+          }
+        } catch {
+          setStatus("Failed to decode SAMLResponse.");
+          return;
+        }
+
+        // Parse SAML assertion XML to extract attributes
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(decodedXml, "text/xml");
+
+        // Get the provider config from STDB using relayState as provider ID
+        let providerId = relayState || "";
+        if (!providerId) {
+          // Try to find the provider by entity ID in the response
+          const issuerEl = xmlDoc.querySelector("Issuer");
+          if (issuerEl?.textContent) {
+            const providers = await api.saml.list();
+            const matched = providers.find(p => p.entity_id === issuerEl.textContent);
+            if (matched) providerId = matched.id;
+          }
+        }
+
+        if (!providerId) {
+          setStatus("Could not determine SAML provider. Make sure RelayState is configured.");
+          return;
+        }
+
+        // Extract attributes from SAML assertion
+        const attributeStatement = xmlDoc.querySelector("AttributeStatement");
+        const attributes: Record<string, string> = {};
+
+        // NameID from Subject
+        const nameIdEl = xmlDoc.querySelector("Subject NameID");
+        if (nameIdEl?.textContent) {
+          attributes["nameId"] = nameIdEl.textContent;
+        }
+        // Also check for NameID in SubjectConfirmation
+        const subjectConfNameId = xmlDoc.querySelector("SubjectConfirmationData NameID");
+        if (subjectConfNameId?.textContent && !attributes["nameId"]) {
+          attributes["nameId"] = subjectConfNameId.textContent;
+        }
+
+        // SAML attributes
+        if (attributeStatement) {
+          const attrs = attributeStatement.querySelectorAll("Attribute");
+          attrs.forEach(attr => {
+            const name = attr.getAttribute("Name") || attr.getAttribute("FriendlyName") || "";
+            const value = attr.querySelector("AttributeValue")?.textContent || "";
+            if (name && value) {
+              attributes[name] = value;
+            }
+          });
+        }
+
+        // Also try to get from the main Attribute elements at root level
+        if (attributeStatement) {
+          const attrEls = attributeStatement.children;
+          for (let i = 0; i < attrEls.length; i++) {
+            const el = attrEls[i];
+            const name = el.getAttribute("Name") || el.getAttribute("FriendlyName") || "";
+            const valEl = el.querySelector("AttributeValue");
+            if (name && valEl?.textContent) {
+              attributes[name] = valEl.textContent;
+            }
+          }
+        }
+
+        setStatus("Signing in...");
+
+        // Apply attribute mapping
+        const provider = await api.saml.get(providerId);
+        if (!provider) {
+          setStatus("SAML provider not found in database.");
+          return;
+        }
+
+        let mapping: Record<string, string> = {};
+        try { mapping = JSON.parse(provider.attribute_mapping); } catch { mapping = { email: "email", name: "name" }; }
+
+        const email = attributes[mapping.email] || attributes["email"] || attributes["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] || attributes["nameId"] || "";
+        const displayName = attributes[mapping.name] || attributes["name"] || attributes["displayName"] || attributes["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] || email?.split("@")[0] || "User";
+
+        if (!email) {
+          setStatus("Could not determine email from SAML response.");
+          return;
+        }
+
+        // Try to log in with existing account
+        const existing = await api.users.getByEmail(email);
+        if (existing) {
+          localStorage.setItem("sw_user_id", existing.id);
+        } else if (provider.auto_register) {
+          const id = "user_" + Math.random().toString(36).slice(2, 8);
+          await callReducerLocal("register_user", [id, displayName, email, crypto.randomUUID(), "member"]);
+          localStorage.setItem("sw_user_id", id);
+        } else {
+          setStatus(`No account found for ${email}. Auto-registration is disabled.`);
+          return;
+        }
+
+        navigate("/", { replace: true });
+      } catch (err: any) {
+        setStatus(`Error: ${err.message || err}`);
+      }
+    })();
+  }, [navigate]);
+
+  return <div className="flex items-center justify-center h-full"><div className="text-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" /><p className="text-xs text-muted-foreground">{status}</p></div></div>;
+}
+
 async function callReducerLocal(reducer: string, args: unknown[]) {
   const DB_ID = "c20000000000000000000000000000000000000000000000000000000000000000";
   await fetch(`http://127.0.0.1:3001/v1/database/${DB_ID}/call/${reducer}`, {
@@ -1612,10 +1910,12 @@ function LoginView() {
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState("");
   const [oidcProviders, setOidcProviders] = useState<OidcProvider[]>([]);
+  const [samlProviders, setSamlProviders] = useState<SamlProvider[]>([]);
 
-  // Load active OIDC providers
+  // Load active OIDC and SAML providers
   useEffect(() => {
     api.oidc.listActive().then(setOidcProviders).catch(() => {});
+    api.saml.listActive().then(setSamlProviders).catch(() => {});
   }, []);
 
   // Generic OIDC sign-in
@@ -1675,6 +1975,32 @@ function LoginView() {
     });
   };
 
+  // Generic SAML sign-in (HTTP Redirect binding)
+  const handleSamlSignIn = (provider: SamlProvider) => {
+    // Generate SAML AuthnRequest
+    const requestId = "_" + crypto.randomUUID().replace(/-/g, "");
+    const issueInstant = new Date().toISOString();
+    const acsUrl = `${window.location.origin}/auth/saml/callback`;
+    const authnRequest = `<?xml version="1.0" encoding="UTF-8"?>
+<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+  xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+  ID="${requestId}" Version="2.0" IssueInstant="${issueInstant}"
+  Destination="${provider.sso_url}"
+  AssertionConsumerServiceURL="${acsUrl}">
+  <saml:Issuer>spacetime-wiki</saml:Issuer>
+  <samlp:NameIDPolicy Format="${provider.name_id_format}" AllowCreate="${provider.auto_register}"/>
+</samlp:AuthnRequest>`;
+
+    // Deflate + Base64 encode (SAML HTTP Redirect binding)
+    // Use pako for deflate compression
+    import("pako").then(pako => {
+      const deflated = pako.deflate(new TextEncoder().encode(authnRequest));
+      const base64 = btoa(String.fromCharCode(...deflated));
+      const relayState = provider.id;
+      window.location.href = `${provider.sso_url}?SAMLRequest=${encodeURIComponent(base64)}&RelayState=${relayState}`;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -1728,6 +2054,14 @@ function LoginView() {
               className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
               <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
               Sign in with {p.name}
+            </button>
+          ))}
+          {/* SAML SSO buttons */}
+          {samlProviders.map(p => (
+            <button key={p.id} onClick={() => handleSamlSignIn(p)}
+              className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 12h8"/><path d="M8 8h8"/><path d="M8 16h5"/></svg>
+              Sign in with {p.name} (SAML)
             </button>
           ))}
           <button onClick={handleGoogleSignIn} className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">

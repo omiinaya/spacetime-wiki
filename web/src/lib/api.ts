@@ -41,6 +41,7 @@ function mapPagePermission(row: unknown[]): PagePermission { return { id: String
 function mapWebhook(row: unknown[]): Webhook { return { id: String(row[0]??""), name: String(row[1]??""), url: String(row[2]??""), events: String(row[3]??""), is_active: Boolean(row[4]), secret: String(row[5]??""), created_by: String(row[6]??""), created_at: Number(row[7])||0, updated_at: Number(row[8])||0 }; }
 function mapWebhookEvent(row: unknown[]): WebhookEvent { return { id: String(row[0]??""), webhook_id: String(row[1]??""), event_type: String(row[2]??""), page_id: String(row[3]??""), payload: String(row[4]??""), status: String(row[5]??""), response_code: Number(row[6])||0, response_body: String(row[7]??""), created_at: Number(row[8])||0, sent_at: Number(row[9])||0 }; }
 function mapOidcProvider(row: unknown[]): OidcProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), issuer_url: String(row[3]??""), client_id: String(row[4]??""), client_secret: String(row[5]??""), scopes: String(row[6]??""), is_active: Boolean(row[7]), created_by: String(row[8]??""), created_at: Number(row[9])||0, updated_at: Number(row[10])||0 }; }
+function mapSamlProvider(row: unknown[]): SamlProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), entity_id: String(row[3]??""), sso_url: String(row[4]??""), certificate: String(row[5]??""), name_id_format: String(row[6]??""), attribute_mapping: String(row[7]??""), auto_register: Boolean(row[8]), is_active: Boolean(row[9]), created_by: String(row[10]??""), created_at: Number(row[11])||0, updated_at: Number(row[12])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -166,6 +167,14 @@ export interface WebhookEvent {
 export interface OidcProvider {
   id: string; name: string; slug: string; issuer_url: string;
   client_id: string; client_secret: string; scopes: string;
+  is_active: boolean; created_by: string;
+  created_at: number; updated_at: number;
+}
+
+export interface SamlProvider {
+  id: string; name: string; slug: string; entity_id: string;
+  sso_url: string; certificate: string; name_id_format: string;
+  attribute_mapping: string; auto_register: boolean;
   is_active: boolean; created_by: string;
   created_at: number; updated_at: number;
 }
@@ -527,5 +536,40 @@ export const api = {
       ]),
     delete: (id: string) =>
       callReducer("delete_oidc_provider", [id]),
+  },
+
+  saml: {
+    list: () =>
+      sqlQuery("SELECT * FROM saml_provider")
+        .then((rows) => (rows as unknown[][]).map(mapSamlProvider)),
+    get: (id: string) =>
+      sqlQuery(`SELECT * FROM saml_provider WHERE id = '${id}'`).then(
+        (rows) => ((rows as unknown[][])[0] ? mapSamlProvider((rows as unknown[][])[0]) : null),
+      ),
+    listActive: () =>
+      sqlQuery("SELECT * FROM saml_provider WHERE is_active = true")
+        .then((rows) => (rows as unknown[][]).map(mapSamlProvider)),
+    create: (
+      name: string, slug: string, entityId: string, ssoUrl: string,
+      certificate: string, nameIdFormat: string, attributeMapping: string,
+      autoRegister: boolean, createdBy: string,
+    ) => {
+      const id = "saml_" + Math.random().toString(36).slice(2, 10);
+      return callReducer("add_saml_provider", [
+        id, name, slug, entityId, ssoUrl, certificate, nameIdFormat,
+        attributeMapping, autoRegister, createdBy,
+      ]).then(() => id);
+    },
+    update: (
+      id: string, name: string, slug: string, entityId: string, ssoUrl: string,
+      certificate: string, nameIdFormat: string, attributeMapping: string,
+      autoRegister: boolean, isActive: boolean,
+    ) =>
+      callReducer("update_saml_provider", [
+        id, name, slug, entityId, ssoUrl, certificate, nameIdFormat,
+        attributeMapping, autoRegister, isActive,
+      ]),
+    delete: (id: string) =>
+      callReducer("delete_saml_provider", [id]),
   },
 };
