@@ -21,6 +21,7 @@ import { DragHandle } from "../extensions/DragHandle";
 import { Mermaid } from "../extensions/Mermaid";
 import { MathInline, MathBlock } from "../extensions/Math";
 import { VideoEmbed, detectProvider } from "../extensions/VideoEmbed";
+import { Drawio } from "../extensions/Drawio";
 import { ImageLightbox } from "../components/ImageLightbox";
 import { common, createLowlight } from "lowlight";
 import {
@@ -82,6 +83,7 @@ const SLASH_COMMANDS = [
   { title: "Diagram", description: "Insert a Mermaid diagram", icon: "📊", command: (e) => e?.chain().focus().setMermaid({ src: "graph TD\\n  A[Start] --> B[Process]\\n  B --> C[End]" }).run() },
   { title: "Math Block", description: "Insert LaTeX math (KaTeX)", icon: "∑", command: (e) => e?.chain().focus().setMathBlock({ tex: "E = mc^2" }).run() },
   { title: "Video", description: "Insert a video embed (YouTube, Vimeo, Loom)", icon: "🎬", command: (e) => { const url = prompt("Video URL:"); if (url) e?.chain().focus().setVideoEmbed({ src: url }).run(); } },
+  { title: "Draw.io", description: "Insert a draw.io diagram", icon: "📐", command: (e) => e?.chain().focus().setDrawio({ src: "" }).run() },
 ];
 
 // ─── Selection Floating Toolbar ──────────────────────────────────────────────
@@ -398,6 +400,7 @@ export function PageEditor({ userId }: Props) {
       MathInline,
       MathBlock,
       VideoEmbed,
+      Drawio,
       Mention.configure({ HTMLAttributes: { class: 'mention' } }),
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,

@@ -17,6 +17,7 @@ import { Details } from "../extensions/Details";
 import { Callout } from "../extensions/Callout";
 import { MathInline, MathBlock } from "../extensions/Math";
 import { VideoEmbed } from "../extensions/VideoEmbed";
+import { Drawio } from "../extensions/Drawio";
 import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
@@ -335,6 +336,7 @@ export function PageView({ pageId, userId }: Props) {
       MathInline,
       MathBlock,
       VideoEmbed,
+      Drawio,
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
