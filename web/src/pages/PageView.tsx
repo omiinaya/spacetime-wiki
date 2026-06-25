@@ -33,6 +33,7 @@ import { PagePermissions } from "../components/PagePermissions";
 import { RevisionDiff } from "../components/RevisionDiff";
 import { ImageLightbox } from "../components/ImageLightbox";
 import { PageTags } from "../components/PageTags";
+import { MentionInput } from "../components/MentionInput";
 
 const lowlight = createLowlight(common);
 
@@ -986,13 +987,16 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
 
           {userId && (
             <div className="flex gap-2">
-              <input
-                type="text" value={newComment} onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..." onKeyDown={(e) => { if (e.key === "Enter") handleAddComment(); }}
-                className="flex-1 h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+              <MentionInput
+                value={newComment}
+                onChange={(v) => setNewComment(v)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
+                placeholder="Add a comment... (@ to mention users)"
+                className="flex-1 min-h-[36px] px-3 py-2 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                minRows={1}
               />
               <button onClick={handleAddComment} disabled={!newComment.trim()}
-                className="h-9 px-3 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
+                className="h-9 px-3 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 self-start">
                 <Send className="h-3.5 w-3.5" />
               </button>
             </div>
