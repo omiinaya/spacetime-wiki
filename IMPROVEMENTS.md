@@ -20,12 +20,6 @@ Files: web/src/App.tsx, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
 Difficulty: Medium
 Est: 2h
 
-### P2 — Page color accent
-Set a per-page color accent (shown in page header, sidebar, and as a subtle border). Extends existing Page.color field on the STDB table. Color picker in page toolbar.
-Files: web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
-Difficulty: Easy
-Est: 30min
-
 ### P3 — PlantUML diagrams
 PlantUML rendering alongside Mermaid for text-based diagramming. Server-side rendering via plantuml.com proxy or local renderer. Custom Tiptap node similar to Mermaid extension.
 Files: web/src/extensions/PlantUML.tsx, web/src/pages/PageEditor.tsx
@@ -41,6 +35,11 @@ Est: 1.5h
 ---
 
 ## Recently Completed
+
+### P2 — Page color accent
+**Done**: set_page_color reducer on the Page table (already had color field). Color picker palette in editor toolbar with 24 preset colors + clear option. Color accent bar at top of page view. Colored dot indicators in sidebar (collections, favorites, uncategorized). Stored per-page color on existing Page.color field.
+Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx, web/src/App.tsx
+Commit: 9a55462
 
 ### P3 — OIDC generic SSO support
 **Done**: OidcProvider STDB table + add/update/delete reducers. Admin panel SSO tab with OIDC provider CRUD. Login view shows configured OIDC providers as sign-in buttons. Generic OIDC callback handler performs PKCE flow, token exchange, userinfo retrieval, and auto-registration.
@@ -80,8 +79,3 @@ Files: web/src/components/SearchFilters.tsx, web/src/App.tsx, Commit: aea33b4
 **Done**: RevisionDiff component with line-by-line diff using jsdiff. Shows added/removed lines with green/red highlighting, title change tracking, addition/removal counts.
 Files: web/src/components/RevisionDiff.tsx, web/src/pages/PageView.tsx
 Commit: dc798c0
-
-### P2 — Page-level permissions (override collection defaults)
-**Done**: PagePermission STDB table + CRUD reducers. Frontend PagePermissions component with user/group permission management.
-Files: server/spacetimedb/src/lib.rs, web/src/components/PagePermissions.tsx, web/src/lib/api.ts, web/src/pages/PageView.tsx
-Commit: 32a593e
