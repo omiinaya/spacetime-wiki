@@ -8,7 +8,35 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-*(No pending items — all backlogged features are implemented.)*
+### P1 — Real-time STDB subscriptions for live page updates
+Replace periodic SQL polling with SpacetimeDB's built-in `db.subscribe()` mechanism for true real-time updates across browser tabs and users. Pages, collections, comments, and sidebar data update instantly when any user makes a change, without manual refresh.
+Files: web/src/lib/api.ts → add subscribe helpers, web/src/App.tsx → integrate subscriptions
+Difficulty: Medium
+Est: 3h
+
+### P2 — Batch page operations in sidebar
+Allow selecting multiple pages in the sidebar via checkbox or Cmd+click for bulk operations: move to collection, delete, archive, add tag. Currently each page must be handled individually.
+Files: web/src/App.tsx, web/src/pages/PageView.tsx
+Difficulty: Medium
+Est: 2h
+
+### P3 — Empty state / onboarding UI for new wikis
+Show a helpful getting-started welcome screen when the wiki has no pages. Include quick-action buttons (Create first page, Import from Markdown, Browse keyboard shortcuts) and a brief feature tour. Similar to Outline's empty state.
+Files: web/src/App.tsx
+Difficulty: Small
+Est: 1h
+
+### P3 — Page print stylesheet
+Add a print CSS stylesheet and a print button in the page header. Clean, readable printed output with proper page breaks, font sizing, and hidden UI chrome (sidebar, toolbar, comments).
+Files: web/src/index.css, web/src/pages/PageView.tsx
+Difficulty: Small
+Est: 1h
+
+### P3 — Page export as standalone HTML
+Add an "Export as HTML" action to the page context menu. Generates a self-contained HTML file with inline CSS that preserves the page content, formatting, and images. Useful for sharing and archiving.
+Files: web/src/App.tsx, web/src/pages/PageView.tsx
+Difficulty: Small
+Est: 1h
 
 ---
 
