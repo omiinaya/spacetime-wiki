@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — REST API for programmatic access (STDB-based HTTP API with API key auth)
-Build a proper REST API layer on top of STDB's HTTP interface that exposes page CRUD, search, collections, tags, and attachments via authenticated API endpoints using the existing `api_key` table infrastructure. Enables external integrations, MCP support, and programmatic wiki management. Uses API key auth (Bearer token) with scoped permissions.
-Files: server/spacetimedb/src/lib.rs (new reducers), web/src/components/, web/src/lib/api.ts
-Difficulty: Medium
-Est: 2h
-
 ### P1 — File attachments browser/media manager
 Enhance the existing attachment upload UI (paste/drag-drop/image upload) with a dedicated media browser dialog. Grid view of uploaded images/files with search, preview, filename display, size, and copy-link. Drag-drop zone for uploads. Replace the current inline list in PageView with a proper component.
 Files: web/src/components/ (new MediaManager component), web/src/pages/PageView.tsx
@@ -44,6 +38,7 @@ Est: 1.5h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-26 | P1 — REST API for programmatic access (STDB-based HTTP API with API key auth) | 0d0ab36 |
 | 2026-06-26 | P2 — Configurable trash retention period (AppSetting table, Admin panel tab, purge_expired_trash reducer) | <current> |
 | 2026-06-26 | P2 — Public sharing dialog UI (dedicated share dialog in PageView with password, TTL, copy URL, revoke) | 0dac9cd |
 | 2026-06-26 | P2 — Page duplication from sidebar context menu | fb2cc15 |
@@ -52,5 +47,4 @@ Est: 1.5h
 | 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
 | 2026-06-26 | P3 — @Mentions in comments (MentionInput component with user autocomplete) | 2b77429 |
 | 2026-06-26 | P1 — Full parent-page hierarchy breadcrumbs | faac220 |
-| 2026-06-26 | P3 — Auto-save drafts to localStorage with recovery banner | 8fdc2fd |
 | 2026-06-26 | P3 — Auto-anchor IDs on headings with deep-link support | a469213 |
