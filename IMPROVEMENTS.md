@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Draw.io/diagrams.net integration
-Embedded diagrams.net (draw.io) editor alongside Mermaid for visual diagram editing. Uses iframe-based draw.io embedding with export to SVG/PNG stored in doc content.
-Files: web/src/extensions/Drawio.tsx, web/src/pages/PageEditor.tsx
-Difficulty: Medium
-Est: 2-3h
-
 ### P2 — Responsive/mobile-friendly layout
 Ensure the UI works well on tablets and mobile devices. Collapsible sidebar auto-hides on small screens, editor adapts to viewport, touch-friendly controls.
 Files: web/src/App.tsx, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
@@ -41,6 +35,11 @@ Est: 1h
 ---
 
 ## Recently Completed
+
+### P3 — Draw.io/diagrams.net integration
+**Done**: Tiptap extension with iframe-based draw.io editor, SVG preview, postMessage communication, inline source editor, create/edit workflow. Slash command (/drawio). React node view with toolbar and diagram preview.
+Files: web/src/extensions/Drawio.tsx, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
+Commit: 73afd15
 
 ### P2 — Pinned documents
 **Done**: `is_pinned` field on Page STDB table + `set_page_pinned` reducer. Pin/unpin toggle button in page view toolbar (Pin icon, highlight state). Pinned pages sort first in sidebar with pushpin indicator. Favorites section also shows pin indicator.
