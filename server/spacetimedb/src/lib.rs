@@ -1387,6 +1387,119 @@ pub fn cleanup_webhook_events(ctx: &ReducerContext, older_than_ms: u64) -> Resul
     Ok(())
 }
 
+// ─── SAML 2.0 SSO ─────────────────────────────────────────────────────────────
+
+#[table(accessor = saml_provider, public)]
+#[derive(Debug, Clone)]
+pub struct SamlProvider {
+    #[primary_key]
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+    /// IdP entity ID (issuer)
+    pub entity_id: String,
+    /// IdP SSO URL (where to send AuthnRequest)
+    pub sso_url: String,
+    /// IdP X.509 certificate (for signature verification, optional)
+    pub certificate: String,
+    /// Name ID format, e.g. "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+    pub name_id_format: String,
+    /// JSON mapping of SAML attributes → user fields, e.g. {"email":"email","firstName":"name"}
+    pub attribute_mapping: String,
+    /// Whether to auto-register users who don't exist
+    pub auto_register: bool,
+    pub is_active: bool,
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[reducer]
+pub fn add_saml_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    entity_id: String,
+    sso_url: String,
+    certificate: String,
+    name_id_format: String,
+    attribute_mapping: String,
+    auto_register: bool,
+    created_by: String,
+) -> Result<(), String> {
+    if entity_id.is_empty() {
+        return Err("Entity ID is required".into());
+    }
+    if !sso_url.starts_with("http://") && !sso_url.starts_with("https://") {
+        return Err("SSO URL must start with http:// or https://".into());
+    }
+    let now = now_ms(ctx);
+    ctx.db.saml_provider().insert(SamlProvider {
+        id, name, slug, entity_id, sso_url,
+        certificate,
+        name_id_format: if name_id_format.is_empty() { "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".into() } else { name_id_format },
+        attribute_mapping: if attribute_mapping.is_empty() { r#"{"email":"email","name":"name"}"#.into() } else { attribute_mapping },
+        auto_register,
+        is_active: true,
+        created_by,
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_saml_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    entity_id: String,
+    sso_url: String,
+    certificate: String,
+    name_id_format: String,
+    attribute_mapping: String,
+    auto_register: bool,
+    is_active: bool,
+) -> Result<(), String> {
+    if entity_id.is_empty() {
+        return Err("Entity ID is required".into());
+    }
+    if !sso_url.starts_with("http://") && !sso_url.starts_with("https://") {
+        return Err("SSO URL must start with http:// or https://".into());
+    }
+    let found = ctx.db.saml_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("SAML provider not found".into());
+    }
+    let mut provider = found.unwrap();
+    provider.name = name;
+    provider.slug = slug;
+    provider.entity_id = entity_id;
+    provider.sso_url = sso_url;
+    if !certificate.is_empty() {
+        provider.certificate = certificate;
+    }
+    provider.name_id_format = if name_id_format.is_empty() { "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".into() } else { name_id_format };
+    provider.attribute_mapping = if attribute_mapping.is_empty() { r#"{"email":"email","name":"name"}"#.into() } else { attribute_mapping };
+    provider.auto_register = auto_register;
+    provider.is_active = is_active;
+    provider.updated_at = now_ms(ctx);
+    ctx.db.saml_provider().id().update(provider);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_saml_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    let found = ctx.db.saml_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("SAML provider not found".into());
+    }
+    ctx.db.saml_provider().id().delete(&id);
+    Ok(())
+}
+
 // ─── OIDC SSO ─────────────────────────────────────────────────────────────────
 
 #[table(accessor = oidc_provider, public)]
