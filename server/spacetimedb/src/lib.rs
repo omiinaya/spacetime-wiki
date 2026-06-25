@@ -116,6 +116,7 @@ pub struct Page {
     pub icon: String,
     pub color: String,
     pub full_width: bool,
+    pub is_pinned: bool,
     pub is_template: bool,
     pub template_id: String,
     pub sort_order: u32,
@@ -508,7 +509,7 @@ pub fn create_page(
         id: id.clone(), title: title.clone(), slug, content: content.clone(),
         text_content, collection_id, parent_page_id,
         status: "draft".into(), icon: String::new(), color: String::new(),
-        full_width: false, is_template: false, template_id: String::new(),
+        full_width: false, is_pinned: false, is_template: false, template_id: String::new(),
         sort_order, created_by: created_by.clone(), updated_by: created_by.clone(),
         created_at: now, updated_at: now, published_at: 0, deleted_at: 0,
     });
@@ -721,6 +722,19 @@ pub fn set_page_color(ctx: &ReducerContext, id: String, color: String) -> Result
     }
     let mut page = found.unwrap();
     page.color = color;
+    page.updated_at = now_ms(ctx);
+    ctx.db.page().id().update(page);
+    Ok(())
+}
+
+#[reducer]
+pub fn set_page_pinned(ctx: &ReducerContext, id: String, is_pinned: bool) -> Result<(), String> {
+    let found = ctx.db.page().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("Page not found".into());
+    }
+    let mut page = found.unwrap();
+    page.is_pinned = is_pinned;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
     Ok(())

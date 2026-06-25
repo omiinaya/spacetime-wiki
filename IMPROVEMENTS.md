@@ -32,12 +32,6 @@ Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
 Difficulty: Medium
 Est: 1.5h
 
-### P2 — Pinned documents
-Toggle pinning important pages to the top of their collection. Uses a boolean `is_pinned` field on the Page STDB table. Pin/unpin toggle in page toolbar header. Pinned pages render with a pushpin icon and sort above unpinned in the sidebar.
-Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx, web/src/App.tsx
-Difficulty: Easy
-Est: 30min
-
 ### P3 — Comment reactions (emoji)
 Allow emoji reactions on comments (👍❤️🎉🚀👀). Extends Comment model with a `reactions` JSON string or separate `comment_reaction` STDB table. Click-to-react in the comment thread view.
 Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx
@@ -47,6 +41,11 @@ Est: 1h
 ---
 
 ## Recently Completed
+
+### P2 — Pinned documents
+**Done**: `is_pinned` field on Page STDB table + `set_page_pinned` reducer. Pin/unpin toggle button in page view toolbar (Pin icon, highlight state). Pinned pages sort first in sidebar with pushpin indicator. Favorites section also shows pin indicator.
+Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx, web/src/App.tsx
+Commit: (pending push)
 
 ### P2 — Page color accent
 **Done**: set_page_color reducer on the Page table (already had color field). Color picker palette in editor toolbar with 24 preset colors + clear option. Color accent bar at top of page view. Colored dot indicators in sidebar (collections, favorites, uncategorized). Stored per-page color on existing Page.color field.
@@ -75,19 +74,6 @@ Files: web/src/extensions/Math.tsx, Commit: bf6ff5c
 **Done**: Mermaid Tiptap extension with custom node view. Inline source editor, dark theme support, slash command (/mermaid). Renders diagrams as SVG via Mermaid library.
 Files: web/src/extensions/Mermaid.tsx, Commit: 4f4c899
 
-### P3 — Full-width page toggle
-**Done**: Toggle button in page view to switch between constrained and full-width layout. Uses Page.full_width field. Stored per-page preference.
-Files: (in-page), Commit: 1eb05b7
-
-### P3 — Image lightbox viewer
-**Done**: Click-to-expand image viewer with zoom, pan, and keyboard navigation (arrow keys, Esc to close). Used in PageView for clicking embedded images.
-Files: web/src/components/ImageLightbox.tsx, Commit: 6a359a2
-
 ### P2 — Search filters (collection, author, date range)
 **Done**: SearchFilters component with dropdowns for collection, author, and date range. Integrated into sidebar search. Clientside filtering in AppLayout.
 Files: web/src/components/SearchFilters.tsx, web/src/App.tsx, Commit: aea33b4
-
-### P2 — Revisions diff view (visual diff between versions)
-**Done**: RevisionDiff component with line-by-line diff using jsdiff. Shows added/removed lines with green/red highlighting, title change tracking, addition/removal counts.
-Files: web/src/components/RevisionDiff.tsx, web/src/pages/PageView.tsx
-Commit: dc798c0
