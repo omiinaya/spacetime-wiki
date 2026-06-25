@@ -29,6 +29,8 @@ function AppLayout() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFilters, setSearchFilters] = useState<SearchFilterState>(EMPTY_FILTERS);
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
+  const [pageLimits, setPageLimits] = useState<Record<string, number>>({});
+  const PAGE_LIMIT = 50;
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -605,7 +607,7 @@ function AppLayout() {
                       </button>
                     </div>
                     {expanded &&
-                      colPages.map((page) => (
+                      colPages.slice(0, pageLimits[col.id] || PAGE_LIMIT).map((page) => (
                         <button
                           key={page.id}
                           onClick={() => navigate(`/page/${page.id}`)}
@@ -632,6 +634,15 @@ function AppLayout() {
                           )}
                         </button>
                       ))}
+                    {expanded && colPages.length > (pageLimits[col.id] || PAGE_LIMIT) && (
+                      <button
+                        onClick={() => setPageLimits(prev => ({ ...prev, [col.id]: (prev[col.id] || PAGE_LIMIT) + PAGE_LIMIT }))}
+                        className="w-full flex items-center gap-2 pl-8 pr-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-md transition-colors text-left"
+                      >
+                        <ChevronDown className="h-3 w-3 shrink-0" />
+                        Show {colPages.length - (pageLimits[col.id] || PAGE_LIMIT)} more
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -648,7 +659,7 @@ function AppLayout() {
                     <span className="text-[10px] text-muted-foreground/50 ml-auto">{pagesByCollection["uncategorized"].length}</span>
                   </button>
                   {expandedCollections.has("uncategorized") &&
-                    pagesByCollection["uncategorized"].map((page) => (
+                    pagesByCollection["uncategorized"].slice(0, pageLimits["uncategorized"] || PAGE_LIMIT).map((page) => (
                       <button
                         key={page.id}
                         onClick={() => navigate(`/page/${page.id}`)}
@@ -667,6 +678,15 @@ function AppLayout() {
                         <span className="truncate">{page.title}</span>
                       </button>
                     ))}
+                  {expandedCollections.has("uncategorized") && (pagesByCollection["uncategorized"]?.length || 0) > (pageLimits["uncategorized"] || PAGE_LIMIT) && (
+                    <button
+                      onClick={() => setPageLimits(prev => ({ ...prev, "uncategorized": (prev["uncategorized"] || PAGE_LIMIT) + PAGE_LIMIT }))}
+                      className="w-full flex items-center gap-2 pl-8 pr-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-md transition-colors text-left"
+                    >
+                      <ChevronDown className="h-3 w-3 shrink-0" />
+                      Show {(pagesByCollection["uncategorized"]?.length || 0) - (pageLimits["uncategorized"] || PAGE_LIMIT)} more
+                    </button>
+                  )}
                 </div>
               )}
 
