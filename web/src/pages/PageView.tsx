@@ -544,7 +544,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             {page.status === "published" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-500">Published</span>}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="page-actions flex items-center gap-1">
             <button onClick={handleToggleFavorite} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", isFavorite && "text-yellow-500")} title="Favorite">
               <Star className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
             </button>
@@ -816,7 +816,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
 
       {/* Table of Contents */}
       {showToc && (
-        <div className="fixed inset-y-0 right-0 w-64 bg-sidebar border-l border-border z-20 overflow-y-auto">
+        <div className="side-panel fixed inset-y-0 right-0 w-64 bg-sidebar border-l border-border z-20 overflow-y-auto">
           <div className="sticky top-0 bg-sidebar z-10">
             <div className="flex items-center justify-between px-4 h-12 border-b border-border">
               <h3 className="text-sm font-semibold">Table of Contents</h3>
@@ -853,7 +853,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
 
       {/* Revisions panel */}
       {showRevisions && (
-        <div className="fixed inset-y-0 right-0 w-80 bg-sidebar border-l border-border z-20 overflow-y-auto">
+        <div className="side-panel fixed inset-y-0 right-0 w-80 bg-sidebar border-l border-border z-20 overflow-y-auto">
           <div className="sticky top-0 bg-sidebar z-10">
             <div className="flex items-center justify-between px-4 h-12 border-b border-border">
               <h3 className="text-sm font-semibold">History ({revisions.length})</h3>
