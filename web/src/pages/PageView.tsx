@@ -18,6 +18,7 @@ import { Callout } from "../extensions/Callout";
 import { MathInline, MathBlock } from "../extensions/Math";
 import { VideoEmbed } from "../extensions/VideoEmbed";
 import { Drawio } from "../extensions/Drawio";
+import { PlantUML } from "../extensions/PlantUML";
 import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
@@ -230,6 +231,17 @@ function downloadFile(content: string, filename: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
+/** Render @mentions as highlighted spans */
+function highlightMentions(text: string): React.ReactNode {
+  const parts = text.split(/(@\w[\w.-]*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("@") && part.length > 1) {
+      return <span key={i} className="text-primary font-medium">{part}</span>;
+    }
+    return part;
+  });
+}
+
 interface Props {
   pageId: string;
   userId: string | null;
@@ -270,6 +282,12 @@ export function PageView({ pageId, userId }: Props) {
   const [, setRefresh] = useState(0);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState<string>("");
+  // ── Mention state ──────────────────────────────────────────────
+  const [mentionUsers, setMentionUsers] = useState<{ id: string; name: string }[]>([]);
+  const [showMentions, setShowMentions] = useState(false);
+  const mentionIndexRef = useRef(-1);
+  const allUsersRef = useRef<{ id: string; name: string }[]>([]);
+  const commentInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadPage(); }, [pageId]);
 
@@ -320,6 +338,10 @@ export function PageView({ pageId, userId }: Props) {
       ]);
       setRevisions(revs);
       setComments(coms);
+      // Load all users for @mentions
+      api.users.list().then((users) => {
+        allUsersRef.current = users.map((u: any) => ({ id: u.id, name: u.name }));
+      });
       // Load attachments
       api.attachments.list(pageId).then((rows) => setAttachments(rows as any[]));
     } catch (err: any) { setError(String(err)); }
@@ -338,6 +360,7 @@ export function PageView({ pageId, userId }: Props) {
       MathBlock,
       VideoEmbed,
       Drawio,
+      PlantUML,
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
@@ -459,8 +482,48 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
     if (!newComment.trim() || !userId) return;
     await api.comments.add(pageId, "", userId, newComment);
     setNewComment("");
+    setShowMentions(false);
     const coms = await api.comments.list(pageId);
     setComments(coms);
+  };
+
+  // ─── @Mentions ─────────────────────────────────────────────────
+
+  const handleCommentChange = (value: string) => {
+    setNewComment(value);
+    // Detect @mention pattern
+    const cursorPos = commentInputRef.current?.selectionStart || value.length;
+    const textBefore = value.slice(0, cursorPos);
+    const atIdx = textBefore.lastIndexOf("@");
+    if (atIdx >= 0 && (atIdx === 0 || textBefore[atIdx - 1] === " ")) {
+      const query = textBefore.slice(atIdx + 1).toLowerCase();
+      // Don't show mentions if there's non-alphanumeric after @ (except the query)
+      if (/^[a-z0-9_]*$/.test(query)) {
+        mentionIndexRef.current = atIdx;
+        const matches = allUsersRef.current.filter((u) =>
+          u.name.toLowerCase().includes(query)
+        ).slice(0, 8);
+        setMentionUsers(matches);
+        setShowMentions(matches.length > 0);
+      } else {
+        setShowMentions(false);
+      }
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  const handleMentionSelect = (userName: string) => {
+    const atIdx = mentionIndexRef.current;
+    if (atIdx < 0) return;
+    // Find the end of the @mention text
+    const textAfter = newComment.slice(atIdx + 1);
+    const spaceIdx = textAfter.search(/[^a-z0-9_]/i);
+    const endIdx = spaceIdx >= 0 ? atIdx + 1 + spaceIdx : newComment.length;
+    const newVal = newComment.slice(0, atIdx) + `@${userName} ` + newComment.slice(endIdx);
+    setNewComment(newVal);
+    setShowMentions(false);
+    commentInputRef.current?.focus();
   };
 
   // ─── Revisions ──────────────────────────────────────────────────────────
@@ -708,12 +771,37 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           </div>
 
           {userId && (
-            <div className="flex gap-2">
-              <input
-                type="text" value={newComment} onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..." onKeyDown={(e) => { if (e.key === "Enter") handleAddComment(); }}
-                className="flex-1 h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-              />
+            <div className="flex gap-2 relative">
+              <div className="flex-1 relative">
+                <input
+                  ref={commentInputRef}
+                  type="text" value={newComment}
+                  onChange={(e) => handleCommentChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddComment();
+                    if (e.key === "Escape") setShowMentions(false);
+                  }}
+                  placeholder="Add a comment... Use @ to mention someone"
+                  className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+                {/* Mention dropdown */}
+                {showMentions && mentionUsers.length > 0 && (
+                  <div className="absolute z-20 left-0 top-full mt-1 w-56 py-1 rounded-lg border border-border bg-card shadow-xl max-h-48 overflow-y-auto">
+                    {mentionUsers.map((u) => (
+                      <button
+                        key={u.id}
+                        onClick={() => handleMentionSelect(u.name)}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+                      >
+                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[9px] font-medium text-primary shrink-0">
+                          {u.name[0]?.toUpperCase() || "?"}
+                        </div>
+                        <span>{u.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button onClick={handleAddComment} disabled={!newComment.trim()}
                 className="h-9 px-3 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
                 <Send className="h-3.5 w-3.5" />
@@ -732,7 +820,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                   <span className="text-[10px] text-muted-foreground">{timeAgo(com.created_at)}</span>
                   {com.is_resolved && <span className="text-[10px] px-1 py-0.5 rounded bg-green-500/10 text-green-500">Resolved</span>}
                 </div>
-                <p className="text-sm">{com.body}</p>
+                <p className="text-sm">{highlightMentions(com.body)}</p>
 
                 {/* Reactions */}
                 {emojiList.length > 0 && (
