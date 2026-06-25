@@ -14,12 +14,6 @@ Files: web/src/pages/PageEditor.tsx, server/spacetimedb/src/lib.rs
 Difficulty: Medium
 Est: 2h
 
-### P1 — Table toolbar with row/column operations (insert/delete rows/cols, merge/split cells)
-The Tiptap table extension is imported but there's no floating toolbar UI for table operations (addRowBefore, addRowAfter, deleteRow, addColumnBefore, addColumnAfter, deleteColumn, mergeCells, splitCell). Users currently have no way to modify tables after insertion.
-Files: web/src/pages/PageEditor.tsx
-Difficulty: Medium
-Est: 1h
-
 ### P2 — Page duplication from sidebar context menu and editor
 The `api.pages.duplicate` reducer and API method exist but there's no UI to trigger duplication. Add a "Duplicate" option to the page context menu in the sidebar and a "Duplicate page" button in the editor toolbar/cog menu.
 Files: web/src/App.tsx (context menu), web/src/pages/PageView.tsx (action bar)
@@ -32,12 +26,25 @@ Files: server/spacetimedb/src/lib.rs, web/src/App.tsx, web/src/lib/api.ts
 Difficulty: Medium
 Est: 1h
 
+### P2 — Inline comments with thread resolution
+Add inline commenting on page content — select text to create a comment thread, reply in thread, resolve/close threads. The data model (comments table) and @mentions in comments already exist; need the inline selection UI and threaded display.
+Files: web/src/pages/PageView.tsx, web/src/components/, server/spacetimedb/src/lib.rs
+Difficulty: Medium
+Est: 2h
+
+### P2 — Public sharing dialog UI
+Build a dedicated share dialog that uses the existing `share_links` table infrastructure. Add a "Share" button in PageView action bar, dialog with copy-link, optional password protection, expiration TTL, and list of active share links with revoke.
+Files: web/src/App.tsx, web/src/pages/PageView.tsx, server/spacetimedb/src/lib.rs
+Difficulty: Small
+Est: 45min
+
 ---
 
 ## Recently Completed
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-26 | P1 — Table toolbar with row/column operations (insert/delete rows/cols, merge/split cells) | 0bea2e9 |
 | 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
 | 2026-06-26 | P3 — @Mentions in comments (MentionInput component with user autocomplete) | 2b77429 |
 | 2026-06-26 | P1 — Full parent-page hierarchy breadcrumbs | faac220 |
