@@ -189,6 +189,18 @@ pub struct Favorite {
     pub created_at: u64,
 }
 
+#[table(accessor = comment_reaction, public)]
+#[derive(Debug, Clone)]
+pub struct CommentReaction {
+    #[primary_key]
+    pub id: String,
+    pub comment_id: String,
+    pub user_id: String,
+    /// Emoji character, e.g. "👍", "❤️", "🎉"
+    pub emoji: String,
+    pub created_at: u64,
+}
+
 #[table(accessor = share_link, public)]
 #[derive(Debug, Clone)]
 pub struct ShareLink {
@@ -775,6 +787,26 @@ pub fn resolve_comment(ctx: &ReducerContext, id: String) -> Result<(), String> {
 #[reducer]
 pub fn delete_comment(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.comment().id().delete(&id);
+    // Clean up reactions on deleted comment
+    for r in ctx.db.comment_reaction().iter().filter(|r| r.comment_id == id) {
+        ctx.db.comment_reaction().id().delete(&r.id);
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn add_comment_reaction(ctx: &ReducerContext, id: String, comment_id: String, user_id: String, emoji: String) -> Result<(), String> {
+    // Check if reaction already exists (toggle off)
+    let existing = ctx.db.comment_reaction().iter()
+        .find(|r| r.comment_id == comment_id && r.user_id == user_id && r.emoji == emoji);
+    if existing.is_some() {
+        ctx.db.comment_reaction().id().delete(&existing.unwrap().id);
+        return Ok(());
+    }
+    ctx.db.comment_reaction().insert(CommentReaction {
+        id, comment_id, user_id, emoji,
+        created_at: now_ms(ctx),
+    });
     Ok(())
 }
 
@@ -1334,7 +1366,7 @@ pub fn mark_webhook_event_sent(
         return Err("Webhook event not found".into());
     }
     let mut event = found.unwrap();
-    event.status = if response_code >= 200 && response_code < 300 { "sent" } else { "failed" };
+    event.status = if response_code >= 200 && response_code < 300 { "sent".to_string() } else { "failed".to_string() };
     event.response_code = response_code;
     event.response_body = response_body;
     event.sent_at = now_ms(ctx);
@@ -1366,11 +1398,11 @@ pub struct OidcProvider {
     pub slug: String,
     pub issuer_url: String,
     pub client_id: String,
-    #[default = String::new()]
+    #[default("")]
     pub client_secret: String,
-    #[default = String::from("openid email profile")]
+    #[default("openid email profile")]
     pub scopes: String,
-    #[default = true]
+    #[default(true)]
     pub is_active: bool,
     pub created_by: String,
     pub created_at: u64,

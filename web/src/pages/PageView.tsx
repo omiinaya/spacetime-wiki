@@ -267,6 +267,7 @@ export function PageView({ pageId, userId }: Props) {
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [showToc, setShowToc] = useState(false);
   const [backlinks, setBacklinks] = useState<Page[]>([]);
+  const [, setRefresh] = useState(0);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState<string>("");
 
@@ -721,7 +722,10 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           )}
 
           <div className="space-y-2">
-            {comments.map((com) => (
+            {comments.map((com) => {
+              const reactions = api.comments.getReactions(com.id);
+              const emojiList = Object.keys(reactions);
+              return (
               <div key={com.id} className="p-3 rounded-lg border border-border bg-card">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-medium">{com.user_id}</span>
@@ -729,9 +733,52 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                   {com.is_resolved && <span className="text-[10px] px-1 py-0.5 rounded bg-green-500/10 text-green-500">Resolved</span>}
                 </div>
                 <p className="text-sm">{com.body}</p>
+
+                {/* Reactions */}
+                {emojiList.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {emojiList.map((emoji) => {
+                      const count = reactions[emoji].length;
+                      const reacted = userId ? api.comments.hasReacted(com.id, userId, emoji) : false;
+                      return (
+                        <button
+                          key={emoji}
+                          onClick={() => { if (userId) { api.comments.addReaction(com.id, userId, emoji); setRefresh(v => v + 1); } }}
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs transition-colors ${
+                            reacted ? "bg-primary/15 text-primary border border-primary/20" : "bg-muted text-muted-foreground hover:text-foreground border border-transparent"
+                          }`}
+                        >
+                          <span className="text-sm leading-none">{emoji}</span>
+                          <span className="tabular-nums">{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Quick reaction bar */}
+                {userId && (
+                  <div className="flex gap-0.5 mt-2">
+                    {["👍", "❤️", "🎉", "🚀", "👀"].map((emoji) => {
+                      const reacted = api.comments.hasReacted(com.id, userId, emoji);
+                      return (
+                        <button
+                          key={emoji}
+                          onClick={() => { api.comments.addReaction(com.id, userId, emoji); setRefresh(v => v + 1); }}
+                          className={`w-6 h-6 flex items-center justify-center rounded text-xs transition-colors ${
+                            reacted ? "bg-primary/15" : "opacity-40 hover:opacity-100 hover:bg-muted"
+                          }`}
+                          title={emoji}
+                        >
+                          {emoji}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            );
+            })}
         </div>
       </div>
 
