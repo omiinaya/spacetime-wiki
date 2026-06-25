@@ -38,14 +38,32 @@ Est: 1h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-26 | P1 — Full parent-page hierarchy breadcrumbs | faac220 |
 | 2026-06-25 | P1 — Floating formatting toolbar (Tiptap BubbleMenu with Underline) | 2aa081c |
-| 2026-06-25 | P3 — JSON export for pages | (this session) |
+| 2026-06-25 | P3 — JSON export for pages | 35451f1 |
 | 2026-06-25 | P2 — Page links autocomplete (search-as-you-type with [[ trigger) | 66e15f7 |
 | 2026-06-25 | P2 — Batch page operations in sidebar (multi-select, Cmd+click, batch archive/move/delete/tag) | 4828c80 |
 | 2026-06-25 | P1 — Markdown import/export (sidebar import btn + page context menu export) | f92876f |
 | 2026-06-25 | P2 — Image gallery / lightbox with prev/next navigation | 17e7895 |
-| 2026-06-25 | P2 — Image drag handle for reorder in editor | cb5f1c7 |
-| 2026-06-25 | P2 — Page permissions UI (wired in page header) | (already implemented) |
-| 2026-06-25 | P3 — Page analytics (views, trending) | d38be4a |
-| 2026-06-25 | P3 — Webhook management UI | (already implemented) |
-| 2026-06-26 | P1 — Full parent-page hierarchy breadcrumbs | (this session) |
+
+---
+
+## Research: New improvement opportunities (added 2026-06-26)
+
+### P2 — Command palette (Cmd+K)
+Quick action search bar for navigating pages, creating new pages, toggling settings, and executing commands. Inspired by Outline's Cmd+K. Uses kbar or a custom modal with keyboard shortcut `Cmd+K`. Filters in real-time as user types. Actions: navigate to page, create new page, toggle dark mode, open trash, open admin panel.
+Files: web/src/components/CommandPalette.tsx (new), web/src/App.tsx
+Difficulty: Medium
+Est: 2h
+
+### P2 — Page color accent UI
+The `set_page_color` STDB reducer exists but there's no UI to set page colors. Add a color picker in the editor toolbar (next to full-width toggle) that lets users set an accent color for the page. The color is displayed as a thin bar at the top of the page in PageView.
+Files: web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
+Difficulty: Small
+Est: 0.5h
+
+### P3 — Permanent image upload (paste/drag-and-drop to server storage)
+Currently pasted and dropped images create blob:// URLs that only work for the current session and break on page reload. Replace with actual upload to server storage, returning a permanent URL stored in the attachment table. Add image URL validation and size limits.
+Files: web/src/pages/PageEditor.tsx, server/spacetimedb/src/lib.rs
+Difficulty: Medium
+Est: 2h

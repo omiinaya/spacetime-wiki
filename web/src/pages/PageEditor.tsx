@@ -603,6 +603,92 @@ export function PageEditor({ userId }: Props) {
   const [pageLinkPos, setPageLinkPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [allPages, setAllPages] = useState<Page[]>([]);
 
+  // ─── Auto-save drafts to localStorage ───────────────────────────────────────
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftDismissed, setDraftDismissed] = useState(false);
+  const lastSavedJson = useRef("");
+
+  const draftKey = isNew ? "sw_draft_new" : `sw_draft_${id}`;
+
+  // Check for existing draft on mount
+  useEffect(() => {
+    if (editor || isNew) {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === "object") {
+            // For existing pages, only show banner if draft differs from loaded content
+            if (page) {
+              const currentContent = JSON.stringify(JSON.parse(page.content || "{}"));
+              if (saved !== currentContent) {
+                setHasDraft(true);
+              }
+            } else {
+              setHasDraft(true);
+            }
+          }
+        } catch { /* ignore corrupt draft */ }
+      }
+    }
+  }, [draftKey, page, editor, isNew]);
+
+  // Auto-save interval: every 5 seconds when editor has content
+  useEffect(() => {
+    if (!editor) return;
+    const interval = setInterval(() => {
+      if (preview) return;
+      const json = JSON.stringify(editor.getJSON());
+      if (json !== lastSavedJson.current && json !== "{}") {
+        lastSavedJson.current = json;
+        try {
+          localStorage.setItem(draftKey, json);
+        } catch {
+          // localStorage full or unavailable — silently ignore
+        }
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [editor, draftKey, preview]);
+
+  // Track initial content to seed lastSavedJson
+  useEffect(() => {
+    if (editor && page) {
+      try {
+        const json = JSON.stringify(JSON.parse(page.content || "{}"));
+        lastSavedJson.current = json;
+      } catch { /* ignore */ }
+    } else if (editor && isNew) {
+      lastSavedJson.current = JSON.stringify(editor.getJSON());
+    }
+  }, [editor, page, isNew]);
+
+  // Restore draft content
+  const handleRestoreDraft = () => {
+    const saved = localStorage.getItem(draftKey);
+    if (saved && editor) {
+      try {
+        const parsed = JSON.parse(saved);
+        editor.commands.setContent(parsed);
+      } catch { /* ignore */ }
+    }
+    setHasDraft(false);
+    setDraftDismissed(true);
+  };
+
+  const handleDismissDraft = () => {
+    setHasDraft(false);
+    setDraftDismissed(true);
+  };
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch { /* ignore */ }
+    setHasDraft(false);
+    lastSavedJson.current = JSON.stringify(editor ? editor.getJSON() : {});
+  };
+
   // Load all pages for link autocomplete
   useEffect(() => {
     api.pages.list().then(setAllPages).catch(() => {});
@@ -792,9 +878,11 @@ export function PageEditor({ userId }: Props) {
           title, content, "", "", userId || "anonymous",
         );
         const newId = typeof result === "string" ? result : String((result as any)[0] || result);
+        clearDraft();
         navigate(`/page/${newId}`);
       } else if (id) {
         await api.pages.update(id, title, content, userId || "anonymous");
+        clearDraft();
       }
     } catch (err: any) {
       setError(String(err));
@@ -1486,6 +1574,25 @@ export function PageEditor({ userId }: Props) {
       {error && (
         <div className="fixed bottom-4 right-4 px-4 py-2 rounded-md bg-red-500/10 border border-red-500/30 text-sm text-red-400">
           {error}
+        </div>
+      )}
+
+      {/* Draft recovery banner */}
+      {hasDraft && !draftDismissed && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg bg-amber-500/15 border border-amber-500/30 shadow-2xl flex items-center gap-3 text-sm">
+          <span className="text-amber-400">💾 Unsaved changes recovered from a previous session.</span>
+          <button
+            onClick={handleRestoreDraft}
+            className="h-6 px-2.5 rounded text-xs font-medium bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+          >
+            Restore
+          </button>
+          <button
+            onClick={handleDismissDraft}
+            className="h-6 px-2.5 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
