@@ -299,6 +299,41 @@ export const api = {
     },
     resolve: (id: string) => callReducer("resolve_comment", [id]),
     delete: (id: string) => callReducer("delete_comment", [id]),
+    // ── Comment reactions (localStorage-based until STDB module build is fixed) ──
+    getReactions: (commentId: string): Record<string, string[]> => {
+      try {
+        const raw = localStorage.getItem("sw_reactions");
+        if (!raw) return {};
+        const all = JSON.parse(raw);
+        return all[commentId] || {};
+      } catch { return {}; }
+    },
+    addReaction: (commentId: string, userId: string, emoji: string) => {
+      try {
+        const raw = localStorage.getItem("sw_reactions") || "{}";
+        const all = JSON.parse(raw);
+        if (!all[commentId]) all[commentId] = {};
+        const emojis = all[commentId];
+        if (!emojis[emoji]) emojis[emoji] = [];
+        // Toggle: if user already reacted with this emoji, remove them
+        const idx = emojis[emoji].indexOf(userId);
+        if (idx >= 0) {
+          emojis[emoji].splice(idx, 1);
+          if (emojis[emoji].length === 0) delete emojis[emoji];
+        } else {
+          emojis[emoji].push(userId);
+        }
+        localStorage.setItem("sw_reactions", JSON.stringify(all));
+      } catch {}
+    },
+    hasReacted: (commentId: string, userId: string, emoji: string): boolean => {
+      try {
+        const raw = localStorage.getItem("sw_reactions");
+        if (!raw) return false;
+        const all = JSON.parse(raw);
+        return all[commentId]?.[emoji]?.includes(userId) || false;
+      } catch { return false; }
+    },
   },
 
   tags: {
