@@ -8,35 +8,11 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Empty state / onboarding UI for new wikis
-Show a helpful getting-started welcome screen when the wiki has no pages. Include quick-action buttons (Create first page, Import from Markdown, Browse keyboard shortcuts) and a brief feature tour. Similar to Outline's empty state.
-Files: web/src/App.tsx
-Difficulty: Small
-Est: 1h
-
-### P3 — Page print stylesheet
-Add a print CSS stylesheet and a print button in the page header. Clean, readable printed output with proper page breaks, font sizing, and hidden UI chrome (sidebar, toolbar, comments).
-Files: web/src/index.css, web/src/pages/PageView.tsx
-Difficulty: Small
-Est: 1h
-
-### P3 — Page export as standalone HTML
-Add an "Export as HTML" action to the page context menu. Generates a self-contained HTML file with inline CSS that preserves the page content, formatting, and images. Useful for sharing and archiving.
-Files: web/src/App.tsx, web/src/pages/PageView.tsx
-Difficulty: Small
-Est: 1h
-
 ### P2 — Page links autocomplete (search-as-you-type for internal links)
 When typing `[[` or using the link toolbar, show a searchable popup of existing wiki pages to link to. Currently links must be pasted as full URLs. Leverage the `api.pages.search()` endpoint for instant results.
 Files: web/src/extensions/, web/src/pages/PageEditor.tsx
 Difficulty: Medium
 Est: 1.5h
-
-### P2 — Drag-and-drop sidebar reorder (move pages between collections)
-Allow dragging a page in the sidebar to a different collection to move it. Currently pages can be dragged but the drop operation is not wired for collection re-assignment. Wire `onDrop` to call `api.pages.update(pageId, { collection_id: targetColId })`.
-Files: web/src/App.tsx
-Difficulty: Medium
-Est: 1h
 
 ### P3 — JSON export for pages
 Add "Export as JSON" option to the page header export dropdown. Exports the full ProseMirror doc JSON plus metadata (title, slug, icon, tags, collection). Useful for programmatic access and backups.
@@ -64,5 +40,7 @@ Est: 1h
 | 2026-06-25 | P3 — Page analytics (views, trending) | d38be4a |
 | 2026-06-25 | P3 — Webhook management UI | (already implemented) |
 | 2026-06-25 | P1 — Virtual scroll / pagination for page lists | 2642781 |
-| 2026-06-25 | P1 — REST API layer for programmatic access | 2bac0e8 |
-| 2026-06-25 | P1 — Full-text search STDB reducer | 524ab77 |
+| 2026-06-25 | P2 — Drag-and-drop sidebar reorder (pages between collections) | (already implemented) |
+| 2026-06-25 | P3 — Page print stylesheet (@media print CSS + print button) | (already implemented) |
+| 2026-06-25 | P3 — Page export as standalone HTML (context menu + export dropdown) | (already implemented) |
+| 2026-06-25 | P3 — Empty state / onboarding UI for new wikis (hero + quick actions + feature tour) | (this session) |
