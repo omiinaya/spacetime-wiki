@@ -8,15 +8,15 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — REST API layer for programmatic access
-Add a lightweight REST API (using a separate HTTP server or STDB HTTP endpoints) providing CRUD for pages, collections, and search. Include API key authentication middleware and rate limiting.
-Files: server/api-server/, web/src/lib/api.ts
-Difficulty: Hard
-Est: 4h
-
 ### P1 — Virtual scroll for long page lists
 When a collection has 1000+ pages, the current list rendering is slow. Implement virtual scrolling or pagination for the page list/collection view.
 Files: web/src/components/
+Difficulty: Medium
+Est: 2h
+
+### P3 — Webhook management UI
+Add a panel in the admin settings to create, edit, test, and delete webhooks. Currently webhooks can only be managed via STDB SQL.
+Files: web/src/components/WebhookManager.tsx
 Difficulty: Medium
 Est: 2h
 
@@ -26,6 +26,7 @@ Est: 2h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-25 | P1 — REST API layer for programmatic access | 2bac0e8 |
 | 2026-06-25 | P1 — Full-text search STDB reducer | 524ab77 |
 | 2026-06-25 | P3 — Rich embeds for 30+ providers | 524ab77 |
 | 2026-06-25 | P1 — Keyboard shortcuts reference/guide | 759f5e5 |
