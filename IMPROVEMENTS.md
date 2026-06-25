@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Inline comments with thread resolution
-Add inline commenting on page content — select text to create a comment thread, reply in thread, resolve/close threads. The data model (comments table) and @mentions in comments already exist; need the inline selection UI and threaded display.
-Files: web/src/pages/PageView.tsx, web/src/components/, server/spacetimedb/src/lib.rs
-Difficulty: Medium
-Est: 2h
-
 ### P2 — Wiki import (Notion/Confluence)
 Add import wizards for Notion (Markdown+ZIP export) and Confluence (HTML/XML export). Parse the exported file structure and create pages preserving hierarchy, content, and metadata. Reuses the existing Markdown import pipeline for Notion exports.
 Files: web/src/App.tsx, web/src/components/
@@ -44,6 +38,7 @@ Est: 1h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-25 | P2 — Inline comments with threaded replies, resolve/delete actions, text-anchor selection UI | ebf98f9 |
 | 2026-06-26 | P1 — File attachments browser/media manager (MediaManager grid dialog, drag-drop upload, search, preview, copy-link, integrated into PageView) | 9a0c7b1 |
 | 2026-06-26 | P2 — Content permalinks (ID-based, survive renames) | 62b887f |
 | 2026-06-26 | P1 — REST API for programmatic access (STDB-based HTTP API with API key auth) | 0d0ab36 |
@@ -53,4 +48,3 @@ Est: 1h
 | 2026-06-26 | P3 — Permanent image upload (paste/drag-and-drop to server storage with attachment:// URL scheme, size limits, and auto-resolution) | 077ecf3 |
 | 2026-06-26 | P1 — Table toolbar with row/column operations (insert/delete rows/cols, merge/split cells) | 0bea2e9 |
 | 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
-| 2026-06-26 | P3 — @Mentions in comments (MentionInput component with user autocomplete) | 2b77429 |
