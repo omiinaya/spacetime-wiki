@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — File attachments browser/media manager
-Enhance the existing attachment upload UI (paste/drag-drop/image upload) with a dedicated media browser dialog. Grid view of uploaded images/files with search, preview, filename display, size, and copy-link. Drag-drop zone for uploads. Replace the current inline list in PageView with a proper component.
-Files: web/src/components/ (new MediaManager component), web/src/pages/PageView.tsx
-Difficulty: Medium
-Est: 1.5h
-
 ### P2 — Inline comments with thread resolution
 Add inline commenting on page content — select text to create a comment thread, reply in thread, resolve/close threads. The data model (comments table) and @mentions in comments already exist; need the inline selection UI and threaded display.
 Files: web/src/pages/PageView.tsx, web/src/components/, server/spacetimedb/src/lib.rs
@@ -50,6 +44,7 @@ Est: 1h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-26 | P1 — File attachments browser/media manager (MediaManager grid dialog, drag-drop upload, search, preview, copy-link, integrated into PageView) | <current> |
 | 2026-06-26 | P2 — Content permalinks (ID-based, survive renames) | 62b887f |
 | 2026-06-26 | P1 — REST API for programmatic access (STDB-based HTTP API with API key auth) | 0d0ab36 |
 | 2026-06-26 | P2 — Configurable trash retention period (AppSetting table, Admin panel tab, purge_expired_trash reducer) | <current> |
@@ -59,4 +54,3 @@ Est: 1h
 | 2026-06-26 | P1 — Table toolbar with row/column operations (insert/delete rows/cols, merge/split cells) | 0bea2e9 |
 | 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
 | 2026-06-26 | P3 — @Mentions in comments (MentionInput component with user autocomplete) | 2b77429 |
-| 2026-06-26 | P1 — Full parent-page hierarchy breadcrumbs | faac220 |
