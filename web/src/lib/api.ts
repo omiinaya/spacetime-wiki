@@ -39,6 +39,7 @@ function mapCollectionGroupPermission(row: unknown[]): CollectionGroupPermission
 function mapPagePermission(row: unknown[]): PagePermission { return { id: String(row[0]??""), page_id: String(row[1]??""), user_id: String(row[2]??""), group_id: String(row[3]??""), role: String(row[4]??""), created_at: Number(row[5])||0 }; }
 function mapWebhook(row: unknown[]): Webhook { return { id: String(row[0]??""), name: String(row[1]??""), url: String(row[2]??""), events: String(row[3]??""), is_active: Boolean(row[4]), secret: String(row[5]??""), created_by: String(row[6]??""), created_at: Number(row[7])||0, updated_at: Number(row[8])||0 }; }
 function mapWebhookEvent(row: unknown[]): WebhookEvent { return { id: String(row[0]??""), webhook_id: String(row[1]??""), event_type: String(row[2]??""), page_id: String(row[3]??""), payload: String(row[4]??""), status: String(row[5]??""), response_code: Number(row[6])||0, response_body: String(row[7]??""), created_at: Number(row[8])||0, sent_at: Number(row[9])||0 }; }
+function mapOidcProvider(row: unknown[]): OidcProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), issuer_url: String(row[3]??""), client_id: String(row[4]??""), client_secret: String(row[5]??""), scopes: String(row[6]??""), is_active: Boolean(row[7]), created_by: String(row[8]??""), created_at: Number(row[9])||0, updated_at: Number(row[10])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -158,6 +159,13 @@ export interface WebhookEvent {
   id: string; webhook_id: string; event_type: string; page_id: string;
   payload: string; status: string; response_code: number;
   response_body: string; created_at: number; sent_at: number;
+}
+
+export interface OidcProvider {
+  id: string; name: string; slug: string; issuer_url: string;
+  client_id: string; client_secret: string; scopes: string;
+  is_active: boolean; created_by: string;
+  created_at: number; updated_at: number;
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -446,5 +454,37 @@ export const api = {
       callReducer("mark_webhook_event_sent", [id, responseCode, responseBody]),
     cleanup: (olderThanMs: number) =>
       callReducer("cleanup_webhook_events", [olderThanMs]),
+  },
+
+  oidc: {
+    list: () =>
+      sqlQuery("SELECT * FROM oidc_provider")
+        .then((rows) => (rows as unknown[][]).map(mapOidcProvider)),
+    get: (id: string) =>
+      sqlQuery(`SELECT * FROM oidc_provider WHERE id = '${id}'`).then(
+        (rows) => ((rows as unknown[][])[0] ? mapOidcProvider((rows as unknown[][])[0]) : null),
+      ),
+    listActive: () =>
+      sqlQuery("SELECT * FROM oidc_provider WHERE is_active = true")
+        .then((rows) => (rows as unknown[][]).map(mapOidcProvider)),
+    create: (
+      name: string, slug: string, issuerUrl: string,
+      clientId: string, clientSecret: string, scopes: string,
+      createdBy: string,
+    ) => {
+      const id = "oidc_" + Math.random().toString(36).slice(2, 10);
+      return callReducer("add_oidc_provider", [
+        id, name, slug, issuerUrl, clientId, clientSecret, scopes, createdBy,
+      ]).then(() => id);
+    },
+    update: (
+      id: string, name: string, slug: string, issuerUrl: string,
+      clientId: string, clientSecret: string, scopes: string, isActive: boolean,
+    ) =>
+      callReducer("update_oidc_provider", [
+        id, name, slug, issuerUrl, clientId, clientSecret, scopes, isActive,
+      ]),
+    delete: (id: string) =>
+      callReducer("delete_oidc_provider", [id]),
   },
 };

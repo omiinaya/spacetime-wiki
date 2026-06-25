@@ -1327,3 +1327,103 @@ pub fn cleanup_webhook_events(ctx: &ReducerContext, older_than_ms: u64) -> Resul
     }
     Ok(())
 }
+
+// ─── OIDC SSO ─────────────────────────────────────────────────────────────────
+
+#[table(accessor = oidc_provider, public)]
+#[derive(Debug, Clone)]
+pub struct OidcProvider {
+    #[primary_key]
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+    pub issuer_url: String,
+    pub client_id: String,
+    #[default = String::new()]
+    pub client_secret: String,
+    #[default = String::from("openid email profile")]
+    pub scopes: String,
+    #[default = true]
+    pub is_active: bool,
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[reducer]
+pub fn add_oidc_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    issuer_url: String,
+    client_id: String,
+    client_secret: String,
+    scopes: String,
+    created_by: String,
+) -> Result<(), String> {
+    if !issuer_url.starts_with("http://") && !issuer_url.starts_with("https://") {
+        return Err("Issuer URL must start with http:// or https://".into());
+    }
+    if client_id.is_empty() {
+        return Err("Client ID is required".into());
+    }
+    let now = now_ms(ctx);
+    ctx.db.oidc_provider().insert(OidcProvider {
+        id, name, slug, issuer_url, client_id,
+        client_secret: if client_secret.is_empty() { String::new() } else { client_secret },
+        scopes: if scopes.is_empty() { "openid email profile".into() } else { scopes },
+        is_active: true,
+        created_by,
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_oidc_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    issuer_url: String,
+    client_id: String,
+    client_secret: String,
+    scopes: String,
+    is_active: bool,
+) -> Result<(), String> {
+    if !issuer_url.starts_with("http://") && !issuer_url.starts_with("https://") {
+        return Err("Issuer URL must start with http:// or https://".into());
+    }
+    if client_id.is_empty() {
+        return Err("Client ID is required".into());
+    }
+    let found = ctx.db.oidc_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("OIDC provider not found".into());
+    }
+    let mut provider = found.unwrap();
+    provider.name = name;
+    provider.slug = slug;
+    provider.issuer_url = issuer_url;
+    provider.client_id = client_id;
+    if !client_secret.is_empty() {
+        provider.client_secret = client_secret;
+    }
+    provider.scopes = if scopes.is_empty() { "openid email profile".into() } else { scopes };
+    provider.is_active = is_active;
+    provider.updated_at = now_ms(ctx);
+    ctx.db.oidc_provider().id().update(provider);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_oidc_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    let found = ctx.db.oidc_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("OIDC provider not found".into());
+    }
+    ctx.db.oidc_provider().id().delete(&id);
+    Ok(())
+}
