@@ -10,9 +10,10 @@ and works the top pending item each tick.
 
 ### P1 — Real-time STDB subscriptions for live page updates
 Replace periodic SQL polling with SpacetimeDB's built-in `db.subscribe()` mechanism for true real-time updates across browser tabs and users. Pages, collections, comments, and sidebar data update instantly when any user makes a change, without manual refresh.
+🟡 In progress: SubscriptionManager + useSubscription hook + WebSocket connection manager with auto-reconnect created (web/src/lib/subscriptions.ts). Remaining: integrate into App.tsx to replace polling-based loadData(), add subscription for per-table updates (pages, collections, comments).
 Files: web/src/lib/api.ts → add subscribe helpers, web/src/App.tsx → integrate subscriptions
 Difficulty: Medium
-Est: 3h
+Est: 3h (2h remaining)
 
 ### P2 — Batch page operations in sidebar
 Allow selecting multiple pages in the sidebar via checkbox or Cmd+click for bulk operations: move to collection, delete, archive, add tag. Currently each page must be handled individually.
