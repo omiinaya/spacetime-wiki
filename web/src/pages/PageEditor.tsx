@@ -1604,11 +1604,11 @@ export function PageEditor({ userId }: Props) {
       )}
 
       {/* Image Lightbox */}
-      {lightboxSrc && (
+      {lightboxImages && (
         <ImageLightbox
-          src={lightboxSrc}
-          alt={lightboxAlt}
-          onClose={() => { setLightboxSrc(null); setLightboxAlt(""); }}
+          images={lightboxImages}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxImages(null)}
         />
       )}
     </div>
