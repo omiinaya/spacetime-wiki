@@ -887,6 +887,32 @@ export function PageEditor({ userId }: Props) {
 
   const closeSlash = () => { setSlashOpen(false); setSlashQuery(""); setSlashIndex(0); };
 
+  // Emoji helpers
+  const filteredEmoji = EMOJI_LIST.filter(([emoji, name]) =>
+    name.includes(emojiQuery.toLowerCase()) || emoji === emojiQuery,
+  ).slice(0, 12);
+
+  const closeEmoji = () => { setEmojiOpen(false); setEmojiQuery(""); setEmojiIndex(0); };
+
+  const executeEmojiSelect = (idx: number) => {
+    const match = filteredEmoji[idx];
+    if (match && editor) {
+      const emoji = match[0];
+      // Find the ":" and delete text up to cursor, then insert emoji
+      const { from } = editor.state.selection;
+      const $pos = editor.state.doc.resolve(from);
+      const nodeStart = $pos.start();
+      const textBefore = editor.state.doc.textBetween(nodeStart, from);
+      const colonIdx = textBefore.lastIndexOf(":");
+      if (colonIdx >= 0) {
+        editor.chain().focus().deleteRange({ from: nodeStart + colonIdx, to: from }).insertContent(emoji).run();
+      } else {
+        editor.chain().focus().insertContent(emoji).run();
+      }
+    }
+    closeEmoji();
+  };
+
   const executeSlashCommand = (idx: number) => {
     const cmd = filteredCommands[idx];
     if (cmd && editor) {
@@ -922,6 +948,57 @@ export function PageEditor({ userId }: Props) {
           setSlashIndex(0);
           return false; // let the "/" be typed
         }
+      }
+      // Emoji picker — detect ":" in text
+      if (event.key === ":" && !emojiOpen && !slashOpen) {
+        const { from } = view.state.selection;
+        const $pos = view.state.doc.resolve(from);
+        const nodeStart = $pos.start();
+        const text = view.state.doc.textBetween(nodeStart, from);
+        // Only trigger inline (not at line start like slash)
+        if (text.trim() !== "" && !text.endsWith(":") && !text.endsWith(" ")) {
+          // Don't open — there's no query yet, wait for the next character
+        } else {
+          const coords = view.coordsAtPos(from);
+          setEmojiPos({ top: coords.top + 24, left: Math.max(10, coords.left - 80) });
+          setEmojiOpen(true);
+          setEmojiQuery("");
+          setEmojiIndex(0);
+          return false;
+        }
+      }
+      if (emojiOpen) {
+        if (event.key === "ArrowDown") { event.preventDefault(); setEmojiIndex(i => Math.min(i + 1, filteredEmoji.length - 1)); return true; }
+        if (event.key === "ArrowUp") { event.preventDefault(); setEmojiIndex(i => Math.max(i - 1, 0)); return true; }
+        if (event.key === "Enter" && filteredEmoji.length > 0) { event.preventDefault(); executeEmojiSelect(emojiIndex); return true; }
+        if (event.key === "Escape") { event.preventDefault(); closeEmoji(); return true; }
+        if (event.key === " " || event.key === ":") {
+          // Space or second colon — insert selected emoji if matched, or close
+          if (filteredEmoji.length > 0 && filteredEmoji[0][1].startsWith(emojiQuery)) {
+            event.preventDefault();
+            executeEmojiSelect(0);
+            return true;
+          }
+          closeEmoji();
+        }
+        // Track typed query
+        if (event.key.length === 1) {
+          setTimeout(() => {
+            const sel = editor.state.selection;
+            const text = editor.state.doc.textBetween(Math.max(0, sel.from - 40), sel.from);
+            const colonIdx = text.lastIndexOf(":");
+            if (colonIdx >= 0) setEmojiQuery(text.slice(colonIdx + 1).replace(/\s/g, ""));
+            else closeEmoji();
+          }, 10);
+        } else if (event.key === "Backspace") {
+          setTimeout(() => {
+            setEmojiQuery(q => {
+              if (q.length <= 1) { closeEmoji(); return ""; }
+              return q.slice(0, -1);
+            });
+          }, 10);
+        }
+        return false;
       }
       if (slashOpen) {
         if (event.key === "ArrowDown") { event.preventDefault(); setSlashIndex(i => Math.min(i + 1, filteredCommands.length - 1)); return true; }
@@ -1356,6 +1433,48 @@ export function PageEditor({ userId }: Props) {
                 <span className="text-[10px] text-muted-foreground/60 ml-auto">{m.type}</span>
               </button>
             ))
+          )}
+        </div>
+      )}
+
+      {/* Emoji picker popup */}
+      {emojiOpen && (
+        <div
+          className="fixed z-[100] w-56 py-1.5 rounded-lg border border-border bg-[#161616] shadow-2xl overflow-hidden"
+          style={{ top: emojiPos.top, left: emojiPos.left }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {emojiQuery && (
+            <div className="px-3 py-1 text-[10px] text-muted-foreground/60 font-mono">
+              :{emojiQuery} — {filteredEmoji.length} match{filteredEmoji.length !== 1 ? "es" : ""}
+            </div>
+          )}
+          {filteredEmoji.length === 0 && (
+            <div className="px-3 py-4 text-xs text-muted-foreground text-center">No emoji found</div>
+          )}
+          <div className="grid grid-cols-6 gap-0.5 px-1.5 py-1">
+            {filteredEmoji.map(([emoji, name], i) => (
+              <button
+                key={name}
+                onClick={() => executeEmojiSelect(i)}
+                onMouseEnter={() => setEmojiIndex(i)}
+                className={cn(
+                  "w-full aspect-square flex items-center justify-center text-lg rounded transition-colors",
+                  i === emojiIndex ? "bg-muted" : "hover:bg-muted/50",
+                )}
+                title={`:${name}:`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+          {filteredEmoji.length > 6 && (
+            <div className="flex items-center gap-4 px-4 h-6 border-t border-border text-[9px] text-muted-foreground">
+              <span>↑↓ navigate</span>
+              <span>↵ select</span>
+              <span>esc close</span>
+              <span className="ml-auto">{emojiIndex + 1}/{filteredEmoji.length}</span>
+            </div>
           )}
         </div>
       )}
