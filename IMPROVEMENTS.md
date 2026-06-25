@@ -26,6 +26,18 @@ Files: web/src/components/ZipExport.tsx, web/src/lib/api.ts
 Difficulty: Medium
 Est: 2h
 
+### P3 — SAML 2.0 SSO
+Add SAML 2.0 identity provider support alongside existing OIDC. Requires SAML library for handling SAML assertions, metadata XML, and callback endpoints. Admin panel SSO tab to include SAML provider configuration.
+Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/App.tsx
+Difficulty: Hard
+Est: 3h
+
+### P3 — Multiple editor modes (Markdown ↔ WYSIWYG toggle)
+Add tab-based editor mode switcher allowing users to toggle between WYSIWYG (current), Markdown source, and split-pane preview modes. Similar to Wiki.js dual-editor approach.
+Files: web/src/pages/PageEditor.tsx, web/src/styles/editor-modes.css
+Difficulty: Medium
+Est: 2h
+
 ---
 
 ## Recently Completed
@@ -77,6 +89,3 @@ Files: web/src/extensions/VideoEmbed.ts, Commit: 4db980e
 ### P3 — KaTeX math extension
 **Done**: Inline and block LaTeX math nodes for the Tiptap editor. React node view for editing and rendering. Slash command (/math). Supports both inline ($...$) and block ($$...$$) math.
 Files: web/src/extensions/Math.tsx, Commit: bf6ff5c
-
-### P3 — Mermaid diagram extension
-**Done**: Mermaid Tiptap extension with custom node view. Inline source editor, dark theme support, slash command (/mermaid). Renders diagrams as SVG via Mermaid library.

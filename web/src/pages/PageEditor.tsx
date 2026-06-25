@@ -22,6 +22,7 @@ import { Mermaid } from "../extensions/Mermaid";
 import { MathInline, MathBlock } from "../extensions/Math";
 import { VideoEmbed, detectProvider } from "../extensions/VideoEmbed";
 import { Drawio } from "../extensions/Drawio";
+import { PlantUML } from "../extensions/PlantUML";
 import { ImageLightbox } from "../components/ImageLightbox";
 import { common, createLowlight } from "lowlight";
 import {
@@ -84,6 +85,7 @@ const SLASH_COMMANDS = [
   { title: "Math Block", description: "Insert LaTeX math (KaTeX)", icon: "∑", command: (e) => e?.chain().focus().setMathBlock({ tex: "E = mc^2" }).run() },
   { title: "Video", description: "Insert a video embed (YouTube, Vimeo, Loom)", icon: "🎬", command: (e) => { const url = prompt("Video URL:"); if (url) e?.chain().focus().setVideoEmbed({ src: url }).run(); } },
   { title: "Draw.io", description: "Insert a draw.io diagram", icon: "📐", command: (e) => e?.chain().focus().setDrawio({ src: "" }).run() },
+  { title: "PlantUML", description: "Insert a PlantUML diagram", icon: "🌿", command: (e) => e?.chain().focus().setPlantUML({ src: "@startuml\\nAlice -> Bob: Hello\\nBob -> Alice: Hi!\\n@enduml" }).run() },
 ];
 
 // ─── Selection Floating Toolbar ──────────────────────────────────────────────
@@ -401,6 +403,7 @@ export function PageEditor({ userId }: Props) {
       MathBlock,
       VideoEmbed,
       Drawio,
+      PlantUML,
       Mention.configure({ HTMLAttributes: { class: 'mention' } }),
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,
