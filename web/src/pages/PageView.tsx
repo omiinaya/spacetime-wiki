@@ -268,6 +268,8 @@ export function PageView({ pageId, userId }: Props) {
   const [shareDays, setShareDays] = useState(0);
   const [shareUrl, setShareUrl] = useState("");
   const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string }[]>([]);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCreating, setShareCreating] = useState(false);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
@@ -284,6 +286,20 @@ export function PageView({ pageId, userId }: Props) {
   const blobUrlCacheRef = useRef<Map<string, string>>(new Map());
 
   useEffect(() => { loadPage(); }, [pageId]);
+
+  // Load existing share links when dialog opens
+  useEffect(() => {
+    if (showShare) {
+      setShareLoading(true);
+      setSharePassword("");
+      setShareDays(0);
+      setShareUrl("");
+      api.shareLinks.list(pageId)
+        .then((links) => setShareLinks(links))
+        .catch(() => {})
+        .finally(() => setShareLoading(false));
+    }
+  }, [showShare, pageId]);
 
   // ─── TOC: extract headings from page JSON ───────────────────────────────
 
@@ -1239,6 +1255,112 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           userId={userId}
           onClose={() => setShowPermissions(false)}
         />
+      )}
+
+      {/* Share Dialog */}
+      {showShare && (
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowShare(false)}>
+          <div className="dialog-container w-full max-w-sm mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-primary" /> Share "{page?.title || pageId}"
+              </h3>
+              <button onClick={() => setShowShare(false)} className="p-1 rounded hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {/* Password field */}
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Password (optional)</label>
+                <input
+                  type="text"
+                  value={sharePassword}
+                  onChange={(e) => setSharePassword(e.target.value)}
+                  placeholder="Leave empty for public link"
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+              </div>
+              {/* TTL field */}
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Expires in days (0 = never)</label>
+                <input
+                  type="number"
+                  value={shareDays}
+                  onChange={(e) => setShareDays(parseInt(e.target.value) || 0)}
+                  min={0}
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+              </div>
+              {/* Create button */}
+              <button
+                onClick={async () => {
+                  setShareCreating(true);
+                  try {
+                    const result = await api.shareLinks.create(pageId, sharePassword, userId || "anon", shareDays);
+                    const host = window.location.host;
+                    const url = `http://${host}/shared/${result.token}`;
+                    setShareUrl(url);
+                    const links = await api.shareLinks.list(pageId);
+                    setShareLinks(links);
+                  } catch (err) {
+                    alert(String(err));
+                  } finally {
+                    setShareCreating(false);
+                  }
+                }}
+                disabled={shareCreating}
+                className="w-full h-8 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {shareCreating ? "Creating..." : "Create share link"}
+              </button>
+              {/* Share URL display */}
+              {shareUrl && (
+                <div className="p-2 rounded-md bg-primary/5 border border-primary/20">
+                  <p className="text-[10px] text-muted-foreground/60 mb-1">Share URL</p>
+                  <div className="flex gap-1">
+                    <input
+                      readOnly
+                      value={shareUrl}
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                      className="flex-1 h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground font-mono"
+                    />
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(shareUrl); }}
+                      className="h-8 px-2 rounded-md text-xs bg-muted hover:bg-muted/80 text-muted-foreground"
+                      title="Copy URL"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              {/* Existing share links */}
+              {shareLinks.length > 0 && (
+                <div className="space-y-1 pt-2 border-t border-border">
+                  <p className="text-[10px] text-muted-foreground/60 mb-1">Active shares</p>
+                  {shareLinks.map((s) => (
+                    <div key={s.id} className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground font-mono truncate flex-1">{s.token.slice(0, 12)}...</span>
+                      <span className="text-[10px] text-muted-foreground/60">{s.visit_count} views</span>
+                      {s.password_hash && <span className="text-[10px]">🔒</span>}
+                      <button
+                        onClick={async () => {
+                          await api.shareLinks.delete(s.id);
+                          const links = await api.shareLinks.list(pageId);
+                          setShareLinks(links);
+                        }}
+                        className="text-red-400 hover:text-red-300 text-[10px]"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Image Lightbox */}
