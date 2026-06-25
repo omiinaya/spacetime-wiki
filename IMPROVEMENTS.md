@@ -45,7 +45,7 @@ Est: 1h
 ### P2 — Pinned documents
 **Done**: `is_pinned` field on Page STDB table + `set_page_pinned` reducer. Pin/unpin toggle button in page view toolbar (Pin icon, highlight state). Pinned pages sort first in sidebar with pushpin indicator. Favorites section also shows pin indicator.
 Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx, web/src/App.tsx
-Commit: (pending push)
+Commit: 4763aeb
 
 ### P2 — Page color accent
 **Done**: set_page_color reducer on the Page table (already had color field). Color picker palette in editor toolbar with 24 preset colors + clear option. Color accent bar at top of page view. Colored dot indicators in sidebar (collections, favorites, uncategorized). Stored per-page color on existing Page.color field.
