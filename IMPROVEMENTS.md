@@ -8,6 +8,18 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
+### P1 — Page tags/labels UI
+Add inline tag/label management to the page editor/view header: add, remove, and display tags on pages. The STDB `page_tag` table and API (`api.tags.add`, `api.tags.remove`) already exist, but there's no UI to manage them. Tags should auto-complete from existing tags and display as colored badges below the page title.
+Files: web/src/pages/PageView.tsx, web/src/components/PageTags.tsx
+Difficulty: Small
+Est: 1h
+
+### P1 — Markdown import/export
+Add UI for importing Markdown files (drag-and-drop or file picker to create new pages) and exporting pages as .md downloads. The editor already has `markdownToProseMirror()` and `tiptapToMarkdown()` functions. Add import button on sidebar + export action in page context menu.
+Files: web/src/App.tsx, web/src/pages/PageView.tsx
+Difficulty: Medium
+Est: 2h
+
 ### P2 — Batch page operations in sidebar
 Allow selecting multiple pages in the sidebar via checkbox or Cmd+click for bulk operations: move to collection, delete, archive, add tag. Currently each page must be handled individually.
 Files: web/src/App.tsx, web/src/pages/PageView.tsx
