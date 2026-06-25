@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — Breadcrumbs with full parent-page hierarchy
-Current breadcrumbs show Collection → Page. Enhance to walk the parent_page_id chain to show the full hierarchy: Collection → Grandparent → Parent → Current page. Each segment clickable to navigate. Use recursion/map for parent lookup.
-Files: web/src/pages/PageView.tsx
-Difficulty: Medium
-Est: 1h
-
 ### P3 — Auto-save drafts to localStorage
 Periodically auto-save unsaved editor content to localStorage. On page load, if a draft exists, show a "Recover unsaved changes" banner. Prevents data loss on accidental navigation or tab close.
 Files: web/src/pages/PageEditor.tsx
@@ -50,7 +44,8 @@ Est: 1h
 | 2026-06-25 | P2 — Batch page operations in sidebar (multi-select, Cmd+click, batch archive/move/delete/tag) | 4828c80 |
 | 2026-06-25 | P1 — Markdown import/export (sidebar import btn + page context menu export) | f92876f |
 | 2026-06-25 | P2 — Image gallery / lightbox with prev/next navigation | 17e7895 |
-| 2026-06-25 | P2 — Image drag handle for reorder in editor | (this session) |
+| 2026-06-25 | P2 — Image drag handle for reorder in editor | cb5f1c7 |
 | 2026-06-25 | P2 — Page permissions UI (wired in page header) | (already implemented) |
 | 2026-06-25 | P3 — Page analytics (views, trending) | d38be4a |
 | 2026-06-25 | P3 — Webhook management UI | (already implemented) |
+| 2026-06-26 | P1 — Full parent-page hierarchy breadcrumbs | (this session) |

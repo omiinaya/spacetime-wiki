@@ -273,6 +273,7 @@ export function PageView({ pageId, userId }: Props) {
   const [backlinks, setBacklinks] = useState<Page[]>([]);
   const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [parentPages, setParentPages] = useState<Page[]>([]);
 
   // Link preview tooltip
   const [linkPreview, setLinkPreview] = useState<{ x: number; y: number; title: string; url: string } | null>(null);
@@ -312,6 +313,17 @@ export function PageView({ pageId, userId }: Props) {
       if (p.collection_id) {
         api.collections.get(p.collection_id).then(setCollection);
       }
+      // Load parent page chain for breadcrumbs
+      const loadParentChain = async (childId: string, chain: Page[] = []): Promise<Page[]> => {
+        if (!childId || chain.length >= 10) return chain;
+        try {
+          const parent = await api.pages.get(childId);
+          if (!parent) return chain;
+          const updated = [parent, ...chain];
+          return loadParentChain(parent.parent_page_id, updated);
+        } catch { return chain; }
+      };
+      loadParentChain(p.parent_page_id).then(setParentPages);
       // Load backlinks
       api.pages.list().then((allPages) => {
         // Build page title lookup for link previews
@@ -898,8 +910,20 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
       <div className="px-4 md:px-8 pt-8">
         {/* Breadcrumbs */}
         {collection && (
-          <div className="flex items-center gap-1.5 mb-2 text-[11px] text-muted-foreground">
-            <span className="hover:text-foreground cursor-pointer transition-colors">{collection.icon || "📁"} {collection.name}</span>
+          <div className="flex items-center gap-1.5 mb-2 text-[11px] text-muted-foreground flex-wrap">
+            <span
+              onClick={() => navigate(`/collection/${collection.id}`)}
+              className="hover:text-foreground cursor-pointer transition-colors"
+            >{collection.icon || "📁"} {collection.name}</span>
+            {parentPages.length > 0 && parentPages.map((parent, i) => (
+              <span key={parent.id} className="flex items-center gap-1.5">
+                <ChevronRight className="h-3 w-3" />
+                <span
+                  onClick={() => navigate(`/page/${parent.id}`)}
+                  className="hover:text-foreground cursor-pointer transition-colors"
+                >{parent.icon || "📄"} {parent.title}</span>
+              </span>
+            ))}
             <ChevronRight className="h-3 w-3" />
             <span className="text-foreground/80">{page.title}</span>
           </div>
