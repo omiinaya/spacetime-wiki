@@ -39,10 +39,10 @@ Difficulty: Medium
 Est: 2h
 
 ### P3 — Comment @mentions
-Embedded diagrams.net (draw.io) editor alongside Mermaid for visual diagram editing. Uses iframe-based draw.io embedding with export to SVG/PNG stored in doc content.
-Files: web/src/extensions/Drawio.tsx, web/src/pages/PageEditor.tsx
+Notify users when they are mentioned in comments (via @username syntax). Extends existing Mention extension to work in comment fields. Shows user suggestions dropdown.
+Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
 Difficulty: Medium
-Est: 2-3h
+Est: 1.5h
 
 ---
 
