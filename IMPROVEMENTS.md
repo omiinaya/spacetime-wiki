@@ -8,18 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — PlantUML diagrams
-PlantUML rendering alongside Mermaid for text-based diagramming. Server-side rendering via plantuml.com proxy or local renderer. Custom Tiptap node similar to Mermaid extension.
-Files: web/src/extensions/PlantUML.tsx, web/src/pages/PageEditor.tsx
-Difficulty: Medium
-Est: 2h
-
-### P3 — Comment @mentions
-Notify users when they are mentioned in comments (via @username syntax). Extends existing Mention extension to work in comment fields. Shows user suggestions dropdown.
-Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
-Difficulty: Medium
-Est: 1.5h
-
 ### P3 — ZIP export (pages + assets)
 Export selected pages + attachments as ZIP archive using JSZip library. Downloadable bundle with markdown/HTML content and embedded assets. Admin-level bulk export option.
 Files: web/src/components/ZipExport.tsx, web/src/lib/api.ts
@@ -41,6 +29,15 @@ Est: 2h
 ---
 
 ## Recently Completed
+
+### P3 — Comment @mentions
+**Done**: Added @mention detection in comment input with user suggestion dropdown (appears when typing @ after whitespace, filters by name). Dropdown shows avatar initials + username (up to 8 results). Selecting inserts @username into the text. @mentions rendered as highlighted spans (text-primary font-medium). All users loaded on mount via api.users.list().
+Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
+
+### P3 — PlantUML diagrams
+**Done**: Tiptap extension with inline source editor, plantuml.com rendering via plantuml-encoder library, slash command (/plantuml), React node view with edit workflow, loading state, and error handling. Server URL is configurable via extension options.
+Files: web/src/extensions/PlantUML.tsx, web/src/pages/PageEditor.tsx, web/src/pages/PageView.tsx
+Commit: b84a9df
 
 ### P3 — Comment reactions (emoji)
 **Done**: Added `CommentReaction` STDB table with `add_comment_reaction` reducer (toggle on/off per user+emoji). Frontend reactions via localStorage (`sw_reactions` key) with emoji pill buttons showing counts, quick reaction bar (👍❤️🎉🚀👀), click-to-toggle toggle. STDB module ready for future publish.
@@ -85,7 +82,3 @@ Commit: b921743
 ### P3 — Multi-provider video embed extension
 **Done**: Video embed Tiptap extension supporting YouTube, Vimeo, Loom, and Twitch. Paste-to-embed URL detection, slash command (/video), React node view with provider icon and link.
 Files: web/src/extensions/VideoEmbed.ts, Commit: 4db980e
-
-### P3 — KaTeX math extension
-**Done**: Inline and block LaTeX math nodes for the Tiptap editor. React node view for editing and rendering. Slash command (/math). Supports both inline ($...$) and block ($$...$$) math.
-Files: web/src/extensions/Math.tsx, Commit: bf6ff5c
