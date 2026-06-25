@@ -7,7 +7,7 @@ import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
-  Sun, Moon, Keyboard,
+  Sun, Moon, Keyboard, Eye,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -1521,16 +1521,29 @@ function HomeView() {
   const [recentPages, setRecentPages] = useState<Page[]>([]);
   const [importing, setImporting] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const [trendingPages, setTrendingPages] = useState<{page_id: string; views: number; title: string; icon: string}[]>([]);
 
   useEffect(() => {
     api.pages.list().then((pages) => {
       setRecentPages(
         pages
-          .filter((p) => p.status === "published" || p.status === "draft")
-          .sort((a, b) => b.updated_at - a.updated_at)
+          .filter((p: any) => p.status === "published" || p.status === "draft")
+          .sort((a: any, b: any) => b.updated_at - a.updated_at)
           .slice(0, 10),
       );
     });
+    // Load trending pages
+    api.analytics.getTrending(5).then(async (trending) => {
+      const enriched = await Promise.all(trending.map(async (t: any) => {
+        try {
+          const p = await api.pages.get(t.page_id);
+          return { ...t, title: p?.title || "Unknown", icon: p?.icon || "" };
+        } catch {
+          return { ...t, title: "Unknown", icon: "" };
+        }
+      }));
+      setTrendingPages(enriched.filter((t: any) => t.title !== "Unknown"));
+    }).catch(() => {});
   }, []);
 
   const handleImportMD = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1587,6 +1600,32 @@ function HomeView() {
                     <span>Updated {timeAgo(page.updated_at)}</span>
                     {page.status === "draft" && <span className="text-yellow-500">· Draft</span>}
                     {page.status === "archived" && <span className="text-muted-foreground">· Archived</span>}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {trendingPages.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <Eye className="h-3.5 w-3.5" /> Trending
+          </h2>
+          <div className="grid gap-2">
+            {trendingPages.map((item) => (
+              <button
+                key={item.page_id}
+                onClick={() => navigate(`/page/${item.page_id}`)}
+                className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-secondary transition-colors text-left"
+              >
+                {item.icon ? <span className="text-base">{item.icon}</span> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium truncate">{item.title}</div>
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Eye className="h-3 w-3" />
+                    <span>{item.views} view{item.views !== 1 ? "s" : ""}</span>
                   </div>
                 </div>
               </button>
