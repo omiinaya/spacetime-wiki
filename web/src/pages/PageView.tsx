@@ -271,6 +271,11 @@ export function PageView({ pageId, userId }: Props) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState<string>("");
 
+  // Link preview tooltip
+  const [linkPreview, setLinkPreview] = useState<{ x: number; y: number; title: string; url: string } | null>(null);
+  const linkPreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [allPageTitles, setAllPageTitles] = useState<Record<string, string>>({});
+
   useEffect(() => { loadPage(); }, [pageId]);
 
   // ─── TOC: extract headings from page JSON ───────────────────────────────
@@ -306,6 +311,13 @@ export function PageView({ pageId, userId }: Props) {
       }
       // Load backlinks
       api.pages.list().then((allPages) => {
+        // Build page title lookup for link previews
+        const titles: Record<string, string> = {};
+        for (const ap of allPages) {
+          if (ap.id) titles[ap.id] = ap.title;
+          if (ap.slug) titles[ap.slug] = ap.title;
+        }
+        setAllPageTitles(titles);
         const links = allPages.filter(
           (other) =>
             other.id !== p.id &&
@@ -366,6 +378,62 @@ export function PageView({ pageId, userId }: Props) {
       } catch { editor.commands.setContent(page.content || ""); }
     }
   }, [editor, page]);
+
+  // ─── Link preview on hover ───────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!editor) return;
+    const el = editor.view.dom;
+    const mouseover = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest("a");
+      if (!anchor || !anchor.getAttribute("href")) {
+        setLinkPreview(null);
+        return;
+      }
+      const href = anchor.getAttribute("href")!;
+      // Clear any existing timer
+      if (linkPreviewTimer.current) clearTimeout(linkPreviewTimer.current);
+      // Debounce: wait 300ms before showing
+      linkPreviewTimer.current = setTimeout(() => {
+        // Check if it's an internal link (/page/<id> or /p/<slug>)
+        const pageMatch = href.match(/^\/page\/([a-zA-Z0-9_]+)/);
+        const slugMatch = href.match(/^\/p\/([a-zA-Z0-9_-]+)/);
+        let title = "";
+        if (pageMatch && allPageTitles[pageMatch[1]]) {
+          title = allPageTitles[pageMatch[1]];
+        } else if (slugMatch && allPageTitles[slugMatch[1]]) {
+          title = allPageTitles[slugMatch[1]];
+        } else if (!href.startsWith("/") && !href.startsWith("#")) {
+          // External link: show domain
+          try {
+            const url = new URL(href);
+            title = url.hostname.replace(/^www\./, "");
+          } catch { title = "External link"; }
+        } else {
+          title = "Wiki link";
+        }
+        const rect = anchor.getBoundingClientRect();
+        setLinkPreview({
+          x: rect.left + rect.width / 2,
+          y: rect.top - 8,
+          url: href,
+          title,
+        });
+      }, 300);
+    };
+    const mouseout = () => {
+      if (linkPreviewTimer.current) clearTimeout(linkPreviewTimer.current);
+      setLinkPreview(null);
+    };
+    el.addEventListener("mouseover", mouseover);
+    el.addEventListener("mouseout", mouseout);
+    return () => {
+      el.removeEventListener("mouseover", mouseover);
+      el.removeEventListener("mouseout", mouseout);
+      if (linkPreviewTimer.current) clearTimeout(linkPreviewTimer.current);
+    };
+  }, [editor, allPageTitles]);
 
   // ─── Lifecycle actions ──────────────────────────────────────────────────
 
@@ -864,6 +932,27 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           </div>
         </div>
       </div>
+
+      {/* Link preview tooltip */}
+      {linkPreview && (
+        <div
+          className="fixed z-50 px-3 py-1.5 rounded-lg border border-border bg-card shadow-xl"
+          style={{
+            left: `${linkPreview.x}px`,
+            top: `${linkPreview.y}px`,
+            transform: "translate(-50%, -100%)",
+            pointerEvents: "none",
+          }}
+        >
+          <div className="flex items-center gap-1.5 text-xs">
+            <Link2 className="h-3 w-3 text-primary shrink-0" />
+            <span className="text-foreground font-medium truncate max-w-[200px]">{linkPreview.title}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground truncate max-w-[240px] mt-0.5">
+            {linkPreview.url}
+          </div>
+        </div>
+      )}
 
       {/* Backlinks */}
       {backlinks.length > 0 && (
