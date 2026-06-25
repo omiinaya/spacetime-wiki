@@ -150,6 +150,7 @@ pub struct Comment {
     pub parent_comment_id: String,
     pub user_id: String,
     pub body: String,
+    pub text_anchor: String,
     pub is_resolved: bool,
     pub created_at: u64,
     pub updated_at: u64,
@@ -777,11 +778,19 @@ pub fn add_comment(
     parent_comment_id: String,
     user_id: String,
     body: String,
+    text_anchor: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
     ctx.db.comment().insert(Comment {
-        id, page_id, parent_comment_id, user_id, body,
-        is_resolved: false, created_at: now, updated_at: now,
+        id,
+        page_id,
+        parent_comment_id,
+        user_id,
+        body,
+        text_anchor,
+        is_resolved: false,
+        created_at: now,
+        updated_at: now,
     });
     Ok(())
 }

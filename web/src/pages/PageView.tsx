@@ -250,6 +250,10 @@ export function PageView({ pageId, userId }: Props) {
   const [revisions, setRevisions] = useState<PageRevision[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState<Record<string, string>>({});
+  const [anchorComment, setAnchorComment] = useState<{ from: number; to: number; text: string } | null>(null);
+  const [anchorInput, setAnchorInput] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [showConfirm, setShowConfirm] = useState<"publish" | "archive" | "delete" | null>(null);
@@ -427,6 +431,17 @@ export function PageView({ pageId, userId }: Props) {
         }
         return false;
       },
+    },
+    onSelectionUpdate: ({ editor: ed }) => {
+      const { from, to } = ed.state.selection;
+      if (from !== to) {
+        const text = ed.state.doc.textBetween(from, to, " ");
+        if (text.trim().length > 0) {
+          setAnchorComment({ from, to, text: text.trim().slice(0, 200) });
+          return;
+        }
+      }
+      setAnchorComment(null);
     },
   });
 
@@ -738,6 +753,42 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
     setComments(coms);
   };
 
+  const handleReply = async (parentId: string) => {
+    const text = replyText[parentId]?.trim();
+    if (!text || !userId) return;
+    await api.comments.add(pageId, parentId, userId, text);
+    setReplyText((prev) => ({ ...prev, [parentId]: "" }));
+    setReplyTo(null);
+    const coms = await api.comments.list(pageId);
+    setComments(coms);
+  };
+
+  const handleResolve = async (id: string) => {
+    await api.comments.resolve(id);
+    const coms = await api.comments.list(pageId);
+    setComments(coms);
+  };
+
+  const handleDeleteComment = async (id: string) => {
+    await api.comments.delete(id);
+    const coms = await api.comments.list(pageId);
+    setComments(coms);
+  };
+
+  const handleAnchorComment = async () => {
+    if (!anchorInput.trim() || !userId || !anchorComment) return;
+    const anchorJson = JSON.stringify({
+      from: anchorComment.from,
+      to: anchorComment.to,
+      text: anchorComment.text,
+    });
+    await api.comments.add(pageId, "", userId, anchorInput, anchorJson);
+    setAnchorInput("");
+    setAnchorComment(null);
+    const coms = await api.comments.list(pageId);
+    setComments(coms);
+  };
+
   // ─── Revisions ──────────────────────────────────────────────────────────
 
   const handleRestoreRevision = async (rev: PageRevision) => {
@@ -1008,15 +1059,53 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
         {editor && <EditorContent editor={editor} />}
       </div>
 
+      {/* Inline comment anchor popup */}
+      {anchorComment && (
+        <div
+          className="fixed z-50 bottom-4 right-4 w-72 p-3 rounded-xl border border-border bg-card shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-medium text-muted-foreground">Comment on selected text</span>
+            <button onClick={() => { setAnchorComment(null); setAnchorInput(""); }} className="text-muted-foreground hover:text-foreground">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2 italic line-clamp-2">&ldquo;{anchorComment.text}&rdquo;</p>
+          <MentionInput
+            value={anchorInput}
+            onChange={setAnchorInput}
+            placeholder="Write a comment..."
+            className="w-full min-h-[60px] px-2 py-1.5 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+            minRows={2}
+          />
+          <div className="flex gap-2 mt-2 justify-end">
+            <button onClick={() => { setAnchorComment(null); setAnchorInput(""); }}
+              className="h-7 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
+              Cancel
+            </button>
+            <button onClick={handleAnchorComment} disabled={!anchorInput.trim()}
+              className="h-7 px-3 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
+              <Send className="h-3 w-3 inline mr-1" /> Add
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Comments */}
       <div className="px-4 md:px-8 pb-8 border-t border-border mt-8">
         <div className="pt-6 space-y-4">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Comments ({comments.length})</h3>
+            {anchorComment && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                Text selected
+              </span>
+            )}
           </div>
 
-          {userId && (
+          {userId && !anchorComment && (
             <div className="flex gap-2">
               <MentionInput
                 value={newComment}
@@ -1033,18 +1122,118 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             </div>
           )}
 
-          <div className="space-y-2">
-            {comments.map((com) => (
-              <div key={com.id} className="p-3 rounded-lg border border-border bg-card">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium">{com.user_id}</span>
-                  <span className="text-[10px] text-muted-foreground">{timeAgo(com.created_at)}</span>
-                  {com.is_resolved && <span className="text-[10px] px-1 py-0.5 rounded bg-green-500/10 text-green-500">Resolved</span>}
-                </div>
-                <p className="text-sm">{com.body}</p>
-              </div>
-            ))}
-          </div>
+          {comments.length > 0 && (
+            <div className="space-y-3">
+              {/* ── Threaded comments ──────────────────────────────────────── */}
+              {(() => {
+                // Build thread tree: top-level comments sorted by creation, replies nested under them
+                const threads: Comment[] = comments.filter((c) => !c.parent_comment_id);
+                const repliesByParent: Record<string, Comment[]> = {};
+                for (const c of comments) {
+                  if (c.parent_comment_id) {
+                    if (!repliesByParent[c.parent_comment_id]) repliesByParent[c.parent_comment_id] = [];
+                    repliesByParent[c.parent_comment_id].push(c);
+                  }
+                }
+                // Sort each reply group by creation time
+                for (const key of Object.keys(repliesByParent)) {
+                  repliesByParent[key].sort((a, b) => a.created_at - b.created_at);
+                }
+                // Sort top-level threads by creation time
+                threads.sort((a, b) => a.created_at - b.created_at);
+
+                const renderComment = (com: Comment, depth: number = 0) => {
+                  const replies = repliesByParent[com.id] || [];
+                  const isResolved = com.is_resolved;
+                  let anchorData: { from: number; to: number; text: string } | null = null;
+                  try {
+                    if (com.text_anchor) anchorData = JSON.parse(com.text_anchor);
+                  } catch {}
+
+                  return (
+                    <div key={com.id} className={depth > 0 ? "ml-6 pl-3 border-l-2 border-border/50" : ""}>
+                      <div className={`p-3 rounded-lg border ${isResolved ? "border-green-500/30 bg-green-500/5" : "border-border bg-card"}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium">{com.user_id}</span>
+                          <span className="text-[10px] text-muted-foreground">{timeAgo(com.created_at)}</span>
+                          {isResolved && <span className="text-[10px] px-1 py-0.5 rounded bg-green-500/10 text-green-500">Resolved</span>}
+                          {anchorData && (
+                            <span className="text-[10px] px-1 py-0.5 rounded bg-blue-500/10 text-blue-500 truncate max-w-[120px]" title={anchorData.text}>
+                              &ldquo;{anchorData.text.slice(0, 30)}{anchorData.text.length > 30 ? "…" : ""}&rdquo;
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm whitespace-pre-wrap">{com.body}</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          {userId && !isResolved && (
+                            <button
+                              onClick={() => setReplyTo(replyTo === com.id ? null : com.id)}
+                              className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              Reply
+                            </button>
+                          )}
+                          {userId && !isResolved && (
+                            <button
+                              onClick={() => handleResolve(com.id)}
+                              className="text-[10px] text-muted-foreground hover:text-green-500 transition-colors"
+                            >
+                              Resolve
+                            </button>
+                          )}
+                          {userId && (
+                            <button
+                              onClick={() => handleDeleteComment(com.id)}
+                              className="text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Inline reply input */}
+                        {replyTo === com.id && (
+                          <div className="flex gap-2 mt-2">
+                            <MentionInput
+                              value={replyText[com.id] || ""}
+                              onChange={(v) => setReplyText((prev) => ({ ...prev, [com.id]: v }))}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleReply(com.id);
+                                }
+                                if (e.key === "Escape") {
+                                  setReplyTo(null);
+                                  setReplyText((prev) => ({ ...prev, [com.id]: "" }));
+                                }
+                              }}
+                              placeholder="Write a reply..."
+                              className="flex-1 min-h-[28px] px-2 py-1 rounded-md border border-border bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                              minRows={1}
+                            />
+                            <button onClick={() => handleReply(com.id)} disabled={!replyText[com.id]?.trim()}
+                              className="h-7 px-2 rounded-md text-[10px] font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 self-start">
+                              <Send className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Recursively render replies */}
+                      {replies.map((reply) => renderComment(reply, depth + 1))}
+                    </div>
+                  );
+                };
+
+                return threads.map((thread) => renderComment(thread, 0));
+              })()}
+            </div>
+          )}
+          {comments.length === 0 && (
+            <p className="text-xs text-muted-foreground py-2">
+              {anchorComment ? "Write your comment above, then click Add." : "No comments yet. Select text in the document to leave an inline comment."}
+            </p>
+          )}
         </div>
       </div>
 

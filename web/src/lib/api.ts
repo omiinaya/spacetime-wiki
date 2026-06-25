@@ -28,7 +28,7 @@ function mapPage(row: unknown[]): Page {
 function mapCollection(row: unknown[]): Collection { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), description: String(row[3]??""), parent_id: String(row[4]??""), icon: String(row[5]??""), color: String(row[6]??""), sort_order: Number(row[7])||0, created_by: String(row[8]??""), created_at: Number(row[9])||0, updated_at: Number(row[10])||0 }; }
 function mapUser(row: unknown[]): User { return { id: String(row[0]??""), name: String(row[1]??""), email: String(row[2]??""), role: String(row[4]??""), avatar_url: String(row[5]??""), created_at: Number(row[6])||0 }; }
 function mapRevision(row: unknown[]): PageRevision { return { id: String(row[0]??""), page_id: String(row[1]??""), title: String(row[2]??""), content: String(row[3]??""), edited_by: String(row[4]??""), created_at: Number(row[5])||0, revision_number: Number(row[6])||0 }; }
-function mapComment(row: unknown[]): Comment { return { id: String(row[0]??""), page_id: String(row[1]??""), parent_comment_id: String(row[2]??""), user_id: String(row[3]??""), body: String(row[4]??""), is_resolved: Boolean(row[5]), created_at: Number(row[6])||0, updated_at: Number(row[7])||0 }; }
+function mapComment(row: unknown[]): Comment { return { id: String(row[0]??""), page_id: String(row[1]??""), parent_comment_id: String(row[2]??""), user_id: String(row[3]??""), body: String(row[4]??""), text_anchor: String(row[5]??""), is_resolved: Boolean(row[6]), created_at: Number(row[7])||0, updated_at: Number(row[8])||0 }; }
 function mapTag(row: unknown[]): PageTag { return { id: String(row[0]??""), page_id: String(row[1]??""), name: String(row[2]??""), value: String(row[3]??"") }; }
 function mapAttachment(row: unknown[]): Attachment { return { id: String(row[0]??""), page_id: String(row[1]??""), filename: String(row[2]??""), mime_type: String(row[3]??""), size_bytes: Number(row[4])||0, storage_key: String(row[5]??""), uploaded_by: String(row[6]??""), created_at: Number(row[7])||0 }; }
 function mapCollectionMember(row: unknown[]): CollectionMember { return { id: String(row[0]??""), collection_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
@@ -215,7 +215,7 @@ export interface PageRevision {
 
 export interface Comment {
   id: string; page_id: string; parent_comment_id: string;
-  user_id: string; body: string; is_resolved: boolean;
+  user_id: string; body: string; text_anchor: string; is_resolved: boolean;
   created_at: number; updated_at: number;
 }
 
@@ -431,10 +431,11 @@ export const api = {
         .then((rows) => (rows as unknown[][]).map(mapComment)),
     add: (
       pageId: string, parentCommentId: string, userId: string, body: string,
+      textAnchor: string = "",
     ) => {
       const id = genId("com");
       return callReducer("add_comment", [
-        id, pageId, parentCommentId, userId, body,
+        id, pageId, parentCommentId, userId, body, textAnchor,
       ]).then(() => id);
     },
     resolve: (id: string) => callReducer("resolve_comment", [id]),
