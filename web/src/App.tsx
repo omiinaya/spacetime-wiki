@@ -113,6 +113,9 @@ function AppLayout() {
   const importRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
 
+  // Sidebar swipe-to-close ref (mobile)
+  const touchStartRef = useRef(0);
+
   // Apply theme class on mount and on change
   useEffect(() => {
     document.documentElement.classList.toggle("light-theme", theme === "light");
@@ -668,9 +671,16 @@ function AppLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-72 max-w-[85vw] bg-sidebar border-r border-border flex flex-col transition-transform md:relative md:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 w-72 max-w-[85vw] bg-sidebar border-r border-border flex flex-col transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
+        onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientX; }}
+        onTouchMove={(e) => {
+          if (sidebarOpen) {
+            const dx = touchStartRef.current - e.touches[0].clientX;
+            if (dx > 60) setSidebarOpen(false);
+          }
+        }}
       >
         <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
           <div className="w-7 h-7 rounded-md bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shrink-0">
@@ -1099,7 +1109,7 @@ function AppLayout() {
       </aside>
 
       {/* Overlay */}
-      {sidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />}
 
       {/* Context menu */}
       {contextMenu && (
