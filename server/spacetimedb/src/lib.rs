@@ -1398,11 +1398,8 @@ pub struct OidcProvider {
     pub slug: String,
     pub issuer_url: String,
     pub client_id: String,
-    #[default("")]
     pub client_secret: String,
-    #[default("openid email profile")]
     pub scopes: String,
-    #[default(true)]
     pub is_active: bool,
     pub created_by: String,
     pub created_at: u64,
