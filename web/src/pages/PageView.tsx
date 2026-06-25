@@ -284,6 +284,7 @@ export function PageView({ pageId, userId }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [parentPages, setParentPages] = useState<Page[]>([]);
   const [showMediaBrowser, setShowMediaBrowser] = useState(false);
+  const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
 
   // Link preview tooltip
   const [linkPreview, setLinkPreview] = useState<{ x: number; y: number; title: string; url: string } | null>(null);
@@ -377,6 +378,20 @@ export function PageView({ pageId, userId }: Props) {
       ]);
       setRevisions(revs);
       setComments(coms);
+      // Load reactions for all comments
+      const reactionPromises = coms.map(c => api.comments.listReactions(c.id));
+      const reactionResults = await Promise.all(reactionPromises);
+      const reactionMap: Record<string, Record<string, string[]>> = {};
+      for (let i = 0; i < coms.length; i++) {
+        const commentId = coms[i].id;
+        const emojiGroups: Record<string, string[]> = {};
+        for (const r of reactionResults[i]) {
+          if (!emojiGroups[r.emoji]) emojiGroups[r.emoji] = [];
+          emojiGroups[r.emoji].push(r.user_id);
+        }
+        reactionMap[commentId] = emojiGroups;
+      }
+      setReactions(reactionMap);
       // Load attachments
       api.attachments.list(pageId).then((rows) => setAttachments(rows as any[]));
     } catch (err: any) { setError(String(err)); }
@@ -751,6 +766,20 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
     setNewComment("");
     const coms = await api.comments.list(pageId);
     setComments(coms);
+    // Reload reactions for all comments
+    const reactionPromises = coms.map(c => api.comments.listReactions(c.id));
+    const reactionResults = await Promise.all(reactionPromises);
+    const reactionMap: Record<string, Record<string, string[]>> = {};
+    for (let i = 0; i < coms.length; i++) {
+      const cid = coms[i].id;
+      const emojiGroups: Record<string, string[]> = {};
+      for (const r of reactionResults[i]) {
+        if (!emojiGroups[r.emoji]) emojiGroups[r.emoji] = [];
+        emojiGroups[r.emoji].push(r.user_id);
+      }
+      reactionMap[cid] = emojiGroups;
+    }
+    setReactions(reactionMap);
   };
 
   const handleReply = async (parentId: string) => {
@@ -761,6 +790,20 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
     setReplyTo(null);
     const coms = await api.comments.list(pageId);
     setComments(coms);
+    // Reload reactions for all comments
+    const reactionPromises = coms.map(c => api.comments.listReactions(c.id));
+    const reactionResults = await Promise.all(reactionPromises);
+    const reactionMap: Record<string, Record<string, string[]>> = {};
+    for (let i = 0; i < coms.length; i++) {
+      const cid = coms[i].id;
+      const emojiGroups: Record<string, string[]> = {};
+      for (const r of reactionResults[i]) {
+        if (!emojiGroups[r.emoji]) emojiGroups[r.emoji] = [];
+        emojiGroups[r.emoji].push(r.user_id);
+      }
+      reactionMap[cid] = emojiGroups;
+    }
+    setReactions(reactionMap);
   };
 
   const handleResolve = async (id: string) => {
@@ -788,6 +831,22 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
     const coms = await api.comments.list(pageId);
     setComments(coms);
   };
+
+  const handleToggleReaction = async (commentId: string, emoji: string) => {
+    if (!userId) return;
+    await api.comments.addReaction(commentId, userId, emoji);
+    // Reload reactions for this comment
+    const commentReactions = await api.comments.listReactions(commentId);
+    const emojiGroups: Record<string, string[]> = {};
+    for (const r of commentReactions) {
+      if (!emojiGroups[r.emoji]) emojiGroups[r.emoji] = [];
+      emojiGroups[r.emoji].push(r.user_id);
+    }
+    setReactions((prev) => ({ ...prev, [commentId]: emojiGroups }));
+  };
+
+  // Default reaction emoji list
+  const REACTION_EMOJIS = ["👍", "❤️", "🎉", "😄", "😕"];
 
   // ─── Revisions ──────────────────────────────────────────────────────────
 
@@ -1189,6 +1248,32 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                               Delete
                             </button>
                           )}
+                        </div>
+
+                        {/* Reaction buttons */}
+                        <div className="flex items-center gap-1 mt-2 flex-wrap">
+                          {REACTION_EMOJIS.map((emoji) => {
+                            const commentReactions = reactions[com.id] || {};
+                            const usersForEmoji = commentReactions[emoji] || [];
+                            const count = usersForEmoji.length;
+                            const hasReacted = userId ? usersForEmoji.includes(userId) : false;
+                            return (
+                              <button
+                                key={emoji}
+                                onClick={() => handleToggleReaction(com.id, emoji)}
+                                className={cn(
+                                  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs transition-all",
+                                  hasReacted
+                                    ? "bg-primary/15 text-primary border border-primary/20"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent"
+                                )}
+                                title={`React with ${emoji}`}
+                              >
+                                <span className="text-sm leading-none">{emoji}</span>
+                                {count > 0 && <span className="text-[10px] font-medium leading-none">{count}</span>}
+                              </button>
+                            );
+                          })}
                         </div>
 
                         {/* Inline reply input */}

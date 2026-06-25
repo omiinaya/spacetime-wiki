@@ -144,8 +144,16 @@ function AppLayout() {
   const importRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
 
-  // Sidebar swipe-to-close ref (mobile)
+  // Sidebar swipe-to-close refs (mobile)
   const touchStartRef = useRef(0);
+  const sidebarDragRef = useRef(false);
+  const sidebarElRef = useRef<HTMLDivElement>(null);
+  const sidebarTouchDelta = useRef(0);
+  const SIDEBAR_W = 288; // w-72 = 18rem
+
+  // Sidebar drag progress → overlay opacity
+  const [sidebarOverlayVisible, setSidebarOverlayVisible] = useState(false);
+  const sidebarOverlayRef = useRef<HTMLDivElement>(null);
 
   // Apply theme class on mount and on change
   useEffect(() => {
@@ -760,16 +768,72 @@ function AppLayout() {
     <div className="flex h-screen bg-background" onClick={() => setContextMenu(null)}>
       {/* Sidebar */}
       <aside
+        ref={sidebarElRef}
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-72 max-w-[85vw] bg-sidebar border-r border-border flex flex-col transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          "fixed inset-y-0 left-0 z-40 w-72 max-w-[85vw] bg-sidebar border-r border-border flex flex-col transition-transform duration-200 ease-out md:relative md:translate-x-0",
+          sidebarDragRef.current ? "" : (sidebarOpen ? "translate-x-0" : "-translate-x-full"),
         )}
-        onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientX; }}
-        onTouchMove={(e) => {
-          if (sidebarOpen) {
-            const dx = touchStartRef.current - e.touches[0].clientX;
-            if (dx > 60) setSidebarOpen(false);
+        onTouchStart={(e) => {
+          touchStartRef.current = e.touches[0].clientX;
+          if (!sidebarOpen) {
+            // Edge swipe to open — only if touch is near left edge
+            if (touchStartRef.current < 30) {
+              sidebarDragRef.current = true;
+              sidebarTouchDelta.current = 0;
+            }
+          } else {
+            // Drag to close — any touch on sidebar
+            sidebarDragRef.current = true;
+            sidebarTouchDelta.current = 0;
           }
+        }}
+        onTouchMove={(e) => {
+          if (!sidebarDragRef.current) return;
+          const dx = e.touches[0].clientX - touchStartRef.current;
+          sidebarTouchDelta.current = dx;
+          const el = sidebarElRef.current;
+          if (!el) return;
+          el.style.transition = "none";
+          if (!sidebarOpen) {
+            // Opening: drag from edge → translate from -100% to dx
+            const offset = Math.min(Math.max(dx, 0), SIDEBAR_W);
+            el.style.transform = `translateX(${offset - SIDEBAR_W}px)`;
+            // Show overlay with progress
+            const progress = offset / SIDEBAR_W;
+            if (progress > 0.05 && !sidebarOverlayVisible) setSidebarOverlayVisible(true);
+            const ov = sidebarOverlayRef.current;
+            if (ov) ov.style.opacity = String(progress * 0.6);
+          } else {
+            // Closing: drag from 0 to -dx (leftwards)
+            const offset = Math.max(-dx, -SIDEBAR_W);
+            el.style.transform = `translateX(${offset}px)`;
+            const progress = Math.abs(dx) / SIDEBAR_W;
+            const ov = sidebarOverlayRef.current;
+            if (ov) ov.style.opacity = String((1 - progress) * 0.6);
+          }
+        }}
+        onTouchEnd={() => {
+          if (!sidebarDragRef.current) return;
+          sidebarDragRef.current = false;
+          const el = sidebarElRef.current;
+          if (!el) return;
+          el.style.transition = "";
+          el.style.transform = "";
+          const progress = Math.abs(sidebarTouchDelta.current) / SIDEBAR_W;
+          if (!sidebarOpen && sidebarTouchDelta.current > 60) {
+            // Swipe far enough right to open
+            setSidebarOpen(true);
+            setSidebarOverlayVisible(true);
+          } else if (sidebarOpen && progress > 0.4) {
+            // Swipe far enough left to close
+            setSidebarOpen(false);
+            setSidebarOverlayVisible(false);
+          }
+          // Close overlay if didn't open
+          if (!sidebarOpen && sidebarTouchDelta.current <= 60) {
+            setSidebarOverlayVisible(false);
+          }
+          sidebarTouchDelta.current = 0;
         }}
       >
         <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
@@ -1199,7 +1263,14 @@ function AppLayout() {
       </aside>
 
       {/* Overlay */}
-      {sidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />}
+      {(sidebarOpen || sidebarOverlayVisible) && (
+        <div
+          ref={sidebarOverlayRef}
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden transition-opacity duration-300"
+          style={{ opacity: sidebarOpen && !sidebarDragRef.current ? 1 : undefined }}
+          onClick={() => { setSidebarOpen(false); setSidebarOverlayVisible(false); }}
+        />
+      )}
 
       {/* Context menu */}
       {contextMenu && (

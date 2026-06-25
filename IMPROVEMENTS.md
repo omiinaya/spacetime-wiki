@@ -14,12 +14,6 @@ Files: web/src/App.tsx, web/src/components/
 Difficulty: Medium
 Est: 1.5h
 
-### P2 — Comment reactions UI
-Add emoji reaction buttons beneath each comment (👍, ❤️, 🎉, 😄, 😕). The STDB backend already has the `comment_reaction` table and `add_comment_reaction` reducer. Need to display existing reactions, allow toggling, and show reaction counts per comment.
-Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
-Difficulty: Small
-Est: 30min
-
 ### P3 — Page color accent picker
 The Page model already has a `color` field and `set_page_color` reducer, but there's no UI for it. Add a color picker in the PageView toolbar (or page properties) that sets the accent color strip. Should show a small color palette (6-8 presets) + custom hex input.
 Files: web/src/pages/PageView.tsx
@@ -38,7 +32,6 @@ Est: 1h
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-25 | P2 — Inline comments with threaded replies, resolve/delete actions, text-anchor selection UI | ebf98f9 |
 | 2026-06-26 | P1 — File attachments browser/media manager (MediaManager grid dialog, drag-drop upload, search, preview, copy-link, integrated into PageView) | 9a0c7b1 |
 | 2026-06-26 | P2 — Content permalinks (ID-based, survive renames) | 62b887f |
 | 2026-06-26 | P1 — REST API for programmatic access (STDB-based HTTP API with API key auth) | 0d0ab36 |
@@ -48,3 +41,4 @@ Est: 1h
 | 2026-06-26 | P3 — Permanent image upload (paste/drag-and-drop to server storage with attachment:// URL scheme, size limits, and auto-resolution) | 077ecf3 |
 | 2026-06-26 | P1 — Table toolbar with row/column operations (insert/delete rows/cols, merge/split cells) | 0bea2e9 |
 | 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
+| 2026-06-26 | **P2 — Comment reactions UI (STDB-backed 👍❤️🎉😄😕 with toggle, counts, active state)** | **_CURRENT_** |
