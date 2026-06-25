@@ -1732,3 +1732,42 @@ pub fn delete_oidc_provider(ctx: &ReducerContext, id: String) -> Result<(), Stri
     ctx.db.oidc_provider().id().delete(&id);
     Ok(())
 }
+
+// ─── Page Analytics ───────────────────────────────────────────────────────────
+
+#[table(accessor = page_view, public)]
+#[derive(Debug, Clone)]
+pub struct PageView {
+    #[primary_key]
+    pub id: String,
+    pub page_id: String,
+    pub user_id: String,
+    /// Client IP or "anonymous"
+    pub viewer: String,
+    pub viewed_at: u64,
+}
+
+#[reducer]
+pub fn record_page_view(
+    ctx: &ReducerContext,
+    page_id: String,
+    viewer: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    // Deduplicate by page + viewer within the last 5 minutes to avoid spam
+    let five_min_ago = now.saturating_sub(300_000);
+    let recent = ctx.db.page_view().iter()
+        .filter(|v| v.page_id == page_id && v.viewer == viewer && v.viewed_at > five_min_ago)
+        .count();
+    if recent > 0 {
+        return Ok(());  // Already counted this viewer recently
+    }
+    ctx.db.page_view().insert(PageView {
+        id: make_id("pv", ctx),
+        page_id,
+        user_id: String::new(),
+        viewer,
+        viewed_at: now,
+    });
+    Ok(())
+}

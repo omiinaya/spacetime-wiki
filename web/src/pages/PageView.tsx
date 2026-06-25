@@ -24,8 +24,8 @@ import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
-  List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin,
-} from "lucide-react";
+  List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye,
+|} from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
 import { PagePermissions } from "../components/PagePermissions";
@@ -252,6 +252,7 @@ export function PageView({ pageId, userId }: Props) {
   const [collection, setCollection] = useState<Collection | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [viewCount, setViewCount] = useState(0);
 
   // Diff state
   const [diffOldRev, setDiffOldRev] = useState<PageRevision | null>(null);
@@ -327,6 +328,11 @@ export function PageView({ pageId, userId }: Props) {
         );
         setBacklinks(links);
       });
+      // Record page view (debounced, deduplicated per viewer)
+      const viewer = localStorage.getItem("sw_user_id") || "anonymous";
+      api.analytics.recordView(pageId, viewer).catch(() => {});
+      // Fetch view count
+      api.analytics.getViewCount(pageId).then(setViewCount).catch(() => {});
       const [revs, coms] = await Promise.all([
         api.revisions.list(pageId),
         api.comments.list(pageId),
@@ -683,6 +689,12 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             {page.status === "draft" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-500">Draft</span>}
             {page.status === "archived" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Archived</span>}
             {page.status === "published" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-500">Published</span>}
+            {viewCount > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground/60 px-1.5 py-0.5">
+                <Eye className="h-3 w-3" />
+                {viewCount}
+              </span>
+            )}
           </div>
 
           <div className="page-actions flex items-center gap-1">

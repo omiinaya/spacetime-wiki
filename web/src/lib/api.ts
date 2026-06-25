@@ -506,6 +506,22 @@ export const api = {
       callReducer("cleanup_webhook_events", [olderThanMs]),
   },
 
+  analytics: {
+    recordView: (pageId: string, viewer: string) =>
+      callReducer("record_page_view", [pageId, viewer]),
+    getViewCount: (pageId: string) =>
+      sqlQuery(`SELECT COUNT(*) FROM page_view WHERE page_id = '${pageId}'`)
+        .then((rows) => Number((rows[0] as any)?.[0] ?? 0)),
+    getTrending: (limit: number = 8) =>
+      sqlQuery(
+        "SELECT page_id, COUNT(*) FROM page_view " +
+        "GROUP BY page_id ORDER BY COUNT(*) DESC",
+      ).then((rows) => (rows as unknown[][]).slice(0, limit).map(r => ({
+        page_id: String(r[0] ?? ""),
+        views: Number(r[1] ?? 0),
+      }))),
+  },
+
   oidc: {
     list: () =>
       sqlQuery("SELECT * FROM oidc_provider")
