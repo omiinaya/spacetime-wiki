@@ -749,7 +749,7 @@ export function PageEditor({ userId }: Props) {
 
         {/* Formatting toolbar */}
         {!preview && editor && (
-          <div className="flex items-center gap-0.5 px-4 pb-2 flex-wrap">
+          <div className="editor-toolbar flex items-center gap-0.5 px-4 pb-2 flex-wrap">
             <EditorButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Bold (Cmd+B)">
               <Bold className="h-3.5 w-3.5" />
             </EditorButton>
