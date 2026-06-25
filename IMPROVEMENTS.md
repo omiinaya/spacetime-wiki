@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — JSON export for pages
-Add "Export as JSON" option to the page header export dropdown. Exports the full ProseMirror doc JSON plus metadata (title, slug, icon, tags, collection). Useful for programmatic access and backups.
-Files: web/src/pages/PageView.tsx, web/src/App.tsx
-Difficulty: Small
-Est: 0.5h
-
 ### P3 — Auto-save drafts to localStorage
 Periodically auto-save unsaved editor content to localStorage. On page load, if a draft exists, show a "Recover unsaved changes" banner. Prevents data loss on accidental navigation or tab close.
 Files: web/src/pages/PageEditor.tsx
@@ -38,6 +32,7 @@ Est: 1h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-25 | P3 — JSON export for pages | (this session) |
 | 2026-06-25 | P2 — Page links autocomplete (search-as-you-type with [[ trigger) | 66e15f7 |
 | 2026-06-25 | P2 — Batch page operations in sidebar (multi-select, Cmd+click, batch archive/move/delete/tag) | 4828c80 |
 | 2026-06-25 | P1 — Markdown import/export (sidebar import btn + page context menu export) | f92876f |
