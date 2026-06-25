@@ -426,6 +426,12 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
     setShowExport(false);
   };
 
+  const handleExportPDF = () => {
+    if (!page) return;
+    window.print();
+    setShowExport(false);
+  };
+
   // ─── Attachments ─────────────────────────────────────────────────────────
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -526,7 +532,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
   };
 
   return (
-    <div className={cn(page?.full_width ? "mx-auto px-4 md:px-8" : "max-w-4xl mx-auto")}>
+    <div className={cn(page?.full_width ? "mx-auto px-4 md:px-8" : "max-w-4xl mx-auto", "page-content")}>
       {page.color && (
         <div className="h-1 w-full rounded-t-lg" style={{ backgroundColor: page.color }} />
       )}
