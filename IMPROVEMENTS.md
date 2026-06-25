@@ -26,11 +26,17 @@ Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView
 Difficulty: Medium
 Est: 1h
 
-### P3 — PDF export via window.print()
-Export page as PDF using browser's window.print() with print media styles. Button already exists in PageView.tsx but handler is missing (`handleExportPDF` is referenced but undefined). Add @media print CSS for clean PDF output, or use a library like html2pdf.
-Files: web/src/pages/PageView.tsx, web/src/index.css
-Difficulty: Easy
-Est: 0.5h
+### P3 — Comment @mentions
+Notify users when they are mentioned in comments (via @username syntax). Extends existing Mention extension to work in comment fields. Shows user suggestions dropdown.
+Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
+Difficulty: Medium
+Est: 1.5h
+
+### P3 — Comment reactions (emoji)
+Allow emoji reactions on comments (👍❤️🎉🚀👀). Extends Comment model with a `reactions` JSON string or separate `comment_reaction` STDB table. Click-to-react in the comment thread view.
+Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx
+Difficulty: Medium
+Est: 1h
 
 ### P3 — ZIP export (pages + assets)
 Export selected pages + attachments as ZIP archive using JSZip library. Downloadable bundle with markdown/HTML content and embedded assets. Admin-level bulk export option.
@@ -41,6 +47,11 @@ Est: 2h
 ---
 
 ## Recently Completed
+
+### P3 — PDF export via window.print()
+**Done**: Added `handleExportPDF` handler to PageView.tsx (was referenced but undefined). Enhanced `@media print` CSS with proper typography (12pt font, heading sizes, page-break rules), hiding sidebar/toolbar/comments/attachments during print.
+Files: web/src/pages/PageView.tsx, web/src/index.css
+Commit: f7fa047
 
 ### P2 — Responsive/mobile-friendly layout
 **Done**: Full-screen dialogs on small screens (dialog-container/dialog-overlay CSS classes), scrollable formatting toolbar on mobile (editor-toolbar), page-actions horizontal scroll in PageView, side panels (TOC, revisions) go full-width on mobile, sidebar width increased to w-72 max-w-[85vw], viewport-bound context menu, safe-area padding support for notched phones, touch-friendly min-height targets, print media query stubs.
