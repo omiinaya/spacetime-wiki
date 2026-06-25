@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Batch page operations in sidebar
-Allow selecting multiple pages in the sidebar via checkbox or Cmd+click for bulk operations: move to collection, delete, archive, add tag. Currently each page must be handled individually.
-Files: web/src/App.tsx, web/src/pages/PageView.tsx
-Difficulty: Medium
-Est: 2h
-
 ### P3 — Empty state / onboarding UI for new wikis
 Show a helpful getting-started welcome screen when the wiki has no pages. Include quick-action buttons (Create first page, Import from Markdown, Browse keyboard shortcuts) and a brief feature tour. Similar to Outline's empty state.
 Files: web/src/App.tsx
@@ -62,6 +56,7 @@ Est: 1h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-25 | P2 — Batch page operations in sidebar (multi-select, Cmd+click, batch archive/move/delete/tag) | 4828c80 |
 | 2026-06-25 | P1 — Markdown import/export (sidebar import btn + page context menu export) | f92876f |
 | 2026-06-25 | P2 — Image gallery / lightbox with prev/next navigation | 17e7895 |
 | 2026-06-25 | P2 — Image drag handle for reorder in editor | (this session) |
@@ -71,4 +66,3 @@ Est: 1h
 | 2026-06-25 | P1 — Virtual scroll / pagination for page lists | 2642781 |
 | 2026-06-25 | P1 — REST API layer for programmatic access | 2bac0e8 |
 | 2026-06-25 | P1 — Full-text search STDB reducer | 524ab77 |
-| 2026-06-25 | P1 — Real-time STDB subscriptions in App.tsx | bcb54ca |
