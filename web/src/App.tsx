@@ -1963,6 +1963,7 @@ function AppLayout() {
           <Route path="/page/:id" element={<PageViewWrapper userId={userId} />} />
           <Route path="/page/:id/edit" element={<PageEditor userId={userId} />} />
           <Route path="/p/:slug" element={<SlugView />} />
+          <Route path="/permalink/:id" element={<PermalinkRedirect />} />
           <Route path="/oauth/google/callback" element={<GoogleCallback />} />
           <Route path="/oauth/oidc/callback" element={<OidcCallback />} />
           <Route path="/auth/saml/callback" element={<SamlCallback />} />
@@ -2595,6 +2596,27 @@ function SlugView() {
     }).catch(() => setError("Page not found"));
   }, [slug, navigate]);
   
+  if (error) return <div className="flex items-center justify-center h-full"><div className="text-center"><p className="text-sm font-semibold mb-1">404</p><p className="text-xs text-muted-foreground">{error}</p></div></div>;
+  return <div className="flex items-center justify-center h-full"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+}
+
+// ─── Permalink Redirect ───────────────────────────────────────────────────
+
+function PermalinkRedirect() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!id) return;
+    // Preserve the hash anchor from the incoming URL (e.g. #heading-id)
+    const anchor = window.location.hash;
+    api.pages.get(id).then(page => {
+      if (page) navigate(`/page/${page.id}${anchor}`, { replace: true });
+      else setError("Page not found");
+    }).catch(() => setError("Page not found"));
+  }, [id, navigate]);
+
   if (error) return <div className="flex items-center justify-center h-full"><div className="text-center"><p className="text-sm font-semibold mb-1">404</p><p className="text-xs text-muted-foreground">{error}</p></div></div>;
   return <div className="flex items-center justify-center h-full"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
 }
