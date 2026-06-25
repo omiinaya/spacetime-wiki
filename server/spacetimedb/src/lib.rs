@@ -1027,6 +1027,18 @@ pub fn revoke_api_key(ctx: &ReducerContext, id: String) -> Result<(), String> {
     Ok(())
 }
 
+#[reducer]
+pub fn update_api_key_usage(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    let found = ctx.db.api_key().iter().find(|k| k.id == id);
+    if found.is_none() {
+        return Err("API key not found".into());
+    }
+    let mut key = found.unwrap();
+    key.last_used_at = now_ms(ctx);
+    ctx.db.api_key().id().update(key);
+    Ok(())
+}
+
 // ─── Templates ──────────────────────────────────────────────────────────────
 
 #[reducer]
