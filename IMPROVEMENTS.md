@@ -44,10 +44,10 @@ Est: 1h
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-26 | P1 — File attachments browser/media manager (MediaManager grid dialog, drag-drop upload, search, preview, copy-link, integrated into PageView) | <current> |
+| 2026-06-26 | P1 — File attachments browser/media manager (MediaManager grid dialog, drag-drop upload, search, preview, copy-link, integrated into PageView) | 9a0c7b1 |
 | 2026-06-26 | P2 — Content permalinks (ID-based, survive renames) | 62b887f |
 | 2026-06-26 | P1 — REST API for programmatic access (STDB-based HTTP API with API key auth) | 0d0ab36 |
-| 2026-06-26 | P2 — Configurable trash retention period (AppSetting table, Admin panel tab, purge_expired_trash reducer) | <current> |
+| 2026-06-26 | P2 — Configurable trash retention period (AppSetting table, Admin panel tab, purge_expired_trash reducer) | 7350c7a |
 | 2026-06-26 | P2 — Public sharing dialog UI (dedicated share dialog in PageView with password, TTL, copy URL, revoke) | 0dac9cd |
 | 2026-06-26 | P2 — Page duplication from sidebar context menu | fb2cc15 |
 | 2026-06-26 | P3 — Permanent image upload (paste/drag-and-drop to server storage with attachment:// URL scheme, size limits, and auto-resolution) | 077ecf3 |
