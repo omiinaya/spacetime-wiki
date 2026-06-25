@@ -1771,3 +1771,79 @@ pub fn record_page_view(
     });
     Ok(())
 }
+
+// ─── Batch operations (for sidebar multi-select) ────────────────────────────
+
+#[reducer]
+pub fn batch_set_page_status(ctx: &ReducerContext, page_ids: Vec<String>, status: String) -> Result<(), String> {
+    let valid_statuses = ["draft", "published", "archived", "deleted"];
+    if !valid_statuses.contains(&status.as_str()) {
+        return Err("Invalid status".into());
+    }
+    let now = now_ms(ctx);
+    for id in &page_ids {
+        if let Some(mut page) = ctx.db.page().iter().find(|p| &p.id == id) {
+            page.status = status.clone();
+            page.updated_at = now;
+            if status == "published" && page.published_at == 0 {
+                page.published_at = now;
+            }
+            if status == "deleted" {
+                page.deleted_at = now;
+            }
+            if status != "deleted" {
+                page.deleted_at = 0;
+            }
+            ctx.db.page().id().update(page);
+        }
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn batch_move_pages(
+    ctx: &ReducerContext,
+    page_ids: Vec<String>,
+    new_collection_id: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    for id in &page_ids {
+        if let Some(mut page) = ctx.db.page().iter().find(|p| &p.id == id) {
+            page.collection_id = new_collection_id.clone();
+            page.updated_at = now;
+            ctx.db.page().id().update(page);
+        }
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn batch_delete_pages(ctx: &ReducerContext, page_ids: Vec<String>) -> Result<(), String> {
+    for id in &page_ids {
+        let _ = delete_page_permanent(ctx, id.clone());
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn batch_add_tag(
+    ctx: &ReducerContext,
+    page_ids: Vec<String>,
+    tag_name: String,
+    tag_value: String,
+) -> Result<(), String> {
+    for id in &page_ids {
+        // Skip if tag already exists for this page
+        let exists = ctx.db.page_tag().iter()
+            .any(|t| t.page_id == *id && t.name == tag_name && t.value == tag_value);
+        if !exists {
+            ctx.db.page_tag().insert(PageTag {
+                id: make_id("tag", ctx),
+                page_id: id.clone(),
+                name: tag_name.clone(),
+                value: tag_value.clone(),
+            });
+        }
+    }
+    Ok(())
+}

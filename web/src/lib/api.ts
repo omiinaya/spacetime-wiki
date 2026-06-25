@@ -246,6 +246,16 @@ export const api = {
     listTemplates: () =>
       sqlQuery("SELECT * FROM page WHERE is_template = true")
         .then((rows) => (rows as unknown[][]).map(mapPage)),
+
+    // ── Batch operations (for sidebar multi-select) ──
+    batchSetStatus: (pageIds: string[], status: string) =>
+      callReducer("batch_set_page_status", [pageIds, status]),
+    batchMove: (pageIds: string[], newCollectionId: string) =>
+      callReducer("batch_move_pages", [pageIds, newCollectionId]),
+    batchDelete: (pageIds: string[]) =>
+      callReducer("batch_delete_pages", [pageIds]),
+    batchAddTag: (pageIds: string[], name: string, value: string) =>
+      callReducer("batch_add_tag", [pageIds, name, value]),
   },
 
   collections: {
