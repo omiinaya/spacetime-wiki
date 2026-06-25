@@ -596,6 +596,65 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
     }
   };
 
+  // ─── JSON Export ─────────────────────────────────────────────────────────
+
+  const [exportingJSON, setExportingJSON] = useState(false);
+
+  const handleExportJSON = async () => {
+    if (!page) return;
+    setExportingJSON(true);
+    try {
+      // Parse content as ProseMirror doc
+      let doc: any;
+      try { doc = JSON.parse(page.content); } catch { doc = null; }
+
+      // Fetch tags for this page
+      let tags: { name: string; value: string }[] = [];
+      try {
+        const tagRows = await api.tags.list(pageId);
+        tags = tagRows.map((t: any) => ({ name: t.name, value: t.value }));
+      } catch { /* no tags */ }
+
+      // Build the export payload
+      const exportData: Record<string, any> = {
+        title: page.title,
+        slug: page.slug,
+        icon: page.icon || "",
+        color: page.color || "",
+        collection_id: page.collection_id || "",
+        parent_page_id: page.parent_page_id || "",
+        status: page.status,
+        is_pinned: page.is_pinned,
+        is_template: page.is_template,
+        tags,
+        created_by: page.created_by,
+        updated_by: page.updated_by,
+        created_at: page.created_at,
+        updated_at: page.updated_at,
+        published_at: page.published_at,
+        content: doc,
+      };
+
+      // If we have collection info, include it
+      if (collection) {
+        exportData.collection = {
+          id: collection.id,
+          name: collection.name,
+          icon: collection.icon,
+          color: collection.color,
+        };
+      }
+
+      const json = JSON.stringify(exportData, null, 2);
+      downloadFile(json, `${page.title || "Untitled"}.json`, "application/json");
+    } catch (err) {
+      console.error("JSON export failed:", err);
+    } finally {
+      setExportingJSON(false);
+      setShowExport(false);
+    }
+  };
+
   // ─── Attachments ─────────────────────────────────────────────────────────
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -781,6 +840,13 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                     className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left disabled:opacity-50"
                   >
                     {exportingZip ? "Exporting..." : "Export as ZIP"}
+                  </button>
+                  <button
+                    onClick={handleExportJSON}
+                    disabled={exportingJSON}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left disabled:opacity-50"
+                  >
+                    {exportingJSON ? "Exporting..." : "Export as JSON"}
                   </button>
                 </div>
               )}
