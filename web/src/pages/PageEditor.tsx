@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
 import { createPortal } from "react-dom";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -393,67 +393,6 @@ const EMOJI_LIST = [
   ["⭐", "star2"], ["🌟", "star3"], ["🌙", "moon"], ["☀️", "sun"],
   ["❄️", "snowflake"], ["🔥", "fire2"], ["💧", "droplet"], ["🌊", "wave2"],
 ];
-
-// ─── Selection Floating Toolbar ──────────────────────────────────────────────
-
-function SelectionToolbar({
-  editor, handleAddLink,
-}: {
-  editor: ReturnType<typeof useEditor>;
-  handleAddLink: () => void;
-}) {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-
-  useEffect(() => {
-    if (!editor) return;
-    const update = () => {
-      const { from, to, empty } = editor.state.selection;
-      if (empty || from === to) {
-        setPos(null);
-        return;
-      }
-      const view = editor.view;
-      const start = view.coordsAtPos(from);
-      const end = view.coordsAtPos(to);
-      setPos({
-        top: start.top - 44,
-        left: (start.left + end.right) / 2,
-      });
-    };
-    editor.on("selectionUpdate", update);
-    editor.on("blur", () => setPos(null));
-    return () => {
-      editor.off("selectionUpdate", update);
-      editor.off("blur", () => setPos(null));
-    };
-  }, [editor]);
-
-  if (!pos || !editor) return null;
-
-  return (
-    <div
-      className="fixed z-50 flex items-center gap-0.5 p-1 rounded-lg border border-border bg-[#1a1a1a] shadow-2xl transform -translate-x-1/2"
-      style={{ top: pos.top, left: pos.left }}
-    >
-      <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("bold") && "text-primary bg-primary/10")} title="Bold">
-        <Bold className="h-3.5 w-3.5" />
-      </button>
-      <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("italic") && "text-primary bg-primary/10")} title="Italic">
-        <Italic className="h-3.5 w-3.5" />
-      </button>
-      <button onClick={() => editor.chain().focus().toggleStrike().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("strike") && "text-primary bg-primary/10")} title="Strikethrough">
-        <Strikethrough className="h-3.5 w-3.5" />
-      </button>
-      <button onClick={() => editor.chain().focus().toggleCode().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("code") && "text-primary bg-primary/10")} title="Inline Code">
-        <Code className="h-3.5 w-3.5" />
-      </button>
-      <span className="w-px h-4 bg-border" />
-      <button onClick={handleAddLink} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("link") && "text-primary bg-primary/10")} title="Link">
-        <LinkIcon className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  );
-}
 
 // ─── Image Floating Toolbar ───────────────────────────────────────────────────
 
@@ -1370,8 +1309,32 @@ export function PageEditor({ userId }: Props) {
         )}
       </div>
 
-      {/* Floating format toolbar on text selection */}
-      {editor && !preview && <SelectionToolbar editor={editor} handleAddLink={handleAddLink} />}
+      {/* Floating format toolbar on text selection (Tiptap BubbleMenu) */}
+      {editor && !preview && (
+        <BubbleMenu editor={editor} tippyOptions={{ duration: 150, placement: 'top' }}>
+          <div className="flex items-center gap-0.5 p-1 rounded-lg border border-border bg-[#1a1a1a] shadow-2xl">
+            <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("bold") && "text-primary bg-primary/10")} title="Bold (Cmd+B)">
+              <Bold className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("italic") && "text-primary bg-primary/10")} title="Italic (Cmd+I)">
+              <Italic className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("underline") && "text-primary bg-primary/10")} title="Underline (Cmd+U)">
+              <UnderlineIcon className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={() => editor.chain().focus().toggleStrike().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("strike") && "text-primary bg-primary/10")} title="Strikethrough">
+              <Strikethrough className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={() => editor.chain().focus().toggleCode().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("code") && "text-primary bg-primary/10")} title="Inline Code">
+              <Code className="h-3.5 w-3.5" />
+            </button>
+            <span className="w-px h-4 bg-border mx-0.5" />
+            <button onClick={handleAddLink} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("link") && "text-primary bg-primary/10")} title="Link">
+              <LinkIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </BubbleMenu>
+      )}
 
       {/* Floating image toolbar when an image is selected */}
       {editor && !preview && <ImageToolbar editor={editor} />}
