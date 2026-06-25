@@ -37,6 +37,8 @@ function mapGroup(row: unknown[]): Group { return { id: String(row[0]??""), name
 function mapGroupMember(row: unknown[]): GroupMember { return { id: String(row[0]??""), group_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
 function mapCollectionGroupPermission(row: unknown[]): CollectionGroupPermission { return { id: String(row[0]??""), collection_id: String(row[1]??""), group_id: String(row[2]??""), role: String(row[3]??""), created_at: Number(row[4])||0 }; }
 function mapPagePermission(row: unknown[]): PagePermission { return { id: String(row[0]??""), page_id: String(row[1]??""), user_id: String(row[2]??""), group_id: String(row[3]??""), role: String(row[4]??""), created_at: Number(row[5])||0 }; }
+function mapWebhook(row: unknown[]): Webhook { return { id: String(row[0]??""), name: String(row[1]??""), url: String(row[2]??""), events: String(row[3]??""), is_active: Boolean(row[4]), secret: String(row[5]??""), created_by: String(row[6]??""), created_at: Number(row[7])||0, updated_at: Number(row[8])||0 }; }
+function mapWebhookEvent(row: unknown[]): WebhookEvent { return { id: String(row[0]??""), webhook_id: String(row[1]??""), event_type: String(row[2]??""), page_id: String(row[3]??""), payload: String(row[4]??""), status: String(row[5]??""), response_code: Number(row[6])||0, response_body: String(row[7]??""), created_at: Number(row[8])||0, sent_at: Number(row[9])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -144,6 +146,18 @@ export interface CollectionGroupPermission {
 export interface PagePermission {
   id: string; page_id: string; user_id: string; group_id: string;
   role: string; created_at: number;
+}
+
+export interface Webhook {
+  id: string; name: string; url: string; events: string;
+  is_active: boolean; secret: string; created_by: string;
+  created_at: number; updated_at: number;
+}
+
+export interface WebhookEvent {
+  id: string; webhook_id: string; event_type: string; page_id: string;
+  payload: string; status: string; response_code: number;
+  response_body: string; created_at: number; sent_at: number;
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -404,5 +418,33 @@ export const api = {
       return callReducer("set_page_permission", [id, pageId, userId, groupId, role]);
     },
     remove: (id: string) => callReducer("remove_page_permission", [id]),
+  },
+
+  webhooks: {
+    list: () =>
+      sqlQuery("SELECT * FROM webhook")
+        .then((rows) => (rows as unknown[][]).map(mapWebhook)),
+    get: (id: string) =>
+      sqlQuery(`SELECT * FROM webhook WHERE id = '${id}'`).then(
+        (rows) => ((rows as unknown[][])[0] ? mapWebhook((rows as unknown[][])[0]) : null),
+      ),
+    create: (name: string, url: string, events: string, secret: string, createdBy: string) => {
+      const id = genId("wh");
+      return callReducer("create_webhook", [id, name, url, events, secret, createdBy]).then(() => id);
+    },
+    update: (id: string, name: string, url: string, events: string, secret: string, isActive: boolean) =>
+      callReducer("update_webhook", [id, name, url, events, secret, isActive]),
+    delete: (id: string) => callReducer("delete_webhook", [id]),
+    listEvents: (webhookId: string) =>
+      sqlQuery(`SELECT * FROM webhook_event WHERE webhook_id = '${webhookId}' ORDER BY created_at DESC`)
+        .then((rows) => (rows as unknown[][]).map(mapWebhookEvent)),
+    fire: (webhookId: string, eventType: string, pageId: string, payload: string) => {
+      const id = genId("wev");
+      return callReducer("fire_webhook_event", [id, webhookId, eventType, pageId, payload]);
+    },
+    markSent: (id: string, responseCode: number, responseBody: string) =>
+      callReducer("mark_webhook_event_sent", [id, responseCode, responseBody]),
+    cleanup: (olderThanMs: number) =>
+      callReducer("cleanup_webhook_events", [olderThanMs]),
   },
 };

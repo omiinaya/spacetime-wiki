@@ -229,6 +229,40 @@ pub struct ApiKey {
     pub is_revoked: bool,
 }
 
+// ─── Webhooks ────────────────────────────────────────────────────────────────
+
+#[table(accessor = webhook, public)]
+#[derive(Debug, Clone)]
+pub struct Webhook {
+    #[primary_key]
+    pub id: String,
+    pub name: String,
+    pub url: String,
+    /// JSON array of event types, e.g. '["page.create","page.update","page.delete"]'
+    pub events: String,
+    pub is_active: bool,
+    pub secret: String,
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[table(accessor = webhook_event, public)]
+#[derive(Debug, Clone)]
+pub struct WebhookEvent {
+    #[primary_key]
+    pub id: String,
+    pub webhook_id: String,
+    pub event_type: String,
+    pub page_id: String,
+    pub payload: String,
+    pub status: String, // "pending" | "sent" | "failed"
+    pub response_code: u32,
+    pub response_body: String,
+    pub created_at: u64,
+    pub sent_at: u64,
+}
+
 // ─── Helper: sort orders ────────────────────────────────────────────────────
 
 fn next_sort_order(ctx: &ReducerContext, collection_id: &str, parent_page_id: &str) -> u32 {
@@ -1157,5 +1191,139 @@ pub fn set_page_permission(
 #[reducer]
 pub fn remove_page_permission(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.page_permission().id().delete(&id);
+    Ok(())
+}
+
+// ─── Webhooks ────────────────────────────────────────────────────────────────
+
+#[reducer]
+pub fn create_webhook(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    url: String,
+    events: String,  // JSON array, e.g. '["page.create","page.update","page.delete"]'
+    secret: String,
+    created_by: String,
+) -> Result<(), String> {
+    // Validate URL starts with http/https
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+        return Err("Webhook URL must start with http:// or https://".into());
+    }
+    // Validate events is valid JSON array
+    if serde_json::from_str::<Vec<String>>(&events).is_err() {
+        return Err("Events must be a JSON array of strings".into());
+    }
+    let now = now_ms(ctx);
+    ctx.db.webhook().insert(Webhook {
+        id,
+        name,
+        url,
+        events,
+        is_active: true,
+        secret,
+        created_by,
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_webhook(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    url: String,
+    events: String,
+    secret: String,
+    is_active: bool,
+) -> Result<(), String> {
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+        return Err("Webhook URL must start with http:// or https://".into());
+    }
+    if serde_json::from_str::<Vec<String>>(&events).is_err() {
+        return Err("Events must be a JSON array of strings".into());
+    }
+    let found = ctx.db.webhook().iter().find(|w| w.id == id);
+    if found.is_none() {
+        return Err("Webhook not found".into());
+    }
+    let mut wh = found.unwrap();
+    wh.name = name;
+    wh.url = url;
+    wh.events = events;
+    wh.secret = secret;
+    wh.is_active = is_active;
+    wh.updated_at = now_ms(ctx);
+    ctx.db.webhook().id().update(wh);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_webhook(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    // Remove all pending events for this webhook
+    for event in ctx.db.webhook_event().iter().filter(|e| e.webhook_id == id) {
+        ctx.db.webhook_event().id().delete(&event.id);
+    }
+    ctx.db.webhook().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn fire_webhook_event(
+    ctx: &ReducerContext,
+    event_id: String,
+    webhook_id: String,
+    event_type: String,
+    page_id: String,
+    payload: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    ctx.db.webhook_event().insert(WebhookEvent {
+        id: event_id,
+        webhook_id,
+        event_type,
+        page_id,
+        payload,
+        status: "pending".into(),
+        response_code: 0,
+        response_body: String::new(),
+        created_at: now,
+        sent_at: 0,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn mark_webhook_event_sent(
+    ctx: &ReducerContext,
+    id: String,
+    response_code: u32,
+    response_body: String,
+) -> Result<(), String> {
+    let found = ctx.db.webhook_event().iter().find(|e| e.id == id);
+    if found.is_none() {
+        return Err("Webhook event not found".into());
+    }
+    let mut event = found.unwrap();
+    event.status = if response_code >= 200 && response_code < 300 { "sent" } else { "failed" };
+    event.response_code = response_code;
+    event.response_body = response_body;
+    event.sent_at = now_ms(ctx);
+    ctx.db.webhook_event().id().update(event);
+    Ok(())
+}
+
+#[reducer]
+pub fn cleanup_webhook_events(ctx: &ReducerContext, older_than_ms: u64) -> Result<(), String> {
+    let cutoff = now_ms(ctx) - older_than_ms;
+    let to_delete: Vec<String> = ctx.db.webhook_event().iter()
+        .filter(|e| e.created_at < cutoff)
+        .map(|e| e.id.clone())
+        .collect();
+    for id in to_delete {
+        ctx.db.webhook_event().id().delete(&id);
+    }
     Ok(())
 }
