@@ -32,6 +32,18 @@ Files: web/src/pages/PageView.tsx, web/src/lib/api.ts
 Difficulty: Medium
 Est: 1.5h
 
+### P2 — Pinned documents
+Toggle pinning important pages to the top of their collection. Uses a boolean `is_pinned` field on the Page STDB table. Pin/unpin toggle in page toolbar header. Pinned pages render with a pushpin icon and sort above unpinned in the sidebar.
+Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx, web/src/App.tsx
+Difficulty: Easy
+Est: 30min
+
+### P3 — Comment reactions (emoji)
+Allow emoji reactions on comments (👍❤️🎉🚀👀). Extends Comment model with a `reactions` JSON string or separate `comment_reaction` STDB table. Click-to-react in the comment thread view.
+Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView.tsx
+Difficulty: Medium
+Est: 1h
+
 ---
 
 ## Recently Completed
