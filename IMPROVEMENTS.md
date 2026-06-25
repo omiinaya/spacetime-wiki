@@ -45,7 +45,7 @@ Est: 1.5h
 ### P3 — OIDC generic SSO support
 **Done**: OidcProvider STDB table + add/update/delete reducers. Admin panel SSO tab with OIDC provider CRUD. Login view shows configured OIDC providers as sign-in buttons. Generic OIDC callback handler performs PKCE flow, token exchange, userinfo retrieval, and auto-registration.
 Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/App.tsx
-Commit: (pending)
+Commit: dd8b292
 
 ### P3 — Webhooks UI (HTTP callbacks)
 **Done**: WebhookSettings React component with create/edit/delete webhooks, event type selection (page.create, page.update, page.delete, page.publish, page.archive, comment.create), test event firing, webhook events viewer with status tracking (pending/sent/failed), and response body inspection. Integrated as a "Webhooks" tab in the admin panel. Backend (STDB tables + reducers) and frontend API were already implemented in prior work.
