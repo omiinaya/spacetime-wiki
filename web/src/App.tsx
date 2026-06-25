@@ -62,7 +62,7 @@ function AppLayout() {
   // Admin state
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "export">("users");
+  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "export">("users");
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; description: string; created_by: string; created_at: number; updated_at: number }[]>([]);
@@ -1328,6 +1328,10 @@ function AppLayout() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "sso" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <Users className="h-3 w-3 inline mr-1" />SSO
               </button>
+              <button onClick={() => setAdminTab("settings")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "settings" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <Trash2 className="h-3 w-3 inline mr-1" />Settings
+              </button>
               <button onClick={() => setAdminTab("export")}
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "export" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <Download className="h-3 w-3 inline mr-1" />Export
@@ -1606,6 +1610,14 @@ function AppLayout() {
                     The ACS (Assertion Consumer Service) URL is: <code className="bg-muted px-1 rounded">{window.location.origin}/auth/saml/callback</code>
                   </p>
                 </div>
+              </div>
+            )}
+            {adminTab === "settings" && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trash Retention</p>
+                </div>
+                <TrashSettings />
               </div>
             )}
             {adminTab === "export" && <BulkExport />}
@@ -3159,6 +3171,116 @@ function tiptapToHTML(doc: any): string {
 }
 
 // ─── Bulk Export ──────────────────────────────────────────────────────────────
+
+// ─── Trash Settings component ─────────────────────────���───────────────────
+
+function TrashSettings() {
+  const [days, setDays] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [trashCount, setTrashCount] = useState(0);
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [retention, deleted] = await Promise.all([
+          api.settings.getTrashRetentionDays(),
+          api.pages.listDeleted(),
+        ]);
+        setDays(retention);
+        setTrashCount(deleted.length);
+      } catch (e) {
+        console.error("Failed to load trash settings:", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.settings.setTrashRetentionDays(days);
+      addToast({ type: "success", title: "Saved", message: `Trash retention set to ${days > 0 ? `${days} days` : "immediate purge (no retention)"}`, duration: 3000 });
+    } catch (e) {
+      addToast({ type: "error", title: "Failed to save", message: String(e), duration: 5000 });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePurgeNow = async () => {
+    if (!confirm(`Permanently delete all trash pages older than ${days > 0 ? `${days} day(s)` : "any age"}? This cannot be undone.`)) return;
+    setSaving(true);
+    try {
+      await api.settings.purgeExpiredTrash();
+      addToast({ type: "success", title: "Purged", message: "Expired trash pages deleted permanently", duration: 3000 });
+      const deleted = await api.pages.listDeleted();
+      setTrashCount(deleted.length);
+    } catch (e) {
+      addToast({ type: "error", title: "Purge failed", message: String(e), duration: 5000 });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="p-3 rounded-md border border-border bg-muted/10">
+        <p className="text-xs text-muted-foreground mb-1">
+          Currently <strong className="text-foreground">{trashCount} page(s)</strong> in trash
+        </p>
+        <p className="text-[10px] text-muted-foreground/60">
+          {days > 0
+            ? `Pages stay in trash for ${days} day(s) before auto-purge.`
+            : "Trash is purged immediately on \"Empty trash\" action (no retention window)."}
+        </p>
+      </div>
+
+      <div>
+        <label className="text-[10px] text-muted-foreground/60 font-medium mb-1 block">
+          Auto-purge after N days (0 = manual only)
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            value={days}
+            onChange={(e) => setDays(Math.max(0, parseInt(e.target.value) || 0))}
+            min={0}
+            max={365}
+            className="w-24 h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="h-8 px-3 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1 transition-colors"
+          >
+            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+            Save
+          </button>
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-border">
+        <button
+          onClick={handlePurgeNow}
+          disabled={saving || trashCount === 0}
+          className="w-full h-8 rounded-md text-xs font-medium text-red-400 border border-red-500/20 hover:bg-red-500/10 disabled:opacity-50 flex items-center justify-center gap-1 transition-colors"
+        >
+          <Trash2 className="h-3 w-3" />
+          Purge expired trash now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── BulkExport component ────────────────────────────────────────────────
 
 function BulkExport() {
   const [loading, setLoading] = useState(true);

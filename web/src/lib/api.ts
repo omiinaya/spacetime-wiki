@@ -42,6 +42,7 @@ function mapWebhook(row: unknown[]): Webhook { return { id: String(row[0]??""), 
 function mapWebhookEvent(row: unknown[]): WebhookEvent { return { id: String(row[0]??""), webhook_id: String(row[1]??""), event_type: String(row[2]??""), page_id: String(row[3]??""), payload: String(row[4]??""), status: String(row[5]??""), response_code: Number(row[6])||0, response_body: String(row[7]??""), created_at: Number(row[8])||0, sent_at: Number(row[9])||0 }; }
 function mapOidcProvider(row: unknown[]): OidcProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), issuer_url: String(row[3]??""), client_id: String(row[4]??""), client_secret: String(row[5]??""), scopes: String(row[6]??""), is_active: Boolean(row[7]), created_by: String(row[8]??""), created_at: Number(row[9])||0, updated_at: Number(row[10])||0 }; }
 function mapSamlProvider(row: unknown[]): SamlProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), entity_id: String(row[3]??""), sso_url: String(row[4]??""), certificate: String(row[5]??""), name_id_format: String(row[6]??""), attribute_mapping: String(row[7]??""), auto_register: Boolean(row[8]), is_active: Boolean(row[9]), created_by: String(row[10]??""), created_at: Number(row[11])||0, updated_at: Number(row[12])||0 }; }
+function mapAppSetting(row: unknown[]): AppSetting { return { key: String(row[0]??""), value: String(row[1]??""), updated_at: Number(row[2])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -293,6 +294,10 @@ export interface SamlProvider {
   attribute_mapping: string; auto_register: boolean;
   is_active: boolean; created_by: string;
   created_at: number; updated_at: number;
+}
+
+export interface AppSetting {
+  key: string; value: string; updated_at: number;
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -713,6 +718,23 @@ export const api = {
       ]),
     delete: (id: string) =>
       callReducer("delete_saml_provider", [id]),
+  },
+
+  settings: {
+    get: async (key: string): Promise<string> => {
+      const rows = await sqlQuery(`SELECT * FROM app_setting WHERE key = '${key}'`);
+      return rows.length > 0 ? String((rows as unknown[][])[0]?.[1] ?? "") : "";
+    },
+    set: (key: string, value: string) =>
+      callReducer("set_app_setting", [key, value]),
+    getTrashRetentionDays: async (): Promise<number> => {
+      const val = await api.settings.get("trash_retention_days");
+      return parseInt(val) || 0;
+    },
+    setTrashRetentionDays: (days: number) =>
+      callReducer("set_app_setting", ["trash_retention_days", String(days)]),
+    purgeExpiredTrash: () =>
+      callReducer("purge_expired_trash", []),
   },
 };
 

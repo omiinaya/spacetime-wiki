@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Configurable trash retention period
-Add a trash retention setting (in Admin panel) that auto-purges deleted pages older than N days. Currently empty trash deletes everything at once with no configurable window. This adds a safety net for accidental deletions.
-Files: server/spacetimedb/src/lib.rs, web/src/App.tsx, web/src/lib/api.ts
-Difficulty: Medium
-Est: 1h
-
 ### P2 — Inline comments with thread resolution
 Add inline commenting on page content — select text to create a comment thread, reply in thread, resolve/close threads. The data model (comments table) and @mentions in comments already exist; need the inline selection UI and threaded display.
 Files: web/src/pages/PageView.tsx, web/src/components/, server/spacetimedb/src/lib.rs
@@ -44,7 +38,8 @@ Est: 1.5h
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-26 | P2 — Page duplication from sidebar context menu | (current) |
+| 2026-06-26 | P2 — Configurable trash retention period (AppSetting table, Admin panel tab, purge_expired_trash reducer) | <current> |
+| 2026-06-26 | P2 — Page duplication from sidebar context menu | fb2cc15 |
 | 2026-06-26 | P3 — Permanent image upload (paste/drag-and-drop to server storage with attachment:// URL scheme, size limits, and auto-resolution) | 077ecf3 |
 | 2026-06-26 | P1 — Table toolbar with row/column operations (insert/delete rows/cols, merge/split cells) | 0bea2e9 |
 | 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
