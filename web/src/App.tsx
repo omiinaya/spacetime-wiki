@@ -7,6 +7,7 @@ import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
+  Sun, Moon,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -93,6 +94,15 @@ function AppLayout() {
   const [shareUrl, setShareUrl] = useState("");
   const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string }[]>([]);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    return (localStorage.getItem("sw_theme") as "dark" | "light") || "dark";
+  });
+
+  // Apply theme class on mount and on change
+  useEffect(() => {
+    document.documentElement.classList.toggle("light-theme", theme === "light");
+    localStorage.setItem("sw_theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     setUserId(localStorage.getItem("sw_user_id"));
@@ -658,6 +668,14 @@ function AppLayout() {
           </button>
           <button onClick={openAdmin} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <Shield className="h-3 w-3" /> Admin
+          </button>
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+          >
+            {theme === "dark" ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+            {theme === "dark" ? "Light mode" : "Dark mode"}
           </button>
           <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
             {userId ? (

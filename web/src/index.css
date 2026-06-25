@@ -16,6 +16,37 @@
   --radius: 0.5rem;
 }
 
+html.light-theme {
+  --background: 0.97 0.003 286;
+  --foreground: 0.09 0.004 285.823;
+  --card: 0.95 0.003 286;
+  --primary: 0.55 0.23 262.881;
+  --secondary: 0.92 0.005 286;
+  --muted: 0.92 0.005 286;
+  --muted-foreground: 0.45 0.01 286;
+  --border: 0.88 0.005 286;
+  --sidebar: 0.96 0.003 286;
+  --destructive: 0.55 0.21 21.519;
+  --radius: 0.5rem;
+}
+
+html.light-theme .prose-invert {
+  --tw-prose-body: oklch(var(--foreground));
+  --tw-prose-headings: oklch(var(--foreground));
+  --tw-prose-links: oklch(var(--primary));
+  --tw-prose-bold: oklch(var(--foreground));
+  --tw-prose-counters: oklch(var(--muted-foreground));
+  --tw-prose-bullets: oklch(var(--muted-foreground));
+  --tw-prose-hr: oklch(var(--border));
+  --tw-prose-quotes: oklch(var(--muted-foreground));
+  --tw-prose-quote-borders: oklch(var(--border));
+  --tw-prose-code: oklch(var(--foreground));
+  --tw-prose-pre-code: oklch(var(--foreground));
+  --tw-prose-pre-bg: oklch(var(--muted));
+  --tw-prose-th-borders: oklch(var(--border));
+  --tw-prose-td-borders: oklch(var(--border));
+}
+
 * {
   border-color: oklch(var(--border));
 }
