@@ -7,7 +7,7 @@ import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
-  Sun, Moon, Keyboard, Eye,
+  Sun, Moon, Keyboard, Eye, CheckSquare, Square, Tags,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, usePagesSubscription, useCollectionsSubscription } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -34,6 +34,13 @@ function AppLayout() {
   const PAGE_LIMIT = 50;
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Batch selection state
+  const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
+  const [batchTagOpen, setBatchTagOpen] = useState(false);
+  const [batchTagName, setBatchTagName] = useState("");
+  const [batchTagValue, setBatchTagValue] = useState("");
+  const [batchMoveOpen, setBatchMoveOpen] = useState(false);
 
   // Collection dialog state
   const [colDialogOpen, setColDialogOpen] = useState(false);
@@ -535,6 +542,68 @@ function AppLayout() {
     await refreshData();
   };
 
+  // ─── Batch selection handlers ────────────────────────────────────────────
+
+  const togglePageSelection = (pageId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setSelectedPageIds(prev => {
+      const next = new Set(prev);
+      if (next.has(pageId)) next.delete(pageId);
+      else next.add(pageId);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedPageIds(new Set());
+
+  // Cmd+click on a page row: toggle selection without navigating
+  const handlePageClick = (pageId: string, e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey) {
+      togglePageSelection(pageId, e);
+      return;
+    }
+    // If any items are selected, clicking without Cmd clears selection then navigates
+    if (selectedPageIds.size > 0) {
+      clearSelection();
+    }
+    navigate(`/page/${pageId}`);
+  };
+
+  const handleBatchArchive = async () => {
+    if (selectedPageIds.size === 0) return;
+    if (!confirm(`Archive ${selectedPageIds.size} page(s)?`)) return;
+    await api.pages.batchSetStatus(Array.from(selectedPageIds), "archived");
+    clearSelection();
+    await refreshData();
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedPageIds.size === 0) return;
+    if (!confirm(`Move ${selectedPageIds.size} page(s) to trash?`)) return;
+    await api.pages.batchSetStatus(Array.from(selectedPageIds), "deleted");
+    clearSelection();
+    await refreshData();
+  };
+
+  const handleBatchMove = async (newColId: string) => {
+    if (selectedPageIds.size === 0) return;
+    await api.pages.batchMove(Array.from(selectedPageIds), newColId);
+    setBatchMoveOpen(false);
+    clearSelection();
+    await refreshData();
+  };
+
+  const handleBatchTag = async () => {
+    if (selectedPageIds.size === 0 || !batchTagName.trim()) return;
+    await api.pages.batchAddTag(Array.from(selectedPageIds), batchTagName.trim(), batchTagValue.trim());
+    setBatchTagOpen(false);
+    setBatchTagName("");
+    setBatchTagValue("");
+    clearSelection();
+    await refreshData();
+  };
+
   // ─── Command palette handlers ───────────────────────────────────────────
 
   const collectionLabel = (colId: string) => collections.find(c => c.id === colId)?.name || "";
@@ -711,9 +780,8 @@ function AppLayout() {
                     </div>
                     {expanded &&
                       colPages.slice(0, pageLimits[col.id] || PAGE_LIMIT).map((page) => (
-                        <button
+                        <div
                           key={page.id}
-                          onClick={() => navigate(`/page/${page.id}`)}
                           draggable
                           onDragStart={(e) => handleDragStart(e, page.id)}
                           onDragOver={handleDragOver}
@@ -723,23 +791,42 @@ function AppLayout() {
                             setContextMenu({ x: e.clientX, y: e.clientY, pageId: page.id });
                           }}
                           className={cn(
-                            "w-full flex items-center gap-2 pl-8 pr-2 py-1 rounded-md text-xs transition-colors text-left",
+                            "w-full flex items-center gap-0.5 pl-2 pr-2 py-0.5 rounded-md text-xs transition-colors group/page",
                             isActive(page.id)
                               ? "bg-primary/10 text-primary font-medium"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                            selectedPageIds.has(page.id) && "bg-primary/5 ring-1 ring-primary/20",
                           )}
                         >
-                          {page.icon || <FileText className="h-3.5 w-3.5 shrink-0" />}
-                          {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
-                          {page.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary" fill="currentColor" />}
-                          <span className="truncate">{page.title}</span>
-                          {page.status === "draft" && (
-                            <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-yellow-500/10 text-yellow-500 shrink-0">Draft</span>
-                          )}
-                          {page.status === "archived" && (
-                            <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Archived</span>
-                          )}
-                        </button>
+                          {/* Selection checkbox */}
+                          <button
+                            onClick={(e) => togglePageSelection(page.id, e)}
+                            className="p-0.5 rounded text-muted-foreground/40 hover:text-foreground shrink-0 opacity-0 group-hover/page:opacity-100 transition-opacity"
+                            title={selectedPageIds.has(page.id) ? "Deselect" : "Select"}
+                          >
+                            {selectedPageIds.has(page.id) ? (
+                              <CheckSquare className="h-3.5 w-3.5 text-primary" />
+                            ) : (
+                              <Square className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                          {/* Clicking the page name navigates (or Cmd+click toggles) */}
+                          <button
+                            onClick={(e) => handlePageClick(page.id, e)}
+                            className="flex-1 flex items-center gap-1.5 min-w-0 text-left"
+                          >
+                            {page.icon || <FileText className="h-3.5 w-3.5 shrink-0" />}
+                            {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
+                            {page.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary" fill="currentColor" />}
+                            <span className="truncate">{page.title}</span>
+                            {page.status === "draft" && (
+                              <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-yellow-500/10 text-yellow-500 shrink-0">Draft</span>
+                            )}
+                            {page.status === "archived" && (
+                              <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Archived</span>
+                            )}
+                          </button>
+                        </div>
                       ))}
                     {expanded && colPages.length > (pageLimits[col.id] || PAGE_LIMIT) && (
                       <button
@@ -767,9 +854,8 @@ function AppLayout() {
                   </button>
                   {expandedCollections.has("uncategorized") &&
                     pagesByCollection["uncategorized"].slice(0, pageLimits["uncategorized"] || PAGE_LIMIT).map((page) => (
-                      <button
+                      <div
                         key={page.id}
-                        onClick={() => navigate(`/page/${page.id}`)}
                         draggable
                         onDragStart={(e) => handleDragStart(e, page.id)}
                         onDragOver={handleDragOver}
@@ -779,15 +865,40 @@ function AppLayout() {
                           setContextMenu({ x: e.clientX, y: e.clientY, pageId: page.id });
                         }}
                         className={cn(
-                          "w-full flex items-center gap-2 pl-8 pr-2 py-1 rounded-md text-xs transition-colors text-left",
+                          "w-full flex items-center gap-0.5 pl-2 pr-2 py-0.5 rounded-md text-xs transition-colors group/page",
                           isActive(page.id) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                          selectedPageIds.has(page.id) && "bg-primary/5 ring-1 ring-primary/20",
                         )}
                       >
-                        <FileText className="h-3.5 w-3.5 shrink-0" />
-                        {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
-                        {page.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary" fill="currentColor" />}
-                        <span className="truncate">{page.title}</span>
-                      </button>
+                        {/* Selection checkbox */}
+                        <button
+                          onClick={(e) => togglePageSelection(page.id, e)}
+                          className="p-0.5 rounded text-muted-foreground/40 hover:text-foreground shrink-0 opacity-0 group-hover/page:opacity-100 transition-opacity"
+                          title={selectedPageIds.has(page.id) ? "Deselect" : "Select"}
+                        >
+                          {selectedPageIds.has(page.id) ? (
+                            <CheckSquare className="h-3.5 w-3.5 text-primary" />
+                          ) : (
+                            <Square className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        {/* Clicking the page name navigates (or Cmd+click toggles) */}
+                        <button
+                          onClick={(e) => handlePageClick(page.id, e)}
+                          className="flex-1 flex items-center gap-1.5 min-w-0 text-left"
+                        >
+                          <FileText className="h-3.5 w-3.5 shrink-0" />
+                          {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
+                          {page.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary" fill="currentColor" />}
+                          <span className="truncate">{page.title}</span>
+                          {page.status === "draft" && (
+                            <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-yellow-500/10 text-yellow-500 shrink-0">Draft</span>
+                          )}
+                          {page.status === "archived" && (
+                            <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Archived</span>
+                          )}
+                        </button>
+                      </div>
                     ))}
                   {expandedCollections.has("uncategorized") && (pagesByCollection["uncategorized"]?.length || 0) > (pageLimits["uncategorized"] || PAGE_LIMIT) && (
                     <button
@@ -807,6 +918,134 @@ function AppLayout() {
             </>
           )}
         </nav>
+
+        {/* ── Batch action bar (shown when pages are selected) ── */}
+        {selectedPageIds.size > 0 && (
+          <div className="px-2 py-2 border-t border-border bg-muted/20">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="text-[10px] text-muted-foreground font-medium px-1">
+                {selectedPageIds.size} selected
+              </span>
+              <button
+                onClick={clearSelection}
+                className="text-[10px] text-muted-foreground/60 hover:text-foreground ml-auto px-1"
+              >
+                Clear
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              <button
+                onClick={() => setBatchMoveOpen(true)}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                <FolderPlus className="h-3 w-3" /> Move
+              </button>
+              <button
+                onClick={handleBatchArchive}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 transition-colors"
+              >
+                <Archive className="h-3 w-3" /> Archive
+              </button>
+              <button
+                onClick={() => setBatchTagOpen(true)}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+              >
+                <Tags className="h-3 w-3" /> Tag
+              </button>
+              <button
+                onClick={handleBatchDelete}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+              >
+                <Trash2 className="h-3 w-3" /> Delete
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Batch Move dialog ── */}
+        {batchMoveOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+            onClick={() => setBatchMoveOpen(false)}
+          >
+            <div
+              className="w-full max-w-sm mx-4 p-4 rounded-xl border border-border bg-card shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-sm font-semibold mb-3">Move {selectedPageIds.size} page(s)</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto mb-3">
+                {collections.map((col) => (
+                  <button
+                    key={col.id}
+                    onClick={() => handleBatchMove(col.id)}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs hover:bg-muted transition-colors text-left"
+                  >
+                    <span>{col.icon || "📁"}</span>
+                    <span className="truncate">{col.name}</span>
+                  </button>
+                ))}
+                <button
+                  onClick={() => handleBatchMove("")}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs hover:bg-muted transition-colors text-left"
+                >
+                  <Hash className="h-3.5 w-3.5" /> Uncategorized
+                </button>
+              </div>
+              <button
+                onClick={() => setBatchMoveOpen(false)}
+                className="w-full py-2 rounded-md text-xs text-muted-foreground hover:text-foreground border border-border transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Batch Tag dialog ── */}
+        {batchTagOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+            onClick={() => setBatchTagOpen(false)}
+          >
+            <div
+              className="w-full max-w-sm mx-4 p-4 rounded-xl border border-border bg-card shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-sm font-semibold mb-3">Add tag to {selectedPageIds.size} page(s)</h3>
+              <div className="space-y-2 mb-3">
+                <input
+                  type="text"
+                  value={batchTagName}
+                  onChange={(e) => setBatchTagName(e.target.value)}
+                  placeholder="Tag name (e.g. 'department')"
+                  className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+                <input
+                  type="text"
+                  value={batchTagValue}
+                  onChange={(e) => setBatchTagValue(e.target.value)}
+                  placeholder="Tag value (e.g. 'engineering')"
+                  className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleBatchTag}
+                  disabled={!batchTagName.trim()}
+                  className="flex-1 h-8 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                >
+                  Add Tag
+                </button>
+                <button
+                  onClick={() => setBatchTagOpen(false)}
+                  className="flex-1 h-8 rounded-md text-xs text-muted-foreground hover:text-foreground border border-border transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="px-3 py-2 border-t border-border space-y-1">
           <button onClick={openTemplates} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
