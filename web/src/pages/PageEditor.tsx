@@ -657,6 +657,18 @@ export function PageEditor({ userId }: Props) {
   const [editorMode, setEditorMode] = useState<"wysiwyg" | "markdown" | "split">("wysiwyg");
   const [markdownSource, setMarkdownSource] = useState("");
 
+  // Page link autocomplete state ([[ trigger)
+  const [showPageLink, setShowPageLink] = useState(false);
+  const [pageLinkQuery, setPageLinkQuery] = useState("");
+  const [pageLinkIndex, setPageLinkIndex] = useState(0);
+  const [pageLinkPos, setPageLinkPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [allPages, setAllPages] = useState<Page[]>([]);
+
+  // Load all pages for link autocomplete
+  useEffect(() => {
+    api.pages.list().then(setAllPages).catch(() => {});
+  }, []);
+
   // Load existing page
   useEffect(() => {
     if (id) {
@@ -998,6 +1010,23 @@ export function PageEditor({ userId }: Props) {
           return false;
         }
       }
+      // Page link autocomplete — detect "[[" in text
+      if (event.key === "[" && !showPageLink && !emojiOpen && !slashOpen) {
+        const { from } = view.state.selection;
+        const $pos = view.state.doc.resolve(from);
+        const nodeStart = $pos.start();
+        const text = view.state.doc.textBetween(Math.max(0, from - 2), from);
+        // Trigger when user types second "[" (i.e. "[[")
+        if (text === "[" && from > 1) {
+          const coords = view.coordsAtPos(from);
+          setPageLinkPos({ top: coords.top + 24, left: Math.max(10, coords.left - 80) });
+          setShowPageLink(true);
+          setPageLinkQuery("");
+          setPageLinkIndex(0);
+          // Don't prevent default — let both "[" be typed
+          return false;
+        }
+      }
       if (emojiOpen) {
         if (event.key === "ArrowDown") { event.preventDefault(); setEmojiIndex(i => Math.min(i + 1, filteredEmoji.length - 1)); return true; }
         if (event.key === "ArrowUp") { event.preventDefault(); setEmojiIndex(i => Math.max(i - 1, 0)); return true; }
@@ -1031,6 +1060,53 @@ export function PageEditor({ userId }: Props) {
         }
         return false;
       }
+      // Page link autocomplete: keyboard navigation
+      if (showPageLink) {
+        const filtered = allPages.filter(p => p.title.toLowerCase().includes(pageLinkQuery.toLowerCase()));
+        if (event.key === "ArrowDown") { event.preventDefault(); setPageLinkIndex(i => Math.min(i + 1, Math.min(filtered.length - 1, 9))); return true; }
+        if (event.key === "ArrowUp") { event.preventDefault(); setPageLinkIndex(i => Math.max(i - 1, 0)); return true; }
+        if (event.key === "Enter" && filtered.length > 0) {
+          event.preventDefault();
+          const p = filtered[pageLinkIndex] || filtered[0];
+          if (p) {
+            const { from } = view.state.selection;
+            const $pos = view.state.doc.resolve(from);
+            const nodeStart = $pos.start();
+            const textBefore = view.state.doc.textBetween(nodeStart, from);
+            const bracketIdx = textBefore.lastIndexOf("[[");
+            if (bracketIdx >= 0) {
+              view.dispatch(view.state.tr
+                .delete(nodeStart + bracketIdx, from)
+                .insertText(p.title, nodeStart + bracketIdx));
+              // Wrap in a link
+              const after = nodeStart + bracketIdx + p.title.length;
+              view.dispatch(view.state.tr
+                .addMark(nodeStart + bracketIdx, after, view.state.schema.marks.link.create({ href: `/page/${p.id}` })));
+            }
+          }
+          setShowPageLink(false);
+          return true;
+        }
+        if (event.key === "Escape") { event.preventDefault(); setShowPageLink(false); return true; }
+        // Track typed query
+        if (event.key.length === 1) {
+          setTimeout(() => {
+            const sel = view.state.selection;
+            const text = view.state.doc.textBetween(Math.max(0, sel.from - 20), sel.from);
+            const bracketIdx = text.lastIndexOf("[[");
+            if (bracketIdx >= 0) setPageLinkQuery(text.slice(bracketIdx + 2));
+            else setShowPageLink(false);
+          }, 10);
+        } else if (event.key === "Backspace") {
+          setTimeout(() => {
+            setPageLinkQuery(q => {
+              if (q.length <= 0) { setShowPageLink(false); return ""; }
+              return q.slice(0, -1);
+            });
+          }, 10);
+        }
+        return false;
+      }
       if (slashOpen) {
         if (event.key === "ArrowDown") { event.preventDefault(); setSlashIndex(i => Math.min(i + 1, filteredCommands.length - 1)); return true; }
         if (event.key === "ArrowUp") { event.preventDefault(); setSlashIndex(i => Math.max(i - 1, 0)); return true; }
@@ -1055,7 +1131,7 @@ export function PageEditor({ userId }: Props) {
     };
     editor.view.dom.addEventListener("keydown", handler as any, true);
     return () => editor.view.dom.removeEventListener("keydown", handler as any, true);
-  }, [editor, slashOpen, preview, filteredCommands, slashIndex]);
+  }, [editor, slashOpen, preview, filteredCommands, slashIndex, showPageLink, pageLinkQuery, pageLinkIndex, allPages]);
 
   // Close slash menu on click outside
   useEffect(() => {
@@ -1064,6 +1140,14 @@ export function PageEditor({ userId }: Props) {
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
   }, [slashOpen]);
+
+  // Close page link popup on click outside
+  useEffect(() => {
+    if (!showPageLink) return;
+    const handler = () => setShowPageLink(false);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [showPageLink]);
 
   // Close color picker on click outside
   useEffect(() => {
@@ -1442,29 +1526,43 @@ export function PageEditor({ userId }: Props) {
         </div>
       )}
 
-      {/* Mention popup */}
-      {showMention && (
+      {/* Page link autocomplete popup ([[ trigger) */}
+      {showPageLink && (
         <div className="fixed z-50 w-56 py-1 rounded-lg border border-border bg-card shadow-xl max-h-48 overflow-y-auto"
-          style={{ bottom: "auto", left: "50%", transform: "translateX(-50%)", marginTop: "4px" }}
+          style={{ top: pageLinkPos.top, left: pageLinkPos.left }}
           onClick={(e) => e.stopPropagation()}>
-          {[
-            ...allPages.filter(p => p.title.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 8).map(p => ({ type: "page" as const, id: p.id, label: p.title, icon: "📄" })),
-            ...allUsers.filter(u => u.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 4).map(u => ({ type: "user" as const, id: u.id, label: u.name, icon: "👤" })),
-          ].length === 0 ? (
-          <div className="px-3 py-2 text-xs text-muted-foreground/60">No matches</div>
-          ) : (
-          [{ type: "page" as const, id: "", label: "", icon: "" }, ...allPages.filter(p => p.title.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 8).map(p => ({ type: "page" as const, id: p.id, label: p.title, icon: "📄" })),
-          ...allUsers.filter(u => u.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 4).map(u => ({ type: "user" as const, id: u.id, label: u.name, icon: "👤" })),
-          ].filter(m => m.label).map((m, i) => (
-              <button key={m.id}
-                onClick={() => { editor?.chain().focus().insertMention({ id: m.id, label: m.label }).run(); setShowMention(false); }}
-                className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left ${i === mentionPos ? "bg-muted" : ""}`}>
-                <span>{m.icon}</span>
-                <span className="truncate">{m.label}</span>
-                <span className="text-[10px] text-muted-foreground/60 ml-auto">{m.type}</span>
-              </button>
-            ))
-          )}
+          {(() => {
+            const q = pageLinkQuery.toLowerCase();
+            const matches = allPages.filter(p => p.title.toLowerCase().includes(q)).slice(0, 10);
+            return matches.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-muted-foreground/60">No pages found</div>
+            ) : (
+              matches.map((p, i) => (
+                <button key={p.id}
+                  onClick={() => {
+                    // Replace [[query with a link to the page
+                    const { from } = editor!.state.selection;
+                    const $pos = editor!.state.doc.resolve(from);
+                    const nodeStart = $pos.start();
+                    const textBefore = editor!.state.doc.textBetween(nodeStart, from);
+                    const bracketIdx = textBefore.lastIndexOf("[[");
+                    if (bracketIdx >= 0) {
+                      editor!.chain().focus()
+                        .deleteRange({ from: nodeStart + bracketIdx, to: from })
+                        .setLink({ href: `/page/${p.id}` })
+                        .insertContent(p.title)
+                        .run();
+                    }
+                    setShowPageLink(false);
+                  }}
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left ${i === pageLinkIndex ? "bg-muted" : ""}`}>
+                  <span className="text-xs">{p.icon || "📄"}</span>
+                  <span className="truncate flex-1">{p.title}</span>
+                  <span className="text-[10px] text-muted-foreground/60 shrink-0">link</span>
+                </button>
+              ))
+            );
+          })()}
         </div>
       )}
 
@@ -1511,7 +1609,7 @@ export function PageEditor({ userId }: Props) {
       )}
 
       {/* Slash command popup */}
-      {showSlash && editor && (
+      {slashOpen && editor && (
         <div
           className="fixed z-[100] w-64 py-1.5 rounded-lg border border-border bg-[#161616] shadow-2xl overflow-hidden"
           style={{ top: slashPos.top, left: slashPos.left }}

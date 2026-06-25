@@ -26,6 +26,18 @@ Files: web/src/pages/PageEditor.tsx
 Difficulty: Small
 Est: 1h
 
+### P1 — Breadcrumbs with full parent-page hierarchy
+Current breadcrumbs show Collection → Page. Enhance to walk the parent_page_id chain to show the full hierarchy: Collection → Grandparent → Parent → Current page. Each segment clickable to navigate. Use recursion/map for parent lookup.
+Files: web/src/pages/PageView.tsx
+Difficulty: Medium
+Est: 1h
+
+### P2 — Responsive sidebar swipe gestures & drawer animation
+Improve the mobile sidebar experience with smooth slide-in/out transitions, swipe-to-close gesture (touchstart/touchmove/touchend), and backdrop blur. Currently uses a basic overlay.
+Files: web/src/App.tsx
+Difficulty: Small
+Est: 1h
+
 ---
 
 ## Recently Completed
@@ -40,7 +52,3 @@ Est: 1h
 | 2026-06-25 | P3 — Page analytics (views, trending) | d38be4a |
 | 2026-06-25 | P3 — Webhook management UI | (already implemented) |
 | 2026-06-25 | P1 — Virtual scroll / pagination for page lists | 2642781 |
-| 2026-06-25 | P2 — Drag-and-drop sidebar reorder (pages between collections) | (already implemented) |
-| 2026-06-25 | P3 — Page print stylesheet (@media print CSS + print button) | (already implemented) |
-| 2026-06-25 | P3 — Page export as standalone HTML (context menu + export dropdown) | (already implemented) |
-| 2026-06-25 | P3 — Empty state / onboarding UI for new wikis (hero + quick actions + feature tour) | (this session) |
