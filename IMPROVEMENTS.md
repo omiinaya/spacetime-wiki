@@ -8,15 +8,15 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Page analytics (views, edits, trending)
-Track and display page view counts, edit frequency, and trending pages. Store view events via a lightweight reducer.
-Files: server/spacetimedb/src/lib.rs, web/src/components/
-Difficulty: Medium
-Est: 3h
-
 ### P2 — Page permissions UI
 Add a dialog to set per-page user/group permissions (view/edit/admin). Currently page permissions can be managed via the PagePermissions component but it's not accessible from the page header.
 Files: web/src/components/PagePermissions.tsx, web/src/pages/PageView.tsx
+Difficulty: Medium
+Est: 2h
+
+### P2 — Image gallery / lightbox improvements
+The current ImageLightbox works for single images. Enhance it to support gallery navigation (prev/next) when a page has multiple images, and add drag-to-reorder in the editor.
+Files: web/src/components/ImageLightbox.tsx, web/src/extensions/ImageEnhanced.tsx
 Difficulty: Medium
 Est: 2h
 
@@ -26,6 +26,7 @@ Est: 2h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-25 | P3 — Page analytics (views, trending) | d38be4a |
 | 2026-06-25 | P3 — Webhook management UI | (already implemented) |
 | 2026-06-25 | P1 — Virtual scroll / pagination for page lists | 2642781 |
 | 2026-06-25 | P1 — REST API layer for programmatic access | 2bac0e8 |
