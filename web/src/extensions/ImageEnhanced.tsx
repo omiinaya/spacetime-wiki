@@ -109,10 +109,19 @@ const ImageNodeView: React.FC<NodeViewProps> = ({
 
   return (
     <div
-      className={`image-wrapper my-4 ${alignClass} ${selected ? "ring-2 ring-primary/50 rounded-lg" : ""}`}
+      className={`image-wrapper my-4 relative group/image-wrapper ${alignClass} ${selected ? "ring-2 ring-primary/50 rounded-lg" : ""}`}
       style={{ maxWidth: "100%" }}
       contentEditable={false}
     >
+      {/* Drag handle for reordering */}
+      <div
+        className="absolute -left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/image-wrapper:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+        contentEditable={false}
+        draggable={true}
+        data-drag-handle
+      >
+        <div className="w-1.5 h-8 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50" />
+      </div>
       <div className="relative inline-block group/image" style={{ maxWidth: "100%" }}>
         <img
           ref={imgRef}
