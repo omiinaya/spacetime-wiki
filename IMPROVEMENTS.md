@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Emoji picker (`:` colon syntax in editor)
-Add colon-triggered emoji picker inside the Tiptap editor (type `:` followed by text to search emoji). Uses the existing `@tiptap/suggestion` plugin pattern.
-Files: web/src/extensions/EmojiPicker.ts, web/src/pages/PageEditor.tsx
-Difficulty: Medium
-Est: 2h
-
 ### P2 — Link preview/unfurl on hover
 When hovering over a link, show a tooltip with the page title (for internal wiki links) or a metadata preview card (for external URLs).
 Files: web/src/pages/PageView.tsx
@@ -56,13 +50,13 @@ Est: 4h
 
 | Date | Item | Commit | 
 |------|------|--------|
+| 2026-06-25 | P2 — Emoji picker (`:` colon syntax in editor) | f078ee0 (partial) |
 | 2026-06-25 | P3 — SAML 2.0 SSO | f078ee0 |
+| 2026-06-25 | P2 — Page templates (template picker dialog) | bde9d16 |
 | 2026-06-25 | P3 — Multiple editor modes (Markdown ↔ WYSIWYG toggle) | 67fb0da |
-| 2026-06-24 | P3 — Comment @mentions | — |
 | 2026-06-24 | P3 — PlantUML diagrams | b84a9df |
 | 2026-06-24 | P3 — ZIP export (pages + assets) | — |
 | 2026-06-24 | P3 — Comment reactions (emoji) | 98ef06d |
 | 2026-06-24 | P3 — PDF export via window.print() | f7fa047 |
 | 2026-06-24 | P2 — Responsive/mobile-friendly layout | 5330ead |
 | 2026-06-24 | P3 — Draw.io/diagrams.net integration | 73afd15 |
-| 2026-06-24 | P2 — Pinned documents | 4763aeb |
