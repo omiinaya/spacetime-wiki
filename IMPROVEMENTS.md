@@ -8,22 +8,16 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P1 — Floating formatting toolbar (BubbleMenu) on text selection
-The `@tiptap/extension-bubble-menu` package is already in dependencies but never imported. Add a floating formatting toolbar that appears above text selection with Bold/Italic/Underline/Strikethrough/Code/Link buttons. Maps to roadmap P1 (Floating formatting toolbar).
-Files: web/src/pages/PageEditor.tsx
-Difficulty: Small
-Est: 0.5h
+### P1 — Breadcrumbs with full parent-page hierarchy
+Current breadcrumbs show Collection → Page. Enhance to walk the parent_page_id chain to show the full hierarchy: Collection → Grandparent → Parent → Current page. Each segment clickable to navigate. Use recursion/map for parent lookup.
+Files: web/src/pages/PageView.tsx
+Difficulty: Medium
+Est: 1h
 
 ### P3 — Auto-save drafts to localStorage
 Periodically auto-save unsaved editor content to localStorage. On page load, if a draft exists, show a "Recover unsaved changes" banner. Prevents data loss on accidental navigation or tab close.
 Files: web/src/pages/PageEditor.tsx
 Difficulty: Small
-Est: 1h
-
-### P1 — Breadcrumbs with full parent-page hierarchy
-Current breadcrumbs show Collection → Page. Enhance to walk the parent_page_id chain to show the full hierarchy: Collection → Grandparent → Parent → Current page. Each segment clickable to navigate. Use recursion/map for parent lookup.
-Files: web/src/pages/PageView.tsx
-Difficulty: Medium
 Est: 1h
 
 ### P2 — Responsive sidebar swipe gestures & drawer animation
@@ -50,6 +44,7 @@ Est: 1h
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-25 | P1 — Floating formatting toolbar (Tiptap BubbleMenu with Underline) | 2aa081c |
 | 2026-06-25 | P3 — JSON export for pages | (this session) |
 | 2026-06-25 | P2 — Page links autocomplete (search-as-you-type with [[ trigger) | 66e15f7 |
 | 2026-06-25 | P2 — Batch page operations in sidebar (multi-select, Cmd+click, batch archive/move/delete/tag) | 4828c80 |
@@ -59,4 +54,3 @@ Est: 1h
 | 2026-06-25 | P2 — Page permissions UI (wired in page header) | (already implemented) |
 | 2026-06-25 | P3 — Page analytics (views, trending) | d38be4a |
 | 2026-06-25 | P3 — Webhook management UI | (already implemented) |
-| 2026-06-25 | P1 — Virtual scroll / pagination for page lists | 2642781 |
