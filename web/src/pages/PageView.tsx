@@ -27,7 +27,7 @@ import {
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
   List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye,
 } from "lucide-react";
-import { api, Page, PageRevision, Comment, Collection } from "../lib/api";
+import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments, isAttachmentUrl } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
 import { PagePermissions } from "../components/PagePermissions";
 import { RevisionDiff } from "../components/RevisionDiff";
@@ -281,6 +281,7 @@ export function PageView({ pageId, userId }: Props) {
   const [linkPreview, setLinkPreview] = useState<{ x: number; y: number; title: string; url: string } | null>(null);
   const linkPreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [allPageTitles, setAllPageTitles] = useState<Record<string, string>>({});
+  const blobUrlCacheRef = useRef<Map<string, string>>(new Map());
 
   useEffect(() => { loadPage(); }, [pageId]);
 
@@ -416,7 +417,10 @@ export function PageView({ pageId, userId }: Props) {
       try {
         const parsed = JSON.parse(page.content || "{}");
         if (parsed && parsed.type === "doc") {
-          editor.commands.setContent(parsed);
+          // Resolve attachment:// URLs to blob URLs for display
+          resolveContentAttachments(parsed, blobUrlCacheRef.current).then((resolved) => {
+            editor.commands.setContent(resolved);
+          });
         } else {
           editor.commands.setContent({ type: "doc", content: [{ type: "paragraph" }] });
         }
@@ -487,6 +491,15 @@ export function PageView({ pageId, userId }: Props) {
       if (linkPreviewTimer.current) clearTimeout(linkPreviewTimer.current);
     };
   }, [editor, allPageTitles]);
+
+  // Clean up blob URLs on unmount
+  useEffect(() => {
+    const cache = blobUrlCacheRef.current;
+    return () => {
+      cache.forEach((blobUrl) => URL.revokeObjectURL(blobUrl));
+      cache.clear();
+    };
+  }, []);
 
   // ─── Lifecycle actions ──────────────────────────────────────────────────
 

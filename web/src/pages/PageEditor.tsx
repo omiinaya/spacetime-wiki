@@ -65,7 +65,7 @@ import {
   Columns3,
   Rows3,
 } from "lucide-react";
-import { api, Page } from "../lib/api";
+import { api, Page, readFileAsBase64, resolveContentAttachments, isAttachmentUrl, MAX_IMAGE_BYTES } from "../lib/api";
 import { cn } from "../lib/utils";
 
 const lowlight = createLowlight(common);
@@ -730,6 +730,8 @@ export function PageEditor({ userId }: Props) {
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  // Cache for attachment:// → blob: URL resolution, cleaned up on unmount
+  const blobUrlCacheRef = useRef<Map<string, string>>(new Map());
 
   // Slash menu state
   const [slashOpen, setSlashOpen] = useState(false);
@@ -930,8 +932,8 @@ export function PageEditor({ userId }: Props) {
             event.preventDefault();
             const file = item.getAsFile();
             if (file) {
-              const url = URL.createObjectURL(file);
-              editor?.chain().focus().setImageEnhanced({ src: url }).run();
+              // Upload image to server storage for permanent URL
+              handleImageFile(file);
             }
             return true;
           }
@@ -965,8 +967,8 @@ export function PageEditor({ userId }: Props) {
         for (const file of files) {
           if (file.type.startsWith("image/")) {
             event.preventDefault();
-            const url = URL.createObjectURL(file);
-            editor?.chain().focus().setImageEnhanced({ src: url }).run();
+            // Upload dropped image to server storage
+            handleImageFile(file);
             return true;
           }
         }
@@ -1008,13 +1010,16 @@ export function PageEditor({ userId }: Props) {
     },
   });
 
-  // Sync content when page loads
+  // Sync content when page loads — resolve attachment:// URLs to blob URLs
   useEffect(() => {
     if (editor && page) {
       try {
         const parsed = JSON.parse(page.content || "{}");
         if (parsed?.type === "doc") {
-          editor.commands.setContent(parsed);
+          // Resolve any attachment:// URLs to blob URLs for display
+          resolveContentAttachments(parsed, blobUrlCacheRef.current).then((resolved) => {
+            editor.commands.setContent(resolved);
+          });
         }
       } catch { /* ignore */ }
     }
@@ -1055,10 +1060,38 @@ export function PageEditor({ userId }: Props) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      editor?.chain().focus().setImageEnhanced({ src: url }).run();
+      handleImageFile(file);
     }
     e.target.value = "";
+  };
+
+  /** Upload an image file to STDB attachment storage and insert it into the editor */
+  const handleImageFile = async (file: File) => {
+    if (file.size > MAX_IMAGE_BYTES) {
+      setError(`Image too large (max ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} MB)`);
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setError("Only image files are supported");
+      return;
+    }
+    try {
+      const base64 = await readFileAsBase64(file);
+      const attId = await api.attachments.add(
+        page?.id || id || "temp",
+        file.name,
+        file.type,
+        file.size,
+        base64,
+        userId || "anonymous",
+      );
+      // Store attachment:// URL in the editor — resolved at load time via resolveContentAttachments
+      const attUrl = `attachment://${attId}`;
+      editor?.chain().focus().setImageEnhanced({ src: attUrl }).run();
+    } catch (err: any) {
+      console.error("Image upload failed:", err);
+      setError(`Image upload failed: ${err.message || err}`);
+    }
   };
 
   // Add link
@@ -1343,6 +1376,15 @@ export function PageEditor({ userId }: Props) {
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
   }, [showColorPicker]);
+
+  // Clean up blob URLs on unmount
+  useEffect(() => {
+    const cache = blobUrlCacheRef.current;
+    return () => {
+      cache.forEach((blobUrl) => URL.revokeObjectURL(blobUrl));
+      cache.clear();
+    };
+  }, []);
 
   if (loading) {
     return (
