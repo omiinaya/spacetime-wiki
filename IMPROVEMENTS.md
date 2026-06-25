@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Auto-save drafts to localStorage
-Periodically auto-save unsaved editor content to localStorage. On page load, if a draft exists, show a "Recover unsaved changes" banner. Prevents data loss on accidental navigation or tab close.
-Files: web/src/pages/PageEditor.tsx
-Difficulty: Small
-Est: 1h
-
 ### P2 — Responsive sidebar swipe gestures & drawer animation
 Improve the mobile sidebar experience with smooth slide-in/out transitions, swipe-to-close gesture (touchstart/touchmove/touchend), and backdrop blur. Currently uses a basic overlay.
 Files: web/src/App.tsx
@@ -39,6 +33,7 @@ Est: 1h
 | Date | Item | Commit |
 |------|------|--------|
 | 2026-06-26 | P1 — Full parent-page hierarchy breadcrumbs | faac220 |
+| 2026-06-26 | P3 — Auto-save drafts to localStorage with recovery banner | 8fdc2fd |
 | 2026-06-25 | P1 — Floating formatting toolbar (Tiptap BubbleMenu with Underline) | 2aa081c |
 | 2026-06-25 | P3 — JSON export for pages | 35451f1 |
 | 2026-06-25 | P2 — Page links autocomplete (search-as-you-type with [[ trigger) | 66e15f7 |
