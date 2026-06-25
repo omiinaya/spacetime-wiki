@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Notification system (toast for real-time events)
-Add a toast notification system for real-time events: page updates by other users, new comments, @mentions, and system notifications. Integrate with existing STDB subscriptions to show non-intrusive toasts when data changes.
-Files: web/src/components/Toast.tsx (new), web/src/App.tsx
-Difficulty: Medium
-Est: 1.5h
-
 ### P3 — Permanent image upload (paste/drag-and-drop to server storage)
 Currently pasted and dropped images create blob:// URLs that only work for the current session and break on page reload. Replace with actual upload to server storage, returning a permanent URL stored in the attachment table. Add image URL validation and size limits.
 Files: web/src/pages/PageEditor.tsx, server/spacetimedb/src/lib.rs
@@ -44,7 +38,7 @@ Est: 1h
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | _pending_ |
+| 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
 | 2026-06-26 | P3 — @Mentions in comments (MentionInput component with user autocomplete) | 2b77429 |
 | 2026-06-26 | P1 — Full parent-page hierarchy breadcrumbs | faac220 |
 | 2026-06-26 | P3 — Auto-save drafts to localStorage with recovery banner | 8fdc2fd |
@@ -52,5 +46,4 @@ Est: 1h
 | 2026-06-25 | P1 — Floating formatting toolbar (Tiptap BubbleMenu with Underline) | 2aa081c |
 | 2026-06-25 | P2 — Page links autocomplete (search-as-you-type with [[ trigger) | 66e15f7 |
 | 2026-06-25 | P2 — Batch page operations in sidebar (multi-select, Cmd+click, batch archive/move/delete/tag) | 4828c80 |
-| 2026-06-25 | P1 — Markdown import/export (sidebar import btn + page context menu export) | f92876f |
-| 2026-06-25 | P2 — Image gallery / lightbox with prev/next navigation | 17e7895 |
+| 2026-06-25 | P2 — Notification system (toast for real-time events: page updates, connection state, import/export, batch ops, CRUD) | _(pending commit)_ |

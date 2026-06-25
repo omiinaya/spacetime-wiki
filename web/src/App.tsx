@@ -11,13 +11,15 @@ import {
 } from "lucide-react";
 import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, usePagesSubscription, useCollectionsSubscription } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
-import { connectSubscriptions, disconnectSubscriptions } from "./lib/subscriptions";
+import { connectSubscriptions, disconnectSubscriptions, defaultSubscriptionManager } from "./lib/subscriptions";
 import { PageEditor } from "./pages/PageEditor";
 import { PageView } from "./pages/PageView";
 import { SearchFilters, EMPTY_FILTERS, type SearchFilterState } from "./components/SearchFilters";
 import { WebhookSettings } from "./components/WebhookSettings";
 import { TemplatePicker } from "./components/TemplatePicker";
 import { KeyboardShortcuts } from "./components/KeyboardShortcuts";
+import { ToastProvider, useToast, initGlobalToast } from "./components/Toast";
+import { showToast } from "./components/Toast";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -105,9 +107,38 @@ function AppLayout() {
   const [shareUrl, setShareUrl] = useState("");
   const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string }[]>([]);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  // Theme toggle
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return (localStorage.getItem("sw_theme") as "dark" | "light") || "dark";
   });
+
+  // Toast notifications
+  const { addToast } = useToast();
+
+  // Initialize global toast for use outside React components
+  useEffect(() => {
+    initGlobalToast(addToast);
+  }, [addToast]);
+
+  // ─── Toast: STDB connection state changes ────────────────────────────────
+  const [prevConnected, setPrevConnected] = useState(false);
+  useEffect(() => {
+    const unsub = defaultSubscriptionManager.onStateChange((state) => {
+      if (state === "connected" && !prevConnected) {
+        showToast({ type: "success", title: "Connected", message: "Real-time updates active", duration: 3000 });
+      }
+      if (state === "connected") {
+        setPrevConnected(true);
+      }
+      if (state === "reconnecting") {
+        showToast({ type: "warning", title: "Reconnecting...", message: "Trying to restore real-time connection", duration: 3000 });
+      }
+    });
+    return () => unsub();
+  }, [prevConnected]);
+
+  // ─── Toast: Comment notifications (when on a different page) ─────────────
+  // Monitored via the comments subscription in PageView (handled there)
 
   // Import MD state
   const importRef = useRef<HTMLInputElement>(null);
@@ -173,6 +204,37 @@ function AppLayout() {
       setLoading(false);
     }
   }, [pagesConnected, colsConnected, subPages.length, subCollections.length]);
+
+  // ─── Toast: Page updates from other users via subscriptions ──────────────
+  const prevPagesRef = useRef<Page[]>([]);
+  useEffect(() => {
+    if (!pagesConnected) return;
+    const prev = prevPagesRef.current;
+    if (prev.length > 0 && subPages.length > 0) {
+      const myId = localStorage.getItem("sw_user_id") || "";
+      for (const page of subPages) {
+        const was = prev.find((p) => p.id === page.id);
+        if (!was && page.created_by !== myId) {
+          showToast({
+            type: "info",
+            title: "New page created",
+            message: `"${page.title}" was added`,
+            duration: 5000,
+            action: { label: "Open", onClick: () => window.location.assign(`/page/${page.id}`) },
+          });
+        } else if (was && was.updated_at !== page.updated_at && page.updated_by !== myId && page.status !== "deleted") {
+          showToast({
+            type: "info",
+            title: "Page updated",
+            message: `"${page.title}" was modified`,
+            duration: 4000,
+            action: { label: "Open", onClick: () => window.location.assign(`/page/${page.id}`) },
+          });
+        }
+      }
+    }
+    prevPagesRef.current = subPages;
+  }, [subPages, pagesConnected]);
 
   // Fallback: if subscriptions never connect after 5s, load via HTTP
   useEffect(() => {
@@ -301,8 +363,11 @@ function AppLayout() {
       const title = file.name.replace(/\.md$/i, "");
       const doc = markdownToProseMirror(text);
       const id = await api.pages.create(title, JSON.stringify(doc), "", "", userId || "anonymous");
+      addToast({ type: "success", title: "Imported", message: `"${title}" imported from Markdown`, duration: 4000 });
       navigate(`/page/${id}`);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      addToast({ type: "error", title: "Import failed", message: String(err), duration: 5000 });
+    }
     finally { setImporting(false); e.target.value = ""; }
   };
 
@@ -319,6 +384,7 @@ function AppLayout() {
       a.download = `${page.title || "Untitled"}.md`;
       a.click();
       URL.revokeObjectURL(url);
+      addToast({ type: "success", title: "Exported", message: `"${page.title}" as Markdown`, duration: 3000 });
     } catch (err) { console.error(err); }
   };
 
@@ -336,6 +402,7 @@ function AppLayout() {
       a.download = `${page.title || "Untitled"}.html`;
       a.click();
       URL.revokeObjectURL(url);
+      addToast({ type: "success", title: "Exported", message: `"${page.title}" as HTML`, duration: 3000 });
     } catch (err) { console.error(err); }
   };
 
@@ -365,12 +432,16 @@ function AppLayout() {
     try {
       if (editingCol) {
         await api.collections.update(editingCol.id, colName, colDesc, colIcon, colColor);
+        addToast({ type: "success", title: "Collection updated", duration: 3000 });
       } else {
         await api.collections.create(colName, colDesc, "", colIcon, colColor, userId || "anonymous");
+        addToast({ type: "success", title: "Collection created", duration: 3000 });
       }
       setColDialogOpen(false);
       await refreshData();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      addToast({ type: "error", title: "Failed to save collection", message: String(e), duration: 5000 });
+    }
   };
 
   const deleteCollection = async (id: string) => {
@@ -378,6 +449,7 @@ function AppLayout() {
     setContextMenu(null);
     await api.collections.delete(id);
     await refreshData();
+    addToast({ type: "success", title: "Collection archived", duration: 3000 });
   };
 
   // ─── Trash handlers ─────────────────────────────────────────────────────
@@ -396,6 +468,8 @@ function AppLayout() {
     await api.pages.restore(id);
     setTrashPages(prev => prev.filter(p => p.id !== id));
     await refreshData();
+    const page = trashPages.find(p => p.id === id);
+    addToast({ type: "success", title: "Page restored", message: page?.title, duration: 3000 });
   };
 
   const permanentDelete = async (id: string) => {
@@ -403,6 +477,7 @@ function AppLayout() {
     await api.pages.delete(id);
     setTrashPages(prev => prev.filter(p => p.id !== id));
     await refreshData();
+    addToast({ type: "success", title: "Page permanently deleted", duration: 3000 });
   };
 
   const emptyTrash = async () => {
@@ -410,6 +485,7 @@ function AppLayout() {
     await api.pages.emptyTrash();
     setTrashPages([]);
     await refreshData();
+    addToast({ type: "success", title: "Trash emptied", duration: 3000 });
   };
 
   // ─── Admin handlers ─────────────────────────────────────────────────────
@@ -579,6 +655,7 @@ function AppLayout() {
     await api.pages.batchSetStatus(Array.from(selectedPageIds), "archived");
     clearSelection();
     await refreshData();
+    addToast({ type: "success", title: `Archived ${selectedPageIds.size} page(s)`, duration: 3000 });
   };
 
   const handleBatchDelete = async () => {
@@ -587,6 +664,7 @@ function AppLayout() {
     await api.pages.batchSetStatus(Array.from(selectedPageIds), "deleted");
     clearSelection();
     await refreshData();
+    addToast({ type: "success", title: `Moved ${selectedPageIds.size} page(s) to trash`, duration: 3000 });
   };
 
   const handleBatchMove = async (newColId: string) => {
@@ -595,6 +673,7 @@ function AppLayout() {
     setBatchMoveOpen(false);
     clearSelection();
     await refreshData();
+    addToast({ type: "success", title: `Moved ${selectedPageIds.size} page(s)`, duration: 3000 });
   };
 
   const handleBatchTag = async () => {
@@ -605,6 +684,7 @@ function AppLayout() {
     setBatchTagValue("");
     clearSelection();
     await refreshData();
+    addToast({ type: "success", title: `Tagged ${selectedPageIds.size} page(s)`, duration: 3000 });
   };
 
   // ─── Command palette handlers ───────────────────────────────────────────
@@ -3253,7 +3333,9 @@ function BulkExport() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppLayout />
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>
     </BrowserRouter>
   );
 }
