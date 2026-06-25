@@ -21,6 +21,7 @@ import { DragHandle } from "../extensions/DragHandle";
 import { Mermaid } from "../extensions/Mermaid";
 import { MathInline, MathBlock } from "../extensions/Math";
 import { VideoEmbed, detectProvider } from "../extensions/VideoEmbed";
+import { RichEmbed, detectEmbedProvider } from "../extensions/RichEmbed";
 import { Drawio } from "../extensions/Drawio";
 import { PlantUML } from "../extensions/PlantUML";
 import { ImageLightbox } from "../components/ImageLightbox";
@@ -85,6 +86,7 @@ const SLASH_COMMANDS = [
   { title: "Diagram", description: "Insert a Mermaid diagram", icon: "📊", command: (e) => e?.chain().focus().setMermaid({ src: "graph TD\\n  A[Start] --> B[Process]\\n  B --> C[End]" }).run() },
   { title: "Math Block", description: "Insert LaTeX math (KaTeX)", icon: "∑", command: (e) => e?.chain().focus().setMathBlock({ tex: "E = mc^2" }).run() },
   { title: "Video", description: "Insert a video embed (YouTube, Vimeo, Loom)", icon: "🎬", command: (e) => { const url = prompt("Video URL:"); if (url) e?.chain().focus().setVideoEmbed({ src: url }).run(); } },
+  { title: "Embed", description: "Embed content from 30+ providers (Figma, CodePen, Spotify, Google Docs...)", icon: "🔗", command: (e) => { const url = prompt("Embed URL:"); if (url) e?.chain().focus().setRichEmbed({ src: url }).run(); } },
   { title: "Draw.io", description: "Insert a draw.io diagram", icon: "📐", command: (e) => e?.chain().focus().setDrawio({ src: "" }).run() },
   { title: "PlantUML", description: "Insert a PlantUML diagram", icon: "🌿", command: (e) => e?.chain().focus().setPlantUML({ src: "@startuml\\nAlice -> Bob: Hello\\nBob -> Alice: Hi!\\n@enduml" }).run() },
 ];
@@ -714,6 +716,7 @@ export function PageEditor({ userId }: Props) {
       MathInline,
       MathBlock,
       VideoEmbed,
+      RichEmbed,
       Drawio,
       PlantUML,
       Mention.configure({ HTMLAttributes: { class: 'mention' } }),
@@ -739,13 +742,20 @@ export function PageEditor({ userId }: Props) {
         // Check for pasted video URLs (text)
         const text = event.clipboardData?.getData("text");
         if (text) {
-          // Check each line for video URLs
+          // Check each line for video URLs first, then rich embeds
           const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
           for (const line of lines) {
             const provider = detectProvider(line);
             if (provider) {
               event.preventDefault();
               editor?.chain().focus().setVideoEmbed({ src: line }).run();
+              return true;
+            }
+            // Check for rich embed (30+ providers)
+            const embedProvider = detectEmbedProvider(line);
+            if (embedProvider) {
+              event.preventDefault();
+              editor?.chain().focus().setRichEmbed({ src: line }).run();
               return true;
             }
           }

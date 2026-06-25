@@ -333,3 +333,35 @@ body {
     -webkit-text-size-adjust: 100%;
   }
 }
+
+/* ─── Rich Embed Styles ─────────────────────────────────────────────────────── */
+
+.rich-embed-card {
+  transition: background-color 0.15s ease;
+}
+.rich-embed-card a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.rich-embed-iframe {
+  max-width: 100%;
+}
+.rich-embed-iframe iframe {
+  border: 0;
+}
+
+html.light-theme .rich-embed-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+html.light-theme .rich-embed-iframe {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+/* ─── Video Embed consistency ───────────────────────────────────────────────── */
+.video-embed-block {
+  max-width: 100%;
+}
+

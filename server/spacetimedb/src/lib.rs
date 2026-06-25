@@ -1387,6 +1387,142 @@ pub fn cleanup_webhook_events(ctx: &ReducerContext, older_than_ms: u64) -> Resul
     Ok(())
 }
 
+// ─── Full-Text Search ──────────────────────────────────────────────────────────
+
+#[table(accessor = search_result, public)]
+#[derive(Debug, Clone)]
+pub struct SearchResult {
+    #[primary_key]
+    pub id: String,
+    /// Unique token per search query, used to group results
+    pub search_token: String,
+    pub page_id: String,
+    pub title: String,
+    pub slug: String,
+    /// First ~200 chars of text_content for excerpt
+    pub excerpt: String,
+    /// "title" or "content" — what matched (title matches ranked first)
+    pub match_type: String,
+    pub created_at: u64,
+}
+
+#[reducer]
+pub fn search_pages(
+    ctx: &ReducerContext,
+    search_token: String,
+    query: String,
+    collection_id: String,
+    author_id: String,
+    date_from: i64,
+    date_to: i64,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    let query_lower = query.to_lowercase();
+    let query_trimmed = query_lower.trim();
+
+    if query_trimmed.is_empty() {
+        return Err("Search query cannot be empty".into());
+    }
+
+    // Clean up any previous results for this token
+    let existing: Vec<String> = ctx.db.search_result().iter()
+        .filter(|r| r.search_token == search_token)
+        .map(|r| r.id.clone())
+        .collect();
+    for id in existing {
+        ctx.db.search_result().id().delete(&id);
+    }
+
+    // Also clean up orphaned results older than 5 minutes
+    let cutoff = now - 300_000;
+    let stale: Vec<String> = ctx.db.search_result().iter()
+        .filter(|r| r.created_at < cutoff)
+        .map(|r| r.id.clone())
+        .collect();
+    for id in stale {
+        ctx.db.search_result().id().delete(&id);
+    }
+
+    // Iterate all non-deleted pages and match
+    for page in ctx.db.page().iter().filter(|p| p.status != "deleted") {
+        // Collection filter
+        if !collection_id.is_empty() && page.collection_id != collection_id {
+            continue;
+        }
+        // Author filter
+        if !author_id.is_empty() && page.created_by != author_id {
+            continue;
+        }
+        // Date range filter (updated_at)
+        if date_from > 0 && (page.updated_at as i64) < date_from {
+            continue;
+        }
+        if date_to > 0 && (page.updated_at as i64) > date_to {
+            continue;
+        }
+
+        let title_lower = page.title.to_lowercase();
+        let content_lower = page.text_content.to_lowercase();
+
+        let (matched, match_type) = if title_lower.contains(query_trimmed) {
+            (true, "title")
+        } else if content_lower.contains(query_trimmed) {
+            (true, "content")
+        } else {
+            (false, "")
+        };
+
+        if !matched {
+            continue;
+        }
+
+        // Build excerpt (first 200 chars around match in text_content)
+        let excerpt = if match_type == "title" {
+            page.title.clone()
+        } else {
+            // Try to find the match position and show surrounding text
+            if let Some(pos) = content_lower.find(query_trimmed) {
+                let start = if pos > 80 { pos - 80 } else { 0 };
+                let end = std::cmp::min(start + 200, page.text_content.len());
+                let excerpt_raw = &page.text_content[start..end];
+                format!("...{}...", excerpt_raw.trim())
+            } else {
+                // Fallback: first 200 chars
+                let short = page.text_content.chars().take(200).collect::<String>();
+                format!("{}...", short.trim())
+            }
+        };
+
+        let id = make_id("sr", ctx);
+        ctx.db.search_result().insert(SearchResult {
+            id,
+            search_token: search_token.clone(),
+            page_id: page.id.clone(),
+            title: page.title.clone(),
+            slug: page.slug.clone(),
+            excerpt,
+            match_type: match_type.to_string(),
+            created_at: now,
+        });
+    }
+
+    Ok(())
+
+}
+
+#[reducer]
+pub fn cleanup_search_results(ctx: &ReducerContext, older_than_ms: u64) -> Result<(), String> {
+    let cutoff = now_ms(ctx) - older_than_ms;
+    let stale: Vec<String> = ctx.db.search_result().iter()
+        .filter(|r| r.created_at < cutoff)
+        .map(|r| r.id.clone())
+        .collect();
+    for id in stale {
+        ctx.db.search_result().id().delete(&id);
+    }
+    Ok(())
+}
+
 // ─── SAML 2.0 SSO ─────────────────────────────────────────────────────────────
 
 #[table(accessor = saml_provider, public)]
