@@ -32,6 +32,18 @@ Files: server/spacetimedb/src/lib.rs, web/src/lib/api.ts, web/src/pages/PageView
 Difficulty: Medium
 Est: 1h
 
+### P3 — PDF export via window.print()
+Export page as PDF using browser's window.print() with print media styles. Button already exists in PageView.tsx but handler is missing (`handleExportPDF` is referenced but undefined). Add @media print CSS for clean PDF output, or use a library like html2pdf.
+Files: web/src/pages/PageView.tsx, web/src/index.css
+Difficulty: Easy
+Est: 0.5h
+
+### P3 — ZIP export (pages + assets)
+Export selected pages + attachments as ZIP archive using JSZip library. Downloadable bundle with markdown/HTML content and embedded assets. Admin-level bulk export option.
+Files: web/src/components/ZipExport.tsx, web/src/lib/api.ts
+Difficulty: Medium
+Est: 2h
+
 ---
 
 ## Recently Completed
