@@ -7,7 +7,7 @@ import {
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send,
 } from "lucide-react";
-import { api, Page, Collection, ApiKey } from "./lib/api";
+import { api, Page, Collection, ApiKey, OidcProvider } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
 import { PageEditor } from "./pages/PageEditor";
 import { PageView } from "./pages/PageView";
@@ -46,7 +46,7 @@ function AppLayout() {
   // Admin state
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks">("users");
+  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso">("users");
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; description: string; created_by: string; created_at: number; updated_at: number }[]>([]);
@@ -59,6 +59,17 @@ function AppLayout() {
   const [addMemberGroupId, setAddMemberGroupId] = useState<string | null>(null);
   const [memberUserId, setMemberUserId] = useState("");
   const [memberRole, setMemberRole] = useState("member");
+
+  // OIDC provider state
+  const [oidcProviders, setOidcProviders] = useState<OidcProvider[]>([]);
+  const [oidcDialogOpen, setOidcDialogOpen] = useState(false);
+  const [editingOidc, setEditingOidc] = useState<OidcProvider | null>(null);
+  const [oidcName, setOidcName] = useState("");
+  const [oidcSlug, setOidcSlug] = useState("");
+  const [oidcIssuer, setOidcIssuer] = useState("");
+  const [oidcClientId, setOidcClientId] = useState("");
+  const [oidcClientSecret, setOidcClientSecret] = useState("");
+  const [oidcScopes, setOidcScopes] = useState("openid email profile");
 
   // Share state
   const [shareDialog, setShareDialog] = useState<{ pageId: string; pageTitle: string } | null>(null);
@@ -242,6 +253,8 @@ function AppLayout() {
       setAllUsers(users);
       const grps = await api.groups.list();
       setGroups(grps);
+      const oidc = await api.oidc.list();
+      setOidcProviders(oidc);
     } catch (e) { console.error(e); }
     setAdminOpen(true);
     setAdminTab("users");
@@ -709,6 +722,10 @@ function AppLayout() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "webhooks" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <Send className="h-3 w-3 inline mr-1" />Webhooks
               </button>
+              <button onClick={() => setAdminTab("sso")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "sso" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <Users className="h-3 w-3 inline mr-1" />SSO
+              </button>
             </div>
 
             {adminTab === "users" && (
@@ -864,6 +881,66 @@ function AppLayout() {
             )}
             {adminTab === "webhooks" && (
               <WebhookSettings userId={userId} />
+            )}
+            {adminTab === "sso" && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">OIDC Providers</p>
+                  <button onClick={() => {
+                    setEditingOidc(null);
+                    setOidcName(""); setOidcSlug(""); setOidcIssuer("");
+                    setOidcClientId(""); setOidcClientSecret(""); setOidcScopes("openid email profile");
+                    setOidcDialogOpen(true);
+                  }} className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                    <Plus className="h-3 w-3" /> Add Provider
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {oidcProviders.map(p => (
+                    <div key={p.id} className="flex items-center gap-3 px-3 py-2 rounded-md border border-border hover:bg-muted/30 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate flex items-center gap-2">
+                          {p.name}
+                          {p.is_active ? (
+                            <span className="text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">Active</span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Disabled</span>
+                          )}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/60 truncate">{p.issuer_url}</p>
+                      </div>
+                      <button onClick={() => {
+                        setEditingOidc(p);
+                        setOidcName(p.name); setOidcSlug(p.slug); setOidcIssuer(p.issuer_url);
+                        setOidcClientId(p.client_id); setOidcClientSecret(""); setOidcScopes(p.scopes);
+                        setOidcDialogOpen(true);
+                      }} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button onClick={async () => {
+                        if (!confirm(`Delete OIDC provider "${p.name}"?`)) return;
+                        await api.oidc.delete(p.id);
+                        setOidcProviders(prev => prev.filter(x => x.id !== p.id));
+                      }} className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {oidcProviders.length === 0 && (
+                    <div className="py-4 text-center text-xs text-muted-foreground">
+                      No OIDC providers configured. Add one to enable SSO login.
+                    </div>
+                  )}
+                </div>
+                <div className="pt-4 mt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold mb-2 text-muted-foreground">How it works</h4>
+                  <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                    Configure any OpenID Connect provider (Keycloak, Okta, Auth0, Azure AD, etc.).
+                    Users will see a <strong className="text-foreground">"Sign in with {oidcProviders.find(p => p.is_active)?.name || "SSO"}"</strong> button on the login page.
+                    The callback URL for all providers is: <code className="bg-muted px-1 rounded">{window.location.origin}/oauth/oidc/callback</code>
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -1048,6 +1125,78 @@ function AppLayout() {
         </div>
       )}
 
+      {/* OIDC Provider dialog */}
+      {oidcDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setOidcDialogOpen(false)}>
+          <div className="w-full max-w-md p-5 rounded-xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold mb-4">{editingOidc ? "Edit OIDC Provider" : "Add OIDC Provider"}</h3>
+            <div className="space-y-3">
+              <input
+                type="text" value={oidcName} onChange={(e) => setOidcName(e.target.value)}
+                placeholder="Provider name (e.g. Keycloak, Okta)" autoFocus
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+              <input
+                type="text" value={oidcSlug} onChange={(e) => setOidcSlug(e.target.value)}
+                placeholder="Slug (e.g. keycloak — appears in URL)"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+              <input
+                type="text" value={oidcIssuer} onChange={(e) => setOidcIssuer(e.target.value)}
+                placeholder="Issuer URL (e.g. https://auth.example.com/realms/myrealm)"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+              <input
+                type="text" value={oidcClientId} onChange={(e) => setOidcClientId(e.target.value)}
+                placeholder="Client ID"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+              <input
+                type="password" value={oidcClientSecret} onChange={(e) => setOidcClientSecret(e.target.value)}
+                placeholder={editingOidc ? "Client secret (leave blank to keep current)" : "Client secret"}
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+              <input
+                type="text" value={oidcScopes} onChange={(e) => setOidcScopes(e.target.value)}
+                placeholder="Scopes (default: openid email profile)"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+              <div className="flex gap-2 justify-end pt-2">
+                <button onClick={() => setOidcDialogOpen(false)} className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button onClick={async () => {
+                  if (!oidcName.trim() || !oidcSlug.trim() || !oidcIssuer.trim() || !oidcClientId.trim()) {
+                    alert("Name, slug, issuer URL, and client ID are required.");
+                    return;
+                  }
+                  try {
+                    if (editingOidc) {
+                      await api.oidc.update(editingOidc.id, oidcName, oidcSlug, oidcIssuer, oidcClientId, oidcClientSecret, oidcScopes, editingOidc.is_active);
+                      setOidcProviders(prev => prev.map(p => p.id === editingOidc.id ? {
+                        ...p, name: oidcName, slug: oidcSlug, issuer_url: oidcIssuer,
+                        client_id: oidcClientId, scopes: oidcScopes, updated_at: Date.now(),
+                      } : p));
+                    } else {
+                      const id = await api.oidc.create(oidcName, oidcSlug, oidcIssuer, oidcClientId, oidcClientSecret, oidcScopes, userId || "anon");
+                      setOidcProviders(prev => [...prev, {
+                        id, name: oidcName, slug: oidcSlug, issuer_url: oidcIssuer,
+                        client_id: oidcClientId, client_secret: oidcClientSecret, scopes: oidcScopes,
+                        is_active: true, created_by: userId || "anon", created_at: Date.now(), updated_at: Date.now(),
+                      }]);
+                    }
+                    setOidcDialogOpen(false);
+                  } catch (e: any) { alert(String(e)); }
+                }} disabled={!oidcName.trim() || !oidcSlug.trim() || !oidcIssuer.trim() || !oidcClientId.trim()}
+                  className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                  {editingOidc ? "Save" : "Add"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <div className="md:hidden flex items-center gap-2 px-4 h-14 border-b border-border">
@@ -1065,6 +1214,7 @@ function AppLayout() {
           <Route path="/page/:id/edit" element={<PageEditor userId={userId} />} />
           <Route path="/p/:slug" element={<SlugView />} />
           <Route path="/oauth/google/callback" element={<GoogleCallback />} />
+          <Route path="/oauth/oidc/callback" element={<OidcCallback />} />
           <Route path="/login" element={<LoginView />} />
         </Routes>
       </main>
@@ -1295,6 +1445,107 @@ function GoogleCallback() {
   return <div className="flex items-center justify-center h-full"><div className="text-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" /><p className="text-xs text-muted-foreground">{status}</p></div></div>;
 }
 
+// ─── OIDC Callback ───────────────────────────────────────────────────────────
+
+function OidcCallback() {
+  const navigate = useNavigate();
+  const [status, setStatus] = useState("Completing sign-in...");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const error = params.get("error");
+    if (error || !code) { setStatus(`Authentication failed: ${error || "No authorization code"}`); return; }
+
+    const code_verifier = localStorage.getItem("sw_oauth_verifier") || "";
+    localStorage.removeItem("sw_oauth_verifier");
+    const providerId = localStorage.getItem("sw_oidc_provider_id") || "";
+    localStorage.removeItem("sw_oidc_provider_id");
+
+    if (!providerId) { setStatus("No OIDC provider configured"); return; }
+
+    (async () => {
+      try {
+        // Get provider config from STDB
+        const provider = await api.oidc.get(providerId);
+        if (!provider) { setStatus("OIDC provider not found"); return; }
+
+        const issuer = provider.issuer_url.replace(/\/$/, "");
+        const redirectUri = `${window.location.origin}/oauth/oidc/callback`;
+
+        setStatus("Exchanging code...");
+
+        // Fetch OIDC discovery to get token endpoint
+        const discRes = await fetch(`${issuer}/.well-known/openid-configuration`);
+        const discovery = await discRes.json();
+        const tokenUrl = discovery.token_endpoint;
+        const userinfoUrl = discovery.userinfo_endpoint;
+
+        // Exchange code for tokens
+        const body = new URLSearchParams({
+          client_id: provider.client_id,
+          code, code_verifier,
+          grant_type: "authorization_code",
+          redirect_uri: redirectUri,
+        });
+        if (provider.client_secret) {
+          body.append("client_secret", provider.client_secret);
+        }
+
+        const tokenRes = await fetch(tokenUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body,
+        });
+        const tokens = await tokenRes.json();
+        if (tokens.error) { setStatus(`Token error: ${tokens.error_description || tokens.error}`); return; }
+
+        // Get user info from ID token or userinfo endpoint
+        let email = "";
+        let name = "";
+
+        if (tokens.id_token) {
+          // Decode JWT payload (base64)
+          try {
+            const payload = JSON.parse(atob(tokens.id_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+            email = payload.email || "";
+            name = payload.name || payload.preferred_username || payload.sub || "";
+          } catch {}
+        }
+
+        if (!email && userinfoUrl) {
+          setStatus("Fetching profile...");
+          const userRes = await fetch(userinfoUrl, {
+            headers: { Authorization: `Bearer ${tokens.access_token}` },
+          });
+          const profile = await userRes.json();
+          email = profile.email || "";
+          name = profile.name || profile.preferred_username || profile.sub || "";
+        }
+
+        if (!email) { setStatus("Could not get email from provider"); return; }
+
+        setStatus("Signing in...");
+        // Try to log in with existing account
+        const existing = await api.users.getByEmail(email);
+        if (existing) {
+          localStorage.setItem("sw_user_id", existing.id);
+        } else {
+          // Auto-register with profile
+          const id = "user_" + Math.random().toString(36).slice(2, 8);
+          await callReducerLocal("register_user", [id, name || email.split("@")[0], email, crypto.randomUUID(), "member"]);
+          localStorage.setItem("sw_user_id", id);
+        }
+        navigate("/", { replace: true });
+      } catch (err: any) {
+        setStatus(`Error: ${err.message || err}`);
+      }
+    })();
+  }, [navigate]);
+
+  return <div className="flex items-center justify-center h-full"><div className="text-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" /><p className="text-xs text-muted-foreground">{status}</p></div></div>;
+}
+
 async function callReducerLocal(reducer: string, args: unknown[]) {
   const DB_ID = "c2003d19339f9932811b3d54bf9b15e18ae48a47a8c8b7135a47367faa03481e";
   await fetch(`http://192.168.1.10:3001/v1/database/${DB_ID}/call/${reducer}`, {
@@ -1326,6 +1577,50 @@ function LoginView() {
   const [name, setName] = useState("");
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState("");
+  const [oidcProviders, setOidcProviders] = useState<OidcProvider[]>([]);
+
+  // Load active OIDC providers
+  useEffect(() => {
+    api.oidc.listActive().then(setOidcProviders).catch(() => {});
+  }, []);
+
+  // Generic OIDC sign-in
+  const handleOidcSignIn = (provider: OidcProvider) => {
+    const code_verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"[b % 66]).join("");
+    crypto.subtle.digest("SHA-256", new TextEncoder().encode(code_verifier)).then(hash => {
+      const code_challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      localStorage.setItem("sw_oauth_verifier", code_verifier);
+      localStorage.setItem("sw_oidc_provider_id", provider.id);
+      // Fetch OIDC discovery to get auth endpoint
+      const issuer = provider.issuer_url.replace(/\/$/, "");
+      fetch(`${issuer}/.well-known/openid-configuration`)
+        .then(r => r.json())
+        .then(discovery => {
+          const authUrl = discovery.authorization_endpoint;
+          const redirectUri = `${window.location.origin}/oauth/oidc/callback`;
+          const scopes = encodeURIComponent(provider.scopes || "openid email profile");
+          const url = `${authUrl}?client_id=${provider.client_id}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scopes}&code_challenge=${code_challenge}&code_challenge_method=S256`;
+          window.location.href = url;
+        })
+        .catch(() => {
+          // Fallback: try well-known relative paths
+          fetch(`${issuer}/.well-known/openid-configuration/`)
+            .then(r => r.json())
+            .then(discovery => {
+              const authUrl = discovery.authorization_endpoint;
+              const redirectUri = `${window.location.origin}/oauth/oidc/callback`;
+              const scopes = encodeURIComponent(provider.scopes || "openid email profile");
+              const url = `${authUrl}?client_id=${provider.client_id}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scopes}&code_challenge=${code_challenge}&code_challenge_method=S256`;
+              window.location.href = url;
+            })
+            .catch(() => {
+              setError("Could not discover OIDC endpoints. Check the issuer URL.");
+            });
+        });
+    });
+  };
 
   // Google OAuth
   const handleGoogleSignIn = () => {
@@ -1393,6 +1688,14 @@ function LoginView() {
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border"></div></div>
             <div className="relative flex justify-center text-xs"><span className="bg-background px-2 text-muted-foreground">or</span></div>
           </div>
+          {/* OIDC SSO buttons */}
+          {oidcProviders.map(p => (
+            <button key={p.id} onClick={() => handleOidcSignIn(p)}
+              className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              Sign in with {p.name}
+            </button>
+          ))}
           <button onClick={handleGoogleSignIn} className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
             <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Sign in with Google
