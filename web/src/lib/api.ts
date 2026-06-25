@@ -29,6 +29,7 @@ function mapCollection(row: unknown[]): Collection { return { id: String(row[0]?
 function mapUser(row: unknown[]): User { return { id: String(row[0]??""), name: String(row[1]??""), email: String(row[2]??""), role: String(row[4]??""), avatar_url: String(row[5]??""), created_at: Number(row[6])||0 }; }
 function mapRevision(row: unknown[]): PageRevision { return { id: String(row[0]??""), page_id: String(row[1]??""), title: String(row[2]??""), content: String(row[3]??""), edited_by: String(row[4]??""), created_at: Number(row[5])||0, revision_number: Number(row[6])||0 }; }
 function mapComment(row: unknown[]): Comment { return { id: String(row[0]??""), page_id: String(row[1]??""), parent_comment_id: String(row[2]??""), user_id: String(row[3]??""), body: String(row[4]??""), text_anchor: String(row[5]??""), is_resolved: Boolean(row[6]), created_at: Number(row[7])||0, updated_at: Number(row[8])||0 }; }
+function mapCommentReaction(row: unknown[]): CommentReaction { return { id: String(row[0]??""), comment_id: String(row[1]??""), user_id: String(row[2]??""), emoji: String(row[3]??""), created_at: Number(row[4])||0 }; }
 function mapTag(row: unknown[]): PageTag { return { id: String(row[0]??""), page_id: String(row[1]??""), name: String(row[2]??""), value: String(row[3]??"") }; }
 function mapAttachment(row: unknown[]): Attachment { return { id: String(row[0]??""), page_id: String(row[1]??""), filename: String(row[2]??""), mime_type: String(row[3]??""), size_bytes: Number(row[4])||0, storage_key: String(row[5]??""), uploaded_by: String(row[6]??""), created_at: Number(row[7])||0 }; }
 function mapCollectionMember(row: unknown[]): CollectionMember { return { id: String(row[0]??""), collection_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
@@ -217,6 +218,11 @@ export interface Comment {
   id: string; page_id: string; parent_comment_id: string;
   user_id: string; body: string; text_anchor: string; is_resolved: boolean;
   created_at: number; updated_at: number;
+}
+
+export interface CommentReaction {
+  id: string; comment_id: string; user_id: string;
+  emoji: string; created_at: number;
 }
 
 export interface PageTag {
@@ -440,40 +446,19 @@ export const api = {
     },
     resolve: (id: string) => callReducer("resolve_comment", [id]),
     delete: (id: string) => callReducer("delete_comment", [id]),
-    // ── Comment reactions (localStorage-based until STDB module build is fixed) ──
-    getReactions: (commentId: string): Record<string, string[]> => {
-      try {
-        const raw = localStorage.getItem("sw_reactions");
-        if (!raw) return {};
-        const all = JSON.parse(raw);
-        return all[commentId] || {};
-      } catch { return {}; }
-    },
+    // ── Comment reactions (STDB-backed with toggle via add_comment_reaction reducer) ──
+    listReactions: (commentId: string) =>
+      sqlQuery(`SELECT * FROM comment_reaction WHERE comment_id = '${commentId}'`)
+        .then((rows) => (rows as unknown[][]).map(mapCommentReaction)),
     addReaction: (commentId: string, userId: string, emoji: string) => {
-      try {
-        const raw = localStorage.getItem("sw_reactions") || "{}";
-        const all = JSON.parse(raw);
-        if (!all[commentId]) all[commentId] = {};
-        const emojis = all[commentId];
-        if (!emojis[emoji]) emojis[emoji] = [];
-        // Toggle: if user already reacted with this emoji, remove them
-        const idx = emojis[emoji].indexOf(userId);
-        if (idx >= 0) {
-          emojis[emoji].splice(idx, 1);
-          if (emojis[emoji].length === 0) delete emojis[emoji];
-        } else {
-          emojis[emoji].push(userId);
-        }
-        localStorage.setItem("sw_reactions", JSON.stringify(all));
-      } catch {}
+      const id = genId("cr");
+      return callReducer("add_comment_reaction", [id, commentId, userId, emoji]);
     },
-    hasReacted: (commentId: string, userId: string, emoji: string): boolean => {
-      try {
-        const raw = localStorage.getItem("sw_reactions");
-        if (!raw) return false;
-        const all = JSON.parse(raw);
-        return all[commentId]?.[emoji]?.includes(userId) || false;
-      } catch { return false; }
+    hasReacted: async (commentId: string, userId: string, emoji: string): Promise<boolean> => {
+      const rows = await sqlQuery(
+        `SELECT id FROM comment_reaction WHERE comment_id = '${commentId}' AND user_id = '${userId}' AND emoji = '${emoji}'`
+      );
+      return rows.length > 0;
     },
   },
 
