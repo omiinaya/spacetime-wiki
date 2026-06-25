@@ -7,7 +7,7 @@ import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
-  Sun, Moon, Keyboard, Eye, CheckSquare, Square, Tags,
+  Sun, Moon, Keyboard, Eye, CheckSquare, Square, Tags, MessageSquare,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, usePagesSubscription, useCollectionsSubscription } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -913,7 +913,18 @@ function AppLayout() {
               )}
 
               {collections.length === 0 && Object.keys(pagesByCollection).length === 0 && (
-                <div className="px-3 py-4 text-xs text-muted-foreground">No pages yet. Create your first page!</div>
+                <div className="px-3 py-6 text-center">
+                  <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-primary/20 to-purple-600/20 flex items-center justify-center">
+                    <Library className="h-5 w-5 text-primary/60" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">Welcome! Your wiki is empty.</p>
+                  <button
+                    onClick={() => navigate("/new")}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    <Plus className="h-3 w-3" /> Create first page
+                  </button>
+                </div>
               )}
             </>
           )}
@@ -1950,6 +1961,97 @@ function HomeView() {
     } catch (err) { console.error(err); }
     finally { setImporting(false); e.target.value = ""; }
   };
+
+  const hasPages = recentPages.length > 0;
+
+  // ─── Onboarding for empty wikis ────────────────────────────────────────
+  if (!hasPages) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 max-w-3xl mx-auto">
+        {/* Hero */}
+        <div className="text-center py-8 md:py-12">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
+            <Library className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Spacetime Wiki</h1>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            Your team's knowledge base, powered by SpacetimeDB for real-time collaboration.
+            Start by creating your first page or importing existing content.
+          </p>
+        </div>
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+          <button
+            onClick={() => navigate("/new")}
+            className="flex flex-col items-center gap-2 p-6 rounded-xl border border-border bg-card hover:bg-secondary hover:border-primary/30 transition-all group"
+          >
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <Plus className="h-6 w-6 text-primary" />
+            </div>
+            <span className="text-sm font-semibold">Create a page</span>
+            <span className="text-xs text-muted-foreground text-center">Start writing in our rich WYSIWYG editor with markdown support</span>
+          </button>
+          <button
+            onClick={() => importRef.current?.click()}
+            disabled={importing}
+            className="flex flex-col items-center gap-2 p-6 rounded-xl border border-border bg-card hover:bg-secondary hover:border-primary/30 transition-all group disabled:opacity-50"
+          >
+            <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+              {importing ? <Loader2 className="h-6 w-6 animate-spin text-emerald-500" /> : <Upload className="h-6 w-6 text-emerald-500" />}
+            </div>
+            <span className="text-sm font-semibold">Import Markdown</span>
+            <span className="text-xs text-muted-foreground text-center">Drag or select .md files to instantly create wiki pages</span>
+            <input ref={importRef} type="file" accept=".md,.txt" onChange={handleImportMD} className="hidden" />
+          </button>
+          <button
+            onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }))}
+            className="flex flex-col items-center gap-2 p-6 rounded-xl border border-border bg-card hover:bg-secondary hover:border-primary/30 transition-all group"
+          >
+            <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+              <Keyboard className="h-6 w-6 text-purple-400" />
+            </div>
+            <span className="text-sm font-semibold">Keyboard shortcuts</span>
+            <span className="text-xs text-muted-foreground text-center">Press <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">?</kbd> to see all shortcuts</span>
+          </button>
+        </div>
+
+        {/* Feature tour */}
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">What you can do</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {[
+              { icon: <Edit3 className="h-4 w-4" />, title: "Rich editing", desc: "WYSIWYG, Markdown, or split view with / commands, emoji picker, and drag-and-drop blocks" },
+              { icon: <Search className="h-4 w-4" />, title: "Full-text search", desc: "Instant search across all pages with collection, author, and date filters" },
+              { icon: <BookOpen className="h-4 w-4" />, title: "Collections & tags", desc: "Organize pages into collections with custom icons, colors, and labels/tags" },
+              { icon: <MessageSquare className="h-4 w-4" />, title: "Comments & history", desc: "Leave comments, restore previous revisions, and compare visual diffs" },
+              { icon: <Shield className="h-4 w-4" />, title: "Permissions & sharing", desc: "Role-based access control, public share links with passwords, and SSO (OIDC/SAML)" },
+              { icon: <Download className="h-4 w-4" />, title: "Import/export", desc: "Import from Markdown, export as MD, HTML, JSON, PDF, or ZIP with attachments" },
+              { icon: <Star className="h-4 w-4" />, title: "Favorites & pinning", desc: "Star your frequently-accessed pages and pin important ones to the top" },
+              { icon: <LayoutTemplate className="h-4 w-4" />, title: "Templates & embeds", desc: "Create pages from templates, embed YouTube/Figma/30+ providers, and diagrams" },
+            ].map((feature, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-secondary transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+                  {feature.icon}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold">{feature.title}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer note */}
+        <div className="text-center pb-8">
+          <p className="text-[11px] text-muted-foreground/60">
+            Spacetime Wiki &middot; Built with SpacetimeDB + React + Tiptap
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto">
