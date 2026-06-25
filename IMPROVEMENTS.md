@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Page duplication from sidebar context menu and editor
-The `api.pages.duplicate` reducer and API method exist but there's no UI to trigger duplication. Add a "Duplicate" option to the page context menu in the sidebar and a "Duplicate page" button in the editor toolbar/cog menu.
-Files: web/src/App.tsx (context menu), web/src/pages/PageView.tsx (action bar)
-Difficulty: Small
-Est: 45min
-
 ### P2 — Configurable trash retention period
 Add a trash retention setting (in Admin panel) that auto-purges deleted pages older than N days. Currently empty trash deletes everything at once with no configurable window. This adds a safety net for accidental deletions.
 Files: server/spacetimedb/src/lib.rs, web/src/App.tsx, web/src/lib/api.ts
@@ -32,13 +26,26 @@ Files: web/src/App.tsx, web/src/pages/PageView.tsx, server/spacetimedb/src/lib.r
 Difficulty: Small
 Est: 45min
 
+### P2 — Content permalinks (ID-based, survive renames)
+Add stable content permalink infrastructure — a `/permalink/<id>#<anchor>` route that redirects to the canonical `/page/<id>` even if the page is renamed. Ensures links from external sources or bookmarks never break. The HeadingWithId extension already provides anchor IDs; this adds a dedicated permalink route and URL resolution.
+Files: web/src/App.tsx (Routes), web/src/pages/PageView.tsx
+Difficulty: Small
+Est: 30min
+
+### P2 — Wiki import (Notion/Confluence)
+Add import wizards for Notion (Markdown+ZIP export) and Confluence (HTML/XML export). Parse the exported file structure and create pages preserving hierarchy, content, and metadata. Reuses the existing Markdown import pipeline for Notion exports.
+Files: web/src/App.tsx, web/src/components/
+Difficulty: Medium
+Est: 1.5h
+
 ---
 
 ## Recently Completed
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-26 | P3 — Permanent image upload (paste/drag-and-drop to server storage with attachment:// URL scheme, size limits, and auto-resolution) | THIS_TICK |
+| 2026-06-26 | P2 — Page duplication from sidebar context menu | (current) |
+| 2026-06-26 | P3 — Permanent image upload (paste/drag-and-drop to server storage with attachment:// URL scheme, size limits, and auto-resolution) | 077ecf3 |
 | 2026-06-26 | P1 — Table toolbar with row/column operations (insert/delete rows/cols, merge/split cells) | 0bea2e9 |
 | 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
 | 2026-06-26 | P3 — @Mentions in comments (MentionInput component with user autocomplete) | 2b77429 |
