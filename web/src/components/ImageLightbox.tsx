@@ -1,30 +1,64 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { X, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 
 // ─── Image Lightbox ──────────────────────────────────────────────────────────
-// Fullscreen overlay for viewing images with zoom, pan, and keyboard navigation.
-// Click backdrop or press Escape to close.
+// Fullscreen overlay for viewing images with zoom, pan, keyboard navigation,
+// and gallery navigation (prev/next) when viewing multiple images on a page.
 
-interface ImageLightboxProps {
+interface GalleryImage {
   src: string;
   alt?: string;
+}
+
+interface ImageLightboxProps {
+  images: GalleryImage[];
+  initialIndex?: number;
   onClose: () => void;
 }
 
-export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
+export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightboxProps) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, posX: 0, posY: 0 });
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // ── Keyboard navigation ──────────────────────────────────────────────────
+  const current = images[currentIndex];
+  const isMulti = images.length > 1;
 
+  // ── Reset zoom on image change ───────────────────────────────────────────
+  const resetZoom = useCallback(() => {
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  const goNext = useCallback(() => {
+    if (currentIndex < images.length - 1) {
+      setCurrentIndex(i => i + 1);
+      resetZoom();
+    }
+  }, [currentIndex, images.length, resetZoom]);
+
+  const goPrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex(i => i - 1);
+      resetZoom();
+    }
+  }, [currentIndex, resetZoom]);
+
+  // ── Keyboard navigation ──────────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case "Escape":
           onClose();
+          break;
+        case "ArrowLeft":
+          if (isMulti) { e.preventDefault(); goPrev(); }
+          break;
+        case "ArrowRight":
+          if (isMulti) { e.preventDefault(); goNext(); }
           break;
         case "=":
         case "+":
@@ -41,14 +75,13 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
           break;
         case "0":
           e.preventDefault();
-          setZoom(1);
-          setPosition({ x: 0, y: 0 });
+          resetZoom();
           break;
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [onClose, goNext, goPrev, isMulti, resetZoom]);
 
   // Prevent body scroll while open
   useEffect(() => {
@@ -59,7 +92,6 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
   }, []);
 
   // ── Zoom controls ────────────────────────────────────────────────────────
-
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.25, 5));
 
   const handleZoomOut = () => {
@@ -70,13 +102,9 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
     });
   };
 
-  const handleReset = () => {
-    setZoom(1);
-    setPosition({ x: 0, y: 0 });
-  };
+  const handleReset = resetZoom;
 
   // ── Canvas-style drag-to-pan when zoomed ─────────────────────────────────
-
   const handleMouseDown = (e: React.MouseEvent) => {
     if (zoom <= 1) return;
     e.preventDefault();
@@ -113,7 +141,6 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // ── Double-click to toggle zoom ──────────────────────────────────────────
-
   const handleDoubleClick = () => {
     if (zoom > 1.5) {
       handleReset();
@@ -123,7 +150,6 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
   };
 
   // ── Close on backdrop click (not image click) ────────────────────────────
-
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -131,6 +157,7 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
+  if (!current) return null;
 
   return (
     <div
@@ -138,7 +165,7 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
-      aria-label="Image lightbox"
+      aria-label={isMulti ? `Image gallery: ${currentIndex + 1} of ${images.length}` : "Image lightbox"}
     >
       {/* Close button */}
       <button
@@ -148,6 +175,33 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
       >
         <X className="h-5 w-5" />
       </button>
+
+      {/* Gallery counter */}
+      {isMulti && (
+        <div className="fixed top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur border border-white/10 text-xs text-white/70 font-mono tabular-nums">
+          {currentIndex + 1} / {images.length}
+        </div>
+      )}
+
+      {/* Prev/Next arrows (sides) */}
+      {isMulti && currentIndex > 0 && (
+        <button
+          onClick={goPrev}
+          className="fixed left-4 top-1/2 -translate-y-1/2 z-10 p-2.5 rounded-full bg-black/50 text-white/90 hover:bg-black/70 hover:text-white transition-colors"
+          title="Previous (←)"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+      )}
+      {isMulti && currentIndex < images.length - 1 && (
+        <button
+          onClick={goNext}
+          className="fixed right-4 top-1/2 -translate-y-1/2 z-10 p-2.5 rounded-full bg-black/50 text-white/90 hover:bg-black/70 hover:text-white transition-colors"
+          title="Next (→)"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      )}
 
       {/* Zoom toolbar */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-2 rounded-full bg-black/60 backdrop-blur border border-white/10 shadow-2xl">
@@ -188,8 +242,9 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
       {/* Image */}
       <img
         ref={imgRef}
-        src={src}
-        alt={alt || ""}
+        key={current.src}
+        src={current.src}
+        alt={current.alt || ""}
         className={`max-h-[90vh] max-w-[90vw] object-contain transition-transform duration-100 ease-out will-change-transform
           ${isDragging ? "cursor-grabbing" : ""}
           ${!isDragging && zoom > 1 ? "cursor-grab" : ""}

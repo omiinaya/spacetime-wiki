@@ -270,8 +270,8 @@ export function PageView({ pageId, userId }: Props) {
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [showToc, setShowToc] = useState(false);
   const [backlinks, setBacklinks] = useState<Page[]>([]);
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
-  const [lightboxAlt, setLightboxAlt] = useState<string>("");
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[] | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Link preview tooltip
   const [linkPreview, setLinkPreview] = useState<{ x: number; y: number; title: string; url: string } | null>(null);
@@ -365,8 +365,30 @@ export function PageView({ pageId, userId }: Props) {
       handleClick: (_view, _pos, event) => {
         const target = event.target as HTMLElement;
         if (target.tagName === "IMG" && target.getAttribute("src")) {
-          setLightboxSrc(target.getAttribute("src")!);
-          setLightboxAlt(target.getAttribute("alt") || "");
+          // Collect all images from the page content for gallery nav
+          const clickedSrc = target.getAttribute("src")!;
+          const clickedAlt = target.getAttribute("alt") || "";
+          try {
+            const content = JSON.parse(page!.content || "{}");
+            const images: { src: string; alt: string }[] = [];
+            const walkNodes = (node: any) => {
+              if (node.attrs?.src && typeof node.attrs.src === "string") {
+                images.push({ src: node.attrs.src, alt: node.attrs.alt || "" });
+              }
+              if (node.content) {
+                node.content.forEach(walkNodes);
+              }
+            };
+            if (content.type === "doc" && content.content) {
+              content.content.forEach(walkNodes);
+            }
+            const idx = images.findIndex(i => i.src === clickedSrc);
+            setLightboxImages(images);
+            setLightboxIndex(idx >= 0 ? idx : 0);
+          } catch {
+            setLightboxImages([{ src: clickedSrc, alt: clickedAlt }]);
+            setLightboxIndex(0);
+          }
           return true;
         }
         return false;
@@ -1103,11 +1125,11 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
       )}
 
       {/* Image Lightbox */}
-      {lightboxSrc && (
+      {lightboxImages && (
         <ImageLightbox
-          src={lightboxSrc}
-          alt={lightboxAlt}
-          onClose={() => { setLightboxSrc(null); setLightboxAlt(""); }}
+          images={lightboxImages}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxImages(null)}
         />
       )}
     </div>
