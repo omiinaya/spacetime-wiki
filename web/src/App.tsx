@@ -7,7 +7,7 @@ import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
-  Sun, Moon,
+  Sun, Moon, Keyboard,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -16,6 +16,7 @@ import { PageView } from "./pages/PageView";
 import { SearchFilters, EMPTY_FILTERS, type SearchFilterState } from "./components/SearchFilters";
 import { WebhookSettings } from "./components/WebhookSettings";
 import { TemplatePicker } from "./components/TemplatePicker";
+import { KeyboardShortcuts } from "./components/KeyboardShortcuts";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -103,6 +104,23 @@ function AppLayout() {
     document.documentElement.classList.toggle("light-theme", theme === "light");
     localStorage.setItem("sw_theme", theme);
   }, [theme]);
+
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  // Global ? key opens shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "?" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+          e.preventDefault();
+          setShortcutsOpen(true);
+        }
+      }
+      if (e.key === "Escape") setShortcutsOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   useEffect(() => {
     setUserId(localStorage.getItem("sw_user_id"));
@@ -676,6 +694,9 @@ function AppLayout() {
           >
             {theme === "dark" ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
             {theme === "dark" ? "Light mode" : "Dark mode"}
+          </button>
+          <button onClick={() => setShortcutsOpen(true)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+            <Keyboard className="h-3 w-3" /> Keyboard shortcuts
           </button>
           <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
             {userId ? (
@@ -1464,6 +1485,10 @@ function AppLayout() {
         collections={collections}
         userId={userId}
         navigate={navigate}
+      />
+      <KeyboardShortcuts
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
       />
     </div>
   );
