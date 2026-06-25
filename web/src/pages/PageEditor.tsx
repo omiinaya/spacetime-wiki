@@ -54,6 +54,7 @@ import {
   ChevronDown,
   Maximize2,
   Palette,
+  Code2,
 } from "lucide-react";
 import { api, Page } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -87,6 +88,266 @@ const SLASH_COMMANDS = [
   { title: "Draw.io", description: "Insert a draw.io diagram", icon: "📐", command: (e) => e?.chain().focus().setDrawio({ src: "" }).run() },
   { title: "PlantUML", description: "Insert a PlantUML diagram", icon: "🌿", command: (e) => e?.chain().focus().setPlantUML({ src: "@startuml\\nAlice -> Bob: Hello\\nBob -> Alice: Hi!\\n@enduml" }).run() },
 ];
+
+// ─── Format conversion utilities ─────────────────────────────────────────────
+
+function tiptapToMarkdown(doc: any): string {
+  const lines: string[] = [];
+  function walk(node: any, depth = 0) {
+    if (!node) return;
+    if (node.type === "doc" || node.type === "tableRow" || node.type === "tableHeader" || node.type === "table") {
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "paragraph") {
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "text") {
+          let t = c.text || "";
+          if (c.marks) {
+            c.marks.forEach((m: any) => {
+              if (m.type === "bold") t = `**${t}**`;
+              if (m.type === "italic") t = `_${t}_`;
+              if (m.type === "strike") t = `~~${t}~~`;
+              if (m.type === "code") t = `\`${t}\``;
+              if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
+            });
+          }
+          text += t;
+        } else if (c.type === "image" || c.type === "imageEnhanced") {
+          text += `![${c.attrs?.alt || ""}](${c.attrs?.src || ""})`;
+        } else if (c.type === "hardBreak") {
+          text += "  \n";
+        }
+      });
+      lines.push(text);
+      lines.push("");
+    } else if (node.type === "heading") {
+      const level = node.attrs?.level || 1;
+      let text = "";
+      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      lines.push(`${"#".repeat(level)} ${text}`);
+      lines.push("");
+    } else if (node.type === "bulletList") {
+      node.content?.forEach((item: any) => {
+        item.content?.forEach((p: any) => {
+          let text = "";
+          p.content?.forEach((c: any) => { if (c.text) text += c.text; });
+          lines.push(`- ${text}`);
+        });
+      });
+      lines.push("");
+    } else if (node.type === "orderedList") {
+      node.content?.forEach((item: any, i: number) => {
+        item.content?.forEach((p: any) => {
+          let text = "";
+          p.content?.forEach((c: any) => { if (c.text) text += c.text; });
+          lines.push(`${i + 1}. ${text}`);
+        });
+      });
+      lines.push("");
+    } else if (node.type === "codeBlock") {
+      const lang = node.attrs?.language || "";
+      lines.push("```" + lang);
+      let text = "";
+      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      lines.push(text);
+      lines.push("```");
+      lines.push("");
+    } else if (node.type === "blockquote") {
+      node.content?.forEach((c: any) => {
+        const inner: string[] = [];
+        (c.content || []).forEach((cc: any) => { if (cc.text) inner.push(cc.text); });
+        lines.push(`> ${inner.join(" ")}`);
+      });
+      lines.push("");
+    } else if (node.type === "horizontalRule") {
+      lines.push("---");
+      lines.push("");
+    } else if (node.type === "taskList") {
+      node.content?.forEach((item: any) => {
+        item.content?.forEach((p: any) => {
+          const checked = item.attrs?.checked ? "x" : " ";
+          let text = "";
+          p.content?.forEach((c: any) => { if (c.text) text += c.text; });
+          lines.push(`- [${checked}] ${text}`);
+        });
+      });
+      lines.push("");
+    } else if (node.type === "callout") {
+      const type = node.attrs?.type || "info";
+      lines.push(`> **${type}:**`);
+      node.content?.forEach((c: any) => {
+        let text = "";
+        c.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+        lines.push(`> ${text}`);
+      });
+      lines.push("");
+    } else if (node.type === "details") {
+      lines.push("<details>");
+      node.content?.forEach((c: any) => {
+        if (c.type === "detailsSummary") {
+          let text = "";
+          c.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+          lines.push(`<summary>${text}</summary>`);
+        } else {
+          walk(c, depth);
+        }
+      });
+      lines.push("</details>");
+      lines.push("");
+    } else {
+      // fallback: render any unrecognised node as its text content
+      let text = "";
+      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      if (text) lines.push(text);
+    }
+  }
+  walk(doc);
+  while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  return lines.join("\n");
+}
+
+function markdownToProseMirror(md: string): any {
+  const doc: any = { type: "doc", content: [] };
+  const lines = md.split("\n");
+  let i = 0;
+  let inCodeBlock = false;
+  let codeLang = "";
+  let codeLines: string[] = [];
+
+  function addParagraph(text: string) {
+    if (!text.trim()) return;
+    const content: any[] = [];
+    // Parse inline marks: **bold**, _italic_, `code`, [link](url), ~~strike~~
+    const parts = text.split(/(\*\*.*?\*\*|_.*?_|`.*?`|~~.*?~~|\[.*?\]\(.*?\))/g);
+    for (const part of parts) {
+      if (!part) continue;
+      if (part.startsWith("**") && part.endsWith("**")) {
+        content.push({ type: "text", text: part.slice(2, -2), marks: [{ type: "bold" }] });
+      } else if (part.startsWith("_") && part.endsWith("_")) {
+        content.push({ type: "text", text: part.slice(1, -1), marks: [{ type: "italic" }] });
+      } else if (part.startsWith("`") && part.endsWith("`")) {
+        content.push({ type: "text", text: part.slice(1, -1), marks: [{ type: "code" }] });
+      } else if (part.startsWith("~~") && part.endsWith("~~")) {
+        content.push({ type: "text", text: part.slice(2, -2), marks: [{ type: "strike" }] });
+      } else if (part.startsWith("[") && part.includes("](")) {
+        const match = part.match(/^\[(.*?)\]\((.*?)\)$/);
+        if (match) {
+          content.push({ type: "text", text: match[1], marks: [{ type: "link", attrs: { href: match[2] } }] });
+        } else {
+          content.push({ type: "text", text: part });
+        }
+      } else {
+        content.push({ type: "text", text: part });
+      }
+    }
+    if (content.length > 0) {
+      doc.content.push({ type: "paragraph", content });
+    }
+  }
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (inCodeBlock) {
+      if (line.startsWith("```")) {
+        doc.content.push({ type: "codeBlock", attrs: { language: codeLang }, content: [{ type: "text", text: codeLines.join("\n") }] });
+        codeLines = [];
+        codeLang = "";
+        inCodeBlock = false;
+        i++;
+        continue;
+      }
+      codeLines.push(line);
+      i++;
+      continue;
+    }
+
+    if (line.startsWith("```")) {
+      inCodeBlock = true;
+      codeLang = line.slice(3).trim();
+      i++;
+      continue;
+    }
+
+    if (!line.trim()) { i++; continue; }
+
+    // Heading
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const text = headingMatch[2];
+      doc.content.push({ type: "heading", attrs: { level }, content: [{ type: "text", text }] });
+      i++;
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^---+\s*$/.test(line)) {
+      doc.content.push({ type: "horizontalRule" });
+      i++;
+      continue;
+    }
+
+    // Blockquote
+    if (line.startsWith("> ")) {
+      const text = line.slice(2);
+      doc.content.push({ type: "blockquote", content: [{ type: "paragraph", content: [{ type: "text", text }] }] });
+      i++;
+      continue;
+    }
+
+    // Unordered list
+    if (/^[-*+]\s+/.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^[-*+]\s+/.test(lines[i])) {
+        const itemText = lines[i].replace(/^[-*+]\s+/, "");
+        items.push({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: itemText }] }] });
+        i++;
+      }
+      doc.content.push({ type: "bulletList", content: items });
+      continue;
+    }
+
+    // Ordered list
+    if (/^\d+\.\s+/.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+        const itemText = lines[i].replace(/^\d+\.\s+/, "");
+        items.push({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: itemText }] }] });
+        i++;
+      }
+      doc.content.push({ type: "orderedList", content: items });
+      continue;
+    }
+
+    // Task list
+    if (/^\s*[-*+]\s+\[[ x]\]\s+/i.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^\s*[-*+]\s+\[[ x]\]\s+/i.test(lines[i])) {
+        const checked = lines[i].includes("[x]") || lines[i].includes("[X]");
+        const text = lines[i].replace(/^\s*[-*+]\s+\[[ x]\]\s+/i, "");
+        items.push({ type: "taskItem", attrs: { checked }, content: [{ type: "paragraph", content: [{ type: "text", text }] }] });
+        i++;
+      }
+      doc.content.push({ type: "taskList", content: items });
+      continue;
+    }
+
+    // Default: paragraph
+    addParagraph(line);
+    i++;
+  }
+
+  // Add trailing code block if unclosed
+  if (inCodeBlock && codeLines.length > 0) {
+    doc.content.push({ type: "codeBlock", attrs: { language: codeLang }, content: [{ type: "text", text: codeLines.join("\n") }] });
+  }
+
+  if (doc.content.length === 0) {
+    doc.content.push({ type: "paragraph", content: [] });
+  }
+  return doc;
+}
 
 // ─── Selection Floating Toolbar ──────────────────────────────────────────────
 
@@ -342,6 +603,8 @@ export function PageEditor({ userId }: Props) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState<string>("");
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [editorMode, setEditorMode] = useState<"wysiwyg" | "markdown" | "split">("wysiwyg");
+  const [markdownSource, setMarkdownSource] = useState("");
 
   // Load existing page
   useEffect(() => {
@@ -921,9 +1184,99 @@ export function PageEditor({ userId }: Props) {
         </div>
       )}
 
+      {page?.color && (
+        <div className="px-4 md:px-8">
+          <div className="h-1 rounded-full" style={{ backgroundColor: page.color }} />
+        </div>
+      )}
+
+      {/* Editor mode tabs */}
+      {!preview && (
+        <div className="px-4 md:px-8 pt-2 pb-1">
+          <div className="flex items-center gap-0.5 border-b border-border">
+            <button
+              onClick={() => {
+                if (editor && editorMode === "markdown") {
+                  try {
+                    const doc = markdownToProseMirror(markdownSource);
+                    editor.commands.setContent(doc);
+                  } catch { /* keep current content */ }
+                }
+                setEditorMode("wysiwyg");
+              }}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium border-b-2 transition-colors",
+                editorMode === "wysiwyg"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              WYSIWYG
+            </button>
+            <button
+              onClick={() => {
+                if (editor && editorMode !== "markdown") {
+                  setMarkdownSource(tiptapToMarkdown(editor.getJSON()));
+                }
+                setEditorMode("markdown");
+              }}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium border-b-2 transition-colors flex items-center gap-1",
+                editorMode === "markdown"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Code2 className="h-3 w-3" /> Markdown
+            </button>
+            <button
+              onClick={() => {
+                if (editor && editorMode !== "split") {
+                  setMarkdownSource(tiptapToMarkdown(editor.getJSON()));
+                }
+                setEditorMode("split");
+              }}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium border-b-2 transition-colors",
+                editorMode === "split"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Split
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Editor content */}
       <div className="px-4 md:px-8 pb-32">
-        {editor && <EditorContent editor={editor} />}
+        {editor && editorMode === "wysiwyg" && (
+          <div className={preview ? "" : "min-h-[60vh]"}>
+            <EditorContent editor={editor} />
+          </div>
+        )}
+        {editor && editorMode === "markdown" && (
+          <textarea
+            value={markdownSource}
+            onChange={(e) => setMarkdownSource(e.target.value)}
+            className="w-full min-h-[60vh] bg-[#0a0a0a] text-foreground font-mono text-sm p-4 rounded-lg border border-border resize-y focus:outline-none focus:ring-1 focus:ring-primary/50"
+            spellCheck={false}
+          />
+        )}
+        {editor && editorMode === "split" && (
+          <div className="grid grid-cols-2 gap-4 min-h-[60vh]">
+            <div className="border border-border rounded-lg p-3 overflow-y-auto">
+              <EditorContent editor={editor} />
+            </div>
+            <textarea
+              value={markdownSource}
+              readOnly
+              className="w-full h-full bg-[#0a0a0a] text-foreground font-mono text-sm p-3 rounded-lg border border-border resize-none focus:outline-none"
+              spellCheck={false}
+            />
+          </div>
+        )}
       </div>
 
       {error && (

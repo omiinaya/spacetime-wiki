@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   BrowserRouter, Routes, Route, useNavigate, useParams, useLocation,
 } from "react-router-dom";
+import JSZip from "jszip";
 import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
-  Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin,
+  Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey, OidcProvider } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -46,7 +47,7 @@ function AppLayout() {
   // Admin state
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso">("users");
+  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "export">("users");
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; description: string; created_by: string; created_at: number; updated_at: number }[]>([]);
@@ -743,6 +744,10 @@ function AppLayout() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "sso" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <Users className="h-3 w-3 inline mr-1" />SSO
               </button>
+              <button onClick={() => setAdminTab("export")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "export" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <Download className="h-3 w-3 inline mr-1" />Export
+              </button>
             </div>
 
             {adminTab === "users" && (
@@ -959,6 +964,7 @@ function AppLayout() {
                 </div>
               </div>
             )}
+            {adminTab === "export" && <BulkExport />}
           </div>
         </div>
       )}
@@ -1791,6 +1797,380 @@ function ApiKeySection({ userId }: { userId: string | null }) {
           {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Create"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─── Export helpers (duplicated from PageView to avoid export dependency) ──
+
+function tiptapToMarkdown(doc: any): string {
+  const lines: string[] = [];
+  function walk(node: any, depth = 0) {
+    if (!node) return;
+    if (node.type === "doc" || node.type === "tableRow" || node.type === "tableHeader") {
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "paragraph") {
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "text") {
+          let t = c.text || "";
+          if (c.marks) {
+            c.marks.forEach((m: any) => {
+              if (m.type === "bold") t = `**${t}**`;
+              if (m.type === "italic") t = `_${t}_`;
+              if (m.type === "strike") t = `~~${t}~~`;
+              if (m.type === "code") t = `\`${t}\``;
+              if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
+            });
+          }
+          text += t;
+        } else if (c.type === "image") {
+          text += `![${c.attrs?.alt || ""}](${c.attrs?.src || ""})`;
+        } else if (c.type === "hardBreak") {
+          text += "\n";
+        }
+      });
+      lines.push(text);
+      lines.push("");
+    } else if (node.type === "heading") {
+      const level = node.attrs?.level || 1;
+      let text = "";
+      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      lines.push(`${"#".repeat(level)} ${text}`);
+      lines.push("");
+    } else if (node.type === "bulletList" || node.type === "orderedList") {
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "listItem") {
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "paragraph") {
+          c.content?.forEach((cc: any) => {
+            if (cc.type === "text") {
+              let t = cc.text || "";
+              if (cc.marks) {
+                cc.marks.forEach((m: any) => {
+                  if (m.type === "bold") t = `**${t}**`;
+                  if (m.type === "italic") t = `_${t}_`;
+                  if (m.type === "code") t = `\`${t}\``;
+                  if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
+                });
+              }
+              text += t;
+            }
+          });
+        }
+      });
+      lines.push(`- ${text}`);
+    } else if (node.type === "codeBlock") {
+      let text = "";
+      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      const lang = node.attrs?.language || "";
+      lines.push(`\`\`\`${lang}`);
+      lines.push(text);
+      lines.push("```");
+      lines.push("");
+    } else if (node.type === "blockquote") {
+      node.content?.forEach((c: any) => {
+        const before = lines.length;
+        walk(c, depth + 1);
+        for (let i = before; i < lines.length; i++) {
+          if (lines[i]) lines[i] = `> ${lines[i]}`;
+        }
+      });
+    } else if (node.type === "horizontalRule") {
+      lines.push("---");
+      lines.push("");
+    } else if (node.type === "callout") {
+      const ctype = node.attrs?.type || "info";
+      lines.push(`> [!${ctype.toUpperCase()}]`);
+      node.content?.forEach((c: any) => walk(c, depth + 1));
+      lines.push("");
+    } else if (node.type === "taskList") {
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "taskItem") {
+      const checked = node.attrs?.checked ? "x" : " ";
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "paragraph") {
+          c.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+        }
+      });
+      lines.push(`- [${checked}] ${text}`);
+    } else if (node.type === "table") {
+      const rows: string[][] = [];
+      node.content?.forEach((row: any) => {
+        const cells: string[] = [];
+        row.content?.forEach((cell: any) => {
+          let text = "";
+          cell.content?.forEach((p: any) => {
+            p.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+          });
+          cells.push(text);
+        });
+        rows.push(cells);
+      });
+      if (rows.length > 0) {
+        const colCount = rows[0].length;
+        rows.forEach((row, i) => {
+          lines.push("| " + row.join(" | ") + " |");
+          if (i === 0) lines.push("| " + "---".repeat(colCount) + " |");
+        });
+        lines.push("");
+      }
+    } else {
+      node.content?.forEach((c: any) => walk(c, depth));
+    }
+  }
+  walk(doc);
+  return lines.join("\n").trim();
+}
+
+function tiptapToHTML(doc: any): string {
+  if (!doc || !doc.content) return "";
+  let html = "";
+  for (const node of doc.content) {
+    switch (node.type) {
+      case "heading": {
+        const level = node.attrs?.level || 1;
+        html += `<h${level}>${node.content?.map((n: any) => n.text || "").join("") || ""}</h${level}>\n`;
+        break;
+      }
+      case "paragraph":
+        html += `<p>${node.content?.map((n: any) => n.text || "").join("") || ""}</p>\n`;
+        break;
+      case "bulletList":
+        html += "<ul>\n";
+        for (const item of node.content || []) {
+          html += `<li>${item.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || n.text || "").join("") || ""}</li>\n`;
+        }
+        html += "</ul>\n";
+        break;
+      case "orderedList":
+        html += "<ol>\n";
+        for (const item of node.content || []) {
+          html += `<li>${item.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || n.text || "").join("") || ""}</li>\n`;
+        }
+        html += "</ol>\n";
+        break;
+      case "codeBlock":
+        html += `<pre><code>${node.content?.map((n: any) => n.text || "").join("") || ""}</code></pre>\n`;
+        break;
+      case "blockquote": {
+        const qText = node.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || "").join("") || "";
+        html += `<blockquote>${qText}</blockquote>\n`;
+        break;
+      }
+      case "horizontalRule":
+        html += "<hr />\n";
+        break;
+      case "callout": {
+        const ctype = node.attrs?.type || "info";
+        const colorClass = ctype === "warning" ? "border-amber-500 bg-amber-50" :
+          ctype === "tip" ? "border-emerald-500 bg-emerald-50" :
+          ctype === "danger" ? "border-red-500 bg-red-50" :
+          "border-blue-500 bg-blue-50";
+        const icon = ctype === "warning" ? "⚠️" : ctype === "tip" ? "💡" : ctype === "danger" ? "🚨" : "ℹ️";
+        html += `<div class="callout ${colorClass}" style="border-left:4px solid;padding:12px;margin:12px 0;border-radius:6px">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;font-weight:600;text-transform:uppercase">`;
+        html += `<span>${icon}</span><span>${ctype}</span></div>`;
+        html += `<div>${node.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || n.text || "").join("") || ""}</div></div>\n`;
+        break;
+      }
+      case "image":
+        html += `<img src="${node.attrs?.src || ""}" alt="${node.attrs?.alt || ""}" />\n`;
+        break;
+      default:
+        if (node.text) html += node.text;
+        break;
+    }
+  }
+  return html;
+}
+
+// ─── Bulk Export ──────────────────────────────────────────────────────────────
+
+function BulkExport() {
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [allPages, setAllPages] = useState<Page[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [selectedColId, setSelectedColId] = useState<string>("__all");
+  const [exportFormat, setExportFormat] = useState<"md" | "html">("md");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [pages, cols] = await Promise.all([
+          api.pages.list(),
+          api.collections.list(),
+        ]);
+        setAllPages(pages);
+        setCollections(cols);
+      } catch (e) {
+        console.error("Failed to load data for export:", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const filteredPages = selectedColId === "__all"
+    ? allPages
+    : allPages.filter((p) => p.collection_id === selectedColId);
+
+  const handleBulkExport = async () => {
+    setExporting(true);
+    try {
+      const zip = new JSZip();
+      let exported = 0;
+
+      for (const page of filteredPages) {
+        const safeName = page.title.replace(/[^a-z0-9]/gi, "_").slice(0, 64) || page.id.slice(0, 12);
+        try {
+          const json = JSON.parse(page.content || "{}");
+          if (exportFormat === "md") {
+            const md = tiptapToMarkdown(json);
+            zip.file(`${safeName}/${safeName}.md`, md);
+          } else {
+            const html = tiptapToHTML(json);
+            const fullHtml = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>${page.title}</title></head>
+<body>${html}</body></html>`;
+            zip.file(`${safeName}/${safeName}.html`, fullHtml);
+          }
+        } catch {
+          zip.file(`${safeName}/${safeName}.txt`, page.content || "");
+        }
+
+        try {
+          const atts = await api.attachments.list(page.id);
+          for (const att of atts as any[]) {
+            const filename = att[2] || "file";
+            const base64Data = att[5] || "";
+            if (base64Data) {
+              zip.file(`${safeName}/attachments/${filename}`, base64Data, { base64: true });
+            }
+          }
+        } catch { /* no attachments */ }
+
+        zip.file(`${safeName}/${safeName}.meta.json`, JSON.stringify({
+          title: page.title, slug: page.slug, icon: page.icon,
+          color: page.color, status: page.status,
+          collection_id: page.collection_id,
+          created_at: page.created_at, updated_at: page.updated_at,
+        }, null, 2));
+
+        exported++;
+      }
+
+      const indexEntries = filteredPages.map((p) => ({
+        title: p.title, slug: p.slug, status: p.status,
+        collection: collections.find((c) => c.id === p.collection_id)?.name || "",
+        updated_at: p.updated_at,
+      }));
+      zip.file("index.json", JSON.stringify(indexEntries, null, 2));
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `wiki-export-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Bulk export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Export Wiki Pages</p>
+      </div>
+
+      <div>
+        <label className="text-[10px] text-muted-foreground/60 font-medium mb-1 block">Collection</label>
+        <select
+          value={selectedColId}
+          onChange={(e) => setSelectedColId(e.target.value)}
+          className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+        >
+          <option value="__all">All collections ({allPages.length} pages)</option>
+          {collections.map((c) => {
+            const count = allPages.filter((p) => p.collection_id === c.id).length;
+            return <option key={c.id} value={c.id}>{c.icon || "📁"} {c.name} ({count})</option>;
+          })}
+          <option value="uncategorized">Uncategorized ({allPages.filter((p) => !p.collection_id || p.collection_id === "").length})</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="text-[10px] text-muted-foreground/60 font-medium mb-1 block">Format</label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setExportFormat("md")}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              exportFormat === "md"
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            Markdown
+          </button>
+          <button
+            onClick={() => setExportFormat("html")}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              exportFormat === "html"
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            HTML
+          </button>
+        </div>
+      </div>
+
+      <div className="p-3 rounded-md border border-border bg-muted/10">
+        <p className="text-xs text-muted-foreground">
+          Exporting <strong className="text-foreground">{filteredPages.length} pages</strong>
+          {exportFormat === "md" ? " as Markdown" : " as HTML"}
+          {selectedColId !== "__all" && (
+            <> from <strong className="text-foreground">{collections.find((c) => c.id === selectedColId)?.name || "Uncategorized"}</strong></>
+          )}
+        </p>
+        <div className="mt-2 max-h-32 overflow-y-auto space-y-0.5">
+          {filteredPages.slice(0, 20).map((p) => (
+            <div key={p.id} className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <FileText className="h-3 w-3 shrink-0" />
+              <span className="truncate">{p.title}</span>
+              {p.collection_id && (
+                <span className="text-muted-foreground/40 shrink-0">{collections.find((c) => c.id === p.collection_id)?.name}</span>
+              )}
+            </div>
+          ))}
+          {filteredPages.length > 20 && (
+            <p className="text-[10px] text-muted-foreground/50 pt-1">...and {filteredPages.length - 20} more</p>
+          )}
+        </div>
+      </div>
+
+      <button
+        onClick={handleBulkExport}
+        disabled={exporting || filteredPages.length === 0}
+        className="w-full h-9 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+      >
+        {exporting ? (
+          <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Exporting...</>
+        ) : (
+          <><Download className="h-3.5 w-3.5" /> Export ZIP ({filteredPages.length} pages)</>
+        )}
+      </button>
     </div>
   );
 }
