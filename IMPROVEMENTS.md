@@ -47,4 +47,4 @@ Est: 2h
 | 2026-06-25 | P2 — Image gallery / lightbox with prev/next navigation | 17e7895 |
 | 2026-06-24 | P2 — Command palette (Cmd+K) | 29ae863 |
 | 2026-06-24 | P2 — Page color accent UI | 9a55462 |
-| 2026-06-26 | P3 — Auto-anchor IDs on headings with deep-link support | (this tick) |
+| 2026-06-26 | P3 — Auto-anchor IDs on headings with deep-link support | a469213 |
