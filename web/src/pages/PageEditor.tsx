@@ -57,6 +57,13 @@ import {
   Maximize2,
   Palette,
   Code2,
+  // Table toolbar icons
+  Plus,
+  TableCellsMerge,
+  TableCellsSplit,
+  TableProperties,
+  Columns3,
+  Rows3,
 } from "lucide-react";
 import { api, Page } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -549,6 +556,157 @@ function ImageToolbar({
           className="w-16 h-6 px-1.5 rounded border border-border/50 bg-transparent text-[11px] text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/50 text-center"
         />
       </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ─── Table floating toolbar ─────────────────────────────────────────────────
+
+function TableToolbar({
+  editor,
+}: {
+  editor: ReturnType<typeof useEditor>;
+}) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [insideTable, setInsideTable] = useState(false);
+
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => {
+      const { selection } = editor.state;
+      const { $from } = selection;
+      let inTable = false;
+      // Walk up the resolved position to see if we're inside a tableCell/tableHeader
+      for (let d = $from.depth; d > 0; d--) {
+        const node = $from.node(d);
+        if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
+          inTable = true;
+          break;
+        }
+      }
+      setInsideTable(inTable);
+      if (!inTable) {
+        setPos(null);
+        return;
+      }
+      // Position above the current cell
+      const view = editor.view;
+      const coords = view.coordsAtPos($from.pos);
+      setPos({
+        top: coords.top - 48,
+        left: coords.left,
+      });
+    };
+    editor.on("selectionUpdate", update);
+    editor.on("blur", () => setTimeout(() => setPos(null), 200));
+    editor.view.dom.addEventListener("mouseup", update);
+    return () => {
+      editor.off("selectionUpdate", update);
+      editor.off("blur", () => setPos(null));
+      editor.view.dom.removeEventListener("mouseup", update);
+    };
+  }, [editor]);
+
+  if (!pos || !insideTable || !editor) return null;
+
+  return createPortal(
+    <div
+      className="fixed z-50 flex items-center gap-0.5 p-1 rounded-lg border border-border bg-[#1a1a1a] shadow-2xl"
+      style={{ top: pos.top, left: Math.max(16, pos.left), transform: "translateX(-50%)" }}
+      contentEditable={false}
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      {/* Insert row before */}
+      <button
+        onClick={() => editor.chain().focus().addRowBefore().run()}
+        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Insert row before"
+      >
+        <Plus className="h-3 w-3" />
+        <Rows3 className="h-2.5 w-2.5 -ml-0.5" />
+      </button>
+
+      {/* Insert row after */}
+      <button
+        onClick={() => editor.chain().focus().addRowAfter().run()}
+        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Insert row after"
+      >
+        <Rows3 className="h-2.5 w-2.5" />
+        <Plus className="h-3 w-3 -ml-0.5" />
+      </button>
+
+      {/* Delete row */}
+      <button
+        onClick={() => editor.chain().focus().deleteRow().run()}
+        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Delete row"
+      >
+        <Rows3 className="h-3 w-3" />
+        <X className="h-2.5 w-2.5 text-red-400 -ml-1" />
+      </button>
+
+      <span className="w-px h-4 bg-border mx-0.5" />
+
+      {/* Insert column before */}
+      <button
+        onClick={() => editor.chain().focus().addColumnBefore().run()}
+        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Insert column before"
+      >
+        <Plus className="h-3 w-3" />
+        <Columns3 className="h-2.5 w-2.5 -ml-0.5" />
+      </button>
+
+      {/* Insert column after */}
+      <button
+        onClick={() => editor.chain().focus().addColumnAfter().run()}
+        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Insert column after"
+      >
+        <Columns3 className="h-2.5 w-2.5" />
+        <Plus className="h-3 w-3 -ml-0.5" />
+      </button>
+
+      {/* Delete column */}
+      <button
+        onClick={() => editor.chain().focus().deleteColumn().run()}
+        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Delete column"
+      >
+        <Columns3 className="h-3 w-3" />
+        <X className="h-2.5 w-2.5 text-red-400 -ml-1" />
+      </button>
+
+      <span className="w-px h-4 bg-border mx-0.5" />
+
+      {/* Merge cells */}
+      <button
+        onClick={() => editor.chain().focus().mergeCells().run()}
+        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Merge selected cells"
+      >
+        <TableCellsMerge className="h-3.5 w-3.5" />
+      </button>
+
+      {/* Split cell */}
+      <button
+        onClick={() => editor.chain().focus().splitCell().run()}
+        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Split cell"
+      >
+        <TableCellsSplit className="h-3.5 w-3.5" />
+      </button>
+
+      {/* Toggle header row */}
+      <button
+        onClick={() => editor.chain().focus().toggleHeaderRow().run()}
+        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Toggle header row"
+      >
+        <TableProperties className="h-3.5 w-3.5" />
+      </button>
     </div>,
     document.body,
   );
@@ -1428,6 +1586,9 @@ export function PageEditor({ userId }: Props) {
 
       {/* Floating image toolbar when an image is selected */}
       {editor && !preview && <ImageToolbar editor={editor} />}
+
+      {/* Floating table toolbar when cursor is inside a table */}
+      {editor && !preview && <TableToolbar editor={editor} />}
 
       {/* Title */}
       <div className="px-4 md:px-8 pt-6">
