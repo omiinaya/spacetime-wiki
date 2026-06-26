@@ -3645,6 +3645,7 @@ function FeatureFlags() {
     { key: "plantuml", label: "PlantUML Diagrams", desc: "PlantUML sequence and UML diagrams" },
     { key: "details", label: "Toggle Blocks", desc: "Collapsible details/summary toggle blocks" },
     { key: "mentions", label: "@Mentions", desc: "Mention users and pages with @ syntax" },
+    { key: "database", label: "Database Bases", desc: "Table and kanban database views inside wiki pages" },
   ];
 
   useEffect(() => {

@@ -2206,3 +2206,238 @@ pub fn delete_ai_chat_message(ctx: &ReducerContext, id: String) -> Result<(), St
     ctx.db.ai_chat_message().id().delete(&id);
     Ok(())
 }
+
+// ─── Database Bases (table/kanban views) ──────────────────────────────────
+
+#[table(accessor = db_base, public)]
+#[derive(Debug, Clone)]
+pub struct DbBase {
+    #[primary_key]
+    pub id: String,
+    pub page_id: String,
+    pub title: String,
+    pub view_type: String, // "table" | "kanban"
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[table(accessor = db_column, public)]
+#[derive(Debug, Clone)]
+pub struct DbColumn {
+    #[primary_key]
+    pub id: String,
+    pub base_id: String,
+    pub name: String,
+    pub field_type: String, // "text","number","select","multi_select","date","checkbox","user","url"
+    pub options: String,    // JSON: { "choices": ["a","b","c"] } for select types
+    pub sort_order: u32,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[table(accessor = db_row, public)]
+#[derive(Debug, Clone)]
+pub struct DbRow {
+    #[primary_key]
+    pub id: String,
+    pub base_id: String,
+    pub sort_order: u32,
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[table(accessor = db_cell, public)]
+#[derive(Debug, Clone)]
+pub struct DbCell {
+    #[primary_key]
+    pub id: String,
+    pub row_id: String,
+    pub column_id: String,
+    pub value: String, // JSON value: string, number, or array for multi_select
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[reducer]
+pub fn create_db_base(
+    ctx: &ReducerContext,
+    id: String,
+    page_id: String,
+    title: String,
+    view_type: String,
+    created_by: String,
+) -> Result<(), String> {
+    let valid_views = ["table", "kanban"];
+    if !valid_views.contains(&view_type.as_str()) {
+        return Err("Invalid view_type. Must be 'table' or 'kanban'".into());
+    }
+    let now = now_ms(ctx);
+    ctx.db.db_base().insert(DbBase {
+        id,
+        page_id,
+        title,
+        view_type,
+        created_by,
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn create_db_column(
+    ctx: &ReducerContext,
+    id: String,
+    base_id: String,
+    name: String,
+    field_type: String,
+    options: String,
+    sort_order: u32,
+) -> Result<(), String> {
+    let valid_types = ["text", "number", "select", "multi_select", "date", "checkbox", "user", "url"];
+    if !valid_types.contains(&field_type.as_str()) {
+        return Err(format!("Invalid field_type '{}'. Must be one of: text, number, select, multi_select, date, checkbox, user, url", field_type));
+    }
+    let now = now_ms(ctx);
+    ctx.db.db_column().insert(DbColumn {
+        id,
+        base_id,
+        name,
+        field_type,
+        options,
+        sort_order,
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn create_db_row(
+    ctx: &ReducerContext,
+    id: String,
+    base_id: String,
+    sort_order: u32,
+    created_by: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    ctx.db.db_row().insert(DbRow {
+        id,
+        base_id,
+        sort_order,
+        created_by,
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_db_cell(
+    ctx: &ReducerContext,
+    id: String,
+    row_id: String,
+    column_id: String,
+    value: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    let existing = ctx.db.db_cell().iter().find(|c| c.row_id == row_id && c.column_id == column_id);
+    if let Some(mut cell) = existing {
+        cell.value = value;
+        cell.updated_at = now;
+        ctx.db.db_cell().id().update(cell);
+    } else {
+        ctx.db.db_cell().insert(DbCell {
+            id,
+            row_id: row_id.clone(),
+            column_id: column_id.clone(),
+            value,
+            created_at: now,
+            updated_at: now,
+        });
+    }
+    // Also update the parent row's updated_at
+    if let Some(mut row) = ctx.db.db_row().iter().find(|r| r.id == row_id) {
+        row.updated_at = now;
+        ctx.db.db_row().id().update(row);
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn set_db_cell(
+    ctx: &ReducerContext,
+    row_id: String,
+    column_id: String,
+    value: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    let existing = ctx.db.db_cell().iter().find(|c| c.row_id == row_id && c.column_id == column_id);
+    if let Some(mut cell) = existing {
+        cell.value = value;
+        cell.updated_at = now;
+        ctx.db.db_cell().id().update(cell);
+    } else {
+        ctx.db.db_cell().insert(DbCell {
+            id: make_id("dbc", ctx),
+            row_id: row_id.clone(),
+            column_id: column_id.clone(),
+            value,
+            created_at: now,
+            updated_at: now,
+        });
+    }
+    if let Some(mut row) = ctx.db.db_row().iter().find(|r| r.id == row_id) {
+        row.updated_at = now;
+        ctx.db.db_row().id().update(row);
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_db_row(ctx: &ReducerContext, row_id: String) -> Result<(), String> {
+    for cell in ctx.db.db_cell().iter().filter(|c| c.row_id == row_id) {
+        ctx.db.db_cell().id().delete(&cell.id);
+    }
+    ctx.db.db_row().id().delete(&row_id);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_db_base(ctx: &ReducerContext, base_id: String) -> Result<(), String> {
+    // Delete all rows (and their cells)
+    for row in ctx.db.db_row().iter().filter(|r| r.base_id == base_id) {
+        for cell in ctx.db.db_cell().iter().filter(|c| c.row_id == row.id) {
+            ctx.db.db_cell().id().delete(&cell.id);
+        }
+        ctx.db.db_row().id().delete(&row.id);
+    }
+    // Delete all columns
+    for col in ctx.db.db_column().iter().filter(|c| c.base_id == base_id) {
+        ctx.db.db_column().id().delete(&col.id);
+    }
+    ctx.db.db_base().id().delete(&base_id);
+    Ok(())
+}
+
+#[reducer]
+pub fn reorder_db_rows(
+    ctx: &ReducerContext,
+    row_ids: Vec<String>,
+    new_sort_order: Vec<u32>,
+) -> Result<(), String> {
+    if row_ids.len() != new_sort_order.len() {
+        return Err("row_ids and new_sort_order must have the same length".into());
+    }
+    let now = now_ms(ctx);
+    for (i, row_id) in row_ids.iter().enumerate() {
+        if let Some(mut row) = ctx.db.db_row().iter().find(|r| &r.id == row_id) {
+            row.sort_order = new_sort_order[i];
+            row.updated_at = now;
+            ctx.db.db_row().id().update(row);
+        }
+    }
+    Ok(())
+}

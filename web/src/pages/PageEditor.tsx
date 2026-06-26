@@ -26,6 +26,7 @@ import { VideoEmbed, detectProvider } from "../extensions/VideoEmbed";
 import { RichEmbed, detectEmbedProvider } from "../extensions/RichEmbed";
 import { Drawio } from "../extensions/Drawio";
 import { PlantUML } from "../extensions/PlantUML";
+import { DatabaseBase } from "../extensions/DatabaseBase";
 import { ImageLightbox } from "../components/ImageLightbox";
 import { common, createLowlight } from "lowlight";
 import {
@@ -99,6 +100,7 @@ const SLASH_COMMANDS: { title: string; description: string; icon: string; comman
   { title: "Embed", description: "Embed content from 30+ providers (Figma, CodePen, Spotify, Google Docs...)", icon: "🔗", command: (e) => { const url = prompt("Embed URL:"); if (url) e?.chain().focus().setRichEmbed({ src: url }).run(); } },
   { title: "Draw.io", description: "Insert a draw.io diagram", icon: "📐", command: (e) => e?.chain().focus().setDrawio({ src: "" }).run() },
   { title: "PlantUML", description: "Insert a PlantUML diagram", icon: "🌿", command: (e) => e?.chain().focus().setPlantUML({ src: "@startuml\\nAlice -> Bob: Hello\\nBob -> Alice: Hi!\\n@enduml" }).run() },
+  { title: "Database", description: "Insert a table/kanban database view", icon: "🗄️", command: (e) => e?.chain().focus().setDatabaseBase({ baseId: prompt("Database Base ID:") || "" }).run() },
 ];
 
 // ─── Format conversion utilities ─────────────────────────────────────────────
@@ -1027,6 +1029,7 @@ export function PageEditor({ userId }: Props) {
       ...(isFeatureEnabled("drawio") ? [Drawio] : []),
       ...(isFeatureEnabled("plantuml") ? [PlantUML] : []),
       ...(isFeatureEnabled("mentions") ? [Mention.configure({ HTMLAttributes: { class: 'mention' } })] : []),
+      ...(isFeatureEnabled("database") ? [DatabaseBase] : []),
       // Real-time collaboration extensions (Yjs/STDB)
       ...(collabActive ? [collaborationExtension] : []),
       ...(collabActive ? [collaborationCursorExtension] : []),

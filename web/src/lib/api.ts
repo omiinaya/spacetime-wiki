@@ -333,6 +333,30 @@ export interface AiChatMessage {
   content: string; created_at: number;
 }
 
+// ─── Database Bases Types ────────────────────────────────────────────────────
+
+export interface DbBase {
+  id: string; page_id: string; title: string;
+  view_type: string; created_by: string;
+  created_at: number; updated_at: number;
+}
+
+export interface DbColumn {
+  id: string; base_id: string; name: string;
+  field_type: string; options: string;
+  sort_order: number; created_at: number; updated_at: number;
+}
+
+export interface DbRow {
+  id: string; base_id: string; sort_order: number;
+  created_by: string; created_at: number; updated_at: number;
+}
+
+export interface DbCell {
+  id: string; row_id: string; column_id: string;
+  value: string; created_at: number; updated_at: number;
+}
+
 // ─── Mappers ───────────────────────────────────────────────────────────────────
 
 function mapCollabSession(row: unknown[]): CollabSession {
@@ -364,6 +388,32 @@ function mapAiChatMessage(row: unknown[]): AiChatMessage {
   return {
     id: String(row[0]??""), session_id: String(row[1]??""), role: String(row[2]??""),
     content: String(row[3]??""), created_at: Number(row[4])||0,
+  };
+}
+function mapDbBase(row: unknown[]): DbBase {
+  return {
+    id: String(row[0]??""), page_id: String(row[1]??""), title: String(row[2]??""),
+    view_type: String(row[3]??""), created_by: String(row[4]??""),
+    created_at: Number(row[5])||0, updated_at: Number(row[6])||0,
+  };
+}
+function mapDbColumn(row: unknown[]): DbColumn {
+  return {
+    id: String(row[0]??""), base_id: String(row[1]??""), name: String(row[2]??""),
+    field_type: String(row[3]??""), options: String(row[4]??""),
+    sort_order: Number(row[5])||0, created_at: Number(row[6])||0, updated_at: Number(row[7])||0,
+  };
+}
+function mapDbRow(row: unknown[]): DbRow {
+  return {
+    id: String(row[0]??""), base_id: String(row[1]??""), sort_order: Number(row[2])||0,
+    created_by: String(row[3]??""), created_at: Number(row[4])||0, updated_at: Number(row[5])||0,
+  };
+}
+function mapDbCell(row: unknown[]): DbCell {
+  return {
+    id: String(row[0]??""), row_id: String(row[1]??""), column_id: String(row[2]??""),
+    value: String(row[3]??""), created_at: Number(row[4])||0, updated_at: Number(row[5])||0,
   };
 }
 
@@ -767,6 +817,66 @@ export const api = {
       callReducer("delete_saml_provider", [id]),
   },
 
+  // ── Database Bases (table/kanban views) ──
+  databases: {
+    list: (pageId?: string) => {
+      let sql = "SELECT * FROM db_base";
+      if (pageId) sql += ` WHERE page_id = '${pageId}'`;
+      sql += " ORDER BY created_at ASC";
+      return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapDbBase));
+    },
+    get: (id: string) =>
+      sqlQuery(`SELECT * FROM db_base WHERE id = '${id}'`).then(
+        (rows) => ((rows as any as unknown[][])[0] ? mapDbBase((rows as any as unknown[][])[0]) : null),
+      ),
+    create: (pageId: string, title: string, viewType: string, createdBy: string) => {
+      const id = genId("db");
+      return callReducer("create_db_base", [id, pageId, title, viewType, createdBy]).then(() => id);
+    },
+    delete: (id: string) => callReducer("delete_db_base", [id]),
+
+    columns: {
+      list: (baseId: string) =>
+        sqlQuery(`SELECT * FROM db_column WHERE base_id = '${baseId}' ORDER BY sort_order ASC`)
+          .then((rows) => (rows as any as unknown[][]).map(mapDbColumn)),
+      create: (baseId: string, name: string, fieldType: string, options: string = "{}", sortOrder: number = 0) => {
+        const id = genId("dbc");
+        return callReducer("create_db_column", [id, baseId, name, fieldType, options, sortOrder]).then(() => id);
+      },
+    },
+
+    rows: {
+      list: (baseId: string) =>
+        sqlQuery(`SELECT * FROM db_row WHERE base_id = '${baseId}' ORDER BY sort_order ASC`)
+          .then((rows) => (rows as any as unknown[][]).map(mapDbRow)),
+      get: (id: string) =>
+        sqlQuery(`SELECT * FROM db_row WHERE id = '${id}'`).then(
+          (rows) => ((rows as any as unknown[][])[0] ? mapDbRow((rows as any as unknown[][])[0]) : null),
+        ),
+      create: (baseId: string, sortOrder: number, createdBy: string) => {
+        const id = genId("dbr");
+        return callReducer("create_db_row", [id, baseId, sortOrder, createdBy]).then(() => id);
+      },
+      delete: (id: string) => callReducer("delete_db_row", [id]),
+      reorder: (rowIds: string[], newSortOrders: number[]) =>
+        callReducer("reorder_db_rows", [rowIds, newSortOrders]),
+    },
+
+    cells: {
+      list: (rowId: string) =>
+        sqlQuery(`SELECT * FROM db_cell WHERE row_id = '${rowId}'`)
+          .then((rows) => (rows as any as unknown[][]).map(mapDbCell)),
+      listForBase: (baseId: string) =>
+        sqlQuery(
+          `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = '${baseId}'`
+        ).then((rows) => (rows as any as unknown[][]).map(mapDbCell)),
+      update: (rowId: string, columnId: string, value: string) => {
+        const id = genId("dce");
+        return callReducer("set_db_cell", [rowId, columnId, value]);
+      },
+    },
+  },
+
   settings: {
     get: async (key: string): Promise<string> => {
       const rows = await sqlQuery(`SELECT * FROM app_setting WHERE key = '${key}'`);
@@ -1057,6 +1167,11 @@ export const SUBSCRIPTION_SQLS = {
   tags: (pageId: string) => `SELECT * FROM page_tag WHERE page_id = '${pageId}'`,
   collabSessions: (pageId: string) => `SELECT * FROM collab_session WHERE page_id = '${pageId}'`,
   collabUpdates: (pageId: string) => `SELECT * FROM collab_update WHERE page_id = '${pageId}'`,
+  dbBases: (pageId: string) => `SELECT * FROM db_base WHERE page_id = '${pageId}'`,
+  dbColumns: (baseId: string) => `SELECT * FROM db_column WHERE base_id = '${baseId}' ORDER BY sort_order ASC`,
+  dbRows: (baseId: string) => `SELECT * FROM db_row WHERE base_id = '${baseId}' ORDER BY sort_order ASC`,
+  dbCellsForBase: (baseId: string) =>
+    `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = '${baseId}'`,
 } as const;
 
 export function usePagesSubscription() {
