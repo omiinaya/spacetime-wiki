@@ -306,6 +306,35 @@ export interface AppSetting {
   key: string; value: string; updated_at: number;
 }
 
+export interface CollabSession {
+  id: string; page_id: string; user_id: string;
+  user_name: string; color: string; cursor_position: string;
+  last_seen_at: number; joined_at: number;
+}
+
+export interface CollabUpdate {
+  id: string; page_id: string; update_data: string;
+  user_id: string; created_at: number;
+}
+
+// ─── Mappers ───────────────────────────────────────────────────────────────────
+
+function mapCollabSession(row: unknown[]): CollabSession {
+  return {
+    id: String(row[0]??""), page_id: String(row[1]??""), user_id: String(row[2]??""),
+    user_name: String(row[3]??""), color: String(row[4]??""),
+    cursor_position: String(row[5]??""), last_seen_at: Number(row[6])||0,
+    joined_at: Number(row[7])||0,
+  };
+}
+function mapCollabUpdate(row: unknown[]): CollabUpdate {
+  return {
+    id: String(row[0]??""), page_id: String(row[1]??""),
+    update_data: String(row[2]??""), user_id: String(row[3]??""),
+    created_at: Number(row[4])||0,
+  };
+}
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 export const api = {
@@ -722,6 +751,30 @@ export const api = {
     purgeExpiredTrash: () =>
       callReducer("purge_expired_trash", []),
   },
+
+  // ── Real-time collaboration ──
+  collaboration: {
+    joinSession: (pageId: string, userId: string, userName: string, color: string) =>
+      callReducer("join_collab_session", [pageId, userId, userName, color]),
+    leaveSession: (pageId: string, userId: string) =>
+      callReducer("leave_collab_session", [pageId, userId]),
+    updateCursor: (pageId: string, userId: string, cursorJson: string) =>
+      callReducer("update_cursor_position", [pageId, userId, cursorJson]),
+    broadcastUpdate: (pageId: string, updateData: string, userId: string) => {
+      const id = genId("cu");
+      return callReducer("broadcast_yjs_update", [id, pageId, updateData, userId]);
+    },
+    getSessions: (pageId: string) =>
+      sqlQuery(`SELECT * FROM collab_session WHERE page_id = '${pageId}'`)
+        .then((rows) => (rows as any as unknown[][]).map(mapCollabSession)),
+    getUpdates: (pageId: string) =>
+      sqlQuery(`SELECT * FROM collab_update WHERE page_id = '${pageId}' ORDER BY created_at ASC`)
+        .then((rows) => (rows as any as unknown[][]).map(mapCollabUpdate)),
+    cleanupSessions: () =>
+      callReducer("cleanup_stale_collab_sessions", []),
+    cleanupOldUpdates: () =>
+      callReducer("cleanup_old_collab_updates", []),
+  },
 };
 
 // ─── Transclusion resolver ────────────────────────────────────────────────────
@@ -875,6 +928,8 @@ export const SUBSCRIPTION_SQLS = {
   comments: (pageId: string) => `SELECT * FROM comment WHERE page_id = '${pageId}'`,
   favorites: (userId: string) => `SELECT * FROM favorite WHERE user_id = '${userId}'`,
   tags: (pageId: string) => `SELECT * FROM page_tag WHERE page_id = '${pageId}'`,
+  collabSessions: (pageId: string) => `SELECT * FROM collab_session WHERE page_id = '${pageId}'`,
+  collabUpdates: (pageId: string) => `SELECT * FROM collab_update WHERE page_id = '${pageId}'`,
 } as const;
 
 export function usePagesSubscription() {
@@ -883,4 +938,18 @@ export function usePagesSubscription() {
 
 export function useCollectionsSubscription() {
   return useSubscription(SUBSCRIPTION_SQLS.collections, (row: unknown[]) => mapCollection(row));
+}
+
+export function useCollabSessionsSubscription(pageId: string | undefined) {
+  return useSubscription(
+    pageId ? SUBSCRIPTION_SQLS.collabSessions(pageId) : "SELECT * FROM collab_session WHERE 1=0",
+    (row: unknown[]) => mapCollabSession(row),
+  );
+}
+
+export function useCollabUpdatesSubscription(pageId: string | undefined) {
+  return useSubscription(
+    pageId ? SUBSCRIPTION_SQLS.collabUpdates(pageId) : "SELECT * FROM collab_update WHERE 1=0",
+    (row: unknown[]) => mapCollabUpdate(row),
+  );
 }

@@ -1,0 +1,141 @@
+/**
+ * React hook for Yjs‑STDB real-time collaboration in Tiptap.
+ *
+ * Manages the Yjs document lifecycle, STDB sync, cursor awareness,
+ * and provides the Tiptap Collaboration extensions configuration.
+ */
+
+import { useState, useEffect, useCallback, useRef } from "react";
+import * as Y from "yjs";
+import Collaboration from "@tiptap/extension-collaboration";
+import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
+import { YjsStdbProvider } from "./yjs-stdb-provider";
+import { useCollabSessionsSubscription, useCollabUpdatesSubscription } from "./api";
+
+interface RemoteUser {
+  userId: string;
+  userName: string;
+  color: string;
+  cursorPosition: string;
+}
+
+interface UseCollabResult {
+  /** The Yjs document (shared between editor and provider) */
+  ydoc: Y.Doc;
+  /** The STDB-backed Yjs provider (for cursor updates) */
+  provider: YjsStdbProvider;
+  /** Tiptap Collaboration extension config – spread into extensions array */
+  collaborationExtension: any;
+  /** Tiptap CollaborationCursor extension config – spread into extensions array */
+  collaborationCursorExtension: any;
+  /** Other users currently editing this page */
+  remoteUsers: RemoteUser[];
+  /** Whether collaboration is active */
+  isActive: boolean;
+}
+
+export function useCollaboration(
+  pageId: string | undefined,
+  userId: string | undefined,
+  userName: string | undefined,
+): UseCollabResult {
+  const [remoteUsers, setRemoteUsers] = useState<RemoteUser[]>([]);
+  const providerRef = useRef<YjsStdbProvider | null>(null);
+  const ydocRef = useRef<Y.Doc>(new Y.Doc());
+  const initializedRef = useRef(false);
+
+  // Subscribe to other sessions on this page
+  const { rows: sessions } = useCollabSessionsSubscription(pageId);
+
+  // Subscribe to Yjs updates broadcast by other users
+  const { rows: updates } = useCollabUpdatesSubscription(pageId);
+
+  // Initialize provider when we have all the info
+  useEffect(() => {
+    if (!pageId || !userId || !userName) return;
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const provider = new YjsStdbProvider(pageId, userId, userName);
+    providerRef.current = provider;
+    provider.initialize().catch((err) => {
+      console.warn("useCollaboration: failed to initialize", err);
+    });
+
+    return () => {
+      provider.destroy();
+      providerRef.current = null;
+      initializedRef.current = false;
+    };
+  }, [pageId, userId, userName]);
+
+  // Apply remote Yjs updates as they arrive via STDB subscription
+  useEffect(() => {
+    if (!updates || !providerRef.current || !pageId) return;
+    const provider = providerRef.current;
+    for (const upd of updates) {
+      provider.applyRemoteUpdate(upd.update_data);
+    }
+  }, [updates, pageId]);
+
+  // Update remote users list from session subscription
+  useEffect(() => {
+    if (!sessions || !userId) {
+      setRemoteUsers([]);
+      return;
+    }
+    const others = sessions
+      .filter((s: any) => s.user_id !== userId)
+      .map((s: any) => ({
+        userId: s.user_id,
+        userName: s.user_name,
+        color: s.color,
+        cursorPosition: s.cursor_position,
+      }));
+    setRemoteUsers(others);
+  }, [sessions, userId]);
+
+  const ydoc = ydocRef.current;
+  const provider = providerRef.current;
+
+  // Build Tiptap Collaboration extension config
+  const collaborationExtension = Collaboration.configure({
+    document: ydoc,
+  });
+
+  const collaborationCursorExtension = CollaborationCursor.configure({
+    provider: providerRef.current ? {
+      getCursorPosition: () => null,
+      setCursorPosition: () => {},
+    } as any : undefined,
+    user: {
+      name: userName || "Unknown",
+      color: userId ? getColorForUser(userId) : "#4A90D9",
+    },
+  });
+
+  return {
+    ydoc,
+    provider: providerRef.current as any,
+    collaborationExtension,
+    collaborationCursorExtension,
+    remoteUsers,
+    isActive: !!pageId && !!userId && !!userName,
+  };
+}
+
+// Color assignment helper (mirrors the one in the provider)
+const COLLAB_COLORS = [
+  "#4A90D9", "#E8734A", "#50B86C", "#D94A8C",
+  "#B87D4A", "#6B5B95", "#D4A843", "#4AB8B8",
+  "#B84A6B", "#5B8C5B", "#8C5B8C", "#B8B84A",
+];
+
+function getColorForUser(userId: string): string {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+    hash |= 0;
+  }
+  return COLLAB_COLORS[Math.abs(hash) % COLLAB_COLORS.length];
+}

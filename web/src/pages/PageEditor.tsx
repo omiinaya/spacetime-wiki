@@ -67,6 +67,7 @@ import {
   Rows3,
 } from "lucide-react";
 import { api, Page, readFileAsBase64, resolveContentAttachments, isAttachmentUrl, MAX_IMAGE_BYTES } from "../lib/api";
+import { useCollaboration } from "../lib/useCollaboration";
 import { cn } from "../lib/utils";
 
 const lowlight = createLowlight(common);
@@ -823,6 +824,24 @@ export function PageEditor({ userId }: Props) {
   const [pageLinkPos, setPageLinkPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [allPages, setAllPages] = useState<Page[]>([]);
 
+  // ─── Real-time collaboration ────────────────────────────────────────────
+  const [collabUserName, setCollabUserName] = useState(() => localStorage.getItem("sw_user_name") || "User");
+  const collabPageId = isNew ? undefined : id;
+  const collabUserId = userId || undefined;
+  const {
+    collaborationExtension,
+    collaborationCursorExtension,
+    remoteUsers,
+    isActive: collabActive,
+    ydoc,
+  } = useCollaboration(collabPageId, collabUserId, collabUserName);
+
+  // Load user name from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("sw_user_name");
+    if (stored) setCollabUserName(stored);
+  }, []);
+
   // ─── Auto-save drafts to localStorage ───────────────────────────────────────
   const [hasDraft, setHasDraft] = useState(false);
   const [draftDismissed, setDraftDismissed] = useState(false);
@@ -1008,6 +1027,9 @@ export function PageEditor({ userId }: Props) {
       ...(isFeatureEnabled("drawio") ? [Drawio] : []),
       ...(isFeatureEnabled("plantuml") ? [PlantUML] : []),
       ...(isFeatureEnabled("mentions") ? [Mention.configure({ HTMLAttributes: { class: 'mention' } })] : []),
+      // Real-time collaboration extensions (Yjs/STDB)
+      ...(collabActive ? [collaborationExtension] : []),
+      ...(collabActive ? [collaborationCursorExtension] : []),
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,
     editable: !preview,
@@ -1520,6 +1542,22 @@ export function PageEditor({ userId }: Props) {
             </span>
             {page?.status === "draft" && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-500">Draft</span>
+            )}
+            {/* Remote users (collaboration) */}
+            {collabActive && remoteUsers.length > 0 && (
+              <div className="flex items-center gap-1 ml-2">
+                {remoteUsers.map((u) => (
+                  <span
+                    key={u.userId}
+                    className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: u.color + "20", color: u.color }}
+                    title={`${u.userName} is editing`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: u.color }} />
+                    {u.userName}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
           <div className="flex items-center gap-1">
