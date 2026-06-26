@@ -18,8 +18,8 @@ import { SearchFilters, EMPTY_FILTERS, type SearchFilterState } from "./componen
 import { WebhookSettings } from "./components/WebhookSettings";
 import { TemplatePicker } from "./components/TemplatePicker";
 import { KeyboardShortcuts } from "./components/KeyboardShortcuts";
-import { ToastProvider, useToast, initGlobalToast } from "./components/Toast";
-import { showToast } from "./components/Toast";
+import { ToastProvider, useToast, initGlobalToast, showToast } from "./components/Toast";
+import { LanguageSwitcher } from "./components/LanguageSwitcher";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -1833,10 +1833,20 @@ function AppLayout() {
             </>)}
             {adminTab === "settings" && (
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trash Retention</p>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Language</p>
+                    </div>
+                    <LanguageSwitcher />
+                  </div>
+                  <div className="border-t border-border pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trash Retention</p>
+                    </div>
+                    <TrashSettings />
+                  </div>
                 </div>
-                <TrashSettings />
               </div>
             )}
             {adminTab === "features" && <FeatureFlags />}
