@@ -372,6 +372,26 @@ export interface Invitation {
   view_count: number; created_at: number; updated_at: number;
 }
 
+// ─── MFA / TOTP Types ────────────────────────────────────────────────────────
+
+export interface MfaMethod {
+  id: string;
+  user_id: string;
+  method_type: string;
+  totp_secret: string;
+  is_enabled: boolean;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface MfaBackupCode {
+  id: string;
+  user_id: string;
+  code_hash: string;
+  is_used: boolean;
+  created_at: number;
+}
+
 export interface DbBase {
   id: string; page_id: string; title: string;
   view_type: string; created_by: string;
@@ -445,6 +465,21 @@ function mapPasskeyChallenge(row: unknown[]): PasskeyChallenge {
     challenge: String(row[0]??""), user_handle: String(row[1]??""),
     purpose: String(row[2]??""), created_at: Number(row[3])||0,
     expires_at: Number(row[4])||0,
+  };
+}
+function mapMfaMethod(row: unknown[]): MfaMethod {
+  return {
+    id: String(row[0]??""), user_id: String(row[1]??""),
+    method_type: String(row[2]??""), totp_secret: String(row[3]??""),
+    is_enabled: Boolean(row[4]), created_at: Number(row[5])||0,
+    updated_at: Number(row[6])||0,
+  };
+}
+function mapMfaBackupCode(row: unknown[]): MfaBackupCode {
+  return {
+    id: String(row[0]??""), user_id: String(row[1]??""),
+    code_hash: String(row[2]??""), is_used: Boolean(row[3]),
+    created_at: Number(row[4])||0,
   };
 }
 function mapAiConfig(row: unknown[]): AiConfig {
@@ -1148,6 +1183,32 @@ export const api = {
     updateCounter: (credentialId: string, counter: number) =>
       callReducer("update_passkey_counter", [credentialId, counter]),
     delete: (id: string) => callReducer("delete_passkey_credential", [id]),
+  },
+  mfa: {
+    getMethod: (userId: string) =>
+      sqlQuery(`SELECT * FROM mfa_method WHERE user_id = '${userId}'`)
+        .then((rows) => {
+          const arr = rows as any as unknown[][];
+          return arr.length > 0 ? mapMfaMethod(arr[0]) : null;
+        }),
+    getBackupCodes: (userId: string) =>
+      sqlQuery(`SELECT * FROM mfa_backup_code WHERE user_id = '${userId}'`)
+        .then((rows) => (rows as any as unknown[][]).map(mapMfaBackupCode)),
+    enableTotp: (userId: string, totpSecret: string, backupCodes: string[]) =>
+      callReducer("enable_totp", [userId, totpSecret, backupCodes]),
+    disable: (userId: string) =>
+      callReducer("disable_mfa", [userId]),
+    verifyTotp: (userId: string, code: number) =>
+      callReducer("verify_totp", [userId, code]),
+    verifyBackupCode: (userId: string, code: string) =>
+      callReducer("verify_mfa_backup_code", [userId, code]),
+    /**
+     * Check if a user has MFA enabled (for login flow)
+     */
+    isEnabled: async (userId: string): Promise<boolean> => {
+      const rows = await sqlQuery(`SELECT id FROM mfa_method WHERE user_id = '${userId}' AND is_enabled = true`);
+      return rows.length > 0;
+    },
   },
   syncedBlocks: {
     list: () =>
