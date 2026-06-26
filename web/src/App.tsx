@@ -3742,6 +3742,7 @@ function FeatureFlags() {
     { key: "details", label: "Toggle Blocks", desc: "Collapsible details/summary toggle blocks" },
     { key: "mentions", label: "@Mentions", desc: "Mention users and pages with @ syntax" },
     { key: "database", label: "Database Bases", desc: "Table and kanban database views inside wiki pages" },
+    { key: "syncedBlocks", label: "Synced Blocks", desc: "Reusable blocks that sync across pages — edit once, update everywhere" },
   ];
 
   useEffect(() => {
