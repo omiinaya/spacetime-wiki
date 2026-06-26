@@ -22,6 +22,7 @@ import { RichEmbed } from "../extensions/RichEmbed";
 import { Drawio } from "../extensions/Drawio";
 import { Mermaid } from "../extensions/Mermaid";
 import { ImageEnhanced } from "../extensions/ImageEnhanced";
+import { Transclusion } from "../extensions/Transclusion";
 import JSZip from "jszip";
 import { common, createLowlight } from "lowlight";
 import {
@@ -29,7 +30,7 @@ import {
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
   List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye, FolderOpen,
 } from "lucide-react";
-import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments } from "../lib/api";
+import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments, resolveTransclusions } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
 import { PagePermissions } from "../components/PagePermissions";
 import { RevisionDiff } from "../components/RevisionDiff";
@@ -474,6 +475,7 @@ export function PageView({ pageId, userId }: Props) {
       Drawio,
       Mermaid,
       ImageEnhanced.configure({ inline: true }),
+      Transclusion,
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
@@ -530,7 +532,10 @@ export function PageView({ pageId, userId }: Props) {
         if (parsed && parsed.type === "doc") {
           // Resolve attachment:// URLs to blob URLs for display
           resolveContentAttachments(parsed, blobUrlCacheRef.current).then((resolved) => {
-            editor.commands.setContent(resolved as any);
+            // Then resolve transclusions ({{@page_id}} syntax)
+            resolveTransclusions(resolved).then((resolvedWithTransclusions) => {
+              editor.commands.setContent(resolvedWithTransclusions as any);
+            });
           });
         } else {
           editor.commands.setContent({ type: "doc", content: [{ type: "paragraph" }] });
