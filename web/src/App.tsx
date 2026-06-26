@@ -382,6 +382,21 @@ function AppLayout() {
     });
   }
 
+  // Build collection tree for nested rendering
+  const colChildren = new Map<string, Collection[]>();
+  for (const col of collections) {
+    const parentId = col.parent_id || "";
+    if (!colChildren.has(parentId)) colChildren.set(parentId, []);
+    colChildren.get(parentId)!.push(col);
+  }
+  function getTree(parentId: string): (Collection & { children: Collection[] })[] {
+    return (colChildren.get(parentId) || []).map(col => ({
+      ...col,
+      children: getTree(col.id),
+    }));
+  }
+  const collectionTree = getTree("");
+
   const isActive = (pageId: string) =>
     location.pathname === `/page/${pageId}` || location.pathname.startsWith(`/page/${pageId}`);
 
@@ -856,6 +871,66 @@ function AppLayout() {
     return () => window.removeEventListener("keydown", handler);
   }, [paletteOpen, paletteIndex, paletteItems.length]);
 
+  // ─── Recursive collection tree renderer ────────────────────────────────
+  const renderColTree = (tree: (Collection & { children: Collection[] })[], depth: number) => {
+    return tree.map((col) => {
+      const colPages = pagesByCollection[col.id] || [];
+      const expanded = expandedCollections.has(col.id);
+      const childCount = col.children.length;
+      return (
+        <div key={col.id} className="mb-0.5">
+          <div className="flex items-center group" style={depth > 0 ? { paddingLeft: depth * 16 } : undefined}>
+            <button
+              onClick={() => toggleCollection(col.id)}
+              onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, colId: col.id }); }}
+              onDragOver={(e) => { e.preventDefault(); setDragOverTarget(col.id); }}
+              onDrop={(e) => handleDropOnCollection(e, col.id)}
+              className="flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left"
+            >
+              {expanded ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
+              <span className="text-xs">{col.icon || "📁"}</span>
+              <span className="truncate">{col.name}</span>
+              <span className="text-[10px] text-muted-foreground/50 ml-auto">{colPages.length}{childCount > 0 ? ` +${childCount}` : ""}</span>
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); openEditCol(col); }} className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
+              <MoreHorizontal className="h-3 w-3" />
+            </button>
+          </div>
+          {expanded && (
+            <>
+              {childCount > 0 && renderColTree(col.children, depth + 1)}
+              {colPages.slice(0, pageLimits[col.id] || PAGE_LIMIT).map((page) => (
+                <div key={page.id} draggable onDragStart={(e) => handleDragStart(e, page.id)}
+                  onDragOver={(e) => handleDragOver(e, page.id)} onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDropOnPage(e, page.id)} onDragEnd={handleDragEnd}
+                  className={cn("w-full flex items-center gap-0.5 pl-2 pr-2 py-0.5 rounded-md text-xs transition-colors group/page", isActive(page.id) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/50", selectedPageIds.has(page.id) && "bg-primary/5 ring-1 ring-primary/20", dragOverTarget === page.id && "ring-1 ring-primary/40 bg-primary/5")}>
+                  <button onClick={(e) => togglePageSelection(page.id, e)} className="p-0.5 rounded text-muted-foreground/40 hover:text-foreground shrink-0 opacity-0 group-hover/page:opacity-100 transition-opacity" title={selectedPageIds.has(page.id) ? "Deselect" : "Select"}>
+                    {selectedPageIds.has(page.id) ? <CheckSquare className="h-3.5 w-3.5 text-primary" /> : <Square className="h-3.5 w-3.5" />}
+                  </button>
+                  <button onClick={(e) => handlePageClick(page.id, e)} className="flex-1 flex items-center gap-1.5 min-w-0 text-left">
+                    {page.icon || <FileText className="h-3.5 w-3.5 shrink-0" />}
+                    {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
+                    {page.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary" fill="currentColor" />}
+                    <span className="truncate">{page.title}</span>
+                    {searchQuery && page.text_content && (<span className="block text-[10px] text-muted-foreground/50 truncate mt-0.5 max-w-full">{(() => { const idx = page.text_content.toLowerCase().indexOf(searchQuery.toLowerCase()); if (idx < 0) return page.text_content.slice(0, 60).replace(/\n/g, " "); const start = Math.max(0, idx - 20); const end = Math.min(page.text_content.length, idx + searchQuery.length + 40); const snippet = page.text_content.slice(start, end).replace(/\n/g, " "); return (start > 0 ? "…" : "") + snippet + (end < page.text_content.length ? "…" : ""); })()}</span>)}
+                    {page.status === "draft" && <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-yellow-500/10 text-yellow-500 shrink-0">Draft</span>}
+                    {page.status === "archived" && <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Archived</span>}
+                    {page.is_template && <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400 shrink-0">Template</span>}
+                  </button>
+                </div>
+              ))}
+              {colPages.length > (pageLimits[col.id] || PAGE_LIMIT) && (
+                <button onClick={() => setPageLimits(prev => ({ ...prev, [col.id]: (prev[col.id] || PAGE_LIMIT) + PAGE_LIMIT }))} className="w-full flex items-center gap-2 pl-8 pr-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-md transition-colors text-left">
+                  <ChevronDown className="h-3 w-3 shrink-0" /> Show {colPages.length - (pageLimits[col.id] || PAGE_LIMIT)} more
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="flex h-screen bg-background" onClick={() => setContextMenu(null)}>
       {/* Sidebar */}
@@ -1006,110 +1081,7 @@ function AppLayout() {
             <div className="px-3 py-4 text-xs text-muted-foreground">Loading...</div>
           ) : (
             <>
-              {collections.map((col) => {
-                const colPages = pagesByCollection[col.id] || [];
-                const expanded = expandedCollections.has(col.id);
-                return (
-                  <div key={col.id} className="mb-0.5">
-                    <div className="flex items-center group">
-                      <button
-                        onClick={() => toggleCollection(col.id)}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          setContextMenu({ x: e.clientX, y: e.clientY, colId: col.id });
-                        }}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDropOnCollection(e, col.id)}
-                        className="flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left"
-                      >
-                        {expanded ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
-                        <span className="text-xs">{col.icon || "📁"}</span>
-                        <span className="truncate">{col.name}</span>
-                        <span className="text-[10px] text-muted-foreground/50 ml-auto">{colPages.length}</span>
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openEditCol(col); }}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-                      >
-                        <MoreHorizontal className="h-3 w-3" />
-                      </button>
-                    </div>
-                    {expanded &&
-                      colPages.slice(0, pageLimits[col.id] || PAGE_LIMIT).map((page) => (
-                        <div
-                          key={page.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, page.id)}
-                          onDragOver={(e) => handleDragOver(e, page.id)}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDropOnPage(e, page.id)}
-                          onDragEnd={handleDragEnd}
-                          className={cn(
-                            "w-full flex items-center gap-0.5 pl-2 pr-2 py-0.5 rounded-md text-xs transition-colors group/page",
-                            isActive(page.id)
-                              ? "bg-primary/10 text-primary font-medium"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                            selectedPageIds.has(page.id) && "bg-primary/5 ring-1 ring-primary/20",
-                            dragOverTarget === page.id && "ring-1 ring-primary/40 bg-primary/5",
-                          )}
-                        >
-                          {/* Selection checkbox */}
-                          <button
-                            onClick={(e) => togglePageSelection(page.id, e)}
-                            className="p-0.5 rounded text-muted-foreground/40 hover:text-foreground shrink-0 opacity-0 group-hover/page:opacity-100 transition-opacity"
-                            title={selectedPageIds.has(page.id) ? "Deselect" : "Select"}
-                          >
-                            {selectedPageIds.has(page.id) ? (
-                              <CheckSquare className="h-3.5 w-3.5 text-primary" />
-                            ) : (
-                              <Square className="h-3.5 w-3.5" />
-                            )}
-                          </button>
-                          {/* Clicking the page name navigates (or Cmd+click toggles) */}
-                          <button
-                            onClick={(e) => handlePageClick(page.id, e)}
-                            className="flex-1 flex items-center gap-1.5 min-w-0 text-left"
-                          >
-                            {page.icon || <FileText className="h-3.5 w-3.5 shrink-0" />}
-                            {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
-                            {page.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary" fill="currentColor" />}
-                            <span className="truncate">{page.title}</span>
-                            {searchQuery && page.text_content && (
-                              <span className="block text-[10px] text-muted-foreground/50 truncate mt-0.5 max-w-full">
-                                {(() => {
-                                  const idx = page.text_content.toLowerCase().indexOf(searchQuery.toLowerCase());
-                                  if (idx < 0) return page.text_content.slice(0, 60).replace(/\n/g, " ");
-                                  const start = Math.max(0, idx - 20);
-                                  const end = Math.min(page.text_content.length, idx + searchQuery.length + 40);
-                                  const snippet = page.text_content.slice(start, end).replace(/\n/g, " ");
-                                  return (start > 0 ? "…" : "") + snippet + (end < page.text_content.length ? "…" : "");
-                                })()}
-                              </span>
-                            )}
-                            {page.status === "draft" && (
-                              <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-yellow-500/10 text-yellow-500 shrink-0">Draft</span>
-                            )}
-                            {page.status === "archived" && (
-                              <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Archived</span>
-                            )}
-                            {page.is_template && (
-                              <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400 shrink-0">Template</span>
-                            )}
-                          </button>
-                        </div>
-                      ))}
-                    {expanded && colPages.length > (pageLimits[col.id] || PAGE_LIMIT) && (
-                      <button
-                        onClick={() => setPageLimits(prev => ({ ...prev, [col.id]: (prev[col.id] || PAGE_LIMIT) + PAGE_LIMIT }))}
-                        className="w-full flex items-center gap-2 pl-8 pr-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-md transition-colors text-left"
-                      >
-                        <ChevronDown className="h-3 w-3 shrink-0" />
-                        Show {colPages.length - (pageLimits[col.id] || PAGE_LIMIT)} more
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+              {renderColTree(collectionTree, 0)}
 
               {/* Uncategorized pages */}
               {pagesByCollection["uncategorized"]?.length > 0 && (
