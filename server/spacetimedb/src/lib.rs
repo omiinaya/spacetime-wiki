@@ -2089,3 +2089,120 @@ pub fn batch_add_tag(
     }
     Ok(())
 }
+
+// ─── AI Assistant ─────────────────────────────────────���───────────────────────
+
+#[table(accessor = ai_config, public)]
+#[derive(Debug, Clone)]
+pub struct AiConfig {
+    #[primary_key]
+    pub key: String,
+    pub value: String,
+    pub updated_at: u64,
+}
+
+#[table(accessor = ai_chat_session, public)]
+#[derive(Debug, Clone)]
+pub struct AiChatSession {
+    #[primary_key]
+    pub id: String,
+    pub user_id: String,
+    pub title: String,
+    /// Optional page ID that provides context for the chat (RAG)
+    pub page_context_id: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[table(accessor = ai_chat_message, public)]
+#[derive(Debug, Clone)]
+pub struct AiChatMessage {
+    #[primary_key]
+    pub id: String,
+    pub session_id: String,
+    pub role: String,  // "user" | "assistant" | "system"
+    pub content: String,
+    pub created_at: u64,
+}
+
+#[reducer]
+pub fn set_ai_config(ctx: &ReducerContext, key: String, value: String) -> Result<(), String> {
+    let now = now_ms(ctx);
+    let existing = ctx.db.ai_config().iter().find(|c| c.key == key);
+    if let Some(mut config) = existing {
+        config.value = value;
+        config.updated_at = now;
+        ctx.db.ai_config().key().update(config);
+    } else {
+        ctx.db.ai_config().insert(AiConfig {
+            key: key.clone(),
+            value,
+            updated_at: now,
+        });
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn create_ai_chat_session(
+    ctx: &ReducerContext,
+    id: String,
+    user_id: String,
+    title: String,
+    page_context_id: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    ctx.db.ai_chat_session().insert(AiChatSession {
+        id,
+        user_id,
+        title,
+        page_context_id,
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn add_ai_chat_message(
+    ctx: &ReducerContext,
+    id: String,
+    session_id: String,
+    role: String,
+    content: String,
+) -> Result<(), String> {
+    let valid_roles = ["user", "assistant", "system"];
+    if !valid_roles.contains(&role.as_str()) {
+        return Err("Invalid role. Must be user, assistant, or system".into());
+    }
+    let now = now_ms(ctx);
+    ctx.db.ai_chat_message().insert(AiChatMessage {
+        id,
+        session_id: session_id.clone(),
+        role,
+        content,
+        created_at: now,
+    });
+    // Update session's updated_at
+    if let Some(mut session) = ctx.db.ai_chat_session().iter().find(|s| s.id == session_id) {
+        session.updated_at = now;
+        ctx.db.ai_chat_session().id().update(session);
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_ai_chat_session(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    // Delete all messages in the session
+    for msg in ctx.db.ai_chat_message().iter().filter(|m| m.session_id == id) {
+        ctx.db.ai_chat_message().id().delete(&msg.id);
+    }
+    ctx.db.ai_chat_session().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_ai_chat_message(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    ctx.db.ai_chat_message().id().delete(&id);
+    Ok(())
+}

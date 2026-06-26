@@ -20,6 +20,7 @@ import { TemplatePicker } from "./components/TemplatePicker";
 import { KeyboardShortcuts } from "./components/KeyboardShortcuts";
 import { ToastProvider, useToast, initGlobalToast, showToast } from "./components/Toast";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
+import { AiAssistant } from "./components/AiAssistant";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -180,6 +181,15 @@ function AppLayout() {
   }, [theme]);
 
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  // ─── AI Assistant state ────────────────────────────────────────────────────
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+
+  // Get current page ID and title from URL + pages list for AI context
+  const currentPageId = location.pathname.match(/^\/page\/([^\/]+)(?:\/edit)?$/)?.[1] || "";
+  const currentPageTitle = currentPageId
+    ? pages.find(p => p.id === currentPageId)?.title || ""
+    : "";
 
   // Global ? key opens shortcuts
   useEffect(() => {
@@ -1345,6 +1355,9 @@ function AppLayout() {
           <button onClick={openAdmin} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <Shield className="h-3 w-3" /> Admin
           </button>
+          <button onClick={() => setAiAssistantOpen(true)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+            <MessageSquare className="h-3 w-3" /> AI Assistant
+          </button>
           <input ref={importRef} type="file" accept=".md,.txt" onChange={handleImportMD} className="hidden" />
           <button
             onClick={() => importRef.current?.click()}
@@ -2332,6 +2345,14 @@ function AppLayout() {
         open={shortcutsOpen}
         onClose={() => setShortcutsOpen(false)}
       />
+      {aiAssistantOpen && userId && (
+        <AiAssistant
+          userId={userId}
+          currentPageId={currentPageId}
+          currentPageTitle={currentPageTitle}
+          onClose={() => setAiAssistantOpen(false)}
+        />
+      )}
     </div>
   );
 }
