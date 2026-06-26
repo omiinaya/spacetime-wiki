@@ -163,6 +163,8 @@ function AppLayout() {
   const [importing, setImporting] = useState(false);
   const notionImportRef = useRef<HTMLInputElement>(null);
   const [importingNotion, setImportingNotion] = useState(false);
+  const confluenceImportRef = useRef<HTMLInputElement>(null);
+  const [importingConfluence, setImportingConfluence] = useState(false);
 
   // Sidebar swipe-to-close refs (mobile)
   const touchStartRef = useRef(0);
@@ -499,6 +501,46 @@ function AppLayout() {
       addToast({ type: "error", title: "Import failed", message: String(err), duration: 5000 });
     } finally {
       setImportingNotion(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleImportConfluence = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportingConfluence(true);
+    try {
+      // Use the server-side Confluence import endpoint
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("collection_id", "");
+      formData.append("created_by", userId || "anonymous");
+
+      // Determine API base URL
+      const apiBase = (window as any).__API_BASE__ || "/api/v1";
+      const res = await fetch(`${apiBase}/import/confluence`, {
+        method: "POST",
+        headers: { "X-API-Key": (window as any).__API_KEY__ || "" },
+        body: formData,
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Server error: ${res.status}`);
+      }
+      const result = await res.json();
+      const created = result.pages_created || 0;
+      addToast({
+        type: "success",
+        title: "Confluence import complete",
+        message: `Created ${created} pages from "${file.name}"`,
+        duration: 4000,
+      });
+      // Reload pages
+      api.pages.list().then(setPages).catch(() => {});
+    } catch (err) {
+      addToast({ type: "error", title: "Confluence import failed", message: String(err), duration: 5000 });
+    } finally {
+      setImportingConfluence(false);
       e.target.value = "";
     }
   };
@@ -1399,6 +1441,15 @@ function AppLayout() {
           >
             {importingNotion ? <Loader2 className="h-3 w-3 animate-spin" /> : <Package className="h-3 w-3" />}
             {importingNotion ? "Importing..." : "Import Wiki"}
+          </button>
+          <input ref={confluenceImportRef} type="file" accept=".zip" onChange={handleImportConfluence} className="hidden" />
+          <button
+            onClick={() => confluenceImportRef.current?.click()}
+            disabled={importingConfluence}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+          >
+            {importingConfluence ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+            {importingConfluence ? "Importing..." : "Import Confluence"}
           </button>
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

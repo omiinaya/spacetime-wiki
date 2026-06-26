@@ -235,6 +235,231 @@ async def import_notion(
     raise HTTPException(400, "Unsupported file format. Accepted: .md, .html, .zip (Notion Markdown export)")
 
 
+@router.post("/confluence")
+async def import_confluence(
+    file: UploadFile = File(...),
+    collection_id: str = Form(""),
+    created_by: str = Form("api"),
+):
+    """Import a Confluence Cloud/Server space export ZIP.
+
+    Confluence space exports contain pages.xml for metadata and
+    individual HTML files per page with Confluence-specific tags
+    like <ac:structured-macro>, <ac:link>, <ri:page>, etc.
+    """
+    raw = await file.read()
+    filename = (file.filename or "export").lower()
+
+    if not filename.endswith(".zip"):
+        raise HTTPException(400, "Confluence import requires a .zip file (space export). Supported: Confluence Cloud/Server HTML export ZIP.")
+
+    import zipfile
+    import io
+    import xml.etree.ElementTree as ET
+
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(raw))
+    except Exception:
+        raise HTTPException(400, "Invalid ZIP file")
+
+    # ── Parse pages.xml for page metadata ─────────────────────────────────
+    pages_meta: dict[str, dict] = {}  # page_id -> {title, parent_id}
+    try:
+        if "pages.xml" in zf.namelist():
+            tree = ET.parse(zf.open("pages.xml"))
+            root = tree.getroot()
+            for page_elem in root.iter("page"):
+                pid = page_elem.get("id", "") or page_elem.get("title", "")
+                title = page_elem.get("title", page_elem.get("page-title", ""))
+                parent = page_elem.get("parent-id", page_elem.get("parent_id", ""))
+                if pid:
+                    pages_meta[pid] = {"title": title, "parent_id": parent}
+        elif "entities.xml" in zf.namelist():
+            tree = ET.parse(zf.open("entities.xml"))
+            root = tree.getroot()
+            for entity in root.iter("entity"):
+                if entity.get("type") == "page":
+                    pid = entity.get("id", "")
+                    title = ""
+                    parent = ""
+                    for prop in entity.iter("property"):
+                        if prop.get("name") == "title":
+                            title = prop.text or ""
+                        if prop.get("name") in ("parent", "parentId", "parent_id"):
+                            parent = prop.text or ""
+                    if pid:
+                        pages_meta[pid] = {"title": title, "parent_id": parent}
+    except Exception:
+        # pages.xml/entities.xml is optional; fall back to HTML filenames
+        pass
+
+    # ── Collect HTML entries ───────────────────────────────────────────────
+    html_entries: list[dict] = []
+    for path in zf.namelist():
+        if path.endswith("/") or path.startswith("attachments/"):
+            continue
+        parts = path.split("/")
+        fname = parts[-1]
+        if fname.endswith(".html") or fname.endswith(".htm"):
+            entry_name = fname.rsplit(".", 1)[0]
+            # Try to find matching metadata
+            meta = pages_meta.get(entry_name, pages_meta.get(path, {}))
+            display_name = meta.get("title", entry_name)
+            parent_id_ref = meta.get("parent_id", "")
+            html_entries.append({
+                "path": path,
+                "name": display_name,
+                "dir": "/".join(parts[:-1]),
+                "meta_id": entry_name,
+                "parent_ref": parent_id_ref,
+            })
+
+    if not html_entries:
+        # Fall back: maybe the HTML is directly in ZIP root with no pages.xml
+        for path in zf.namelist():
+            if path.endswith("/"):
+                continue
+            fname = path.split("/")[-1]
+            if fname.endswith(".html") or fname.endswith(".htm"):
+                html_entries.append({
+                    "path": path,
+                    "name": fname.rsplit(".", 1)[0],
+                    "dir": "",
+                    "meta_id": "",
+                    "parent_ref": "",
+                })
+
+    if not html_entries:
+        raise HTTPException(400, "No HTML pages found in Confluence export ZIP")
+
+    # Sort shallow first
+    html_entries.sort(key=lambda e: len(e["path"].split("/")))
+
+    # ── Process pages ──────────────────────────────────────────────────────
+    page_ids_by_dir: dict[str, str] = {}
+    page_ids_by_meta_id: dict[str, str] = {}
+    created = 0
+    errors: list[str] = []
+
+    for entry in html_entries:
+        try:
+            raw_content = zf.read(entry["path"]).decode("utf-8", errors="replace")
+            doc = _confluence_html_to_prosemirror(raw_content)
+
+            # Determine parent page ID
+            parent_id = ""
+            if entry["parent_ref"] and entry["parent_ref"] in page_ids_by_meta_id:
+                parent_id = page_ids_by_meta_id[entry["parent_ref"]]
+            if not parent_id:
+                parent_id = page_ids_by_dir.get(entry["dir"], "")
+
+            page_id = _make_id("page")
+            await call_reducer(
+                "create_page",
+                [
+                    page_id, entry["name"],
+                    _json_dumps(doc),
+                    collection_id, parent_id, created_by,
+                ],
+            )
+
+            page_ids_by_dir[entry["path"].rsplit(".", 1)[0]] = page_id
+            page_ids_by_dir[f"{entry['dir']}/{entry['name']}"] = page_id
+            if entry["meta_id"]:
+                page_ids_by_meta_id[entry["meta_id"]] = page_id
+            created += 1
+        except Exception as e:
+            errors.append(f"{entry['path']}: {e}")
+
+    zf.close()
+    return {
+        "status": "completed",
+        "pages_created": created,
+        "errors": errors,
+    }
+
+
+def _confluence_html_to_prosemirror(html: str) -> dict:
+    """Convert Confluence HTML export to ProseMirror JSON.
+
+    Strips Confluence-specific markup (<ac:structured-macro>, <ac:link>,
+    <ri:page>, <ac:image>, etc.) and converts basic HTML to PM nodes.
+    """
+    import re
+
+    # ── Pre-clean Confluence-specific tags ────────────────────────────────
+    # Remove CDATA sections
+    html = re.sub(r'<!\[CDATA\[(.*?)\]\]>', r'\1', html, flags=re.DOTALL)
+
+    # Convert <ac:structured-macro ac:name="xxx">...</ac:structured-macro>
+    # to a styled blockquote or callout-like paragraph
+    def _replace_macro(m):
+        name = m.group(1) or ""
+        body = m.group(2) or ""
+        # Extract rich-text body content
+        body_clean = re.sub(r'</?ac:rich-text-body[^>]*>', '', body)
+        body_clean = re.sub(r'<ac:parameter[^>]*>.*?</ac:parameter>', '', body_clean, flags=re.DOTALL)
+        # Map common macros to readable prefixes
+        labels = {
+            "info": "ℹ️",
+            "warning": "⚠️",
+            "note": "📝",
+            "tip": "💡",
+            "code": "```",
+            "expand": "",
+            "toc": "",
+        }
+        prefix = labels.get(name.lower(), f"[{name}]")
+        return f"{prefix} {body_clean}" if prefix else body_clean
+    html = re.sub(
+        r'<ac:structured-macro\s+ac:name="([^"]*)"[^>]*>(.*?)</ac:structured-macro>',
+        _replace_macro,
+        html,
+        flags=re.DOTALL,
+    )
+
+    # Convert <ac:link><ri:page ri:content-title="Title"/><ac:plain-text-link-body>...</ac:plain-text-link-body></ac:link>
+    html = re.sub(
+        r'<ac:link>.*?<ri:page[^>]*ri:content-title="([^"]*)"[^>]*/>.*?</ac:link>',
+        r'\1',
+        html,
+        flags=re.DOTALL,
+    )
+    # Convert <ac:link><ri:attachment .../></ac:link>
+    html = re.sub(r'<ac:link>.*?<ri:attachment[^>]*/>.*?</ac:link>', '[attachment]', html, flags=re.DOTALL)
+    # Convert plain <ac:link>...</ac:link>
+    html = re.sub(
+        r'<ac:link>\s*<ac:plain-text-link-body>(.*?)</ac:plain-text-link-body>\s*</ac:link>',
+        r'\1',
+        html,
+        flags=re.DOTALL,
+    )
+    html = re.sub(r'<ac:link>.*?</ac:link>', '', html, flags=re.DOTALL)
+
+    # Convert <ac:image> to placeholder
+    html = re.sub(r'<ac:image>.*?<ri:attachment[^>]*ri:filename="([^"]*)"[^>]*/>.*?</ac:image>', r'[image: \1]', html, flags=re.DOTALL)
+    html = re.sub(r'<ac:image>.*?<ri:url[^>]*ri:value="([^"]*)"[^>]*/>.*?</ac:image>', r'[image: \1]', html, flags=re.DOTALL)
+    html = re.sub(r'<ac:image>.*?</ac:image>', '[image]', html, flags=re.DOTALL)
+
+    # Remove remaining Confluence namespaced tags
+    html = re.sub(r'</?ac:[\w-]+[^>]*>', '', html)
+    html = re.sub(r'</?ri:[\w-]+[^>]*>', '', html)
+    html = re.sub(r'</?at:[\w-]+[^>]*>', '', html)
+
+    # Remove Confluence-specific meta/ style sections
+    html = re.sub(r'<meta[^>]*>', '', html, flags=re.IGNORECASE)
+    html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
+
+    # Remove Confluence chrome: #main-content, #Content, etc. keep inner
+    main_content = re.search(r'<div[^>]*id="(main-content|Content|page-content)"[^>]*>(.*?)</div>\s*$', html, re.DOTALL)
+    if main_content:
+        html = main_content.group(2)
+
+    # ── Now convert cleaned HTML to ProseMirror ────────────────────────────
+    # Use the existing HtmlToProseMirror parser for the cleaned HTML
+    return convert_html_to_prosemirror(html)
+
+
 # ─── Simple MD → ProseMirror (server-side helper) ────────────────────────────
 
 def _markdown_to_prosemirror(md: str) -> dict:
