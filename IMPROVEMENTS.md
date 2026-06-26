@@ -12,6 +12,11 @@ and works the top pending item each tick.
 |----------|------|-------|
 | P4 | MFA/TOTP authentication | Time-based one-time password for 2FA |
 | P4 | Auto-sort rules for content | Automatic sort ordering rules for collections/nested pages |
+| P4 | LDAP authentication | Enterprise LDAP/AD integration for login & user sync |
+| P4 | Slack/Discord/GitHub OAuth SSO | Additional OAuth providers beyond Google/Microsoft |
+| P4 | Advanced search syntax | Tag filters, date ranges, `author:user` search syntax |
+| P3 | Typography extension | Smart quotes, em-dashes, ellipsis via Tiptap typography extension |
+| P3 | Multiple editor modes | WYSIWYG ↔ Markdown live toggle (like BookStack dual editor) |
 
 ---
 
