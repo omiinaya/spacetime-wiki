@@ -500,6 +500,129 @@ pub fn reorder_collections(ctx: &ReducerContext, ordered_ids: Vec<String>) -> Re
     Ok(())
 }
 
+// ─── Auto-sort rules for collections ────────────────────────────────────────
+//
+// Allows configuring automatic sort ordering for pages within a collection.
+// sort_field: "title" | "created_at" | "updated_at" | "manual"
+// sort_direction: "asc" | "desc"
+// auto_apply: if true, pages are automatically re-sorted when created/updated
+
+#[table(accessor = collection_sort_rule, public)]
+#[derive(Debug, Clone)]
+pub struct CollectionSortRule {
+    #[primary_key]
+    pub collection_id: String,
+    pub sort_field: String,     // "title" | "created_at" | "updated_at" | "manual"
+    pub sort_direction: String, // "asc" | "desc"
+    pub auto_apply: bool,
+    pub updated_by: String,
+    pub updated_at: u64,
+}
+
+#[reducer]
+pub fn set_collection_sort_rule(
+    ctx: &ReducerContext,
+    collection_id: String,
+    sort_field: String,
+    sort_direction: String,
+    auto_apply: bool,
+    updated_by: String,
+) -> Result<(), String> {
+    let valid_fields = ["title", "created_at", "updated_at", "manual"];
+    if !valid_fields.contains(&sort_field.as_str()) {
+        return Err("Invalid sort field. Must be one of: title, created_at, updated_at, manual".into());
+    }
+    let valid_dirs = ["asc", "desc"];
+    if !valid_dirs.contains(&sort_direction.as_str()) {
+        return Err("Invalid sort direction. Must be 'asc' or 'desc'".into());
+    }
+    let now = now_ms(ctx);
+    let existing = ctx.db.collection_sort_rule().iter().find(|r| r.collection_id == collection_id);
+    if let Some(mut rule) = existing {
+        rule.sort_field = sort_field;
+        rule.sort_direction = sort_direction;
+        rule.auto_apply = auto_apply;
+        rule.updated_by = updated_by;
+        rule.updated_at = now;
+        ctx.db.collection_sort_rule().collection_id().update(rule);
+    } else {
+        ctx.db.collection_sort_rule().insert(CollectionSortRule {
+            collection_id,
+            sort_field,
+            sort_direction,
+            auto_apply,
+            updated_by,
+            updated_at: now,
+        });
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_collection_sort_rule(ctx: &ReducerContext, collection_id: String) -> Result<(), String> {
+    ctx.db.collection_sort_rule().collection_id().delete(&collection_id);
+    Ok(())
+}
+
+#[reducer]
+pub fn apply_collection_auto_sort(ctx: &ReducerContext, collection_id: String) -> Result<(), String> {
+    let rule = ctx.db.collection_sort_rule().iter()
+        .find(|r| r.collection_id == collection_id);
+    if rule.is_none() {
+        return Err("No sort rule configured for this collection".into());
+    }
+    let rule = rule.unwrap();
+    if rule.sort_field == "manual" {
+        return Ok(()); // no-op for manual sort
+    }
+
+    let mut pages: Vec<_> = ctx.db.page().iter()
+        .filter(|p| p.collection_id == collection_id && p.status != "deleted")
+        .collect();
+
+    // Sort in-memory
+    match rule.sort_field.as_str() {
+        "title" => {
+            if rule.sort_direction == "desc" {
+                pages.sort_by(|a, b| b.title.to_lowercase().cmp(&a.title.to_lowercase()));
+            } else {
+                pages.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+            }
+        }
+        "created_at" => {
+            if rule.sort_direction == "desc" {
+                pages.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+            } else {
+                pages.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+            }
+        }
+        "updated_at" => {
+            if rule.sort_direction == "desc" {
+                pages.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+            } else {
+                pages.sort_by(|a, b| a.updated_at.cmp(&b.updated_at));
+            }
+        }
+        _ => {}
+    }
+
+    // Update sort_order based on position (pinned pages stay on top)
+    let now = now_ms(ctx);
+    let mut sort_idx: u32 = 0;
+    for page in pages {
+        if page.is_pinned {
+            continue;
+        }
+        if let Some(mut p) = ctx.db.page().iter().find(|p| p.id == page.id) {
+            p.sort_order = sort_idx;
+            p.updated_at = now;
+            ctx.db.page().id().update(p);
+            sort_idx += 1;
+        }
+    }
+    Ok(())
+}
+
 // ─── Collection Members ──────────────────────────────────────────────────────
 
 #[reducer]

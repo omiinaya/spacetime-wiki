@@ -48,6 +48,7 @@ function mapAppSetting(row: unknown[]): AppSetting { return { key: String(row[0]
 function mapScimProvider(row: unknown[]): ScimProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), api_token_hash: String(row[3]??""), is_active: Boolean(row[4]), default_role: String(row[5]??""), auto_register: Boolean(row[6]), deprovision_behavior: String(row[7]??""), sync_groups: Boolean(row[8]), created_by: String(row[9]??""), created_at: Number(row[10])||0, updated_at: Number(row[11])||0 }; }
 function mapScimEvent(row: unknown[]): ScimEvent { return { id: String(row[0]??""), provider_id: String(row[1]??""), resource_type: String(row[2]??""), operation: String(row[3]??""), external_id: String(row[4]??""), local_id: String(row[5]??""), status: String(row[6]??""), detail: String(row[7]??""), created_at: Number(row[8])||0 }; }
 function mapInvitation(row: unknown[]): Invitation { return { id: String(row[0]??""), email: String(row[1]??""), invited_by: String(row[2]??""), role: String(row[3]??""), page_ids: String(row[4]??""), collection_ids: String(row[5]??""), token: String(row[6]??""), status: String(row[7]??""), message: String(row[8]??""), expires_at: Number(row[9])||0, view_count: Number(row[10])||0, created_at: Number(row[11])||0, updated_at: Number(row[12])||0 }; }
+function mapCollectionSortRule(row: unknown[]): CollectionSortRule { return { collection_id: String(row[0]??""), sort_field: String(row[1]??""), sort_direction: String(row[2]??""), auto_apply: Boolean(row[3]), updated_by: String(row[4]??""), updated_at: Number(row[5])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -372,6 +373,15 @@ export interface Invitation {
   view_count: number; created_at: number; updated_at: number;
 }
 
+export interface CollectionSortRule {
+  collection_id: string;
+  sort_field: string;    // "title" | "created_at" | "updated_at" | "manual"
+  sort_direction: string; // "asc" | "desc"
+  auto_apply: boolean;
+  updated_by: string;
+  updated_at: number;
+}
+
 // ─── MFA / TOTP Types ────────────────────────────────────────────────────────
 
 export interface MfaMethod {
@@ -644,6 +654,23 @@ export const api = {
     delete: (id: string) => callReducer("delete_collection", [id]),
     reorder: (orderedIds: string[]) =>
       callReducer("reorder_collections", [orderedIds]),
+    sortRules: {
+      set: (collectionId: string, sortField: string, sortDirection: string, autoApply: boolean, updatedBy: string) =>
+        callReducer("set_collection_sort_rule", [collectionId, sortField, sortDirection, autoApply, updatedBy]),
+      delete: (collectionId: string) =>
+        callReducer("delete_collection_sort_rule", [collectionId]),
+      apply: (collectionId: string) =>
+        callReducer("apply_collection_auto_sort", [collectionId]),
+      get: (collectionId: string) =>
+        sqlQuery(`SELECT * FROM collection_sort_rule WHERE collection_id = '${collectionId}'`)
+          .then((rows) => {
+            const arr = rows as any as unknown[][];
+            return arr.length > 0 ? mapCollectionSortRule(arr[0]) : null;
+          }),
+      list: () =>
+        sqlQuery("SELECT * FROM collection_sort_rule")
+          .then((rows) => (rows as any as unknown[][]).map(mapCollectionSortRule)),
+    },
   },
 
   members: {
@@ -1439,6 +1466,7 @@ export const SUBSCRIPTION_SQLS = {
   dbRows: (baseId: string) => `SELECT * FROM db_row WHERE base_id = '${baseId}' ORDER BY sort_order ASC`,
   dbCellsForBase: (baseId: string) =>
     `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = '${baseId}'`,
+  collectionSortRules: "SELECT * FROM collection_sort_rule",
 } as const;
 
 export function usePagesSubscription() {

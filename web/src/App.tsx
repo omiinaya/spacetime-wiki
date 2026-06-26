@@ -117,20 +117,30 @@ function AppLayout() {
   const [batchTagValue, setBatchTagValue] = useState("");
   const [batchMoveOpen, setBatchMoveOpen] = useState(false);
 
-  // Collection page sort modes (stored in localStorage)
+  // Collection page sort modes — merge server-side rules with localStorage fallback
   const COLLECTION_SORT_KEY = "sw_collection_sort";
   const [collectionSortModes, setCollectionSortModes] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem(COLLECTION_SORT_KEY) || "{}"); }
     catch { return {}; }
   });
   const [colSortMode, setColSortMode] = useState("manual");
+  const [colAutoApply, setColAutoApply] = useState(false);
+  const [sortRulesLoaded, setSortRulesLoaded] = useState(false);
 
   const sidebarNavRef = useRef<HTMLDivElement>(null);
 
-  const saveCollectionSortMode = (colId: string, mode: string) => {
+  const saveCollectionSortMode = (colId: string, mode: string, autoApply = false) => {
     const updated = { ...collectionSortModes, [colId]: mode };
     setCollectionSortModes(updated);
     try { localStorage.setItem(COLLECTION_SORT_KEY, JSON.stringify(updated)); } catch {}
+    // Also sync to server
+    const field = mode === "manual" ? "manual" : mode.replace("-asc", "").replace("-desc", "");
+    const dir = mode.endsWith("-desc") ? "desc" : "asc";
+    if (mode !== "manual") {
+      api.collections.sortRules.set(colId, field, dir, autoApply, userId || "anonymous").catch(() => {});
+    } else {
+      api.collections.sortRules.set(colId, "manual", "asc", false, userId || "anonymous").catch(() => {});
+    }
   };
 
   // Collection dialog state
@@ -672,13 +682,28 @@ function AppLayout() {
     setColDialogOpen(true);
   };
 
-  const openEditCol = (col: Collection) => {
+  const openEditCol = async (col: Collection) => {
     setEditingCol(col);
     setColName(col.name);
     setColDesc(col.description);
     setColIcon(col.icon || "📁");
     setColColor(col.color);
     setColSortMode(collectionSortModes[col.id] || "manual");
+    setColAutoApply(false);
+    // Load server-side sort rule if available
+    try {
+      const rule = await api.collections.sortRules.get(col.id);
+      if (rule) {
+        const mode = rule.sort_field === "manual" ? "manual"
+          : rule.sort_field + "-" + rule.sort_direction;
+        setColSortMode(mode);
+        setColAutoApply(rule.auto_apply);
+        // Also update localStorage cache
+        const updated = { ...collectionSortModes, [col.id]: mode };
+        setCollectionSortModes(updated);
+        try { localStorage.setItem(COLLECTION_SORT_KEY, JSON.stringify(updated)); } catch {}
+      }
+    } catch {}
     setColDialogOpen(true);
     setContextMenu(null);
   };
@@ -688,7 +713,7 @@ function AppLayout() {
     try {
       if (editingCol) {
         await api.collections.update(editingCol.id, colName, colDesc, colIcon, colColor);
-        saveCollectionSortMode(editingCol.id, colSortMode);
+        saveCollectionSortMode(editingCol.id, colSortMode, colAutoApply);
         addToast({ type: "success", title: "Collection updated", duration: 3000 });
       } else {
         await api.collections.create(colName, colDesc, "", colIcon, colColor, userId || "anonymous");
@@ -696,8 +721,8 @@ function AppLayout() {
       }
       setColDialogOpen(false);
       await refreshData();
-    } catch (e) {
-      addToast({ type: "error", title: "Failed to save collection", message: String(e), duration: 5000 });
+    } catch (err) {
+      addToast({ type: "error", title: "Failed to save collection", message: String(err), duration: 5000 });
     }
   };
 
@@ -2176,6 +2201,17 @@ function AppLayout() {
                     <option value="updated-asc">Least recently updated</option>
                     <option value="updated-desc">Most recently updated</option>
                   </select>
+                  {colSortMode !== "manual" && (
+                    <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={colAutoApply}
+                        onChange={(e) => setColAutoApply(e.target.checked)}
+                        className="rounded border-border"
+                      />
+                      <span className="text-[10px] text-muted-foreground/80">Auto-apply sort on page create/update</span>
+                    </label>
+                  )}
                 </div>
               )}
               <div className="flex gap-2 justify-end pt-2">
