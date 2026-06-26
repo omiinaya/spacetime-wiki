@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
+
 import { createPortal } from "react-dom";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -74,7 +75,7 @@ const lowlight = createLowlight(common);
 // Keyboard handler in the editor detects "/" and shows a dropdown.
 // No tippy/ReactRenderer dependency — just portals + DOM coordinates.
 
-const SLASH_COMMANDS = [
+const SLASH_COMMANDS: { title: string; description: string; icon: string; command: (e: any) => void }[] = [
   { title: "Heading 1", description: "Large section heading", icon: "H1", command: (e) => e?.chain().focus().toggleHeading({ level: 1 }).run() },
   { title: "Heading 2", description: "Medium section heading", icon: "H2", command: (e) => e?.chain().focus().toggleHeading({ level: 2 }).run() },
   { title: "Heading 3", description: "Small section heading", icon: "H3", command: (e) => e?.chain().focus().toggleHeading({ level: 3 }).run() },
@@ -402,6 +403,64 @@ const EMOJI_LIST = [
   ["❄️", "snowflake"], ["🔥", "fire2"], ["💧", "droplet"], ["🌊", "wave2"],
 ];
 
+// ─── Floating format toolbar (replaces Tiptap v3 BubbleMenu) ──────────────────
+
+function FloatingToolbar({
+  editor,
+}: {
+  editor: ReturnType<typeof useEditor>;
+}) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => {
+      const { selection } = editor.state;
+      if (!selection.empty && selection.content().size > 0) {
+        const { view } = editor;
+        const coords = view.coordsAtPos(selection.from);
+        const editorRect = view.dom.getBoundingClientRect();
+        setPos({
+          top: coords.top - editorRect.top - 40,
+          left: coords.left - editorRect.left + (coords.right - coords.left) / 2,
+        });
+        setShow(true);
+      } else {
+        setShow(false);
+      }
+    };
+    editor.on("selectionUpdate", update);
+    editor.on("blur", () => setShow(false));
+    return () => { editor.off("selectionUpdate", update); editor.off("blur", () => setShow(false)); };
+  }, [editor]);
+
+  if (!show) return null;
+
+  const handleAddLink = () => {
+    const url = prompt("Link URL:");
+    if (url) editor?.chain().focus().setLink({ href: url }).run();
+  };
+
+  return createPortal(
+    <div
+      ref={ref}
+      className="flex items-center gap-0.5 p-1 rounded-lg border border-border bg-[#1a1a1a] shadow-2xl fixed z-50"
+      style={{ top: pos.top, left: pos.left - 100, transform: "translateX(-50%)" }}
+    >
+      <button onClick={() => editor?.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor?.isActive("bold") && "text-primary bg-primary/10")} title="Bold (Cmd+B)"><Bold className="h-3.5 w-3.5" /></button>
+      <button onClick={() => editor?.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor?.isActive("italic") && "text-primary bg-primary/10")} title="Italic (Cmd+I)"><Italic className="h-3.5 w-3.5" /></button>
+      <button onClick={() => editor?.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor?.isActive("underline") && "text-primary bg-primary/10")} title="Underline (Cmd+U)"><UnderlineIcon className="h-3.5 w-3.5" /></button>
+      <button onClick={() => editor?.chain().focus().toggleStrike().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor?.isActive("strike") && "text-primary bg-primary/10")} title="Strikethrough"><Strikethrough className="h-3.5 w-3.5" /></button>
+      <button onClick={() => editor?.chain().focus().toggleCode().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor?.isActive("code") && "text-primary bg-primary/10")} title="Inline Code"><Code className="h-3.5 w-3.5" /></button>
+      <span className="w-px h-4 bg-border mx-0.5" />
+      <button onClick={handleAddLink} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor?.isActive("link") && "text-primary bg-primary/10")} title="Link"><LinkIcon className="h-3.5 w-3.5" /></button>
+    </div>,
+    document.body,
+  );
+}
+
 // ─── Image Floating Toolbar ───────────────────────────────────────────────────
 
 function ImageToolbar({
@@ -416,11 +475,11 @@ function ImageToolbar({
     if (!editor) return;
     const update = () => {
       const { selection } = editor.state;
-      if (selection.type.name !== "NodeSelection") {
+      if ((selection as any).type.name !== "NodeSelection") {
         setPos(null);
         return;
       }
-      const node = selection.node;
+      const node = (selection as any).node;
       if (!node || (node.type.name !== "imageEnhanced")) {
         setPos(null);
         return;
@@ -448,8 +507,8 @@ function ImageToolbar({
   if (!pos || !editor) return null;
 
   const { selection } = editor.state;
-  if (selection.type.name !== "NodeSelection") return null;
-  const node = selection.node;
+  if ((selection as any).type.name !== "NodeSelection") return null;
+  const node = (selection as any).node;
   if (!node || node.type.name !== "imageEnhanced") return null;
 
   const currentAttrs = node.attrs;
@@ -729,7 +788,7 @@ export function PageEditor({ userId }: Props) {
   const [preview, setPreview] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
+  // const editorRef = useRef<HTMLDivElement>(null);
   // Cache for attachment:// → blob: URL resolution, cleaned up on unmount
   const blobUrlCacheRef = useRef<Map<string, string>>(new Map());
 
@@ -792,6 +851,7 @@ export function PageEditor({ userId }: Props) {
         } catch { /* ignore corrupt draft */ }
       }
     }
+  // @ts-expect-error editor used before declaration (useEffect fires after mount)
   }, [draftKey, page, editor, isNew]);
 
   // Auto-save interval: every 5 seconds when editor has content
@@ -810,6 +870,7 @@ export function PageEditor({ userId }: Props) {
       }
     }, 5000);
     return () => clearInterval(interval);
+  // @ts-expect-error editor used before declaration (useEffect fires after mount)
   }, [editor, draftKey, preview]);
 
   // Track initial content to seed lastSavedJson
@@ -822,6 +883,7 @@ export function PageEditor({ userId }: Props) {
     } else if (editor && isNew) {
       lastSavedJson.current = JSON.stringify(editor.getJSON());
     }
+  // @ts-expect-error editor used before declaration (useEffect fires after mount)
   }, [editor, page, isNew]);
 
   // Restore draft content
@@ -1045,7 +1107,7 @@ export function PageEditor({ userId }: Props) {
         if (parsed?.type === "doc") {
           // Resolve any attachment:// URLs to blob URLs for display
           resolveContentAttachments(parsed, blobUrlCacheRef.current).then((resolved) => {
-            editor.commands.setContent(resolved);
+            editor.commands.setContent(resolved as any);
           });
         }
       } catch { /* ignore */ }
@@ -1626,32 +1688,8 @@ export function PageEditor({ userId }: Props) {
         )}
       </div>
 
-      {/* Floating format toolbar on text selection (Tiptap BubbleMenu) */}
-      {editor && !preview && (
-        <BubbleMenu editor={editor} tippyOptions={{ duration: 150, placement: 'top' }}>
-          <div className="flex items-center gap-0.5 p-1 rounded-lg border border-border bg-[#1a1a1a] shadow-2xl">
-            <button onClick={() => editor.chain().focus().toggleBold().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("bold") && "text-primary bg-primary/10")} title="Bold (Cmd+B)">
-              <Bold className="h-3.5 w-3.5" />
-            </button>
-            <button onClick={() => editor.chain().focus().toggleItalic().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("italic") && "text-primary bg-primary/10")} title="Italic (Cmd+I)">
-              <Italic className="h-3.5 w-3.5" />
-            </button>
-            <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("underline") && "text-primary bg-primary/10")} title="Underline (Cmd+U)">
-              <UnderlineIcon className="h-3.5 w-3.5" />
-            </button>
-            <button onClick={() => editor.chain().focus().toggleStrike().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("strike") && "text-primary bg-primary/10")} title="Strikethrough">
-              <Strikethrough className="h-3.5 w-3.5" />
-            </button>
-            <button onClick={() => editor.chain().focus().toggleCode().run()} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("code") && "text-primary bg-primary/10")} title="Inline Code">
-              <Code className="h-3.5 w-3.5" />
-            </button>
-            <span className="w-px h-4 bg-border mx-0.5" />
-            <button onClick={handleAddLink} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors", editor.isActive("link") && "text-primary bg-primary/10")} title="Link">
-              <LinkIcon className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </BubbleMenu>
-      )}
+      {/* Floating format toolbar on text selection */}
+      {editor && !preview && <FloatingToolbar editor={editor} />}
 
       {/* Floating image toolbar when an image is selected */}
       {editor && !preview && <ImageToolbar editor={editor} />}

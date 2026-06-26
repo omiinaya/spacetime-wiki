@@ -156,7 +156,7 @@ export async function resolveContentAttachments(
       try {
         const rows = await sqlQuery(`SELECT * FROM attachment WHERE id = '${id}'`);
         if (rows.length > 0) {
-          const row = rows[0] as unknown[];
+          const row = rows[0] as any as unknown[];
           const storageKey = String(row[5] ?? "");
           const mimeType = String(row[3] ?? "image/png");
           const blobUrl = base64ToBlobUrl(storageKey, mimeType);
@@ -317,17 +317,17 @@ export const api = {
       if (status) conditions.push(`status = '${status}'`);
       else conditions.push("status != 'deleted'");
       if (conditions.length) sql += " WHERE " + conditions.join(" AND ");
-      return sqlQuery(sql).then((rows) => (rows as unknown[][]).map(mapPage));
+      return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapPage));
     },
     listDeleted: () =>
-      sqlQuery("SELECT * FROM page WHERE status = 'deleted'").then((rows) => (rows as unknown[][]).map(mapPage)),
+      sqlQuery("SELECT * FROM page WHERE status = 'deleted'").then((rows) => (rows as any as unknown[][]).map(mapPage)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM page WHERE id = '${id}'`).then(
-        (rows) => ((rows as unknown[][])[0] ? mapPage((rows as unknown[][])[0]) : null),
+        (rows) => ((rows as any as unknown[][])[0] ? mapPage((rows as any as unknown[][])[0]) : null),
       ),
     getBySlug: (slug: string) =>
       sqlQuery(`SELECT * FROM page WHERE slug = '${slug}'`).then(
-        (rows) => ((rows as unknown[][])[0] ? mapPage((rows as unknown[][])[0]) : null),
+        (rows) => ((rows as any as unknown[][])[0] ? mapPage((rows as any as unknown[][])[0]) : null),
       ),
     create: (
       title: string,
@@ -372,7 +372,7 @@ export const api = {
     },
     listTemplates: () =>
       sqlQuery("SELECT * FROM page WHERE is_template = true")
-        .then((rows) => (rows as unknown[][]).map(mapPage)),
+        .then((rows) => (rows as any as unknown[][]).map(mapPage)),
 
     // ── Batch operations (for sidebar multi-select) ──
     batchSetStatus: (pageIds: string[], status: string) =>
@@ -386,10 +386,10 @@ export const api = {
   },
 
   collections: {
-    list: () => sqlQuery("SELECT * FROM collection").then((rows) => (rows as unknown[][]).map(mapCollection)),
+    list: () => sqlQuery("SELECT * FROM collection").then((rows) => (rows as any as unknown[][]).map(mapCollection)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM collection WHERE id = '${id}'`).then(
-        (rows) => ((rows as unknown[][])[0] ? mapCollection((rows as unknown[][])[0]) : null),
+        (rows) => ((rows as any as unknown[][])[0] ? mapCollection((rows as any as unknown[][])[0]) : null),
       ),
     create: (
       name: string,
@@ -415,7 +415,7 @@ export const api = {
   members: {
     list: (collectionId: string) =>
       sqlQuery(`SELECT * FROM collection_member WHERE collection_id = '${collectionId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapCollectionMember)),
+        .then((rows) => (rows as any as unknown[][]).map(mapCollectionMember)),
     add: (collectionId: string, userId: string, role: string, addedBy: string) => {
       const id = genId("cm");
       return callReducer("add_collection_member", [id, collectionId, userId, role, addedBy]);
@@ -428,13 +428,13 @@ export const api = {
   revisions: {
     list: (pageId: string) =>
       sqlQuery(`SELECT * FROM page_revision WHERE page_id = '${pageId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapRevision)),
+        .then((rows) => (rows as any as unknown[][]).map(mapRevision)),
   },
 
   comments: {
     list: (pageId: string) =>
       sqlQuery(`SELECT * FROM comment WHERE page_id = '${pageId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapComment)),
+        .then((rows) => (rows as any as unknown[][]).map(mapComment)),
     add: (
       pageId: string, parentCommentId: string, userId: string, body: string,
       textAnchor: string = "",
@@ -449,7 +449,7 @@ export const api = {
     // ── Comment reactions (STDB-backed with toggle via add_comment_reaction reducer) ──
     listReactions: (commentId: string) =>
       sqlQuery(`SELECT * FROM comment_reaction WHERE comment_id = '${commentId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapCommentReaction)),
+        .then((rows) => (rows as any as unknown[][]).map(mapCommentReaction)),
     addReaction: (commentId: string, userId: string, emoji: string) => {
       const id = genId("cr");
       return callReducer("add_comment_reaction", [id, commentId, userId, emoji]);
@@ -465,7 +465,7 @@ export const api = {
   tags: {
     list: (pageId: string) =>
       sqlQuery(`SELECT * FROM page_tag WHERE page_id = '${pageId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapTag)),
+        .then((rows) => (rows as any as unknown[][]).map(mapTag)),
     add: (pageId: string, name: string, value: string) => {
       const id = genId("tag");
       return callReducer("add_tag", [id, pageId, name, value]).then(() => id);
@@ -485,7 +485,7 @@ export const api = {
   attachments: {
     list: (pageId: string) =>
       sqlQuery(`SELECT * FROM attachment WHERE page_id = '${pageId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapAttachment)),
+        .then((rows) => (rows as any as unknown[][]).map(mapAttachment)),
     add: (
       pageId: string, filename: string, mimeType: string, sizeBytes: number,
       storageKey: string, uploadedBy: string,
@@ -501,7 +501,7 @@ export const api = {
   shareLinks: {
     list: (pageId: string) =>
       sqlQuery(`SELECT * FROM share_link WHERE page_id = '${pageId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapShareLink)),
+        .then((rows) => (rows as any as unknown[][]).map(mapShareLink)),
     create: (pageId: string, password: string, createdBy: string, expiresDays: number) => {
       const id = genId("share");
       const token = crypto.randomUUID ? crypto.randomUUID() : genId("sh");
@@ -524,16 +524,16 @@ export const api = {
     login: async (email: string, password: string) => {
       await callReducer("login_user", [email, password]);
       const rows = await sqlQuery(`SELECT * FROM user WHERE email = '${email}'`);
-      return (rows as unknown[][])[0] ? mapUser((rows as unknown[][])[0]) : null;
+      return (rows as any as unknown[][])[0] ? mapUser((rows as any as unknown[][])[0]) : null;
     },
-    list: () => sqlQuery("SELECT * FROM user").then((rows) => (rows as unknown[][]).map(mapUser)),
+    list: () => sqlQuery("SELECT * FROM user").then((rows) => (rows as any as unknown[][]).map(mapUser)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM user WHERE id = '${id}'`).then(
-        (rows) => ((rows as unknown[][])[0] ? mapUser((rows as unknown[][])[0]) : null),
+        (rows) => ((rows as any as unknown[][])[0] ? mapUser((rows as any as unknown[][])[0]) : null),
       ),
     getByEmail: (email: string) =>
       sqlQuery(`SELECT * FROM user WHERE email = '${email}'`).then(
-        (rows) => ((rows as unknown[][])[0] ? mapUser((rows as unknown[][])[0]) : null),
+        (rows) => ((rows as any as unknown[][])[0] ? mapUser((rows as any as unknown[][])[0]) : null),
       ),
     updateRole: (userId: string, newRole: string, updatedBy: string) =>
       callReducer("update_user_role", [userId, newRole, updatedBy]),
@@ -542,7 +542,7 @@ export const api = {
   apiKeys: {
     list: (userId: string) =>
       sqlQuery(`SELECT * FROM api_key WHERE user_id = '${userId}' AND is_revoked = false`)
-        .then((rows) => (rows as unknown[][]).map(mapApiKey)),
+        .then((rows) => (rows as any as unknown[][]).map(mapApiKey)),
     create: (userId: string, name: string, keyHash: string, keyPrefix: string, expiresDays: number) => {
       const id = genId("apk");
       return callReducer("create_api_key", [id, userId, name, keyHash, keyPrefix, expiresDays]).then(() => id);
@@ -551,10 +551,10 @@ export const api = {
   },
 
   groups: {
-    list: () => sqlQuery("SELECT * FROM `group`").then((rows) => (rows as unknown[][]).map(mapGroup)),
+    list: () => sqlQuery("SELECT * FROM `group`").then((rows) => (rows as any as unknown[][]).map(mapGroup)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM \`group\` WHERE id = '${id}'`).then(
-        (rows) => ((rows as unknown[][])[0] ? mapGroup((rows as unknown[][])[0]) : null),
+        (rows) => ((rows as any as unknown[][])[0] ? mapGroup((rows as any as unknown[][])[0]) : null),
       ),
     create: (name: string, description: string, createdBy: string) => {
       const id = genId("grp");
@@ -565,7 +565,7 @@ export const api = {
     delete: (id: string) => callReducer("delete_group", [id]),
     listMembers: (groupId: string) =>
       sqlQuery(`SELECT * FROM group_member WHERE group_id = '${groupId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapGroupMember)),
+        .then((rows) => (rows as any as unknown[][]).map(mapGroupMember)),
     addMember: (groupId: string, userId: string, role: string, addedBy: string) => {
       const id = genId("gm");
       return callReducer("add_group_member", [id, groupId, userId, role, addedBy]);
@@ -575,7 +575,7 @@ export const api = {
     removeMember: (id: string) => callReducer("remove_group_member", [id]),
     listCollectionPermissions: (collectionId: string) =>
       sqlQuery(`SELECT * FROM collection_group_permission WHERE collection_id = '${collectionId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapCollectionGroupPermission)),
+        .then((rows) => (rows as any as unknown[][]).map(mapCollectionGroupPermission)),
     setCollectionPermission: (collectionId: string, groupId: string, role: string) => {
       const id = genId("cgp");
       return callReducer("set_collection_group_permission", [id, collectionId, groupId, role]);
@@ -587,7 +587,7 @@ export const api = {
   pagePermissions: {
     list: (pageId: string) =>
       sqlQuery(`SELECT * FROM page_permission WHERE page_id = '${pageId}'`)
-        .then((rows) => (rows as unknown[][]).map(mapPagePermission)),
+        .then((rows) => (rows as any as unknown[][]).map(mapPagePermission)),
     set: (pageId: string, userId: string, groupId: string, role: string) => {
       const id = genId("pp");
       return callReducer("set_page_permission", [id, pageId, userId, groupId, role]);
@@ -598,10 +598,10 @@ export const api = {
   webhooks: {
     list: () =>
       sqlQuery("SELECT * FROM webhook")
-        .then((rows) => (rows as unknown[][]).map(mapWebhook)),
+        .then((rows) => (rows as any as unknown[][]).map(mapWebhook)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM webhook WHERE id = '${id}'`).then(
-        (rows) => ((rows as unknown[][])[0] ? mapWebhook((rows as unknown[][])[0]) : null),
+        (rows) => ((rows as any as unknown[][])[0] ? mapWebhook((rows as any as unknown[][])[0]) : null),
       ),
     create: (name: string, url: string, events: string, secret: string, createdBy: string) => {
       const id = genId("wh");
@@ -612,7 +612,7 @@ export const api = {
     delete: (id: string) => callReducer("delete_webhook", [id]),
     listEvents: (webhookId: string) =>
       sqlQuery(`SELECT * FROM webhook_event WHERE webhook_id = '${webhookId}' ORDER BY created_at DESC`)
-        .then((rows) => (rows as unknown[][]).map(mapWebhookEvent)),
+        .then((rows) => (rows as any as unknown[][]).map(mapWebhookEvent)),
     fire: (webhookId: string, eventType: string, pageId: string, payload: string) => {
       const id = genId("wev");
       return callReducer("fire_webhook_event", [id, webhookId, eventType, pageId, payload]);
@@ -633,7 +633,7 @@ export const api = {
       sqlQuery(
         "SELECT page_id, COUNT(*) FROM page_view " +
         "GROUP BY page_id ORDER BY COUNT(*) DESC",
-      ).then((rows) => (rows as unknown[][]).slice(0, limit).map(r => ({
+      ).then((rows) => (rows as any as unknown[][]).slice(0, limit).map(r => ({
         page_id: String(r[0] ?? ""),
         views: Number(r[1] ?? 0),
       }))),
@@ -642,14 +642,14 @@ export const api = {
   oidc: {
     list: () =>
       sqlQuery("SELECT * FROM oidc_provider")
-        .then((rows) => (rows as unknown[][]).map(mapOidcProvider)),
+        .then((rows) => (rows as any as unknown[][]).map(mapOidcProvider)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM oidc_provider WHERE id = '${id}'`).then(
-        (rows) => ((rows as unknown[][])[0] ? mapOidcProvider((rows as unknown[][])[0]) : null),
+        (rows) => ((rows as any as unknown[][])[0] ? mapOidcProvider((rows as any as unknown[][])[0]) : null),
       ),
     listActive: () =>
       sqlQuery("SELECT * FROM oidc_provider WHERE is_active = true")
-        .then((rows) => (rows as unknown[][]).map(mapOidcProvider)),
+        .then((rows) => (rows as any as unknown[][]).map(mapOidcProvider)),
     create: (
       name: string, slug: string, issuerUrl: string,
       clientId: string, clientSecret: string, scopes: string,
@@ -674,14 +674,14 @@ export const api = {
   saml: {
     list: () =>
       sqlQuery("SELECT * FROM saml_provider")
-        .then((rows) => (rows as unknown[][]).map(mapSamlProvider)),
+        .then((rows) => (rows as any as unknown[][]).map(mapSamlProvider)),
     get: (id: string) =>
       sqlQuery(`SELECT * FROM saml_provider WHERE id = '${id}'`).then(
-        (rows) => ((rows as unknown[][])[0] ? mapSamlProvider((rows as unknown[][])[0]) : null),
+        (rows) => ((rows as any as unknown[][])[0] ? mapSamlProvider((rows as any as unknown[][])[0]) : null),
       ),
     listActive: () =>
       sqlQuery("SELECT * FROM saml_provider WHERE is_active = true")
-        .then((rows) => (rows as unknown[][]).map(mapSamlProvider)),
+        .then((rows) => (rows as any as unknown[][]).map(mapSamlProvider)),
     create: (
       name: string, slug: string, entityId: string, ssoUrl: string,
       certificate: string, nameIdFormat: string, attributeMapping: string,
@@ -709,7 +709,7 @@ export const api = {
   settings: {
     get: async (key: string): Promise<string> => {
       const rows = await sqlQuery(`SELECT * FROM app_setting WHERE key = '${key}'`);
-      return rows.length > 0 ? String((rows as unknown[][])[0]?.[1] ?? "") : "";
+      return rows.length > 0 ? String((rows as any as unknown[][])[0]?.[1] ?? "") : "";
     },
     set: (key: string, value: string) =>
       callReducer("set_app_setting", [key, value]),

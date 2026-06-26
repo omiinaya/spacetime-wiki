@@ -131,33 +131,35 @@ export function TemplatePicker({ open, onClose, collections, userId, navigate }:
               if (b === "__uncategorized__") return -1;
               return (collections.find(c => c.id === a)?.name || "").localeCompare(collections.find(c => c.id === b)?.name || "");
             });
-            return groupKeys.flatMap((key) => [
-              <div key={key} className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1 py-1.5 mt-2 first:mt-0">
-                {colLabel(key)}
-              </div>,
-              ...grouped[key].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => handleCreateFromTemplate(t)}
-              disabled={creating}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
-            >
-              <span className="w-8 h-8 rounded flex items-center justify-center bg-purple-500/10 text-purple-400 shrink-0 text-base">
-                {t.icon || <LayoutTemplate className="h-4 w-4" />}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-foreground truncate">{t.title}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {collections.find(c => c.id === t.collection_id)?.name || "No collection"}
-                  {t.color && <span className="ml-2 w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: t.color }} />}
-                </div>
-              </div>
-              <span className="text-[10px] text-muted-foreground/50 shrink-0">Template</span>
-            </button>
-          ));
-        ]);
-      })()
-    }
+            const templateGroups = groupKeys.flatMap((key) => {
+              return [
+                <div key={key} className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1 py-1.5 mt-2 first:mt-0">
+                  {colLabel(key)}
+                </div>,
+                ...grouped[key].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => handleCreateFromTemplate(t)}
+                    disabled={creating}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
+                  >
+                    <span className="w-8 h-8 rounded flex items-center justify-center bg-purple-500/10 text-purple-400 shrink-0 text-base">
+                      {t.icon || <LayoutTemplate className="h-4 w-4" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-foreground truncate">{t.title}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {collections.find(c => c.id === t.collection_id)?.name || "No collection"}
+                        {t.color && <span className="ml-2 w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: t.color }} />}
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground/50 shrink-0">Template</span>
+                  </button>
+                )),
+              ];
+            });
+            return templateGroups;
+          })()}
         </div>
 
         {/* Footer */}

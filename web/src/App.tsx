@@ -898,7 +898,7 @@ function AppLayout() {
           </div>
           {expanded && (
             <>
-              {childCount > 0 && renderColTree(col.children, depth + 1)}
+              {(col as any).children.length > 0 && renderColTree((col as any).children as any, depth + 1)}
               {colPages.slice(0, pageLimits[col.id] || PAGE_LIMIT).map((page) => (
                 <div key={page.id} draggable onDragStart={(e) => handleDragStart(e, page.id)}
                   onDragOver={(e) => handleDragOver(e, page.id)} onDragLeave={handleDragLeave}
@@ -1705,6 +1705,7 @@ function AppLayout() {
               <WebhookSettings userId={userId} />
             )}
             {adminTab === "sso" && (
+              <>
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">OIDC Providers</p>
@@ -1823,16 +1824,16 @@ function AppLayout() {
                   </p>
                 </div>
               </div>
-            )}
+            </>)}
             {adminTab === "settings" && (
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trash Retention</p>
-            {adminTab === "features" && <FeatureFlags />}
                 </div>
                 <TrashSettings />
               </div>
             )}
+            {adminTab === "features" && <FeatureFlags />}
             {adminTab === "export" && <BulkExport />}
           </div>
         </div>

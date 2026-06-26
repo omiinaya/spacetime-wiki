@@ -27,7 +27,7 @@ import {
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
   List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye, FolderOpen,
 } from "lucide-react";
-import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments, isAttachmentUrl } from "../lib/api";
+import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
 import { PagePermissions } from "../components/PagePermissions";
 import { RevisionDiff } from "../components/RevisionDiff";
@@ -165,7 +165,7 @@ function tiptapToMarkdown(doc: any): string {
   return lines.join("\n").trim();
 }
 
-function tiptapToHTML(doc: any): string {
+/* function tiptapToHTML(doc: any): string {
   if (!doc || !doc.content) return "";
   let html = "";
   for (const node of doc.content) {
@@ -225,7 +225,7 @@ function tiptapToHTML(doc: any): string {
     }
   }
   return html;
-}
+} */
 
 function downloadFile(content: string, filename: string, mime: string) {
   const blob = new Blob([content], { type: mime });
@@ -274,7 +274,7 @@ export function PageView({ pageId, userId }: Props) {
   const [shareDays, setShareDays] = useState(0);
   const [shareUrl, setShareUrl] = useState("");
   const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string }[]>([]);
-  const [shareLoading, setShareLoading] = useState(false);
+  // const [shareLoading, setShareLoading] = useState(false);
   const [shareCreating, setShareCreating] = useState(false);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -344,6 +344,7 @@ export function PageView({ pageId, userId }: Props) {
       }
     }, 100);
     return () => { clearTimeout(timer); observer.disconnect(); };
+  // @ts-expect-error toc used before declaration (variable is hoisted within function)
   }, [showToc, toc]);
 
   // Link preview tooltip
@@ -357,14 +358,12 @@ export function PageView({ pageId, userId }: Props) {
   // Load existing share links when dialog opens
   useEffect(() => {
     if (showShare) {
-      setShareLoading(true);
       setSharePassword("");
       setShareDays(0);
       setShareUrl("");
       api.shareLinks.list(pageId)
         .then((links) => setShareLinks(links))
         .catch(() => {})
-        .finally(() => setShareLoading(false));
     }
   }, [showShare, pageId]);
 
@@ -527,7 +526,7 @@ export function PageView({ pageId, userId }: Props) {
         if (parsed && parsed.type === "doc") {
           // Resolve attachment:// URLs to blob URLs for display
           resolveContentAttachments(parsed, blobUrlCacheRef.current).then((resolved) => {
-            editor.commands.setContent(resolved);
+            editor.commands.setContent(resolved as any);
           });
         } else {
           editor.commands.setContent({ type: "doc", content: [{ type: "paragraph" }] });
@@ -1198,7 +1197,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
               onClick={() => navigate(`/collection/${collection.id}`)}
               className="hover:text-foreground cursor-pointer transition-colors"
             >{collection.icon || "📁"} {collection.name}</span>
-            {parentPages.length > 0 && parentPages.map((parent, i) => (
+            {parentPages.length > 0 && parentPages.map((parent) => (
               <span key={parent.id} className="flex items-center gap-1.5">
                 <ChevronRight className="h-3 w-3" />
                 <span
@@ -1267,7 +1266,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           )}
         </div>
         {/* Tags */}
-        <PageTags pageId={pageId || ""} editable={!preview} userId={userId} />
+        <PageTags pageId={pageId || ''} editable={false} userId={userId} />
       </div>
 
       {/* Content */}

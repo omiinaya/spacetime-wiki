@@ -2,6 +2,7 @@ import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+// @ts-expect-error - no types
 import plantumlEncoder from "plantuml-encoder";
 
 // ─── Default server URL (configurable) ───────────────────────────────────────
