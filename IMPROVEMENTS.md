@@ -6,11 +6,11 @@ and works the top pending item each tick.
 
 ---
 
-## Status: P0-P4 done. P5 in progress (5/7 complete — 2 remaining).
+## Status: P0-P4 done. P5 in progress (6/7 complete — 1 remaining).
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | SCIM provisioning | System for Cross-domain Identity Management — auto-provision users |
+| P5 | ✅ SCIM provisioning | System for Cross-domain Identity Management — auto-provision users |
 | P5 | Passkeys / WebAuthn | Passwordless authentication via passkeys |
 | P4 | Synced blocks (reuse across pages) | Docmost-style synced blocks — edit once, update everywhere. STDB-backed block references |
 | P4 | Notion import | Import pages/content from Notion HTML/Markdown export |
@@ -22,6 +22,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | **P5 — SCIM 2.0 provisioning!** STDB tables+reducers (ScimProvider, ScimEvent), SCIM 2.0 REST API endpoints (Users, Groups, Schemas, ServiceProviderConfig) with Bearer token auth, admin panel provider CRUD + event log | e6c5720 |
 | 2026-06-28 | **P5 — RTL/bidirectional text support!** direction field on Page struct, set_page_direction reducer, LTR/RTL toggle in editor toolbar, dir attribute on content/view containers | 0af60ce |
 | 2026-06-28 | **P5 — AI Assistant sidebar integration!** Full chat UI (AiAssistant.tsx) wired into App.tsx sidebar with session management, Ollama/OpenAI/Anthropic config panel, page-context-aware Q&A. Backend (AiConfig, AiChatSession, AiChatMessage tables + reducers) already existed. | 5d58362 |
 | 2026-06-26 | **P5 — i18n / multi-language UI!** i18next + react-i18next + i18next-browser-languagedetector, full en/es translation files (22 namespaced sections each), LanguageSwitcher component in admin Settings tab, localStorage persistence | 6e04779 |
