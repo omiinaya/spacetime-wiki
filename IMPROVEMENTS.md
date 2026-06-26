@@ -6,13 +6,12 @@ and works the top pending item each tick.
 
 ---
 
-## Status: PENDING
+## Status: PENDING — All P0-P2 features implemented. Remaining P4 items below.
 
 | Priority | Item | Notes |
 |----------|------|-------|
 | P4 | Page includes/transclusion (`{{@page_id}}` syntax) | embed content from another page inline, BookStack-style |
 | P4 | MCP (Model Context Protocol) server | expose wiki pages and search as AI-accessible tools/resources |
-| P3 | Collection-level nested hierarchies | sub-collections with parent_id support in sidebar |
 
 ---
 
@@ -20,6 +19,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | P2 — Enhanced command palette (8 actions, keyboard shortcut badges, theme toggle) | 810cd50 |
 | 2026-06-28 | P3 — PDF export (print-optimized HTML opens in new window for Save as PDF) with cover page, page breaks, styled headers | 928d953 |
 | 2026-06-28 | P3 — Mermaid diagrams and ImageEnhanced rendering in PageView read-only editor mode | 928d953 |
 | 2026-06-28 | Fix TS build: 36+ errors fixed (BubbleMenu/Tiptap v3 compat, Fragment wrapping, type casts) | 966ebc9 |
