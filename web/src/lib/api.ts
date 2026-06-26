@@ -386,6 +386,26 @@ export interface DbCell {
   value: string; created_at: number; updated_at: number;
 }
 
+// ─── Synced Block Types ───────────────────────────────────────────────────────
+
+export interface SyncedBlock {
+  id: string;
+  title: string;
+  content: string;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
+  updated_by: string;
+}
+
+export interface SyncedBlockRef {
+  id: string;
+  block_id: string;
+  page_id: string;
+  created_by: string;
+  created_at: number;
+}
+
 // ─── Mappers ───────────────────────────────────────────────────────────────────
 
 function mapCollabSession(row: unknown[]): CollabSession {
@@ -459,6 +479,19 @@ function mapDbCell(row: unknown[]): DbCell {
   return {
     id: String(row[0]??""), row_id: String(row[1]??""), column_id: String(row[2]??""),
     value: String(row[3]??""), created_at: Number(row[4])||0, updated_at: Number(row[5])||0,
+  };
+}
+function mapSyncedBlock(row: unknown[]): SyncedBlock {
+  return {
+    id: String(row[0]??""), title: String(row[1]??""), content: String(row[2]??""),
+    created_by: String(row[3]??""), created_at: Number(row[4])||0,
+    updated_at: Number(row[5])||0, updated_by: String(row[6]??""),
+  };
+}
+function mapSyncedBlockRef(row: unknown[]): SyncedBlockRef {
+  return {
+    id: String(row[0]??""), block_id: String(row[1]??""), page_id: String(row[2]??""),
+    created_by: String(row[3]??""), created_at: Number(row[4])||0,
   };
 }
 
@@ -1107,6 +1140,36 @@ export const api = {
     updateCounter: (credentialId: string, counter: number) =>
       callReducer("update_passkey_counter", [credentialId, counter]),
     delete: (id: string) => callReducer("delete_passkey_credential", [id]),
+  },
+  syncedBlocks: {
+    list: () =>
+      sqlQuery("SELECT * FROM synced_block ORDER BY updated_at DESC")
+        .then((rows) => (rows as any as unknown[][]).map(mapSyncedBlock)),
+    get: (id: string) =>
+      sqlQuery(`SELECT * FROM synced_block WHERE id = '${id}'`)
+        .then((rows) => {
+          const arr = rows as any as unknown[][];
+          return arr.length > 0 ? mapSyncedBlock(arr[0]) : null;
+        }),
+    create: (title: string, content: string, createdBy: string) => {
+      const id = genId("sb");
+      return callReducer("create_synced_block", [id, title, content, createdBy]).then(() => id);
+    },
+    update: (id: string, title: string, content: string, updatedBy: string) =>
+      callReducer("update_synced_block", [id, title, content, updatedBy]),
+    delete: (id: string) => callReducer("delete_synced_block", [id]),
+    // References
+    listRefs: (blockId: string) =>
+      sqlQuery(`SELECT * FROM synced_block_ref WHERE block_id = '${blockId}'`)
+        .then((rows) => (rows as any as unknown[][]).map(mapSyncedBlockRef)),
+    listRefsByPage: (pageId: string) =>
+      sqlQuery(`SELECT * FROM synced_block_ref WHERE page_id = '${pageId}'`)
+        .then((rows) => (rows as any as unknown[][]).map(mapSyncedBlockRef)),
+    addRef: (blockId: string, pageId: string, createdBy: string) => {
+      const id = genId("sbr");
+      return callReducer("add_synced_block_ref", [id, blockId, pageId, createdBy]).then(() => id);
+    },
+    removeRef: (id: string) => callReducer("remove_synced_block_ref", [id]),
   },
 };
 

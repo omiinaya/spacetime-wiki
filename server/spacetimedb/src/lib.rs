@@ -2916,3 +2916,115 @@ pub fn reorder_db_rows(
     }
     Ok(())
 }
+
+// ─── Synced Blocks (P4) — edit once, update everywhere ──────────────────────────
+
+#[table(accessor = synced_block, public)]
+#[derive(Debug, Clone)]
+pub struct SyncedBlock {
+    #[primary_key]
+    pub id: String,
+    pub title: String,
+    /// Prosemirror JSON content of the block
+    pub content: String,
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+    pub updated_by: String,
+}
+
+#[table(accessor = synced_block_ref, public)]
+#[derive(Debug, Clone)]
+pub struct SyncedBlockRef {
+    #[primary_key]
+    pub id: String,
+    /// The synced block this reference points to
+    pub block_id: String,
+    /// The page that contains this reference
+    pub page_id: String,
+    pub created_by: String,
+    pub created_at: u64,
+}
+
+#[reducer]
+pub fn create_synced_block(
+    ctx: &ReducerContext,
+    id: String,
+    title: String,
+    content: String,
+    created_by: String,
+) -> Result<(), String> {
+    if title.trim().is_empty() {
+        return Err("Title is required".into());
+    }
+    let now = now_ms(ctx);
+    ctx.db.synced_block().insert(SyncedBlock {
+        id,
+        title,
+        content,
+        created_by: created_by.clone(),
+        created_at: now,
+        updated_at: now,
+        updated_by: created_by,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_synced_block(
+    ctx: &ReducerContext,
+    id: String,
+    title: String,
+    content: String,
+    updated_by: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    if let Some(mut block) = ctx.db.synced_block().id().find(&id) {
+        block.title = title;
+        block.content = content;
+        block.updated_at = now;
+        block.updated_by = updated_by;
+        ctx.db.synced_block().id().update(block);
+        Ok(())
+    } else {
+        Err("Synced block not found".into())
+    }
+}
+
+#[reducer]
+pub fn delete_synced_block(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    // Delete all references first
+    for refe in ctx.db.synced_block_ref().iter().filter(|r| r.block_id == id) {
+        ctx.db.synced_block_ref().id().delete(&refe.id);
+    }
+    ctx.db.synced_block().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn add_synced_block_ref(
+    ctx: &ReducerContext,
+    id: String,
+    block_id: String,
+    page_id: String,
+    created_by: String,
+) -> Result<(), String> {
+    if ctx.db.synced_block().id().find(&block_id).is_none() {
+        return Err("Synced block not found".into());
+    }
+    let now = now_ms(ctx);
+    ctx.db.synced_block_ref().insert(SyncedBlockRef {
+        id,
+        block_id,
+        page_id,
+        created_by,
+        created_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn remove_synced_block_ref(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    ctx.db.synced_block_ref().id().delete(&id);
+    Ok(())
+}
