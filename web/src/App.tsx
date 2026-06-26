@@ -1035,6 +1035,18 @@ function AppLayout() {
                             {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
                             {page.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary" fill="currentColor" />}
                             <span className="truncate">{page.title}</span>
+                            {searchQuery && page.text_content && (
+                              <span className="block text-[10px] text-muted-foreground/50 truncate mt-0.5 max-w-full">
+                                {(() => {
+                                  const idx = page.text_content.toLowerCase().indexOf(searchQuery.toLowerCase());
+                                  if (idx < 0) return page.text_content.slice(0, 60).replace(/\n/g, " ");
+                                  const start = Math.max(0, idx - 20);
+                                  const end = Math.min(page.text_content.length, idx + searchQuery.length + 40);
+                                  const snippet = page.text_content.slice(start, end).replace(/\n/g, " ");
+                                  return (start > 0 ? "…" : "") + snippet + (end < page.text_content.length ? "…" : "");
+                                })()}
+                              </span>
+                            )}
                             {page.status === "draft" && (
                               <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-yellow-500/10 text-yellow-500 shrink-0">Draft</span>
                             )}
