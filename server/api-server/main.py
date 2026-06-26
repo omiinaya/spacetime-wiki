@@ -17,6 +17,7 @@ from routers.scim import router as scim_router
 from routers.webauthn import router as webauthn_router
 from routers.imports import router as imports_router
 from routers.ldap_auth import router as ldap_router
+from routers.oauth import router as oauth_router
 
 # ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ app.include_router(scim_router)
 app.include_router(webauthn_router)
 app.include_router(imports_router)
 app.include_router(ldap_router)
+app.include_router(oauth_router)
 
 
 # ─── Health ────────────────────────────────────────────────────────────────────

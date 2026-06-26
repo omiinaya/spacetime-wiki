@@ -480,6 +480,40 @@ export interface LdapUser {
   created_at: number;
 }
 
+// ─── OAuth Provider Types ─────────────────────────────────────────────────��───
+
+export interface OauthProvider {
+  id: string;
+  name: string;
+  slug: string;
+  provider_type: string; // "slack" | "discord" | "github" | "gitlab" | "generic"
+  authorize_url: string;
+  token_url: string;
+  userinfo_url: string;
+  scope: string;
+  client_id: string;
+  icon: string;
+  is_active: boolean;
+  auto_register: boolean;
+  default_role: string;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface OauthUser {
+  id: string;
+  user_id: string;
+  provider_id: string;
+  external_id: string;
+  external_username: string;
+  external_email: string;
+  token_expires_at: number;
+  last_synced_at: number;
+  created_at: number;
+  updated_at: number;
+}
+
 // ─── Mappers ───────────────────────────────────────────────────────────────────
 
 function mapCollabSession(row: unknown[]): CollabSession {
@@ -1386,6 +1420,44 @@ export const api = {
     getLinkedUsers: (providerId: string): Promise<LdapUser[]> =>
       sqlQuery(`SELECT * FROM ldap_user WHERE ldap_provider_id = '${providerId}'`)
         .then((rows) => (rows as any as unknown[][]).map(mapLdapUser)),
+  },
+  oauth: {
+    listProviders: (): Promise<OauthProvider[]> =>
+      fetch(`/api/v1/auth/oauth/providers`).then(r => r.json()),
+    listAllProviders: (): Promise<OauthProvider[]> =>
+      fetch(`/api/v1/auth/oauth/providers/all`).then(r => r.json()),
+    getUserLinks: (userId: string): Promise<OauthUser[]> =>
+      fetch(`/api/v1/auth/oauth/user-links/${userId}`).then(r => r.json()),
+    addProvider: (
+      name: string, slug: string, providerType: string,
+      authorizeUrl: string, tokenUrl: string, userinfoUrl: string,
+      scope: string, clientId: string, clientSecret: string,
+      icon: string, autoRegister: boolean, defaultRole: string,
+      createdBy: string,
+    ) => {
+      const id = genId("oa");
+      return callReducer("add_oauth_provider", [
+        id, name, slug, providerType, authorizeUrl, tokenUrl, userinfoUrl,
+        scope, clientId, clientSecret, icon, autoRegister, defaultRole, createdBy,
+      ]).then(() => id);
+    },
+    updateProvider: (id: string, provider: {
+      name: string; slug: string; provider_type: string;
+      authorize_url: string; token_url: string; userinfo_url: string;
+      scope: string; client_id: string; client_secret: string;
+      icon: string; auto_register: boolean; default_role: string; is_active: boolean;
+    }) =>
+      callReducer("update_oauth_provider", [
+        id, provider.name, provider.slug, provider.provider_type,
+        provider.authorize_url, provider.token_url, provider.userinfo_url,
+        provider.scope, provider.client_id, provider.client_secret,
+        provider.icon, provider.auto_register, provider.default_role,
+        provider.is_active,
+      ]),
+    deleteProvider: (id: string) =>
+      callReducer("delete_oauth_provider", [id]),
+    unlinkUser: (id: string) =>
+      callReducer("unlink_oauth_user", [id]),
   },
 };
 

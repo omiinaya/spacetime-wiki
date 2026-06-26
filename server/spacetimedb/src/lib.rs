@@ -3762,3 +3762,231 @@ fn base32_decode(input: &str) -> Option<Vec<u8>> {
     }
     Some(output)
 }
+
+// ─── OAuth 2.0 Provider (Slack/Discord/GitHub/GitLab) ──────────────────────
+
+#[table(accessor = oauth_provider, public)]
+#[derive(Debug, Clone)]
+pub struct OauthProvider {
+    #[primary_key]
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+    /// Provider type: "slack" | "discord" | "github" | "gitlab" | "generic"
+    pub provider_type: String,
+    /// OAuth authorize endpoint URL
+    pub authorize_url: String,
+    /// OAuth token endpoint URL
+    pub token_url: String,
+    /// OAuth userinfo endpoint URL (called with the access token)
+    pub userinfo_url: String,
+    /// Space-separated scopes, e.g. "openid email profile" or "read:user user:email"
+    pub scope: String,
+    /// OAuth client ID (public)
+    pub client_id: String,
+    /// OAuth client secret (stored encrypted)
+    pub client_secret: String,
+    /// Icon identifier for the login button, e.g. "slack", "discord", "github"
+    pub icon: String,
+    pub is_active: bool,
+    /// If true, auto-register users who authenticate successfully
+    pub auto_register: bool,
+    /// Default role for auto-registered users
+    pub default_role: String,
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+/// Tracks which wiki users are linked to OAuth provider accounts
+#[table(accessor = oauth_user, public)]
+#[derive(Debug, Clone)]
+pub struct OauthUser {
+    #[primary_key]
+    pub id: String,
+    pub user_id: String,
+    pub provider_id: String,
+    /// The external user ID from the OAuth provider (e.g. GitHub user ID, Slack user ID)
+    pub external_id: String,
+    /// The external username/login from the provider (e.g. GitHub handle)
+    pub external_username: String,
+    /// Email from the provider (used for matching existing users)
+    pub external_email: String,
+    /// Stored encrypted access token for API calls (e.g. Slack bot token)
+    pub access_token: String,
+    pub refresh_token: String,
+    pub token_expires_at: u64,
+    pub last_synced_at: u64,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[reducer]
+pub fn add_oauth_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    provider_type: String,
+    authorize_url: String,
+    token_url: String,
+    userinfo_url: String,
+    scope: String,
+    client_id: String,
+    client_secret: String,
+    icon: String,
+    auto_register: bool,
+    default_role: String,
+    created_by: String,
+) -> Result<(), String> {
+    let valid_types = ["slack", "discord", "github", "gitlab", "generic"];
+    if !valid_types.contains(&provider_type.as_str()) {
+        return Err("Invalid provider type. Must be one of: slack, discord, github, gitlab, generic".into());
+    }
+    if name.is_empty() {
+        return Err("Provider name is required".into());
+    }
+    if client_id.is_empty() {
+        return Err("Client ID is required".into());
+    }
+    if client_secret.is_empty() {
+        return Err("Client secret is required".into());
+    }
+    if authorize_url.is_empty() || token_url.is_empty() || userinfo_url.is_empty() {
+        return Err("authorize_url, token_url, and userinfo_url are required".into());
+    }
+    let valid_roles = ["admin", "member", "viewer"];
+    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role.clone() } else { "member".into() };
+    let scopes_clean = if scope.is_empty() {
+        match provider_type.as_str() {
+            "slack" => "openid email profile".into(),
+            "discord" => "identify email".into(),
+            "github" => "read:user user:email".into(),
+            "gitlab" => "read_user".into(),
+            _ => "openid email profile".into(),
+        }
+    } else { scope };
+    let now = now_ms(ctx);
+    ctx.db.oauth_provider().insert(OauthProvider {
+        id, name, slug, provider_type,
+        authorize_url, token_url, userinfo_url,
+        scope: scopes_clean, client_id, client_secret,
+        icon: if icon.is_empty() { provider_type.clone() } else { icon },
+        is_active: true, auto_register,
+        default_role: role_clean,
+        created_by, created_at: now, updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_oauth_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    provider_type: String,
+    authorize_url: String,
+    token_url: String,
+    userinfo_url: String,
+    scope: String,
+    client_id: String,
+    client_secret: String,
+    icon: String,
+    auto_register: bool,
+    default_role: String,
+    is_active: bool,
+) -> Result<(), String> {
+    let found = ctx.db.oauth_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("OAuth provider not found".into());
+    }
+    let valid_types = ["slack", "discord", "github", "gitlab", "generic"];
+    if !valid_types.contains(&provider_type.as_str()) {
+        return Err("Invalid provider type".into());
+    }
+    if name.is_empty() {
+        return Err("Provider name is required".into());
+    }
+    if client_id.is_empty() {
+        return Err("Client ID is required".into());
+    }
+    let mut provider = found.unwrap();
+    provider.name = name;
+    provider.slug = slug;
+    provider.provider_type = provider_type;
+    provider.authorize_url = authorize_url;
+    provider.token_url = token_url;
+    provider.userinfo_url = userinfo_url;
+    if !scope.is_empty() {
+        provider.scope = scope;
+    }
+    provider.client_id = client_id;
+    if !client_secret.is_empty() {
+        provider.client_secret = client_secret;
+    }
+    provider.icon = if icon.is_empty() { provider.provider_type.clone() } else { icon };
+    provider.auto_register = auto_register;
+    let valid_roles = ["admin", "member", "viewer"];
+    provider.default_role = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    provider.is_active = is_active;
+    provider.updated_at = now_ms(ctx);
+    ctx.db.oauth_provider().id().update(provider);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_oauth_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    let found = ctx.db.oauth_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("OAuth provider not found".into());
+    }
+    // Remove linked OAuth user records
+    let linked: Vec<String> = ctx.db.oauth_user().iter()
+        .filter(|u| u.provider_id == id)
+        .map(|u| u.id.clone())
+        .collect();
+    for uid in &linked {
+        ctx.db.oauth_user().id().delete(uid);
+    }
+    ctx.db.oauth_provider().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn link_oauth_user(
+    ctx: &ReducerContext,
+    id: String,
+    user_id: String,
+    provider_id: String,
+    external_id: String,
+    external_username: String,
+    external_email: String,
+    access_token: String,
+    refresh_token: String,
+    token_expires_at: u64,
+) -> Result<(), String> {
+    if ctx.db.user().id().find(&user_id).is_none() {
+        return Err("User not found".into());
+    }
+    if ctx.db.oauth_provider().id().find(&provider_id).is_none() {
+        return Err("OAuth provider not found".into());
+    }
+    let now = now_ms(ctx);
+    ctx.db.oauth_user().insert(OauthUser {
+        id, user_id, provider_id, external_id, external_username, external_email,
+        access_token, refresh_token, token_expires_at,
+        last_synced_at: now, created_at: now, updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn unlink_oauth_user(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    let found = ctx.db.oauth_user().id().find(&id);
+    if found.is_none() {
+        return Err("OAuth user link not found".into());
+    }
+    ctx.db.oauth_user().id().delete(&id);
+    Ok(())
+}
