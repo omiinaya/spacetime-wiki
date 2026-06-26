@@ -6,12 +6,10 @@ and works the top pending item each tick.
 
 ---
 
-## Status: P0-P4 done. P5 in progress (6/7 complete — 1 remaining).
+## Status: P0-P5 all complete. Passing through P4 backlog now.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | ✅ SCIM provisioning | System for Cross-domain Identity Management — auto-provision users |
-| P5 | Passkeys / WebAuthn | Passwordless authentication via passkeys |
 | P4 | Synced blocks (reuse across pages) | Docmost-style synced blocks — edit once, update everywhere. STDB-backed block references |
 | P4 | Notion import | Import pages/content from Notion HTML/Markdown export |
 | P4 | Guest/invited users | Invite external users with limited access to specific pages |
@@ -29,5 +27,6 @@ and works the top pending item each tick.
 | 2026-06-26 | **P5 — Real-time collaboration (Yjs/STDB)!** STDB tables+reducers, YjsStdbProvider bridge, Tiptap Collaboration+Cursor extensions, remote user presence indicators | _(this commit)_ |
 | 2026-06-26 | **Fix STDB v2.4 build errors** — app_setting.key().update(), removed get_app_setting reducer (reducers cannot return values) | 9062523 |
 | 2026-06-28 | **P4 — MCP server built!** 6 tools (wiki_search, wiki_read_page, wiki_list_collections, wiki_list_pages, wiki_get_backlinks, wiki_get_linked_pages) + Resources. Registered in Hermes native MCP client. | |
+| 2026-06-28 | **P4 — Passkeys/WebAuthn passwordless auth!** STDB tables+reducers (passkey_credential, passkey_challenge), API server endpoints for registration + authentication, PasskeySettings admin panel with credential management, "Sign in with Passkey" button on login page, full WebAuthn browser API integration | |
 | 2026-06-26 | **P5 — Bases (table/kanban database views)!** STDB tables (DbBase, DbColumn, DbRow, DbCell) + reducers, full API client, Tiptap extension with table + kanban views, inline cell editing, row/column CRUD, slash command, feature flag | |
 | 2026-06-28 | **P4 — Page includes/transclusion!** `{{@page_id}}` syntax in page content renders referenced page inline, with Tiptap extension, visual styling, and full attachment resolution | |

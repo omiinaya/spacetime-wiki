@@ -335,6 +335,17 @@ export interface CollabUpdate {
   user_id: string; created_at: number;
 }
 
+export interface PasskeyCredential {
+  id: string; user_id: string; credential_id: string;
+  public_key: string; counter: number; transports: string;
+  device_name: string; created_at: number; last_used_at: number;
+}
+
+export interface PasskeyChallenge {
+  challenge: string; user_handle: string; purpose: string;
+  created_at: number; expires_at: number;
+}
+
 // ─── AI Assistant Types ────────────────────────────────────────────────────────
 
 export interface AiConfig {
@@ -390,6 +401,22 @@ function mapCollabUpdate(row: unknown[]): CollabUpdate {
     id: String(row[0]??""), page_id: String(row[1]??""),
     update_data: String(row[2]??""), user_id: String(row[3]??""),
     created_at: Number(row[4])||0,
+  };
+}
+function mapPasskeyCredential(row: unknown[]): PasskeyCredential {
+  return {
+    id: String(row[0]??""), user_id: String(row[1]??""),
+    credential_id: String(row[2]??""), public_key: String(row[3]??""),
+    counter: Number(row[4])||0, transports: String(row[5]??""),
+    device_name: String(row[6]??""), created_at: Number(row[7])||0,
+    last_used_at: Number(row[8])||0,
+  };
+}
+function mapPasskeyChallenge(row: unknown[]): PasskeyChallenge {
+  return {
+    challenge: String(row[0]??""), user_handle: String(row[1]??""),
+    purpose: String(row[2]??""), created_at: Number(row[3])||0,
+    expires_at: Number(row[4])||0,
   };
 }
 function mapAiConfig(row: unknown[]): AiConfig {
@@ -1054,6 +1081,32 @@ export const api = {
       sql += " ORDER BY created_at DESC LIMIT 100";
       return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapScimEvent));
     },
+  },
+  passkeys: {
+    listCredentials: (userId: string) =>
+      sqlQuery(`SELECT * FROM passkey_credential WHERE user_id = '${userId}' ORDER BY created_at DESC`)
+        .then((rows) => (rows as any as unknown[][]).map(mapPasskeyCredential)),
+    listCredentialsForUser: (userId: string) =>
+      sqlQuery(`SELECT * FROM passkey_credential WHERE user_id = '${userId}'`)
+        .then((rows) => (rows as any as unknown[][]).map(mapPasskeyCredential)),
+    getCredentialByCredentialId: (credentialId: string) =>
+      sqlQuery(`SELECT * FROM passkey_credential WHERE credential_id = '${credentialId}'`)
+        .then((rows) => {
+          const arr = rows as any as unknown[][];
+          return arr.length > 0 ? mapPasskeyCredential(arr[0]) : null;
+        }),
+    store: (userId: string, credentialId: string, publicKey: string,
+            counter: number, transports: string, deviceName: string) => {
+      const id = genId("pk");
+      return callReducer("store_passkey_credential", [id, userId, credentialId, publicKey, counter, transports, deviceName]).then(() => id);
+    },
+    createChallenge: (challenge: string, userHandle: string, purpose: string) =>
+      callReducer("create_passkey_challenge", [challenge, userHandle, purpose]),
+    consumeChallenge: (challenge: string) =>
+      callReducer("consume_passkey_challenge", [challenge]),
+    updateCounter: (credentialId: string, counter: number) =>
+      callReducer("update_passkey_counter", [credentialId, counter]),
+    delete: (id: string) => callReducer("delete_passkey_credential", [id]),
   },
 };
 

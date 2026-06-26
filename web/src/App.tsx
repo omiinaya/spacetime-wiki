@@ -9,7 +9,7 @@ import {
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
   Sun, Moon, Keyboard, Eye, CheckSquare, Square, Tags, MessageSquare, Package,
 } from "lucide-react";
-import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, usePagesSubscription, useCollectionsSubscription } from "./lib/api";
+import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, PasskeyCredential, usePagesSubscription, useCollectionsSubscription } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
 import { connectSubscriptions, disconnectSubscriptions, defaultSubscriptionManager } from "./lib/subscriptions";
 import { PageEditor } from "./pages/PageEditor";
@@ -79,7 +79,7 @@ function AppLayout() {
   // Admin state
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim">("users");
+  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys">("users");
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; description: string; created_by: string; created_at: number; updated_at: number }[]>([]);
@@ -1571,6 +1571,11 @@ function AppLayout() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "scim" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <Shield className="h-3 w-3 inline mr-1" />SCIM
               </button>
+              <button onClick={() => setAdminTab("passkeys")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "passkeys" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+                Passkeys
+              </button>
             </div>
 
             {adminTab === "users" && (
@@ -1869,6 +1874,7 @@ function AppLayout() {
             {adminTab === "features" && <FeatureFlags />}
             {adminTab === "export" && <BulkExport />}
             {adminTab === "scim" && <ScimSettings userId={userId} />}
+            {adminTab === "passkeys" && <PasskeySettings userId={userId} />}
           </div>
         </div>
       )}
@@ -2910,6 +2916,15 @@ async function callReducerLocal(reducer: string, args: unknown[]) {
   });
 }
 
+function arrayBufferToBase64Url(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 function SlugView() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -3059,6 +3074,77 @@ function LoginView() {
     } catch (err: any) { setError(String(err)); }
   };
 
+  const handlePasskeySignIn = async () => {
+    setError("");
+    try {
+      // 1. Request authentication challenge from the API server
+      const origin = window.location.origin;
+      const resp = await fetch(`${origin}/api/v1/webauthn/auth/begin?email=${encodeURIComponent(email || "")}`);
+      if (!resp.ok) {
+        const detail = await resp.text();
+        throw new Error(detail || "Failed to get challenge");
+      }
+      const options = await resp.json();
+
+      // 2. Convert options to the format expected by the WebAuthn API
+      const publicKey: CredentialRequestOptions["publicKey"] = {
+        challenge: Uint8Array.from(atob(options.challenge.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)),
+        timeout: options.timeout,
+        rpId: options.rpId,
+        userVerification: options.userVerification,
+      };
+
+      if (options.allowCredentials && options.allowCredentials.length > 0) {
+        publicKey.allowCredentials = options.allowCredentials.map((cred: any) => ({
+          id: Uint8Array.from(atob(cred.id.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)),
+          type: "public-key" as PublicKeyCredentialType,
+          transports: cred.transports as AuthenticatorTransport[],
+        }));
+      }
+
+      // 3. Call navigator.credentials.get()
+      const credential = await navigator.credentials.get({ publicKey });
+      if (!credential) throw new Error("No credential returned");
+
+      const pkCred = credential as PublicKeyCredential;
+      const response = pkCred.response as AuthenticatorAssertionResponse;
+
+      // 4. Send assertion response to the API server for verification
+      const assertionPayload = {
+        id: pkCred.id,
+        rawId: arrayBufferToBase64Url(pkCred.rawId),
+        type: pkCred.type,
+        response: {
+          clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
+          authenticatorData: arrayBufferToBase64Url(response.authenticatorData),
+          signature: arrayBufferToBase64Url(response.signature),
+          userHandle: response.userHandle ? arrayBufferToBase64Url(response.userHandle) : "",
+        },
+      };
+
+      const verifyResp = await fetch(`${origin}/api/v1/webauthn/auth/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(assertionPayload),
+      });
+
+      if (!verifyResp.ok) {
+        const detail = await verifyResp.text();
+        throw new Error(detail || "Authentication failed");
+      }
+
+      const result = await verifyResp.json();
+      if (result.user) {
+        localStorage.setItem("sw_user_id", result.user.id);
+        navigate("/");
+      } else {
+        throw new Error("No user returned from authentication");
+      }
+    } catch (err: any) {
+      setError(`Passkey sign-in failed: ${err.message || err}`);
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-md mx-auto">
       <div className="space-y-6">
@@ -3113,6 +3199,11 @@ function LoginView() {
           <button onClick={handleGoogleSignIn} className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
             <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Sign in with Google
+          </button>
+          {/* Passkey / WebAuthn sign-in */}
+          <button onClick={handlePasskeySignIn} className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
+            <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+            Sign in with Passkey
           </button>
         </form>
         <p className="text-xs text-muted-foreground text-center">
@@ -4217,6 +4308,221 @@ function ScimSettings({ userId }: { userId: string | null }) {
                 <button onClick={handleSave} disabled={!name.trim() || !slug.trim() || (!editing && !apiToken.trim())}
                   className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
                   {editing ? "Update" : "Add"} Provider
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PasskeySettings({ userId }: { userId: string | null }) {
+  const [credentials, setCredentials] = useState<PasskeyCredential[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [regEmail, setRegEmail] = useState("");
+  const [regName, setRegName] = useState("");
+  const [deviceName, setDeviceName] = useState("");
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+
+  const loadCredentials = useCallback(async () => {
+    if (!userId) { setLoading(false); return; }
+    try {
+      const creds = await api.passkeys.listCredentialsForUser(userId);
+      setCredentials(creds);
+    } catch (e) {
+      console.error("Failed to load passkey credentials:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => { loadCredentials(); }, [loadCredentials]);
+
+  const handleRegisterBegin = async () => {
+    if (!regEmail.trim()) { setError("Email is required"); return; }
+    setError("");
+    setStatus("Starting registration...");
+    try {
+      // 1. Get registration options from the API server
+      const origin = window.location.origin;
+      const resp = await fetch(`${origin}/api/v1/webauthn/register/begin?email=${encodeURIComponent(regEmail)}&display_name=${encodeURIComponent(regName)}`);
+      if (!resp.ok) {
+        const detail = await resp.text();
+        throw new Error(detail || "Failed to get registration options");
+      }
+      const creationOptions = await resp.json();
+
+      // 2. Convert to the format expected by navigator.credentials.create()
+      const publicKey: PublicKeyCredentialCreationOptions = {
+        challenge: Uint8Array.from(
+          atob(creationOptions.challenge.replace(/-/g, "+").replace(/_/g, "/")),
+          c => c.charCodeAt(0)
+        ),
+        rp: creationOptions.rp,
+        user: {
+          id: Uint8Array.from(
+            atob(creationOptions.user.id.replace(/-/g, "+").replace(/_/g, "/")),
+            c => c.charCodeAt(0)
+          ),
+          name: creationOptions.user.name,
+          displayName: creationOptions.user.displayName,
+        },
+        pubKeyCredParams: creationOptions.pubKeyCredParams,
+        timeout: creationOptions.timeout,
+        attestation: creationOptions.attestation || "none",
+        authenticatorSelection: creationOptions.authenticatorSelection || {
+          residentKey: "preferred",
+          userVerification: "preferred",
+        },
+      };
+
+      // 3. Call the browser WebAuthn API
+      setStatus("Waiting for authenticator...");
+      const credential = await navigator.credentials.create({ publicKey });
+      if (!credential) throw new Error("User cancelled or no credential created");
+
+      const pkCred = credential as PublicKeyCredential;
+      const response = pkCred.response as AuthenticatorAttestationResponse;
+
+      // 4. Send registration response to the API server
+      setStatus("Verifying registration...");
+      const registrationPayload = {
+        id: pkCred.id,
+        rawId: arrayBufferToBase64Url(pkCred.rawId),
+        type: pkCred.type,
+        response: {
+          clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
+          attestationObject: arrayBufferToBase64Url(response.attestationObject),
+          transports: response.getTransports ? response.getTransports() : ["internal"],
+        },
+        user_id: userId || "",
+        email: regEmail,
+        device_name: deviceName || navigator.userAgent?.slice(0, 60) || "Unknown device",
+        origin: window.location.origin,
+      };
+
+      const verifyResp = await fetch(`${origin}/api/v1/webauthn/register/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registrationPayload),
+      });
+
+      if (!verifyResp.ok) {
+        const detail = await verifyResp.text();
+        throw new Error(detail || "Registration verification failed");
+      }
+
+      setStatus("Passkey registered successfully!");
+      setRegisterOpen(false);
+      setRegEmail("");
+      setRegName("");
+      setDeviceName("");
+      await loadCredentials();
+      setTimeout(() => setStatus(""), 3000);
+    } catch (err: any) {
+      setError(`Registration failed: ${err.message || err}`);
+      setStatus("");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this passkey credential?")) return;
+    try {
+      await api.passkeys.delete(id);
+      await loadCredentials();
+    } catch (err) {
+      console.error("Failed to delete passkey:", err);
+    }
+  };
+
+  if (loading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Passkeys / WebAuthn Credentials
+        </p>
+        <button onClick={() => { setRegisterOpen(true); setError(""); setStatus(""); }}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+          <Plus className="h-3 w-3" /> Register Passkey
+        </button>
+      </div>
+
+      {/* Registered credentials */}
+      <div className="space-y-2 mb-4">
+        {credentials.map(c => (
+          <div key={c.id} className="flex items-center gap-3 px-3 py-2 rounded-md border border-border hover:bg-muted/30 transition-colors">
+            <svg className="h-4 w-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/>
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">{c.device_name || "Unknown device"}</p>
+              <p className="text-[10px] text-muted-foreground/60">
+                Added {new Date(c.created_at).toLocaleDateString()} · Last used {new Date(c.last_used_at).toLocaleDateString()}
+              </p>
+            </div>
+            <button onClick={() => handleDelete(c.id)}
+              className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-red-500/10">
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+        {credentials.length === 0 && (
+          <div className="py-4 text-center text-xs text-muted-foreground">
+            No passkeys registered. Register one to enable passwordless sign-in.
+          </div>
+        )}
+      </div>
+
+      {/* Info box */}
+      <div className="p-3 rounded-md bg-primary/5 border border-primary/20">
+        <h4 className="text-xs font-semibold mb-1">How Passkeys work</h4>
+        <p className="text-[10px] text-muted-foreground/60">
+          Passkeys use your device's biometric (fingerprint, face) or PIN to sign in securely —
+          no password needed. They are synced across your devices via iCloud Keychain, Google
+          Password Manager, or similar. To use a passkey, click "Sign in with Passkey" on the login page.
+        </p>
+      </div>
+
+      {/* Registration dialog */}
+      {registerOpen && (
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+             onClick={() => setRegisterOpen(false)}>
+          <div className="dialog-container w-full max-w-md mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl"
+               onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold mb-4">Register a Passkey</h3>
+            <div className="space-y-3">
+              <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)}
+                placeholder="Your email address"
+                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <input type="text" value={regName} onChange={e => setRegName(e.target.value)}
+                placeholder="Display name (optional)"
+                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <input type="text" value={deviceName} onChange={e => setDeviceName(e.target.value)}
+                placeholder="Device name (e.g. MacBook Pro)"
+                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              {status && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 text-primary text-xs">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  {status}
+                </div>
+              )}
+              {error && (
+                <div className="px-3 py-2 rounded-md bg-red-500/10 text-red-400 text-xs">{error}</div>
+              )}
+              <div className="flex gap-2 justify-end pt-2">
+                <button onClick={() => setRegisterOpen(false)}
+                  className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button onClick={handleRegisterBegin} disabled={!regEmail.trim() || !!status}
+                  className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                  Register Passkey
                 </button>
               </div>
             </div>
