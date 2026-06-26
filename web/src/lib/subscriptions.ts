@@ -202,7 +202,7 @@ export function useSubscription<T>(
     const unsub = defaultSubscriptionManager.subscribe({
       sql,
       onRows: (rawRows) => {
-        const mapped = (rawRows as unknown[][]).map(mapper);
+        const mapped = (rawRows as any as unknown[][]).map(mapper);
         rowsRef.current = mapped;
         setRows([...mapped]);
       },
