@@ -290,6 +290,35 @@ export function PageView({ pageId, userId }: Props) {
   const [showMediaBrowser, setShowMediaBrowser] = useState(false);
   const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
 
+  // Inline title editing
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTitleSave = async () => {
+    const trimmed = titleDraft.trim();
+    if (!trimmed || !page || trimmed === page.title) {
+      setEditingTitle(false);
+      return;
+    }
+    try {
+      await api.pages.update(pageId, trimmed, page.content, userId || "anonymous");
+      setPage(prev => prev ? { ...prev, title: trimmed } : prev);
+      showToast({ type: "success", title: "Title updated", duration: 2000 });
+    } catch (err) {
+      showToast({ type: "error", title: "Failed to update title", message: String(err), duration: 4000 });
+    }
+    setEditingTitle(false);
+  };
+
+  // Auto-focus the title input when editing starts
+  useEffect(() => {
+    if (editingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [editingTitle]);
+
   // Link preview tooltip
   const [linkPreview, setLinkPreview] = useState<{ x: number; y: number; title: string; url: string } | null>(null);
   const linkPreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1155,11 +1184,36 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             <span className="text-foreground/80">{page.title}</span>
           </div>
         )}
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <button onClick={() => setShowEmoji(!showEmoji)} className="text-2xl hover:scale-110 transition-transform">
+        <h1 className="text-3xl font-bold flex items-center gap-2 min-w-0">
+          <button onClick={() => setShowEmoji(!showEmoji)} className="text-2xl hover:scale-110 transition-transform shrink-0">
             {page.icon || "📄"}
           </button>
-          {page.title}
+          {editingTitle ? (
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={handleTitleSave}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); handleTitleSave(); }
+                if (e.key === "Escape") { e.preventDefault(); setEditingTitle(false); setTitleDraft(page.title); }
+              }}
+              className="flex-1 min-w-0 bg-transparent border-b-2 border-primary/50 text-3xl font-bold text-foreground outline-none py-0.5"
+              autoFocus
+            />
+          ) : (
+            <button
+              onClick={() => {
+                setTitleDraft(page.title);
+                setEditingTitle(true);
+              }}
+              className="flex-1 min-w-0 text-left text-3xl font-bold text-foreground hover:text-primary/80 transition-colors truncate"
+              title="Click to rename"
+            >
+              {page.title}
+            </button>
+          )}
         </h1>
         {showEmoji && (
           <div className="absolute mt-1 p-2 rounded-lg border border-border bg-card shadow-xl z-30" onClick={(e) => e.stopPropagation()}>

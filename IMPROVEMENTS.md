@@ -8,7 +8,9 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-No outstanding items — backlog is clear!
+| Priority | Item | Notes |
+|----------|------|-------|
+| P2 | Inline title editing on PageView | Click page title → inline edit → Enter to save |
 
 ---
 
