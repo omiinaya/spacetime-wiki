@@ -8,11 +8,7 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Dual editor mode (WYSIWYG ↔ Markdown)
-Add a toggle in the PageEditor to switch between WYSIWYG (Tiptap) and raw Markdown editing modes. The export-to-markdown and import-from-markdown functions already exist in PageEditor; wire them into a live toggle with a Codemirror or textarea for the Markdown side.
-Files: web/src/pages/PageEditor.tsx
-Difficulty: Medium
-Est: 1h
+No outstanding items — backlog is clear!
 
 ---
 
@@ -32,4 +28,5 @@ Est: 1h
 | 2026-06-26 | **P2 — Comment reactions UI (STDB-backed 👍❤️🎉😄😕 with toggle, counts, active state)** | 6374a20 |
 | 2026-06-27 | P2 — Wiki import from ZIP (Notion/Confluence export) with parent-child hierarchy preservation | 1170918 |
 | 2026-06-27 | P2 — Edge-swipe-to-open sidebar gesture with drag-follow animation | b79f7e9 |
-| 2026-06-27 | P3 — Page color accent picker in PageView toolbar (12-color palette + clear) | (this session) |
+| 2026-06-27 | P3 — Page color accent picker in PageView toolbar (12-color palette + clear) | 54f0dd5 |
+| 2026-06-27 | P3 — Dual editor mode (WYSIWYG ↔ Markdown ↔ Split) | (already implemented) |
