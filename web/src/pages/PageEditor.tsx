@@ -886,6 +886,34 @@ export function PageEditor({ userId }: Props) {
     setTags(tags.filter((t) => t.id !== tagId));
   };
 
+  // ─── Feature flags ─────────────────────────────────────────────────────────
+
+  const [featureFlags, setFeatureFlags] = useState<Record<string, boolean> | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const val = await api.settings.get("feature_flags");
+        if (val) {
+          const parsed = JSON.parse(val);
+          setFeatureFlags(parsed);
+        } else {
+          // Default: all enabled
+          setFeatureFlags({
+            callouts: true, mermaid: true, math: true,
+            embeds: true, video: true, drawio: true,
+            plantuml: true, details: true, mentions: true,
+          });
+        }
+      } catch { /* use defaults */ }
+    })();
+  }, []);
+
+  const isFeatureEnabled = (key: string): boolean => {
+    if (featureFlags === null) return true; // during loading, show all
+    return featureFlags[key] !== false;
+  };
+
   // ─── Editor ──────────────────────────────────────────────────────────────
 
   const editor = useEditor({
@@ -909,16 +937,15 @@ export function PageEditor({ userId }: Props) {
       Highlight,
       CodeBlockLowlight.configure({ lowlight }),
       // Slash commands handled via keydown listener below
-      Details,
-      Callout,
-      Mermaid,
-      MathInline,
-      MathBlock,
-      VideoEmbed,
-      RichEmbed,
-      Drawio,
-      PlantUML,
-      Mention.configure({ HTMLAttributes: { class: 'mention' } }),
+      ...(isFeatureEnabled("details") ? [Details] : []),
+      ...(isFeatureEnabled("callouts") ? [Callout] : []),
+      ...(isFeatureEnabled("mermaid") ? [Mermaid] : []),
+      ...(isFeatureEnabled("math") ? [MathInline, MathBlock] : []),
+      ...(isFeatureEnabled("video") ? [VideoEmbed] : []),
+      ...(isFeatureEnabled("embeds") ? [RichEmbed] : []),
+      ...(isFeatureEnabled("drawio") ? [Drawio] : []),
+      ...(isFeatureEnabled("plantuml") ? [PlantUML] : []),
+      ...(isFeatureEnabled("mentions") ? [Mention.configure({ HTMLAttributes: { class: 'mention' } })] : []),
     ],
     content: page ? (() => { try { return JSON.parse(page.content || "{}"); } catch { return "<p></p>"; } })() : undefined,
     editable: !preview,
