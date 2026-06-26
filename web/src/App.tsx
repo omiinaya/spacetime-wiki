@@ -1460,6 +1460,20 @@ function AppLayout() {
               >
                 <Link2 className="h-3 w-3" /> Copy link
               </button>
+              <div className="h-px bg-border/50 mx-2 my-1" />
+              <button
+                onClick={async () => {
+                  const pageId = contextMenu.pageId!;
+                  setContextMenu(null);
+                  if (!confirm("Move this page to trash?")) return;
+                  await api.pages.batchSetStatus([pageId], "deleted");
+                  await refreshData();
+                  showToast({ type: "success", title: "Page moved to trash", duration: 3000 });
+                }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left"
+              >
+                <Trash2 className="h-3 w-3" /> Move to trash
+              </button>
             </>
           ) : (
             <>
