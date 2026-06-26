@@ -2019,7 +2019,55 @@ function AppLayout() {
       )}
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
+      <main
+        className="flex-1 overflow-y-auto"
+        onTouchStart={(e) => {
+          if (!sidebarOpen && sidebarElRef.current && e.touches[0].clientX < 30) {
+            // Edge swipe to open — start tracking on sidebar itself
+            touchStartRef.current = e.touches[0].clientX;
+            sidebarDragRef.current = true;
+            sidebarTouchDelta.current = 0;
+            const el = sidebarElRef.current;
+            el.style.transition = "none";
+          }
+        }}
+        onTouchMove={(e) => {
+          if (!sidebarDragRef.current) return;
+          const dx = e.touches[0].clientX - touchStartRef.current;
+          sidebarTouchDelta.current = dx;
+          const el = sidebarElRef.current;
+          if (!el) return;
+          el.style.transition = "none";
+          if (!sidebarOpen && dx > 0) {
+            // Edge swipe to open
+            const offset = Math.min(dx, SIDEBAR_W);
+            el.style.transform = `translateX(${offset - SIDEBAR_W}px)`;
+            const progress = offset / SIDEBAR_W;
+            if (progress > 0.05 && !sidebarOverlayVisible) setSidebarOverlayVisible(true);
+            const ov = sidebarOverlayRef.current;
+            if (ov) ov.style.opacity = String(progress * 0.6);
+          } else if (sidebarOpen && dx < 0) {
+            // Swipe on overlay to close
+            const offset = Math.max(dx, -SIDEBAR_W);
+            el.style.transform = `translateX(${offset}px)`;
+            const progress = Math.abs(dx) / SIDEBAR_W;
+            const ov = sidebarOverlayRef.current;
+            if (ov) ov.style.opacity = String((1 - progress) * 0.6);
+          }
+        }}
+        onTouchEnd={() => {
+          if (!sidebarDragRef.current) return;
+          // Handle edge-to-open completion
+          if (!sidebarOpen && sidebarTouchDelta.current > 60) {
+            setSidebarOpen(true);
+            setSidebarOverlayVisible(true);
+          }
+          sidebarDragRef.current = false;
+          const el = sidebarElRef.current;
+          if (el) { el.style.transition = ""; el.style.transform = ""; }
+          sidebarTouchDelta.current = 0;
+        }}
+      >
         <div className="md:hidden flex items-center gap-2 px-4 h-14 border-b border-border">
           <button onClick={() => setSidebarOpen(true)}><Menu className="h-5 w-5" /></button>
           <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
