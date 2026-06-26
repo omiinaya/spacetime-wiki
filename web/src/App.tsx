@@ -52,6 +52,8 @@ function AppLayout() {
   });
   const [colSortMode, setColSortMode] = useState("manual");
 
+  const sidebarNavRef = useRef<HTMLDivElement>(null);
+
   const saveCollectionSortMode = (colId: string, mode: string) => {
     const updated = { ...collectionSortModes, [colId]: mode };
     setCollectionSortModes(updated);
@@ -676,15 +678,30 @@ function AppLayout() {
   const [paletteQuery, setPaletteQuery] = useState("");
   const [paletteIndex, setPaletteIndex] = useState(0);
 
+  // Drag-and-drop state
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+
   const handleDragStart = (e: React.DragEvent, pageId: string) => {
     setDragPageId(pageId);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", pageId);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, pageId?: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
+    if (pageId && pageId !== dragOverTarget) {
+      setDragOverTarget(pageId);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverTarget(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragPageId(null);
+    setDragOverTarget(null);
   };
 
   const handleDropOnCollection = async (e: React.DragEvent, colId: string) => {
@@ -1023,18 +1040,17 @@ function AppLayout() {
                           key={page.id}
                           draggable
                           onDragStart={(e) => handleDragStart(e, page.id)}
-                          onDragOver={handleDragOver}
+                          onDragOver={(e) => handleDragOver(e, page.id)}
+                          onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDropOnPage(e, page.id)}
-                          onContextMenu={(e) => {
-                            e.preventDefault();
-                            setContextMenu({ x: e.clientX, y: e.clientY, pageId: page.id });
-                          }}
+                          onDragEnd={handleDragEnd}
                           className={cn(
                             "w-full flex items-center gap-0.5 pl-2 pr-2 py-0.5 rounded-md text-xs transition-colors group/page",
                             isActive(page.id)
                               ? "bg-primary/10 text-primary font-medium"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                             selectedPageIds.has(page.id) && "bg-primary/5 ring-1 ring-primary/20",
+                            dragOverTarget === page.id && "ring-1 ring-primary/40 bg-primary/5",
                           )}
                         >
                           {/* Selection checkbox */}
@@ -1109,8 +1125,10 @@ function AppLayout() {
                         key={page.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, page.id)}
-                        onDragOver={handleDragOver}
+                        onDragOver={(e) => handleDragOver(e, page.id)}
+                        onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDropOnPage(e, page.id)}
+                        onDragEnd={handleDragEnd}
                         onContextMenu={(e) => {
                           e.preventDefault();
                           setContextMenu({ x: e.clientX, y: e.clientY, pageId: page.id });
@@ -1119,6 +1137,7 @@ function AppLayout() {
                           "w-full flex items-center gap-0.5 pl-2 pr-2 py-0.5 rounded-md text-xs transition-colors group/page",
                           isActive(page.id) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                           selectedPageIds.has(page.id) && "bg-primary/5 ring-1 ring-primary/20",
+                          dragOverTarget === page.id && "ring-1 ring-primary/40 bg-primary/5",
                         )}
                       >
                         {/* Selection checkbox */}
