@@ -20,7 +20,10 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-28 | P3 — TOC scroll-spy with IntersectionObserver-based active heading highlighting | 1050aa1 |
+| 2026-06-28 | P3 — PDF export (print-optimized HTML opens in new window for Save as PDF) with cover page, page breaks, styled headers | 928d953 |
+| 2026-06-28 | P3 — Mermaid diagrams and ImageEnhanced rendering in PageView read-only editor mode | 928d953 |
+| 2026-06-28 | Fix TS build: 36+ errors fixed (BubbleMenu/Tiptap v3 compat, Fragment wrapping, type casts) | 966ebc9 |
+| 2026-06-28 | P3 — Nested collection hierarchies with recursive tree rendering | 5189a1c |
 | 2026-06-28 | P3 — Feature flags / modular architecture admin panel with toggleable extensions | ff8a73a |
 | 2026-06-28 | P3 — Collection page sort preference (Manual/Title/Date) per collection in editor | 267e8a7 |
 | 2026-06-28 | P2 — Copy page link to clipboard from sidebar context menu | 4deb760 |
