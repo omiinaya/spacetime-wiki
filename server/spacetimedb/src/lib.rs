@@ -1964,6 +1964,186 @@ pub fn delete_oidc_provider(ctx: &ReducerContext, id: String) -> Result<(), Stri
     Ok(())
 }
 
+// ─── LDAP Authentication ───────────────────────────────────────────────────────
+
+#[table(accessor = ldap_provider, public)]
+#[derive(Debug, Clone)]
+pub struct LdapProvider {
+    #[primary_key]
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+    pub host: String,
+    pub port: u16,
+    /// Whether to use LDAPS (SSL/TLS)
+    pub is_secure: bool,
+    /// Distinguished Name of the bind user (empty for anonymous bind)
+    pub bind_dn: String,
+    pub bind_password: String,
+    /// Base DN for user searches, e.g. "dc=example,dc=com"
+    pub base_dn: String,
+    /// LDAP filter to find users, e.g. "(uid={{username}})" — {{username}} is replaced with the login input
+    pub user_filter: String,
+    /// LDAP attribute that holds the username/login (e.g. "uid", "cn", "sAMAccountName")
+    pub username_attribute: String,
+    /// LDAP attribute that holds the email address (e.g. "mail")
+    pub email_attribute: String,
+    /// LDAP attribute that holds the display name (e.g. "displayName", "cn")
+    pub name_attribute: String,
+    /// Default role assigned to new LDAP users
+    pub default_role: String,
+    /// If true, automatically create wiki accounts for authenticated LDAP users
+    pub auto_register: bool,
+    pub is_active: bool,
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+/// Tracks which wiki users are linked to LDAP directory entries
+#[table(accessor = ldap_user, public)]
+#[derive(Debug, Clone)]
+pub struct LdapUser {
+    #[primary_key]
+    pub id: String,
+    pub user_id: String,
+    pub ldap_provider_id: String,
+    /// Full DN of the user in LDAP
+    pub dn: String,
+    /// Unique external ID (e.g. objectGUID or entryUUID)
+    pub external_id: String,
+    pub last_synced_at: u64,
+    pub created_at: u64,
+}
+
+#[reducer]
+pub fn add_ldap_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    host: String,
+    port: u16,
+    is_secure: bool,
+    bind_dn: String,
+    bind_password: String,
+    base_dn: String,
+    user_filter: String,
+    username_attribute: String,
+    email_attribute: String,
+    name_attribute: String,
+    default_role: String,
+    auto_register: bool,
+    created_by: String,
+) -> Result<(), String> {
+    if host.is_empty() {
+        return Err("LDAP host is required".into());
+    }
+    if base_dn.is_empty() {
+        return Err("Base DN is required".into());
+    }
+    if user_filter.is_empty() {
+        return Err("User filter is required".into());
+    }
+    let valid_roles = ["admin", "member", "viewer"];
+    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role.clone() } else { "member".into() };
+    let now = now_ms(ctx);
+    ctx.db.ldap_provider().insert(LdapProvider {
+        id, name, slug, host, port, is_secure,
+        bind_dn, bind_password, base_dn, user_filter,
+        username_attribute, email_attribute, name_attribute,
+        default_role: role_clean,
+        auto_register, is_active: true,
+        created_by, created_at: now, updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_ldap_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    host: String,
+    port: u16,
+    is_secure: bool,
+    bind_dn: String,
+    bind_password: String,
+    base_dn: String,
+    user_filter: String,
+    username_attribute: String,
+    email_attribute: String,
+    name_attribute: String,
+    default_role: String,
+    auto_register: bool,
+    is_active: bool,
+) -> Result<(), String> {
+    if host.is_empty() {
+        return Err("LDAP host is required".into());
+    }
+    if base_dn.is_empty() {
+        return Err("Base DN is required".into());
+    }
+    let found = ctx.db.ldap_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("LDAP provider not found".into());
+    }
+    let mut provider = found.unwrap();
+    provider.name = name;
+    provider.slug = slug;
+    provider.host = host;
+    provider.port = port;
+    provider.is_secure = is_secure;
+    provider.bind_dn = bind_dn;
+    if !bind_password.is_empty() {
+        provider.bind_password = bind_password;
+    }
+    provider.base_dn = base_dn;
+    provider.user_filter = user_filter;
+    provider.username_attribute = if username_attribute.is_empty() { "uid".into() } else { username_attribute };
+    provider.email_attribute = if email_attribute.is_empty() { "mail".into() } else { email_attribute };
+    provider.name_attribute = if name_attribute.is_empty() { "cn".into() } else { name_attribute };
+    let valid_roles = ["admin", "member", "viewer"];
+    provider.default_role = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    provider.auto_register = auto_register;
+    provider.is_active = is_active;
+    provider.updated_at = now_ms(ctx);
+    ctx.db.ldap_provider().id().update(provider);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_ldap_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    let found = ctx.db.ldap_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("LDAP provider not found".into());
+    }
+    // Also delete linked ldap_user records
+    for u in ctx.db.ldap_user().iter().filter(|u| u.ldap_provider_id == id).map(|u| u.id.clone()).collect::<Vec<_>>() {
+        ctx.db.ldap_user().id().delete(&u);
+    }
+    ctx.db.ldap_provider().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn link_ldap_user(
+    ctx: &ReducerContext,
+    id: String,
+    user_id: String,
+    ldap_provider_id: String,
+    dn: String,
+    external_id: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    ctx.db.ldap_user().insert(LdapUser {
+        id, user_id, ldap_provider_id, dn, external_id,
+        last_synced_at: now, created_at: now,
+    });
+    Ok(())
+}
+
 // ─── Page Analytics ───────────────────────────────────────────────────────────
 
 #[table(accessor = page_view, public)]

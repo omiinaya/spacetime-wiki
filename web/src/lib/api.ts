@@ -49,6 +49,8 @@ function mapScimProvider(row: unknown[]): ScimProvider { return { id: String(row
 function mapScimEvent(row: unknown[]): ScimEvent { return { id: String(row[0]??""), provider_id: String(row[1]??""), resource_type: String(row[2]??""), operation: String(row[3]??""), external_id: String(row[4]??""), local_id: String(row[5]??""), status: String(row[6]??""), detail: String(row[7]??""), created_at: Number(row[8])||0 }; }
 function mapInvitation(row: unknown[]): Invitation { return { id: String(row[0]??""), email: String(row[1]??""), invited_by: String(row[2]??""), role: String(row[3]??""), page_ids: String(row[4]??""), collection_ids: String(row[5]??""), token: String(row[6]??""), status: String(row[7]??""), message: String(row[8]??""), expires_at: Number(row[9])||0, view_count: Number(row[10])||0, created_at: Number(row[11])||0, updated_at: Number(row[12])||0 }; }
 function mapCollectionSortRule(row: unknown[]): CollectionSortRule { return { collection_id: String(row[0]??""), sort_field: String(row[1]??""), sort_direction: String(row[2]??""), auto_apply: Boolean(row[3]), updated_by: String(row[4]??""), updated_at: Number(row[5])||0 }; }
+function mapLdapProvider(row: unknown[]): LdapProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), host: String(row[3]??""), port: Number(row[4])||389, is_secure: Boolean(row[5]), bind_dn: String(row[6]??""), bind_password: String(row[7]??""), base_dn: String(row[8]??""), user_filter: String(row[9]??""), username_attribute: String(row[10]??""), email_attribute: String(row[11]??""), name_attribute: String(row[12]??""), default_role: String(row[13]??""), auto_register: Boolean(row[14]), is_active: Boolean(row[15]), created_by: String(row[16]??""), created_at: Number(row[17])||0, updated_at: Number(row[18])||0 }; }
+function mapLdapUser(row: unknown[]): LdapUser { return { id: String(row[0]??""), user_id: String(row[1]??""), ldap_provider_id: String(row[2]??""), dn: String(row[3]??""), external_id: String(row[4]??""), last_synced_at: Number(row[5])||0, created_at: Number(row[6])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -441,6 +443,40 @@ export interface SyncedBlockRef {
   block_id: string;
   page_id: string;
   created_by: string;
+  created_at: number;
+}
+
+// ─── LDAP Types ─────────────────────────────────────────────────────────────────
+
+export interface LdapProvider {
+  id: string;
+  name: string;
+  slug: string;
+  host: string;
+  port: number;
+  is_secure: boolean;
+  bind_dn: string;
+  bind_password: string;
+  base_dn: string;
+  user_filter: string;
+  username_attribute: string;
+  email_attribute: string;
+  name_attribute: string;
+  default_role: string;
+  auto_register: boolean;
+  is_active: boolean;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface LdapUser {
+  id: string;
+  user_id: string;
+  ldap_provider_id: string;
+  dn: string;
+  external_id: string;
+  last_synced_at: number;
   created_at: number;
 }
 
@@ -1304,6 +1340,52 @@ export const api = {
       callReducer("revoke_invitation", [id, revokedBy]),
     recordView: (token: string) =>
       callReducer("record_invitation_view", [token]),
+  },
+  ldap: {
+    list: (): Promise<LdapProvider[]> =>
+      sqlQuery("SELECT * FROM ldap_provider")
+        .then((rows) => (rows as any as unknown[][]).map(mapLdapProvider)),
+    listActive: (): Promise<LdapProvider[]> =>
+      sqlQuery("SELECT * FROM ldap_provider WHERE is_active = true")
+        .then((rows) => (rows as any as unknown[][]).map(mapLdapProvider)),
+    get: (id: string): Promise<LdapProvider | null> =>
+      sqlQuery(`SELECT * FROM ldap_provider WHERE id = '${id}'`)
+        .then((rows) => rows.length > 0 ? mapLdapProvider((rows as any as unknown[][])[0]) : null),
+    add: (provider: {
+      name: string; slug: string; host: string; port: number;
+      is_secure: boolean; bind_dn: string; bind_password: string;
+      base_dn: string; user_filter: string; username_attribute: string;
+      email_attribute: string; name_attribute: string;
+      default_role: string; auto_register: boolean;
+    }, createdBy: string) => {
+      const id = genId("ldap");
+      return callReducer("add_ldap_provider", [
+        id, provider.name, provider.slug, provider.host, provider.port,
+        provider.is_secure, provider.bind_dn, provider.bind_password,
+        provider.base_dn, provider.user_filter, provider.username_attribute,
+        provider.email_attribute, provider.name_attribute,
+        provider.default_role, provider.auto_register, createdBy,
+      ]).then(() => id);
+    },
+    update: (id: string, provider: {
+      name: string; slug: string; host: string; port: number;
+      is_secure: boolean; bind_dn: string; bind_password: string;
+      base_dn: string; user_filter: string; username_attribute: string;
+      email_attribute: string; name_attribute: string;
+      default_role: string; auto_register: boolean; is_active: boolean;
+    }) =>
+      callReducer("update_ldap_provider", [
+        id, provider.name, provider.slug, provider.host, provider.port,
+        provider.is_secure, provider.bind_dn, provider.bind_password,
+        provider.base_dn, provider.user_filter, provider.username_attribute,
+        provider.email_attribute, provider.name_attribute,
+        provider.default_role, provider.auto_register, provider.is_active,
+      ]),
+    delete: (id: string) =>
+      callReducer("delete_ldap_provider", [id]),
+    getLinkedUsers: (providerId: string): Promise<LdapUser[]> =>
+      sqlQuery(`SELECT * FROM ldap_user WHERE ldap_provider_id = '${providerId}'`)
+        .then((rows) => (rows as any as unknown[][]).map(mapLdapUser)),
   },
 };
 

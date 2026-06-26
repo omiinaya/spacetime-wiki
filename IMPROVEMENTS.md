@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | LDAP authentication | Enterprise LDAP/AD integration for login & user sync |
 | P4 | Slack/Discord/GitHub OAuth SSO | Additional OAuth providers beyond Google/Microsoft |
 | P4 | Advanced search syntax | Tag filters, date ranges, `author:user` search syntax |
 | P2 | Activity feed / audit trail page | Dedicated "Recent activity" page showing page creates, updates, deletes, restores with user info |
@@ -23,6 +22,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-26 | **P4 — LDAP authentication!** STDB tables+reducers (ldap_provider, ldap_user), Admin panel LDAP tab with full provider CRUD and attribute mapping, LDAP login in LoginView, Python FastAPI LDAP auth backend with bind/search/verify flow | _(this commit)_ |
 | 2026-06-26 | **P3 — Multiple editor modes (WYSIWYG/Markdown/Split)!** Full wysiwyg/markdown/split toggling in PageEditor toolbar, with ProseMirror↔Markdown conversion via tiptap-markdown | _(this commit)_ |
 | 2026-06-26 | **P3 — Typography extension!** Smart quotes, em-dashes, ellipsis, arrows, trademark/copyright symbols via `@tiptap/extension-typography` | _(this commit)_ |
 | 2026-06-26 | **P4 — Auto-sort rules for content!** STDB `collection_sort_rule` table with set/delete/apply reducers, frontend sort rule config in collection dialog with auto-apply checkbox, server-side sort rule persistence | _(this commit)_ |
