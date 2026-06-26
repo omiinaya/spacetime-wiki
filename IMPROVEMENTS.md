@@ -12,7 +12,7 @@ and works the top pending item each tick.
 |----------|------|-------|
 | P4 | Page includes/transclusion (`{{@page_id}}` syntax) | embed content from another page inline, BookStack-style |
 | P4 | MCP (Model Context Protocol) server | expose wiki pages and search as AI-accessible tools/resources |
-| P3 | Drag-and-drop visual feedback in sidebar | show insertion line indicator when dragging pages |
+| P3 | Collection-level nested hierarchies | sub-collections with parent_id support in sidebar |
 
 ---
 
