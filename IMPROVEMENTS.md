@@ -12,6 +12,7 @@ and works the top pending item each tick.
 |----------|------|-------|
 | P4 | Page includes/transclusion (`{{@page_id}}` syntax) | embed content from another page inline, BookStack-style |
 | P4 | MCP (Model Context Protocol) server | expose wiki pages and search as AI-accessible tools/resources |
+| P3 | TOC scroll-spy | highlight current heading in table of contents as you scroll |
 
 ---
 
