@@ -2227,6 +2227,295 @@ pub fn delete_ai_chat_message(ctx: &ReducerContext, id: String) -> Result<(), St
     Ok(())
 }
 
+// ─── SCIM Provisioning (Identity Management) ───────────────────────────────
+//
+// SCIM 2.0 (RFC 7642-7644) — System for Cross-domain Identity Management.
+// Allows external IdPs (Okta, Azure AD, OneLogin) to auto-provision users
+// and groups into the wiki via a standard REST API.
+
+#[table(accessor = scim_provider, public)]
+#[derive(Debug, Clone)]
+pub struct ScimProvider {
+    #[primary_key]
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+    /// Bearer token the SCIM client (IdP) must present when calling our SCIM API
+    pub api_token_hash: String,
+    /// Whether this provider is active — SCIM API calls from inactive providers are rejected
+    pub is_active: bool,
+    /// Which user role to assign auto-provisioned users (admin, member, viewer)
+    pub default_role: String,
+    /// Whether to auto-register users who don't exist yet
+    pub auto_register: bool,
+    /// Whether to deactivate (set role=viewer) or delete users when deprovisioned
+    pub deprovision_behavior: String, // "deactivate" | "delete"
+    /// When true, groups pushed from SCIM are also created in the wiki groups system
+    pub sync_groups: bool,
+    pub created_by: String,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[table(accessor = scim_event, public)]
+#[derive(Debug, Clone)]
+pub struct ScimEvent {
+    #[primary_key]
+    pub id: String,
+    pub provider_id: String,
+    /// SCIM resource type: "User" | "Group"
+    pub resource_type: String,
+    /// SCIM operation: "POST" | "PUT" | "PATCH" | "DELETE"
+    pub operation: String,
+    /// SCIM external ID (the IdP's user/group ID)
+    pub external_id: String,
+    /// Wiki user ID or group ID affected
+    pub local_id: String,
+    /// Outcome: "success" | "skipped" | "error"
+    pub status: String,
+    /// Human-readable detail about what happened
+    pub detail: String,
+    pub created_at: u64,
+}
+
+#[reducer]
+pub fn add_scim_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    api_token: String,
+    default_role: String,
+    auto_register: bool,
+    deprovision_behavior: String,
+    sync_groups: bool,
+    created_by: String,
+) -> Result<(), String> {
+    if name.is_empty() {
+        return Err("Name is required".into());
+    }
+    if slug.is_empty() {
+        return Err("Slug is required".into());
+    }
+    if api_token.is_empty() {
+        return Err("API token is required".into());
+    }
+    let valid_behaviors = ["deactivate", "delete"];
+    if !valid_behaviors.contains(&deprovision_behavior.as_str()) {
+        return Err("Deprovision behavior must be 'deactivate' or 'delete'".into());
+    }
+    let valid_roles = ["admin", "member", "viewer"];
+    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    let api_token_hash = hash_password(&api_token);
+    let now = now_ms(ctx);
+    ctx.db.scim_provider().insert(ScimProvider {
+        id, name, slug,
+        api_token_hash,
+        is_active: true,
+        default_role: role_clean,
+        auto_register,
+        deprovision_behavior,
+        sync_groups,
+        created_by,
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn update_scim_provider(
+    ctx: &ReducerContext,
+    id: String,
+    name: String,
+    slug: String,
+    api_token: String,
+    default_role: String,
+    auto_register: bool,
+    deprovision_behavior: String,
+    sync_groups: bool,
+    is_active: bool,
+) -> Result<(), String> {
+    if name.is_empty() {
+        return Err("Name is required".into());
+    }
+    let valid_behaviors = ["deactivate", "delete"];
+    if !valid_behaviors.contains(&deprovision_behavior.as_str()) {
+        return Err("Deprovision behavior must be 'deactivate' or 'delete'".into());
+    }
+    let found = ctx.db.scim_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("SCIM provider not found".into());
+    }
+    let mut provider = found.unwrap();
+    provider.name = name;
+    provider.slug = slug;
+    if !api_token.is_empty() {
+        provider.api_token_hash = hash_password(&api_token);
+    }
+    let valid_roles = ["admin", "member", "viewer"];
+    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    provider.default_role = role_clean;
+    provider.auto_register = auto_register;
+    provider.deprovision_behavior = deprovision_behavior;
+    provider.sync_groups = sync_groups;
+    provider.is_active = is_active;
+    provider.updated_at = now_ms(ctx);
+    ctx.db.scim_provider().id().update(provider);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_scim_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    let found = ctx.db.scim_provider().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("SCIM provider not found".into());
+    }
+    // Clean up events for this provider
+    let events: Vec<String> = ctx.db.scim_event().iter()
+        .filter(|e| e.provider_id == id)
+        .map(|e| e.id.clone())
+        .collect();
+    for eid in events {
+        ctx.db.scim_event().id().delete(&eid);
+    }
+    ctx.db.scim_provider().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn record_scim_event(
+    ctx: &ReducerContext,
+    id: String,
+    provider_id: String,
+    resource_type: String,
+    operation: String,
+    external_id: String,
+    local_id: String,
+    status: String,
+    detail: String,
+) -> Result<(), String> {
+    ctx.db.scim_event().insert(ScimEvent {
+        id, provider_id, resource_type, operation, external_id,
+        local_id, status, detail,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+/// SCIM sync: create or update a user from SCIM data.
+/// Returns the wiki user ID.
+#[reducer]
+pub fn scim_sync_user(
+    ctx: &ReducerContext,
+    email: String,
+    name: String,
+    external_id: String,
+    provider_id: String,
+    default_role: String,
+    auto_register: bool,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    let existing = ctx.db.user().iter().find(|u| u.email == email);
+    if let Some(mut user) = existing {
+        // Update existing user's name if it changed
+        if user.name != name {
+            user.name = name;
+            user.updated_at = now;
+            ctx.db.user().id().update(user);
+        }
+        return Ok(());
+    }
+    if !auto_register {
+        return Err(format!("User '{}' not found and auto_register is disabled", email));
+    }
+    let valid_roles = ["admin", "member", "viewer"];
+    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    let user_id = make_id("scim_user", ctx);
+    // Generate a random password for SCIM-provisioned users (they'll use SSO)
+    let random_password = format!("scim_{:x}", now);
+    ctx.db.user().insert(User {
+        id: user_id.clone(),
+        name,
+        email,
+        password_hash: hash_password(&random_password),
+        role: role_clean,
+        avatar_url: String::new(),
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+/// SCIM sync: deprovision a user (deactivate or delete).
+#[reducer]
+pub fn scim_deprovision_user(
+    ctx: &ReducerContext,
+    email: String,
+    behavior: String,
+) -> Result<(), String> {
+    let existing = ctx.db.user().iter().find(|u| u.email == email);
+    if existing.is_none() {
+        return Ok(()); // User already gone
+    }
+    let mut user = existing.unwrap();
+    let now = now_ms(ctx);
+    if behavior == "delete" {
+        ctx.db.user().id().delete(&user.id);
+    } else {
+        // Deactivate: set role to viewer (cannot write)
+        user.role = "viewer".into();
+        user.updated_at = now;
+        ctx.db.user().id().update(user);
+    }
+    Ok(())
+}
+
+/// SCIM sync: create or update a group from SCIM data.
+#[reducer]
+pub fn scim_sync_group(
+    ctx: &ReducerContext,
+    group_id: String,
+    name: String,
+    external_id: String,
+    provider_id: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    let existing = ctx.db.group().iter().find(|g| g.name == name);
+    if let Some(mut group) = existing {
+        group.name = name;
+        group.updated_at = now;
+        ctx.db.group().id().update(group);
+        return Ok(group.id.clone());
+    }
+    // Create new group
+    ctx.db.group().insert(Group {
+        id: group_id.clone(),
+        name,
+        description: format!("SCIM-provisioned group from provider {}", provider_id),
+        created_by: "scim".into(),
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn scim_deprovision_group(
+    ctx: &ReducerContext,
+    group_name: String,
+) -> Result<(), String> {
+    let existing = ctx.db.group().iter().find(|g| g.name == group_name);
+    if let Some(group) = existing {
+        // Delete group memberships
+        for member in ctx.db.group_member().iter().filter(|m| m.group_id == group.id) {
+            ctx.db.group_member().id().delete(&member.id);
+        }
+        ctx.db.group().id().delete(&group.id);
+    }
+    Ok(())
+}
+
 // ─── Database Bases (table/kanban views) ──────────────────────────────────
 
 #[table(accessor = db_base, public)]

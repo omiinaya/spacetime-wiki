@@ -45,6 +45,8 @@ function mapWebhookEvent(row: unknown[]): WebhookEvent { return { id: String(row
 function mapOidcProvider(row: unknown[]): OidcProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), issuer_url: String(row[3]??""), client_id: String(row[4]??""), client_secret: String(row[5]??""), scopes: String(row[6]??""), is_active: Boolean(row[7]), created_by: String(row[8]??""), created_at: Number(row[9])||0, updated_at: Number(row[10])||0 }; }
 function mapSamlProvider(row: unknown[]): SamlProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), entity_id: String(row[3]??""), sso_url: String(row[4]??""), certificate: String(row[5]??""), name_id_format: String(row[6]??""), attribute_mapping: String(row[7]??""), auto_register: Boolean(row[8]), is_active: Boolean(row[9]), created_by: String(row[10]??""), created_at: Number(row[11])||0, updated_at: Number(row[12])||0 }; }
 function mapAppSetting(row: unknown[]): AppSetting { return { key: String(row[0]??""), value: String(row[1]??""), updated_at: Number(row[2])||0 }; }
+function mapScimProvider(row: unknown[]): ScimProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), api_token_hash: String(row[3]??""), is_active: Boolean(row[4]), default_role: String(row[5]??""), auto_register: Boolean(row[6]), deprovision_behavior: String(row[7]??""), sync_groups: Boolean(row[8]), created_by: String(row[9]??""), created_at: Number(row[10])||0, updated_at: Number(row[11])||0 }; }
+function mapScimEvent(row: unknown[]): ScimEvent { return { id: String(row[0]??""), provider_id: String(row[1]??""), resource_type: String(row[2]??""), operation: String(row[3]??""), external_id: String(row[4]??""), local_id: String(row[5]??""), status: String(row[6]??""), detail: String(row[7]??""), created_at: Number(row[8])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -306,6 +308,20 @@ export interface SamlProvider {
 
 export interface AppSetting {
   key: string; value: string; updated_at: number;
+}
+
+export interface ScimProvider {
+  id: string; name: string; slug: string;
+  api_token_hash: string; is_active: boolean;
+  default_role: string; auto_register: boolean;
+  deprovision_behavior: string; sync_groups: boolean;
+  created_by: string; created_at: number; updated_at: number;
+}
+
+export interface ScimEvent {
+  id: string; provider_id: string; resource_type: string;
+  operation: string; external_id: string; local_id: string;
+  status: string; detail: string; created_at: number;
 }
 
 export interface CollabSession {
@@ -1014,6 +1030,29 @@ export const api = {
 
       const data = await res.json();
       return data.choices?.[0]?.message?.content || "[No response from AI]";
+    },
+  },
+  scim: {
+    listProviders: () =>
+      sqlQuery("SELECT * FROM scim_provider").then((rows) => (rows as any as unknown[][]).map(mapScimProvider)),
+    addProvider: (name: string, slug: string, apiToken: string, defaultRole: string,
+                  autoRegister: boolean, deprovisionBehavior: string, syncGroups: boolean,
+                  createdBy: string) => {
+      const id = genId("scim");
+      return callReducer("add_scim_provider", [id, name, slug, apiToken, defaultRole,
+        autoRegister, deprovisionBehavior, syncGroups, createdBy]).then(() => id);
+    },
+    updateProvider: (id: string, name: string, slug: string, apiToken: string,
+                      defaultRole: string, autoRegister: boolean, deprovisionBehavior: string,
+                      syncGroups: boolean, isActive: boolean) =>
+      callReducer("update_scim_provider", [id, name, slug, apiToken, defaultRole,
+        autoRegister, deprovisionBehavior, syncGroups, isActive]),
+    deleteProvider: (id: string) => callReducer("delete_scim_provider", [id]),
+    listEvents: (providerId?: string) => {
+      let sql = "SELECT * FROM scim_event";
+      if (providerId) sql += ` WHERE provider_id = '${providerId}'`;
+      sql += " ORDER BY created_at DESC LIMIT 100";
+      return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapScimEvent));
     },
   },
 };
