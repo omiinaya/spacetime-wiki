@@ -14,6 +14,7 @@ from routers.collections import router as collections_router
 from routers.search import router as search_router
 from routers.auth import router as auth_router
 from routers.scim import router as scim_router
+from routers.webauthn import router as webauthn_router
 
 # ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ app.include_router(collections_router)
 app.include_router(search_router)
 app.include_router(auth_router)
 app.include_router(scim_router)
+app.include_router(webauthn_router)
 
 
 # ─── Health ────────────────────────────────────────────────────────────────────

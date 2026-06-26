@@ -2516,7 +2516,173 @@ pub fn scim_deprovision_group(
     Ok(())
 }
 
-// ─── Database Bases (table/kanban views) ──────────────────────────────────
+// ─── Passkeys / WebAuthn ──────────────────────────────────────────────────
+//
+// WebAuthn (FIDO2/Passkeys) passwordless authentication.
+// Credentials are stored as COSE public keys verified by the API server.
+// Challenges are stored in STDB for the registration/authentication flow.
+
+#[table(accessor = passkey_credential, public)]
+#[derive(Debug, Clone)]
+pub struct PasskeyCredential {
+    #[primary_key]
+    pub id: String,
+    pub user_id: String,
+    /// Base64url-encoded credential ID (from browser)
+    pub credential_id: String,
+    /// Base64-encoded COSE public key bytes
+    pub public_key: String,
+    /// Signature counter — monotonically increasing
+    pub counter: u64,
+    /// JSON array of transport types, e.g. ["internal","usb","nfc","ble"]
+    pub transports: String,
+    /// User-agent / device description shown in the UI
+    pub device_name: String,
+    pub created_at: u64,
+    pub last_used_at: u64,
+}
+
+#[table(accessor = passkey_challenge, public)]
+#[derive(Debug, Clone)]
+pub struct PasskeyChallenge {
+    #[primary_key]
+    pub challenge: String,
+    /// Empty for authentication, user email for registration
+    pub user_handle: String,
+    /// "registration" | "authentication"
+    pub purpose: String,
+    pub created_at: u64,
+    pub expires_at: u64,
+}
+
+#[reducer]
+pub fn store_passkey_credential(
+    ctx: &ReducerContext,
+    id: String,
+    user_id: String,
+    credential_id: String,
+    public_key: String,
+    counter: u64,
+    transports: String,
+    device_name: String,
+) -> Result<(), String> {
+    if credential_id.is_empty() {
+        return Err("credential_id is required".into());
+    }
+    if public_key.is_empty() {
+        return Err("public_key is required".into());
+    }
+    let now = now_ms(ctx);
+    // Check for duplicate credential_id
+    let existing = ctx.db.passkey_credential().iter()
+        .find(|c| c.credential_id == credential_id);
+    if existing.is_some() {
+        // Update counter and last_used (re-registration of same credential)
+        let mut cred = existing.unwrap();
+        cred.counter = counter;
+        cred.last_used_at = now;
+        ctx.db.passkey_credential().id().update(cred);
+        return Ok(());
+    }
+    ctx.db.passkey_credential().insert(PasskeyCredential {
+        id,
+        user_id,
+        credential_id,
+        public_key,
+        counter,
+        transports,
+        device_name,
+        created_at: now,
+        last_used_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn create_passkey_challenge(
+    ctx: &ReducerContext,
+    challenge: String,
+    user_handle: String,
+    purpose: String,
+) -> Result<(), String> {
+    let valid_purposes = ["registration", "authentication"];
+    if !valid_purposes.contains(&purpose.as_str()) {
+        return Err("Purpose must be 'registration' or 'authentication'".into());
+    }
+    let now = now_ms(ctx);
+    // Expire after 5 minutes
+    let expires_at = now + 300_000;
+    // Clean up any existing challenges for this user/purpose
+    let stale: Vec<String> = ctx.db.passkey_challenge().iter()
+        .filter(|c| {
+            (purpose == "registration" && c.user_handle == user_handle && c.purpose == purpose)
+            || (purpose == "authentication" && c.purpose == purpose)
+            || c.expires_at < now
+        })
+        .map(|c| c.challenge.clone())
+        .collect();
+    for c in stale {
+        ctx.db.passkey_challenge().id().delete(&c);
+    }
+    ctx.db.passkey_challenge().insert(PasskeyChallenge {
+        challenge,
+        user_handle,
+        purpose,
+        created_at: now,
+        expires_at,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn consume_passkey_challenge(
+    ctx: &ReducerContext,
+    challenge: String,
+) -> Result<(), String> {
+    let found = ctx.db.passkey_challenge().iter().find(|c| c.challenge == challenge);
+    if found.is_none() {
+        return Err("Challenge not found".into());
+    }
+    let now = now_ms(ctx);
+    let c = found.unwrap();
+    if c.expires_at < now {
+        ctx.db.passkey_challenge().id().delete(&challenge);
+        return Err("Challenge has expired".into());
+    }
+    ctx.db.passkey_challenge().id().delete(&challenge);
+    Ok(())
+}
+
+#[reducer]
+pub fn update_passkey_counter(
+    ctx: &ReducerContext,
+    credential_id: String,
+    counter: u64,
+) -> Result<(), String> {
+    let found = ctx.db.passkey_credential().iter().find(|c| c.credential_id == credential_id);
+    if found.is_none() {
+        return Err("Credential not found".into());
+    }
+    let mut cred = found.unwrap();
+    let now = now_ms(ctx);
+    cred.counter = counter;
+    cred.last_used_at = now;
+    ctx.db.passkey_credential().id().update(cred);
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_passkey_credential(
+    ctx: &ReducerContext,
+    id: String,
+) -> Result<(), String> {
+    let found = ctx.db.passkey_credential().iter().find(|c| c.id == id);
+    if found.is_none() {
+        return Err("Credential not found".into());
+    }
+    ctx.db.passkey_credential().id().delete(&id);
+    Ok(())
+}
 
 #[table(accessor = db_base, public)]
 #[derive(Debug, Clone)]

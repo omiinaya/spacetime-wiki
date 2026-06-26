@@ -15,6 +15,7 @@ from stdb_client import sql_query, map_api_key
 SKIP_PATHS = {
     "/docs", "/openapi.json", "/redoc",
     "/health", "/api/v1/auth/register-key",
+    "/api/v1/webauthn",
 }
 
 
