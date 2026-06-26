@@ -44,6 +44,20 @@ function AppLayout() {
   const [batchTagValue, setBatchTagValue] = useState("");
   const [batchMoveOpen, setBatchMoveOpen] = useState(false);
 
+  // Collection page sort modes (stored in localStorage)
+  const COLLECTION_SORT_KEY = "sw_collection_sort";
+  const [collectionSortModes, setCollectionSortModes] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem(COLLECTION_SORT_KEY) || "{}"); }
+    catch { return {}; }
+  });
+  const [colSortMode, setColSortMode] = useState("manual");
+
+  const saveCollectionSortMode = (colId: string, mode: string) => {
+    const updated = { ...collectionSortModes, [colId]: mode };
+    setCollectionSortModes(updated);
+    try { localStorage.setItem(COLLECTION_SORT_KEY, JSON.stringify(updated)); } catch {}
+  };
+
   // Collection dialog state
   const [colDialogOpen, setColDialogOpen] = useState(false);
   const [editingCol, setEditingCol] = useState<Collection | null>(null);
@@ -350,11 +364,18 @@ function AppLayout() {
     if (!pagesByCollection[cid]) pagesByCollection[cid] = [];
     pagesByCollection[cid].push(page);
   }
-  // Sort pages within each collection: pinned first, then by sort_order
+  // Sort pages within each collection: pinned first, then by sort_order or preference
   for (const cid of Object.keys(pagesByCollection)) {
+    const sortMode = collectionSortModes[cid] || "manual";
     pagesByCollection[cid].sort((a, b) => {
       if (a.is_pinned && !b.is_pinned) return -1;
       if (!a.is_pinned && b.is_pinned) return 1;
+      if (sortMode === "title-asc") return a.title.localeCompare(b.title);
+      if (sortMode === "title-desc") return b.title.localeCompare(a.title);
+      if (sortMode === "created-asc") return a.created_at - b.created_at;
+      if (sortMode === "created-desc") return b.created_at - a.created_at;
+      if (sortMode === "updated-asc") return a.updated_at - b.updated_at;
+      if (sortMode === "updated-desc") return b.updated_at - a.updated_at;
       return a.sort_order - b.sort_order;
     });
   }
@@ -493,6 +514,7 @@ function AppLayout() {
     setColDesc(col.description);
     setColIcon(col.icon || "📁");
     setColColor(col.color);
+    setColSortMode(collectionSortModes[col.id] || "manual");
     setColDialogOpen(true);
     setContextMenu(null);
   };
@@ -502,6 +524,7 @@ function AppLayout() {
     try {
       if (editingCol) {
         await api.collections.update(editingCol.id, colName, colDesc, colIcon, colColor);
+        saveCollectionSortMode(editingCol.id, colSortMode);
         addToast({ type: "success", title: "Collection updated", duration: 3000 });
       } else {
         await api.collections.create(colName, colDesc, "", colIcon, colColor, userId || "anonymous");
@@ -1900,6 +1923,24 @@ function AppLayout() {
                 placeholder="Color (hex, optional)"
                 className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
               />
+              {editingCol && (
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 font-medium mb-1 block">Page sort order</label>
+                  <select
+                    value={colSortMode}
+                    onChange={(e) => setColSortMode(e.target.value)}
+                    className="w-full h-9 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  >
+                    <option value="manual">Manual (drag to reorder)</option>
+                    <option value="title-asc">Title A–Z</option>
+                    <option value="title-desc">Title Z–A</option>
+                    <option value="created-asc">Oldest first</option>
+                    <option value="created-desc">Newest first</option>
+                    <option value="updated-asc">Least recently updated</option>
+                    <option value="updated-desc">Most recently updated</option>
+                  </select>
+                </div>
+              )}
               <div className="flex gap-2 justify-end pt-2">
                 <button onClick={() => setColDialogOpen(false)} className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                   Cancel
