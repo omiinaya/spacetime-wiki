@@ -47,6 +47,7 @@ function mapSamlProvider(row: unknown[]): SamlProvider { return { id: String(row
 function mapAppSetting(row: unknown[]): AppSetting { return { key: String(row[0]??""), value: String(row[1]??""), updated_at: Number(row[2])||0 }; }
 function mapScimProvider(row: unknown[]): ScimProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), api_token_hash: String(row[3]??""), is_active: Boolean(row[4]), default_role: String(row[5]??""), auto_register: Boolean(row[6]), deprovision_behavior: String(row[7]??""), sync_groups: Boolean(row[8]), created_by: String(row[9]??""), created_at: Number(row[10])||0, updated_at: Number(row[11])||0 }; }
 function mapScimEvent(row: unknown[]): ScimEvent { return { id: String(row[0]??""), provider_id: String(row[1]??""), resource_type: String(row[2]??""), operation: String(row[3]??""), external_id: String(row[4]??""), local_id: String(row[5]??""), status: String(row[6]??""), detail: String(row[7]??""), created_at: Number(row[8])||0 }; }
+function mapInvitation(row: unknown[]): Invitation { return { id: String(row[0]??""), email: String(row[1]??""), invited_by: String(row[2]??""), role: String(row[3]??""), page_ids: String(row[4]??""), collection_ids: String(row[5]??""), token: String(row[6]??""), status: String(row[7]??""), message: String(row[8]??""), expires_at: Number(row[9])||0, view_count: Number(row[10])||0, created_at: Number(row[11])||0, updated_at: Number(row[12])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -363,6 +364,13 @@ export interface AiChatMessage {
 }
 
 // ─── Database Bases Types ────────────────────────────────────────────────────
+
+export interface Invitation {
+  id: string; email: string; invited_by: string; role: string;
+  page_ids: string; collection_ids: string; token: string;
+  status: string; message: string; expires_at: number;
+  view_count: number; created_at: number; updated_at: number;
+}
 
 export interface DbBase {
   id: string; page_id: string; title: string;
@@ -1170,6 +1178,44 @@ export const api = {
       return callReducer("add_synced_block_ref", [id, blockId, pageId, createdBy]).then(() => id);
     },
     removeRef: (id: string) => callReducer("remove_synced_block_ref", [id]),
+  },
+  invitations: {
+    list: () =>
+      sqlQuery("SELECT * FROM invitation ORDER BY created_at DESC")
+        .then((rows) => (rows as any as unknown[][]).map(mapInvitation)),
+    get: (id: string) =>
+      sqlQuery(`SELECT * FROM invitation WHERE id = '${id}'`)
+        .then((rows) => {
+          const arr = rows as any as unknown[][];
+          return arr.length > 0 ? mapInvitation(arr[0]) : null;
+        }),
+    getByToken: (token: string) =>
+      sqlQuery(`SELECT * FROM invitation WHERE token = '${token}'`)
+        .then((rows) => {
+          const arr = rows as any as unknown[][];
+          return arr.length > 0 ? mapInvitation(arr[0]) : null;
+        }),
+    create: (
+      email: string,
+      invitedBy: string,
+      role: string,
+      pageIds: string,
+      collectionIds: string,
+      token: string,
+      message: string,
+      expiresDays: number,
+    ) => {
+      const id = genId("inv");
+      return callReducer("create_invitation", [
+        id, email, invitedBy, role, pageIds, collectionIds, token, message, expiresDays,
+      ]).then(() => id);
+    },
+    accept: (token: string, userId: string) =>
+      callReducer("accept_invitation", [token, userId]),
+    revoke: (id: string, revokedBy: string) =>
+      callReducer("revoke_invitation", [id, revokedBy]),
+    recordView: (token: string) =>
+      callReducer("record_invitation_view", [token]),
   },
 };
 

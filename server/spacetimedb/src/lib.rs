@@ -2917,6 +2917,208 @@ pub fn reorder_db_rows(
     Ok(())
 }
 
+// ─── Invitations / Guest Users (P4) ────────────────────────────────────────────
+//
+// Admins can invite external users by email, granting limited access to specific
+// pages and/or collections. Invitations are accepted via a unique token link.
+
+#[table(accessor = invitation, public)]
+#[derive(Debug, Clone)]
+pub struct Invitation {
+    #[primary_key]
+    pub id: String,
+    pub email: String,
+    /// The wiki user who created the invitation (must be admin)
+    pub invited_by: String,
+    /// Role to assign on acceptance: "viewer" (default) | "member"
+    pub role: String,
+    /// JSON array of page IDs the guest gets access to, e.g. '["page_1","page_2"]'
+    pub page_ids: String,
+    /// JSON array of collection IDs the guest gets access to, e.g. '["col_1"]'
+    pub collection_ids: String,
+    /// Unique token for the invitation link (URL-safe random string)
+    pub token: String,
+    /// "pending" | "accepted" | "expired" | "revoked"
+    pub status: String,
+    /// Optional personal message shown to the invitee
+    pub message: String,
+    /// Max acceptance deadline (ms epoch), 0 = never expires
+    pub expires_at: u64,
+    /// How many times the invite link was opened
+    pub view_count: u32,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[reducer]
+pub fn create_invitation(
+    ctx: &ReducerContext,
+    id: String,
+    email: String,
+    invited_by: String,
+    role: String,
+    page_ids: String,
+    collection_ids: String,
+    token: String,
+    message: String,
+    expires_days: u32,
+) -> Result<(), String> {
+    if email.trim().is_empty() || !email.contains('@') {
+        return Err("A valid email address is required".into());
+    }
+    // Only admins can invite
+    let inviter = ctx.db.user().iter().find(|u| u.id == invited_by);
+    if inviter.is_none() || inviter.unwrap().role != "admin" {
+        return Err("Only admins can create invitations".into());
+    }
+    // Check for existing pending invitation for this email
+    let existing = ctx.db.invitation().iter()
+        .find(|i| i.email == email && i.status == "pending");
+    if existing.is_some() {
+        return Err("There is already a pending invitation for this email".into());
+    }
+    if token.len() < 16 {
+        return Err("Token must be at least 16 characters".into());
+    }
+    let valid_roles = ["viewer", "member"];
+    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
+
+    // Validate JSON arrays (must parse as Vec<String>)
+    if !page_ids.is_empty() {
+        if serde_json::from_str::<Vec<String>>(&page_ids).is_err() {
+            return Err("page_ids must be a valid JSON array of strings or empty".into());
+        }
+    }
+    if !collection_ids.is_empty() {
+        if serde_json::from_str::<Vec<String>>(&collection_ids).is_err() {
+            return Err("collection_ids must be a valid JSON array of strings or empty".into());
+        }
+    }
+
+    let now = now_ms(ctx);
+    let expires_at = if expires_days > 0 {
+        now + (expires_days as u64) * 86_400_000
+    } else {
+        0
+    };
+    ctx.db.invitation().insert(Invitation {
+        id,
+        email,
+        invited_by,
+        role: role_clean,
+        page_ids,
+        collection_ids,
+        token,
+        status: "pending".into(),
+        message,
+        expires_at,
+        view_count: 0,
+        created_at: now,
+        updated_at: now,
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn accept_invitation(
+    ctx: &ReducerContext,
+    token: String,
+    user_id: String,
+) -> Result<(), String> {
+    let now = now_ms(ctx);
+    let inv = ctx.db.invitation().iter()
+        .find(|i| i.token == token && i.status == "pending");
+    if inv.is_none() {
+        return Err("Invitation not found or already used".into());
+    }
+    let invitation = inv.unwrap();
+    // Check expiry
+    if invitation.expires_at > 0 && now > invitation.expires_at {
+        let mut expired = invitation;
+        expired.status = "expired".into();
+        expired.updated_at = now;
+        ctx.db.invitation().id().update(expired);
+        return Err("Invitation has expired".into());
+    }
+    // Verify the email matches
+    let user = ctx.db.user().iter().find(|u| u.id == user_id);
+    if user.is_none() {
+        return Err("User not found".into());
+    }
+    let user = user.unwrap();
+    if user.email.to_lowercase() != invitation.email.to_lowercase() {
+        return Err("This invitation was sent to a different email address".into());
+    }
+    // Grant page-level permissions for each page in page_ids
+    if !invitation.page_ids.is_empty() {
+        if let Ok(page_ids) = serde_json::from_str::<Vec<String>>(&invitation.page_ids) {
+            for page_id in &page_ids {
+                let perm_id = make_id("pp", ctx);
+                ctx.db.page_permission().insert(PagePermission {
+                    id: perm_id,
+                    page_id: page_id.clone(),
+                    user_id: user_id.clone(),
+                    group_id: String::new(),
+                    role: invitation.role.clone(),
+                    created_at: now,
+                });
+            }
+        }
+    }
+    // Add to collection memberships for each collection in collection_ids
+    if !invitation.collection_ids.is_empty() {
+        if let Ok(col_ids) = serde_json::from_str::<Vec<String>>(&invitation.collection_ids) {
+            for col_id in &col_ids {
+                let cm_id = make_id("cm", ctx);
+                ctx.db.collection_member().insert(CollectionMember {
+                    id: cm_id,
+                    collection_id: col_id.clone(),
+                    user_id: user_id.clone(),
+                    role: invitation.role.clone(),
+                    added_by: invitation.invited_by.clone(),
+                    created_at: now,
+                });
+            }
+        }
+    }
+    // Mark invitation as accepted
+    let mut inv_mut = invitation;
+    inv_mut.status = "accepted".into();
+    inv_mut.updated_at = now;
+    ctx.db.invitation().id().update(inv_mut);
+    Ok(())
+}
+
+#[reducer]
+pub fn revoke_invitation(ctx: &ReducerContext, id: String, revoked_by: String) -> Result<(), String> {
+    let inviter = ctx.db.user().iter().find(|u| u.id == revoked_by);
+    if inviter.is_none() || inviter.unwrap().role != "admin" {
+        return Err("Only admins can revoke invitations".into());
+    }
+    let found = ctx.db.invitation().iter().find(|i| i.id == id);
+    if found.is_none() {
+        return Err("Invitation not found".into());
+    }
+    let mut inv = found.unwrap();
+    if inv.status != "pending" {
+        return Err("Can only revoke pending invitations".into());
+    }
+    inv.status = "revoked".into();
+    inv.updated_at = now_ms(ctx);
+    ctx.db.invitation().id().update(inv);
+    Ok(())
+}
+
+#[reducer]
+pub fn record_invitation_view(ctx: &ReducerContext, token: String) -> Result<(), String> {
+    let found = ctx.db.invitation().iter().find(|i| i.token == token);
+    if let Some(mut inv) = found {
+        inv.view_count += 1;
+        ctx.db.invitation().id().update(inv);
+    }
+    Ok(())
+}
+
 // ─── Synced Blocks (P4) — edit once, update everywhere ──────────────────────────
 
 #[table(accessor = synced_block, public)]
