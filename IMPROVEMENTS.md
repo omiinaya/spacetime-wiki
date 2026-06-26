@@ -6,11 +6,10 @@ and works the top pending item each tick.
 
 ---
 
-## Status: Working P4 backlog items — implementing Slack/Discord/GitHub OAuth SSO.
+## Status: Working P4 backlog items — Advanced search syntax next.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | Slack/Discord/GitHub OAuth SSO | Additional OAuth providers beyond Google/Microsoft — STDB table + reducers + FastAPI router + frontend login buttons and callback |
 | P4 | Advanced search syntax | Tag filters, date ranges, `author:user` search syntax — frontend parsing exists (App.tsx), backend search.py needs filter params |
 | P2 | Activity feed / audit trail page | Dedicated "Recent activity" page showing page creates, updates, deletes, restores with user info |
 | P2 | Admin dashboard / wiki statistics | Wiki stats view (page count, users, collections, storage, top contributors) |
@@ -25,6 +24,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-29 | **P4 — Slack/Discord/GitHub/GitLab OAuth SSO!** Frontend login buttons with PKCE, OAuthCallback component, admin CRUD UI for OAuth providers, FastAPI callback endpoint for code exchange + auto-registration | c5b81ed |
 | 2026-06-29 | **P4 — Confluence import!** Server-side endpoint (`POST /api/v1/import/confluence`) with Confluence HTML→ProseMirror converter, pages.xml/entities.xml hierarchy parsing, ZIP upload support. Frontend sidebar "Import Confluence" button with status feedback | _(this commit)_ |
 | 2026-06-29 | **P4 — Guest/invited users!** STDB tables+reducers (Invitation), API client with create/accept/revoke, admin Invitations tab in settings panel with create dialog and revoke controls | 95c854d |
 | 2026-06-29 | **P4 — MFA/TOTP authentication!** STDB tables (mfa_method, mfa_backup_code) + reducers (enable_totp, disable_mfa, verify_totp, verify_mfa_backup_code), admin panel MFA tab with QR code setup and backup codes, TOTP verification during login flow | _(this commit)_ |
