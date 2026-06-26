@@ -2,6 +2,58 @@
 
 use spacetimedb::*;
 use sha2::{Digest, Sha256};
+use hmac::{Hmac, Mac};
+use sha1::Sha1;
+
+type HmacSha1 = Hmac<Sha1>;
+
+// ─── TOTP helpers ────────────────────────────────────────────────────────────
+
+fn hotp(secret: &[u8], counter: u64) -> u32 {
+    let counter_bytes = counter.to_be_bytes();
+    let mut mac = HmacSha1::new_from_slice(secret).expect("HMAC accepts any key size");
+    mac.update(&counter_bytes);
+    let result = mac.finalize().into_bytes();
+    let offset = (result[19] & 0xf) as usize;
+    let code = ((result[offset] & 0x7f) as u32) << 24
+        | (result[offset + 1] as u32) << 16
+        | (result[offset + 2] as u32) << 8
+        | (result[offset + 3] as u32);
+    code % 1_000_000
+}
+
+fn totp(secret: &[u8], timestamp_ms: u64) -> u32 {
+    let counter = timestamp_ms / 30_000;
+    hotp(secret, counter)
+}
+
+fn verify_totp_code(secret: &[u8], code: u32, timestamp_ms: u64) -> bool {
+    let counter = timestamp_ms / 30_000;
+    // Allow ±1 window (30s each) for clock drift = 3 windows total
+    for offset in [0u64, 1, 2] {
+        if hotp(secret, counter + offset) == code || hotp(secret, counter - offset) == code {
+            return true;
+        }
+    }
+    false
+}
+
+fn random_base32(len: usize) -> String {
+    let charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".as_bytes();
+    let mut result = String::with_capacity(len);
+    for i in 0..len {
+        let idx = (now_ms_ts() as usize * 1103515245 + i).wrapping_mul(12345) % charset.len();
+        result.push(charset[idx] as char);
+    }
+    result
+}
+
+fn now_ms_ts() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -2486,7 +2538,7 @@ pub fn scim_sync_group(
         group.name = name;
         group.updated_at = now;
         ctx.db.group().id().update(group);
-        return Ok(group.id.clone());
+        return Ok(());
     }
     // Create new group
     ctx.db.group().insert(Group {
@@ -2622,7 +2674,7 @@ pub fn create_passkey_challenge(
         .map(|c| c.challenge.clone())
         .collect();
     for c in stale {
-        ctx.db.passkey_challenge().id().delete(&c);
+        ctx.db.passkey_challenge().challenge().delete(&c);
     }
     ctx.db.passkey_challenge().insert(PasskeyChallenge {
         challenge,
@@ -2646,10 +2698,10 @@ pub fn consume_passkey_challenge(
     let now = now_ms(ctx);
     let c = found.unwrap();
     if c.expires_at < now {
-        ctx.db.passkey_challenge().id().delete(&challenge);
+        ctx.db.passkey_challenge().challenge().delete(&challenge);
         return Err("Challenge has expired".into());
     }
-    ctx.db.passkey_challenge().id().delete(&challenge);
+    ctx.db.passkey_challenge().challenge().delete(&challenge);
     Ok(())
 }
 
@@ -3229,4 +3281,181 @@ pub fn add_synced_block_ref(
 pub fn remove_synced_block_ref(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.synced_block_ref().id().delete(&id);
     Ok(())
+}
+
+// ─── MFA / TOTP Authentication ───────────────────────────────────────────────
+
+#[table(accessor = mfa_method, public)]
+#[derive(Debug, Clone)]
+pub struct MfaMethod {
+    #[primary_key]
+    pub id: String,
+    pub user_id: String,
+    /// "totp" for now; extensible for future methods like "sms", "email"
+    pub method_type: String,
+    /// base32-encoded TOTP secret
+    pub totp_secret: String,
+    pub is_enabled: bool,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+#[table(accessor = mfa_backup_code, public)]
+#[derive(Debug, Clone)]
+pub struct MfaBackupCode {
+    #[primary_key]
+    pub id: String,
+    pub user_id: String,
+    /// sha256 hash of the backup code
+    pub code_hash: String,
+    pub is_used: bool,
+    pub created_at: u64,
+}
+
+#[reducer]
+pub fn enable_totp(
+    ctx: &ReducerContext,
+    user_id: String,
+    /// base32-encoded TOTP secret
+    totp_secret: String,
+    /// Plain-text backup codes (will be hashed before storing)
+    backup_codes: Vec<String>,
+) -> Result<(), String> {
+    // Validate user exists
+    if ctx.db.user().id().find(&user_id).is_none() {
+        return Err("User not found".into());
+    }
+    if totp_secret.is_empty() {
+        return Err("TOTP secret is required".into());
+    }
+    let now = now_ms(ctx);
+    let id = format!("mfa_{:x}", now);
+
+    // Upsert: remove existing MFA method for this user first
+    let existing: Vec<String> = ctx.db.mfa_method().iter()
+        .filter(|m| m.user_id == user_id)
+        .map(|m| m.id.clone())
+        .collect();
+    for eid in &existing {
+        ctx.db.mfa_method().id().delete(eid);
+    }
+
+    ctx.db.mfa_method().insert(MfaMethod {
+        id: id.clone(),
+        user_id,
+        method_type: "totp".into(),
+        totp_secret,
+        is_enabled: true,
+        created_at: now,
+        updated_at: now,
+    });
+
+    // Store backup codes (hashed)
+    for code in &backup_codes {
+        if !code.is_empty() {
+            let code_hash = hash_password(code);
+            let bid = format!("mbc_{:x}", now_ms(ctx) + ctx.db.mfa_backup_code().iter().count() as u64);
+            ctx.db.mfa_backup_code().insert(MfaBackupCode {
+                id: bid,
+                user_id: user_id.clone(),
+                code_hash,
+                is_used: false,
+                created_at: now,
+            });
+        }
+    }
+
+    Ok(())
+}
+
+#[reducer]
+pub fn disable_mfa(ctx: &ReducerContext, user_id: String) -> Result<(), String> {
+    let existing: Vec<String> = ctx.db.mfa_method().iter()
+        .filter(|m| m.user_id == user_id)
+        .map(|m| m.id.clone())
+        .collect();
+    for eid in &existing {
+        ctx.db.mfa_method().id().delete(eid);
+    }
+    // Also clean up backup codes
+    let codes: Vec<String> = ctx.db.mfa_backup_code().iter()
+        .filter(|c| c.user_id == user_id)
+        .map(|c| c.id.clone())
+        .collect();
+    for cid in &codes {
+        ctx.db.mfa_backup_code().id().delete(cid);
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn verify_totp(
+    ctx: &ReducerContext,
+    user_id: String,
+    code: u32,
+) -> Result<(), String> {
+    let method = ctx.db.mfa_method().iter().find(|m| m.user_id == user_id && m.is_enabled);
+    match method {
+        None => Err("MFA not enabled for this user".into()),
+        Some(m) => {
+            if m.method_type != "totp" {
+                return Err("Unsupported MFA method".into());
+            }
+            // Decode base32 secret
+            let secret = match base32_decode(&m.totp_secret) {
+                Some(s) => s,
+                None => return Err("Invalid TOTP secret encoding".into()),
+            };
+            let now = now_ms(ctx);
+            if verify_totp_code(&secret, code, now) {
+                Ok(())
+            } else {
+                Err("Invalid TOTP code".into())
+            }
+        }
+    }
+}
+
+#[reducer]
+pub fn verify_mfa_backup_code(
+    ctx: &ReducerContext,
+    user_id: String,
+    code: String,
+) -> Result<(), String> {
+    let code_hash = hash_password(&code);
+    let found = ctx.db.mfa_backup_code().iter()
+        .find(|c| c.user_id == user_id && c.code_hash == code_hash && !c.is_used);
+    match found {
+        None => Err("Invalid or already used backup code".into()),
+        Some(c) => {
+            let mut updated = c.clone();
+            updated.is_used = true;
+            ctx.db.mfa_backup_code().id().update(updated);
+            Ok(())
+        }
+    }
+}
+
+/// Simple RFC 4648 base32 decoding (no padding required)
+fn base32_decode(input: &str) -> Option<Vec<u8>> {
+    let chars: Vec<char> = input.to_uppercase().chars().filter(|c| *c != ' ').collect();
+    if chars.is_empty() {
+        return None;
+    }
+    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    let mut bits = 0u64;
+    let mut bit_count = 0u32;
+    let mut output = Vec::new();
+
+    for &ch in &chars {
+        let val = alphabet.find(ch)? as u64;
+        bits = (bits << 5) | val;
+        bit_count += 5;
+        if bit_count >= 8 {
+            bit_count -= 8;
+            output.push((bits >> bit_count) as u8);
+            bits &= (1 << bit_count) - 1;
+        }
+    }
+    Some(output)
 }

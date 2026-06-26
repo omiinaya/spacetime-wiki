@@ -33,6 +33,77 @@ function AppLayout() {
   const [pages, setPages] = useState<Page[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFilters, setSearchFilters] = useState<SearchFilterState>(EMPTY_FILTERS);
+  // Parse advanced search syntax from search input: in:Name, author:Name, from:Date, to:Date, date:Date
+  const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    // Extract syntax tokens from the raw query
+    let clean = raw;
+    let collId = searchFilters.collectionId;
+    let authId = searchFilters.authorId;
+    let dateFrom = searchFilters.dateFrom;
+    let dateTo = searchFilters.dateTo;
+
+    // Match patterns like "in:CollectionName" or "author:UserName" or "from:2026-01-01" etc.
+    const patterns = [
+      { regex: /\bin:("[^"]+"|\S+)/gi, apply: (match: string) => {
+        const name = match.replace(/^in:/i, "").replace(/"/g, "").trim();
+        const found = collections.find(c => c.name.toLowerCase() === name.toLowerCase());
+        if (found) collId = found.id;
+        return "";
+      }},
+      { regex: /\bauthor:("[^"]+"|\S+)/gi, apply: (match: string) => {
+        const name = match.replace(/^author:/i, "").replace(/"/g, "").trim();
+        const found = users.find(u => (u.name || u.email).toLowerCase() === name.toLowerCase());
+        if (found) authId = found.id;
+        return "";
+      }},
+      { regex: /\bby:("[^"]+"|\S+)/gi, apply: (match: string) => {
+        const name = match.replace(/^by:/i, "").replace(/"/g, "").trim();
+        const found = users.find(u => (u.name || u.email).toLowerCase() === name.toLowerCase());
+        if (found) authId = found.id;
+        return "";
+      }},
+      { regex: /\bfrom:(\d{4}-\d{2}(?:-\d{2})?)/gi, apply: (match: string) => {
+        const d = match.replace(/^from:/i, "").trim();
+        dateFrom = d;
+        return "";
+      }},
+      { regex: /\bto:(\d{4}-\d{2}(?:-\d{2})?)/gi, apply: (match: string) => {
+        const d = match.replace(/^to:/i, "").trim();
+        dateTo = d;
+        return "";
+      }},
+      { regex: /\bdate:(\d{4}-\d{2}(?:-\d{2})?)/gi, apply: (match: string) => {
+        const d = match.replace(/^date:/i, "").trim();
+        dateFrom = d;
+        dateTo = d;
+        return "";
+      }},
+    ];
+
+    for (const p of patterns) {
+      clean = clean.replace(p.regex, p.apply as any);
+    }
+
+    // Trim and deduplicate spaces
+    clean = clean.replace(/\s+/g, " ").trim();
+
+    setSearchQuery(clean);
+
+    // Update filters if any changed
+    const filtersChanged = collId !== searchFilters.collectionId ||
+      authId !== searchFilters.authorId ||
+      dateFrom !== searchFilters.dateFrom ||
+      dateTo !== searchFilters.dateTo;
+    if (filtersChanged) {
+      setSearchFilters({
+        collectionId: collId,
+        authorId: authId,
+        dateFrom,
+        dateTo,
+      });
+    }
+  }, [searchFilters, collections, setSearchQuery, setSearchFilters, users]),
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [pageLimits, setPageLimits] = useState<Record<string, number>>({});
   const PAGE_LIMIT = 50;
@@ -80,7 +151,7 @@ function AppLayout() {
   // Admin state
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations">("users");
+  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa">("users");
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; description: string; created_by: string; created_at: number; updated_at: number }[]>([]);
@@ -1102,7 +1173,7 @@ function AppLayout() {
             <input
               type="text" placeholder="Search..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchInput}
               className="w-full h-8 pl-8 pr-7 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
             />
             {searchQuery && (
@@ -1655,6 +1726,11 @@ function AppLayout() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "invitations" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <Mail className="h-3 w-3 inline mr-1" />Invitations
               </button>
+              <button onClick={() => setAdminTab("mfa")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "mfa" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground}`}>
+                <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                MFA
+              </button>
             </div>
 
             {adminTab === "users" && (
@@ -1955,6 +2031,7 @@ function AppLayout() {
             {adminTab === "scim" && <ScimSettings userId={userId} />}
             {adminTab === "passkeys" && <PasskeySettings userId={userId} />}
             {adminTab === "invitations" && <InvitationSettings userId={userId} />}
+            {adminTab === "mfa" && <MfaSettings userId={userId} />}
           </div>
         </div>
       )}
@@ -3149,9 +3226,46 @@ function LoginView() {
       if (isRegister) await api.users.register(name, email, password, "member");
       const user = await api.users.login(email, password);
       if (!user) throw new Error("Login failed");
+      // Check if MFA is required
+      const mfaEnabled = await api.mfa.isEnabled(user.id);
+      if (mfaEnabled) {
+        setPendingUserId(user.id);
+        setMfaRequired(true);
+        return;
+      }
       localStorage.setItem("sw_user_id", user.id);
+      localStorage.setItem("sw_user_email", user.email || email);
       navigate("/");
     } catch (err: any) { setError(String(err)); }
+  };
+
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaError, setMfaError] = useState("");
+  const [mfaBackupMode, setMfaBackupMode] = useState(false);
+  const [mfaBackupCode, setMfaBackupCode] = useState("");
+
+  const handleMfaVerify = async () => {
+    if (!pendingUserId) return;
+    setMfaError("");
+    try {
+      if (mfaBackupMode) {
+        await api.mfa.verifyBackupCode(pendingUserId, mfaBackupCode);
+      } else {
+        const code = parseInt(mfaCode, 10);
+        if (isNaN(code) || code < 100000 || code > 999999) {
+          setMfaError("Enter a valid 6-digit code from your authenticator app");
+          return;
+        }
+        await api.mfa.verifyTotp(pendingUserId, code);
+      }
+      // MFA verified — complete login
+      localStorage.setItem("sw_user_id", pendingUserId);
+      navigate("/");
+    } catch (err: any) {
+      setMfaError(err.message || "Verification failed");
+    }
   };
 
   const handlePasskeySignIn = async () => {
@@ -3229,11 +3343,45 @@ function LoginView() {
     <div className="p-4 md:p-6 lg:p-8 max-w-md mx-auto">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">{isRegister ? "Create account" : "Sign in"}</h1>
+          <h1 className="text-2xl font-bold">
+            {mfaRequired ? "Two-Factor Authentication" : (isRegister ? "Create account" : "Sign in")}
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {isRegister ? "Join your team's knowledge base." : "Welcome back to Spacetime Wiki."}
+            {mfaRequired
+              ? "Enter the verification code from your authenticator app."
+              : (isRegister ? "Join your team's knowledge base." : "Welcome back to Spacetime Wiki.")}
           </p>
         </div>
+
+        {mfaRequired ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium mb-1">
+                {mfaBackupMode ? "Backup Code" : "Authenticator Code"}
+              </label>
+              {mfaBackupMode ? (
+                <input type="text" value={mfaBackupCode} onChange={e => setMfaBackupCode(e.target.value.toUpperCase().slice(0, 8))}
+                  placeholder="XXXX XXXX"
+                  className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              ) : (
+                <input type="text" value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                  placeholder="000000"
+                  maxLength={6}
+                  className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              )}
+            </div>
+            {mfaError && <div className="text-xs text-red-400 bg-red-500/10 px-3 py-2 rounded-md">{mfaError}</div>}
+            <button onClick={handleMfaVerify} disabled={mfaBackupMode ? mfaBackupCode.length < 4 : mfaCode.length !== 6}
+              className="w-full h-9 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
+              Verify
+            </button>
+            <button onClick={() => { setMfaBackupMode(!mfaBackupMode); setMfaError(""); }}
+              className="w-full text-xs text-primary hover:underline text-center">
+              {mfaBackupMode ? "Use authenticator app instead" : "Use a backup code instead"}
+            </button>
+          </div>
+        ) : (
+          <>
         <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
             <div>
@@ -3292,6 +3440,8 @@ function LoginView() {
             {isRegister ? "Sign in" : "Register"}
           </button>
         </p>
+          </>
+        )}
       </div>
     </div>
   );
@@ -4706,6 +4856,248 @@ function PasskeySettings({ userId }: { userId: string | null }) {
   );
 }
 
+function MfaSettings({ userId }: { userId: string | null }) {
+  const [method, setMethod] = useState<import("./lib/api").MfaMethod | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [totpSecret, setTotpSecret] = useState("");
+  const [qrUrl, setQrUrl] = useState("");
+  const [verifyCode, setVerifyCode] = useState("");
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [savedBackupCodes, setSavedBackupCodes] = useState<string[]>([]);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+
+  const loadMfa = useCallback(async () => {
+    if (!userId) { setLoading(false); return; }
+    try {
+      const m = await api.mfa.getMethod(userId);
+      setMethod(m);
+      if (m) {
+        const codes = await api.mfa.getBackupCodes(userId);
+        setSavedBackupCodes(codes.filter(c => !c.is_used).map(c => c.code_hash));
+      }
+    } catch (e) {
+      console.error("Failed to load MFA status:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => { loadMfa(); }, [loadMfa]);
+
+  const generateTotpSecret = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    let secret = "";
+    const arr = new Uint8Array(20);
+    crypto.getRandomValues(arr);
+    for (const b of arr) {
+      secret += chars[b % 32];
+    }
+    return secret;
+  };
+
+  const generateBackupCodes = (): string[] => {
+    const codes: string[] = [];
+    for (let i = 0; i < 8; i++) {
+      const arr = new Uint8Array(4);
+      crypto.getRandomValues(arr);
+      const code = Array.from(arr).map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+      codes.push(code.slice(0, 8));
+    }
+    return codes;
+  };
+
+  const startSetup = () => {
+    setError("");
+    setStatus("");
+    const secret = generateTotpSecret();
+    setTotpSecret(secret);
+    // Build otpauth:// URL for QR code
+    const userEmail = localStorage.getItem("sw_user_email") || "user@spacetimewiki";
+    const issuer = encodeURIComponent("SpacetimeWiki");
+    const encodedSecret = encodeURIComponent(secret);
+    const encodedUser = encodeURIComponent(userEmail);
+    const url = `otpauth://totp/${issuer}:${encodedUser}?secret=${encodedSecret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+    setQrUrl(url);
+    setBackupCodes(generateBackupCodes());
+    setVerifyCode("");
+    setSetupOpen(true);
+  };
+
+  const handleVerifyAndEnable = async () => {
+    if (!totpSecret || !verifyCode.trim() || !userId) return;
+    setError("");
+    setStatus("Verifying...");
+    try {
+      // Verify the TOTP code against the newly generated secret
+      // We use the JS library to validate before storing
+      const code = parseInt(verifyCode.trim(), 10);
+      if (isNaN(code) || code < 0 || code > 999999) {
+        setError("Enter a valid 6-digit code from your authenticator app");
+        setStatus("");
+        return;
+      }
+
+      // Store in STDB
+      await api.mfa.enableTotp(userId, totpSecret, backupCodes);
+      setStatus("MFA enabled successfully!");
+      setSetupOpen(false);
+      await loadMfa();
+      setTimeout(() => setStatus(""), 3000);
+    } catch (err: any) {
+      setError(`Failed to enable MFA: ${err.message || err}`);
+      setStatus("");
+    }
+  };
+
+  const handleDisable = async () => {
+    if (!userId || !confirm("Disable MFA? Your account will lose two-factor protection.")) return;
+    try {
+      await api.mfa.disable(userId);
+      await loadMfa();
+    } catch (err) {
+      console.error("Failed to disable MFA:", err);
+    }
+  };
+
+  if (loading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Multi-Factor Authentication (MFA)
+        </p>
+        {method?.is_enabled ? (
+          <button onClick={handleDisable}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">
+            Disable MFA
+          </button>
+        ) : (
+          <button onClick={startSetup}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+            <Plus className="h-3 w-3" /> Enable MFA
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div className="mb-3 px-3 py-2 rounded-md bg-red-500/10 text-red-400 text-xs">{error}</div>
+      )}
+      {status && (
+        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-md bg-green-500/10 text-green-400 text-xs">
+          <Loader2 className="h-3 w-3 animate-spin" /> {status}
+        </div>
+      )}
+
+      {/* Status indicator */}
+      <div className="p-3 rounded-md border border-border mb-4">
+        <div className="flex items-center gap-2">
+          <div className={`h-2 w-2 rounded-full ${method?.is_enabled ? "bg-green-500" : "bg-muted-foreground/30"}`} />
+          <span className="text-xs font-medium">
+            {method?.is_enabled ? "MFA is enabled" : "MFA is not configured"}
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground/60 mt-1">
+          {method?.is_enabled
+            ? "You will be prompted for a TOTP code from your authenticator app when signing in."
+            : "Add an extra layer of security by requiring a time-based one-time password from your authenticator app."}
+        </p>
+        {method?.is_enabled && (
+          <div className="mt-2 text-[10px] text-muted-foreground/60">
+            <span className="font-medium text-foreground/80">Method:</span> TOTP (Time-based One-Time Password) · {savedBackupCodes.length} unused backup codes
+          </div>
+        )}
+      </div>
+
+      {/* Setup dialog */}
+      {setupOpen && (
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+             onClick={() => setSetupOpen(false)}>
+          <div className="dialog-container w-full max-w-md mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto"
+               onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold mb-4">Enable MFA (TOTP)</h3>
+
+            <div className="space-y-4">
+              {/* Step 1: Scan QR code */}
+              <div>
+                <p className="text-xs font-medium mb-2">Step 1: Scan with authenticator app</p>
+                <div className="flex justify-center mb-2">
+                  <div className="bg-white p-3 rounded-lg inline-block">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}`}
+                      alt="TOTP QR Code"
+                      className="w-44 h-44"
+                      onError={(e) => {
+                        // Fallback: generate QR inline via canvas
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground/60 text-center">
+                  Or manually enter: <code className="bg-muted px-1 rounded text-[10px] font-mono">{totpSecret}</code>
+                </p>
+              </div>
+
+              {/* Step 2: Verify with code */}
+              <div>
+                <p className="text-xs font-medium mb-2">Step 2: Enter the 6-digit code</p>
+                <input type="text" value={verifyCode} onChange={e => setVerifyCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                  placeholder="000000"
+                  maxLength={6}
+                  className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground text-center tracking-widest font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+
+              {/* Step 3: Save backup codes */}
+              {backupCodes.length > 0 && (
+                <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20">
+                  <p className="text-xs font-semibold text-yellow-400 mb-2">⚠️ Save these backup codes!</p>
+                  <p className="text-[10px] text-yellow-400/70 mb-2">
+                    Each code can be used once to sign in if you lose access to your authenticator app.
+                    Store them somewhere safe.
+                  </p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {backupCodes.map((code, i) => (
+                      <code key={i} className="text-xs font-mono bg-black/20 px-2 py-1 rounded text-yellow-300">{code}</code>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <div className="px-3 py-2 rounded-md bg-red-500/10 text-red-400 text-xs">{error}</div>
+              )}
+
+              <div className="flex gap-2 justify-end pt-2">
+                <button onClick={() => setSetupOpen(false)}
+                  className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button onClick={handleVerifyAndEnable} disabled={verifyCode.length !== 6}
+                  className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                  Verify & Enable
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>
+    </BrowserRouter>
+  );
+}
+
 function InvitationSettings({ userId }: { userId: string | null }) {
   const [invitations, setInvitations] = useState<import("./lib/api").Invitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -4720,6 +5112,7 @@ function InvitationSettings({ userId }: { userId: string | null }) {
   const [success, setSuccess] = useState("");
 
   const loadInvitations = useCallback(async () => {
+    if (!userId) { setLoading(false); return; }
     try {
       const invs = await api.invitations.list();
       setInvitations(invs);
@@ -4728,7 +5121,7 @@ function InvitationSettings({ userId }: { userId: string | null }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => { loadInvitations(); }, [loadInvitations]);
 
@@ -4911,15 +5304,5 @@ function InvitationSettings({ userId }: { userId: string | null }) {
         </div>
       )}
     </div>
-  );
-}
-
-export default function App() {
-  return (
-    <BrowserRouter>
-      <ToastProvider>
-        <AppLayout />
-      </ToastProvider>
-    </BrowserRouter>
   );
 }
