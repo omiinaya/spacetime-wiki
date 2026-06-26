@@ -16,6 +16,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import Typography from "@tiptap/extension-typography";
 import { Details } from "../extensions/Details";
 import { Callout, CALLOUT_TYPES } from "../extensions/Callout";
 import { Mention } from "../extensions/Mention";
@@ -923,6 +924,17 @@ export function PageEditor({ userId }: Props) {
         heading: false,
         codeBlock: false, // replaced by CodeBlockLowlight
         link: false,     // use explicit Link.configure below
+      }),
+      Typography.configure({
+        emDash: true,
+        ellipsis: true,
+        openCloseQuote: true,
+        leftArrow: true,
+        rightArrow: true,
+        trademark: true,
+        copyright: true,
+        serviceMark: true,
+        registeredTrademark: true,
       }),
       HeadingWithId.configure({ levels: [1, 2, 3] }),
       DragHandle,
