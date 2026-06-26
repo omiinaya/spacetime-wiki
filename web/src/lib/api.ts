@@ -317,6 +317,22 @@ export interface CollabUpdate {
   user_id: string; created_at: number;
 }
 
+// ─── AI Assistant Types ────────────────────────────────────────────────────────
+
+export interface AiConfig {
+  key: string; value: string; updated_at: number;
+}
+
+export interface AiChatSession {
+  id: string; user_id: string; title: string;
+  page_context_id: string; created_at: number; updated_at: number;
+}
+
+export interface AiChatMessage {
+  id: string; session_id: string; role: string;
+  content: string; created_at: number;
+}
+
 // ─── Mappers ───────────────────────────────────────────────────────────────────
 
 function mapCollabSession(row: unknown[]): CollabSession {
@@ -332,6 +348,22 @@ function mapCollabUpdate(row: unknown[]): CollabUpdate {
     id: String(row[0]??""), page_id: String(row[1]??""),
     update_data: String(row[2]??""), user_id: String(row[3]??""),
     created_at: Number(row[4])||0,
+  };
+}
+function mapAiConfig(row: unknown[]): AiConfig {
+  return { key: String(row[0]??""), value: String(row[1]??""), updated_at: Number(row[2])||0 };
+}
+function mapAiChatSession(row: unknown[]): AiChatSession {
+  return {
+    id: String(row[0]??""), user_id: String(row[1]??""), title: String(row[2]??""),
+    page_context_id: String(row[3]??""), created_at: Number(row[4])||0,
+    updated_at: Number(row[5])||0,
+  };
+}
+function mapAiChatMessage(row: unknown[]): AiChatMessage {
+  return {
+    id: String(row[0]??""), session_id: String(row[1]??""), role: String(row[2]??""),
+    content: String(row[3]??""), created_at: Number(row[4])||0,
   };
 }
 
@@ -774,6 +806,101 @@ export const api = {
       callReducer("cleanup_stale_collab_sessions", []),
     cleanupOldUpdates: () =>
       callReducer("cleanup_old_collab_updates", []),
+  },
+
+  // ── AI Assistant ──
+  ai: {
+    config: {
+      get: async (key: string): Promise<string> => {
+        const rows = await sqlQuery(`SELECT * FROM ai_config WHERE key = '${key}'`);
+        return rows.length > 0 ? String((rows as any as unknown[][])[0]?.[1] ?? "") : "";
+      },
+      getAll: () =>
+        sqlQuery("SELECT * FROM ai_config")
+          .then((rows) => (rows as any as unknown[][]).map(mapAiConfig)),
+      set: (key: string, value: string) =>
+        callReducer("set_ai_config", [key, value]),
+    },
+    sessions: {
+      list: (userId: string) =>
+        sqlQuery(`SELECT * FROM ai_chat_session WHERE user_id = '${userId}' ORDER BY updated_at DESC`)
+          .then((rows) => (rows as any as unknown[][]).map(mapAiChatSession)),
+      get: (id: string) =>
+        sqlQuery(`SELECT * FROM ai_chat_session WHERE id = '${id}'`)
+          .then((rows) => (rows as any as unknown[][])[0] ? mapAiChatSession((rows as any as unknown[][])[0]) : null),
+      create: (userId: string, title: string, pageContextId: string = "") => {
+        const id = genId("ai_s");
+        return callReducer("create_ai_chat_session", [id, userId, title, pageContextId])
+          .then(() => id);
+      },
+      delete: (id: string) =>
+        callReducer("delete_ai_chat_session", [id]),
+    },
+    messages: {
+      list: (sessionId: string) =>
+        sqlQuery(`SELECT * FROM ai_chat_message WHERE session_id = '${sessionId}' ORDER BY created_at ASC`)
+          .then((rows) => (rows as any as unknown[][]).map(mapAiChatMessage)),
+      add: (sessionId: string, role: string, content: string) => {
+        const id = genId("ai_m");
+        return callReducer("add_ai_chat_message", [id, sessionId, role, content])
+          .then(() => id);
+      },
+      delete: (id: string) =>
+        callReducer("delete_ai_chat_message", [id]),
+    },
+    /** Call the AI proxy to get an LLM response */
+    ask: async (sessionId: string, userMessage: string, pageContextId?: string): Promise<string> => {
+      // Get AI config
+      const [provider, apiUrl, apiKey, model, systemPrompt] = await Promise.all([
+        api.ai.config.get("provider"),
+        api.ai.config.get("api_url"),
+        api.ai.config.get("api_key"),
+        api.ai.config.get("model"),
+        api.ai.config.get("system_prompt"),
+      ]);
+
+      // Get conversation history
+      const messages = await api.ai.messages.list(sessionId);
+
+      // Get page context if specified
+      let pageContext = "";
+      if (pageContextId) {
+        const page = await api.pages.get(pageContextId);
+        if (page) {
+          pageContext = page.text_content.substring(0, 4000);
+        }
+      }
+
+      // Call AI proxy via HTTP
+      const proxyUrl = (apiUrl || "http://localhost:11434") + "/v1/chat/completions";
+      const body = JSON.stringify({
+        model: model || "llama3.2",
+        messages: [
+          ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
+          ...(pageContext ? [{ role: "system", content: `Context from current page:\n${pageContext}` }] : []),
+          ...messages.map((m: AiChatMessage) => ({ role: m.role, content: m.content })),
+          { role: "user", content: userMessage },
+        ],
+        stream: false,
+      });
+
+      const res = await fetch(proxyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey ? { "Authorization": `Bearer ${apiKey}` } : {}),
+        },
+        body,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`AI request failed: ${res.status} — ${text.slice(0, 200)}`);
+      }
+
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "[No response from AI]";
+    },
   },
 };
 
