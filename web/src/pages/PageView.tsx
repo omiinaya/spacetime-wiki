@@ -25,7 +25,7 @@ import { common, createLowlight } from "lowlight";
 import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
-  List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye,
+  List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye, FolderOpen,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments, isAttachmentUrl } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
@@ -33,6 +33,7 @@ import { PagePermissions } from "../components/PagePermissions";
 import { RevisionDiff } from "../components/RevisionDiff";
 import { ImageLightbox } from "../components/ImageLightbox";
 import { PageTags } from "../components/PageTags";
+import { showToast } from "../components/Toast";
 import { MentionInput } from "../components/MentionInput";
 import { MediaManager } from "../components/MediaManager";
 
@@ -283,6 +284,8 @@ export function PageView({ pageId, userId }: Props) {
   const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [moveCollections, setMoveCollections] = useState<Collection[]>([]);
   const [parentPages, setParentPages] = useState<Page[]>([]);
   const [showMediaBrowser, setShowMediaBrowser] = useState(false);
   const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
@@ -1047,6 +1050,51 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             <button onClick={() => setShowShare(true)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Share">
               <Link2 className="h-4 w-4" />
             </button>
+
+            {/* Move to collection */}
+            <div className="relative">
+              <button onClick={() => { setShowMoveDialog(!showMoveDialog); if (!showMoveDialog) api.collections.list().then(setMoveCollections); }} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", showMoveDialog && "text-primary bg-primary/10")} title="Move to collection">
+                <FolderOpen className="h-4 w-4" />
+              </button>
+              {showMoveDialog && (
+                <div className="absolute right-0 top-full mt-1 w-48 py-1 rounded-lg border border-border bg-card shadow-xl z-20 max-h-48 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  {moveCollections.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">Loading...</div>
+                  ) : (
+                    moveCollections.map((col) => (
+                      <button
+                        key={col.id}
+                        onClick={async () => {
+                          await api.pages.move(pageId, col.id, "");
+                          setPage(prev => prev ? { ...prev, collection_id: col.id } : prev);
+                          setShowMoveDialog(false);
+                          showToast({ type: "success", title: "Moved", message: `Page moved to "${col.name}"`, duration: 3000 });
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left",
+                          page?.collection_id === col.id && "text-primary bg-primary/5",
+                        )}
+                      >
+                        {col.icon || "📁"} {col.name}
+                      </button>
+                    ))
+                  )}
+                  <div className="border-t border-border mt-1 pt-1">
+                    <button
+                      onClick={async () => {
+                        await api.pages.move(pageId, "", "");
+                        setPage(prev => prev ? { ...prev, collection_id: "" } : prev);
+                        setShowMoveDialog(false);
+                        showToast({ type: "success", title: "Moved", message: "Page moved to root (no collection)", duration: 3000 });
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+                    >
+                      📄 No collection
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Permissions button */}
             <button onClick={() => setShowPermissions(true)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Permissions">
