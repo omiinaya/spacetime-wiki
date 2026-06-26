@@ -295,6 +295,9 @@ export function PageView({ pageId, userId }: Props) {
   const [titleDraft, setTitleDraft] = useState("");
   const titleInputRef = useRef<HTMLInputElement>(null);
 
+  // Scroll-spy: active heading in TOC
+  const [activeHeading, setActiveHeading] = useState<string | null>(null);
+
   const handleTitleSave = async () => {
     const trimmed = titleDraft.trim();
     if (!trimmed || !page || trimmed === page.title) {
@@ -318,6 +321,30 @@ export function PageView({ pageId, userId }: Props) {
       titleInputRef.current.select();
     }
   }, [editingTitle]);
+
+  // Scroll-spy: IntersectionObserver for active heading tracking in TOC
+  useEffect(() => {
+    if (!showToc || toc.length === 0) return;
+    const ids = toc.map(h => h.id);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveHeading(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: "-80px 0px -60% 0px" }
+    );
+    // Observe heading elements after a tick to ensure DOM is rendered
+    const timer = setTimeout(() => {
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+      }
+    }, 100);
+    return () => { clearTimeout(timer); observer.disconnect(); };
+  }, [showToc, toc]);
 
   // Link preview tooltip
   const [linkPreview, setLinkPreview] = useState<{ x: number; y: number; title: string; url: string } | null>(null);
@@ -1596,9 +1623,15 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                   if (el) {
                     el.scrollIntoView({ behavior: "smooth", block: "start" });
                     history.replaceState(null, "", `#${h.id}`);
+                    setActiveHeading(h.id);
                   }
                 }}
-                className="block px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                className={cn(
+                  "block px-2 py-1 rounded text-xs transition-colors",
+                  activeHeading === h.id
+                    ? "text-primary font-medium bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                )}
                 style={{ paddingLeft: `${8 + (h.level - 1) * 12}px` }}
               >
                 {h.text}
