@@ -6,7 +6,7 @@ and works the top pending item each tick.
 
 ---
 
-## Status: DONE — All P0-P4 features implemented. P5 items researched.
+## Status: P0-P4 done. P5 in progress (1/4 complete).
 
 | Priority | Item | Notes |
 |----------|------|-------|
