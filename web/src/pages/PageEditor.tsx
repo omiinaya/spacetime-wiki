@@ -1586,6 +1586,23 @@ export function PageEditor({ userId }: Props) {
                     <Maximize2 className="h-4 w-4" />
                   </button>
                 )}
+                {/* Text direction toggle */}
+                {page && (
+                  <button
+                    onClick={async () => {
+                      const newDir = page.direction === "rtl" ? "ltr" : "rtl";
+                      await api.pages.setDirection(id || page.id, newDir);
+                      setPage(prev => prev ? { ...prev, direction: newDir } : prev);
+                    }}
+                    className={cn(
+                      "p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted font-mono text-xs px-2",
+                      page?.direction === "rtl" && "text-primary bg-primary/10",
+                    )}
+                    title={page?.direction === "rtl" ? "Switch to LTR" : "Switch to RTL (right-to-left)"}
+                  >
+                    {page?.direction === "rtl" ? "RTL" : "LTR"}
+                  </button>
+                )}
                 {!preview && (
                   <>
                     <button onClick={handleDuplicate} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Duplicate">
@@ -1855,7 +1872,7 @@ export function PageEditor({ userId }: Props) {
       {/* Editor content */}
       <div className="px-4 md:px-8 pb-32">
         {editor && editorMode === "wysiwyg" && (
-          <div className={preview ? "" : "min-h-[60vh]"}>
+          <div className={preview ? "" : "min-h-[60vh]"} dir={page?.direction || "ltr"}>
             <EditorContent editor={editor} />
           </div>
         )}
@@ -1865,11 +1882,12 @@ export function PageEditor({ userId }: Props) {
             onChange={(e) => setMarkdownSource(e.target.value)}
             className="w-full min-h-[60vh] bg-[#0a0a0a] text-foreground font-mono text-sm p-4 rounded-lg border border-border resize-y focus:outline-none focus:ring-1 focus:ring-primary/50"
             spellCheck={false}
+            dir={page?.direction || "ltr"}
           />
         )}
         {editor && editorMode === "split" && (
           <div className="grid grid-cols-2 gap-4 min-h-[60vh]">
-            <div className="border border-border rounded-lg p-3 overflow-y-auto">
+            <div className="border border-border rounded-lg p-3 overflow-y-auto" dir={page?.direction || "ltr"}>
               <EditorContent editor={editor} />
             </div>
             <textarea
@@ -1877,6 +1895,7 @@ export function PageEditor({ userId }: Props) {
               readOnly
               className="w-full h-full bg-[#0a0a0a] text-foreground font-mono text-sm p-3 rounded-lg border border-border resize-none focus:outline-none"
               spellCheck={false}
+              dir={page?.direction || "ltr"}
             />
           </div>
         )}
