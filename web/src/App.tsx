@@ -1092,6 +1092,9 @@ function AppLayout() {
                             {page.status === "archived" && (
                               <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Archived</span>
                             )}
+                            {page.is_template && (
+                              <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400 shrink-0">Template</span>
+                            )}
                           </button>
                         </div>
                       ))}
@@ -1166,6 +1169,9 @@ function AppLayout() {
                           )}
                           {page.status === "archived" && (
                             <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Archived</span>
+                          )}
+                          {page.is_template && (
+                            <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400 shrink-0">Template</span>
                           )}
                         </button>
                       </div>
