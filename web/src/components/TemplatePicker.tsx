@@ -112,7 +112,30 @@ export function TemplatePicker({ open, onClose, collections, userId, navigate }:
             </div>
           )}
 
-          {!loading && templates.map((t) => (
+          {!loading && templates.length > 0 && (() => {
+            // Group templates by collection
+            const grouped: Record<string, Page[]> = {};
+            for (const t of templates) {
+              const key = t.collection_id || "__uncategorized__";
+              if (!grouped[key]) grouped[key] = [];
+              grouped[key].push(t);
+            }
+            const colLabel = (colId: string) => {
+              if (colId === "__uncategorized__") return "Uncategorized";
+              return collections.find(c => c.id === colId)?.icon + " " + collections.find(c => c.id === colId)?.name || colId;
+            };
+            const groupKeys = Object.keys(grouped);
+            // Sort groups: uncategorized last
+            groupKeys.sort((a, b) => {
+              if (a === "__uncategorized__") return 1;
+              if (b === "__uncategorized__") return -1;
+              return (collections.find(c => c.id === a)?.name || "").localeCompare(collections.find(c => c.id === b)?.name || "");
+            });
+            return groupKeys.flatMap((key) => [
+              <div key={key} className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1 py-1.5 mt-2 first:mt-0">
+                {colLabel(key)}
+              </div>,
+              ...grouped[key].map((t) => (
             <button
               key={t.id}
               onClick={() => handleCreateFromTemplate(t)}
@@ -131,7 +154,10 @@ export function TemplatePicker({ open, onClose, collections, userId, navigate }:
               </div>
               <span className="text-[10px] text-muted-foreground/50 shrink-0">Template</span>
             </button>
-          ))}
+          ));
+        ]);
+      })()
+    }
         </div>
 
         {/* Footer */}
