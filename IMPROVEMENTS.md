@@ -30,3 +30,4 @@ No outstanding items — backlog is clear!
 | 2026-06-27 | P2 — Edge-swipe-to-open sidebar gesture with drag-follow animation | b79f7e9 |
 | 2026-06-27 | P3 — Page color accent picker in PageView toolbar (12-color palette + clear) | 54f0dd5 |
 | 2026-06-27 | P3 — Dual editor mode (WYSIWYG ↔ Markdown ↔ Split) | (already implemented) |
+| 2026-06-27 | P2 — Move page to collection dialog in PageView (collection picker + move action) | 3152d29 |
