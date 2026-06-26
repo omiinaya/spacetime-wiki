@@ -1332,7 +1332,30 @@ function AppLayout() {
           <button onClick={openTemplates} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <LayoutTemplate className="h-3 w-3" /> Templates
           </button>
-          <button onClick={loadTrashPage} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+          <button
+            onClick={loadTrashPage}
+            onDragOver={(e) => { e.preventDefault(); setDragOverTarget("__trash__"); }}
+            onDragLeave={() => setDragOverTarget(null)}
+            onDrop={async (e) => {
+              e.preventDefault();
+              const pageId = e.dataTransfer.getData("text/plain") || dragPageId;
+              if (pageId && pageId !== "__trash__") {
+                if (!confirm("Move this page to trash?")) return;
+                await api.pages.batchSetStatus([pageId], "deleted");
+                setDragPageId(null);
+                setDragOverTarget(null);
+                await refreshData();
+                showToast({ type: "success", title: "Page moved to trash", duration: 3000 });
+              }
+            }}
+            onDragEnd={() => { setDragPageId(null); setDragOverTarget(null); }}
+            className={cn(
+              "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors",
+              dragOverTarget === "__trash__"
+                ? "bg-red-500/10 text-red-400 border border-red-500/30"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+            )}
+          >
             <Trash2 className="h-3 w-3" /> Trash
           </button>
           <button onClick={openAdmin} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
