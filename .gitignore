@@ -5,3 +5,5 @@ dist/
 .DS_Store
 target/
 server/spacetimedb/target/
+__pycache__/
+*.pyc
