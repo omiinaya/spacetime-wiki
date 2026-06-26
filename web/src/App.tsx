@@ -820,7 +820,7 @@ function AppLayout() {
 
   const paletteItems = (() => {
     const q = paletteQuery.toLowerCase();
-    const results: { type: "page" | "collection" | "action"; id?: string; label: string; subtitle: string; icon: React.ReactNode; action: () => void }[] = [];
+    const results: { type: "page" | "collection" | "action"; id?: string; label: string; subtitle: string; icon: React.ReactNode; action: () => void; shortcut?: string }[] = [];
 
     // Pages
     for (const p of pages.filter(x => x.status !== "deleted" && (x.title.toLowerCase().includes(q) || q === ""))) {
@@ -842,8 +842,14 @@ function AppLayout() {
     }
     // Actions
     const actions = [
-      { label: "New page", subtitle: "Create a new document", icon: <Plus className="h-4 w-4" />, action: () => { closePalette(); navigate("/new"); } },
-      { label: "New collection", subtitle: "Create a new collection", icon: <FolderPlus className="h-4 w-4" />, action: () => { closePalette(); openCreateCol(); } },
+      { label: "New page", subtitle: "Create a new document", icon: <Plus className="h-4 w-4" />, shortcut: "N", action: () => { closePalette(); navigate("/new"); } },
+      { label: "New collection", subtitle: "Create a new collection", icon: <FolderPlus className="h-4 w-4" />, shortcut: "C", action: () => { closePalette(); openCreateCol(); } },
+      { label: "New template", subtitle: "Save current page as a template", icon: <LayoutTemplate className="h-4 w-4" />, shortcut: "T", action: () => { closePalette(); setTemplatePickerOpen(true); } },
+      { label: "Admin panel", subtitle: "Manage users, groups, settings", icon: <Shield className="h-4 w-4" />, shortcut: "A", action: () => { closePalette(); navigate("/admin"); } },
+      { label: "Trash", subtitle: "View deleted pages", icon: <Trash2 className="h-4 w-4" />, shortcut: "G T", action: () => { closePalette(); navigate("/trash"); } },
+      { label: "Favorites", subtitle: "Show starred pages", icon: <Star className="h-4 w-4" />, shortcut: "G F", action: () => { closePalette(); navigate("/favorites"); } },
+      { label: "Keyboard shortcuts", subtitle: "View all keyboard shortcuts", icon: <Keyboard className="h-4 w-4" />, shortcut: "?", action: () => { closePalette(); setShortcutsOpen(true); } },
+      { label: "Toggle dark mode", subtitle: `Switch to ${theme === "dark" ? "light" : "dark"} theme`, icon: theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />, shortcut: "D", action: () => { closePalette(); setTheme(theme === "dark" ? "light" : "dark"); } },
     ];
     for (const a of actions) {
       if (a.label.toLowerCase().includes(q) || q === "") results.push({ type: "action", label: a.label, subtitle: a.subtitle, icon: a.icon, action: a.action });
@@ -2287,6 +2293,11 @@ function AppLayout() {
                   </div>
                   {item.type === "page" && <span className="text-[10px] text-muted-foreground/50">Page</span>}
                   {item.type === "collection" && <span className="text-[10px] text-muted-foreground/50">Collection</span>}
+                  {"shortcut" in item && item.shortcut && (
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted/50 text-muted-foreground/60 border border-border/50">
+                      {(item as any).shortcut}
+                    </kbd>
+                  )}
                 </button>
               ))}
             </div>
