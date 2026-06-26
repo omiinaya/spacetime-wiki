@@ -26,7 +26,7 @@
 | Visual diff between revisions | ✅ | — | — | ✅ | 🔲 | P3 |
 | Page duplication/clone | ✅ | — | — | — | 🔲 | P2 |
 | Templates | ✅ | ✅ | — | ✅ | 🔲 | P2 |
-| Page includes/transclusion (`{{@page_id}}`) | — | — | — | ✅ | 🔲 | P4 |
+| Page includes/transclusion (`{{@page_id}}`) | — | — | — | ✅ | ✅ | P4 |
 | Synced blocks (reuse across pages) | — | ✅ | — | — | 🔲 | P4 |
 
 ---
@@ -192,7 +192,7 @@
 | **Wiki.js** | 12 storage backends | 🔲 | P4 |
 | **Wiki.js** | Modular architecture (on/off features) | 🔲 | P3 |
 | **BookStack** | Shelves→Books→Chapters→Pages hierarchy | 🔲 | P2 |
-| **BookStack** | Page includes/transclusion (`{{@page_id}}`) | 🔲 | P4 |
+| **BookStack** | Page includes/transclusion (`{{@page_id}}`) | ✅ | P4 |
 | **BookStack** | Built-in diagrams.net (draw.io) | 🔲 | P3 |
 | **BookStack** | Advanced search syntax (tags, date filters) | 🔲 | P4 |
 | **BookStack** | Recycle bin with configurable retention | 🔲 | P2 |
@@ -279,7 +279,7 @@
 - [ ] Real-time collaboration (YJS or STDB subscriptions)
 - [ ] AI assistant + RAG search
 - [ ] Bases (table/kanban database views like Docmost)
-- [ ] Page includes/transclusion
+- [x] Page includes/transclusion
 - [ ] i18n multi-language
 - [ ] Passkeys/WebAuthn
 - [ ] MFA (TOTP)
