@@ -282,6 +282,7 @@ export function PageView({ pageId, userId }: Props) {
   const [backlinks, setBacklinks] = useState<Page[]>([]);
   const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const [parentPages, setParentPages] = useState<Page[]>([]);
   const [showMediaBrowser, setShowMediaBrowser] = useState(false);
   const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
@@ -952,6 +953,33 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
               setPage(prev => prev ? { ...prev, is_pinned: newVal } : prev);
             }} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", page?.is_pinned && "text-primary bg-primary/10")} title={page?.is_pinned ? "Unpin" : "Pin to top"}>
               <Pin className="h-4 w-4" fill={page?.is_pinned ? "currentColor" : "none"} />
+            </button>
+            <button className="relative p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setShowColorPicker(!showColorPicker)} title="Page color">
+              <Palette className="h-4 w-4" style={page?.color ? { color: page.color } : undefined} />
+              {showColorPicker && (
+                <div className="absolute top-full right-0 mt-1 p-2 rounded-lg border border-border bg-card shadow-xl z-30" onClick={(e) => e.stopPropagation()}>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {["#ef4444","#f97316","#eab308","#22c55e","#06b6d4","#3b82f6","#8b5cf6","#d946ef","#ec4899","#78716c","#0f0f0f",""].map((c) => (
+                      <button
+                        key={c}
+                        onClick={async () => {
+                          await api.pages.setColor(pageId, c);
+                          setPage(prev => prev ? { ...prev, color: c } : prev);
+                          setShowColorPicker(false);
+                        }}
+                        className={cn(
+                          "w-6 h-6 rounded border border-border hover:scale-110 transition-transform",
+                          page?.color === c && "ring-2 ring-primary ring-offset-2 ring-offset-card",
+                        )}
+                        style={{ backgroundColor: c || "transparent" }}
+                        title={c || "None"}
+                      >
+                        {!c && <X className="h-3 w-3 mx-auto" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </button>
             <button onClick={() => setShowRevisions(!showRevisions)} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", showRevisions && "text-primary bg-primary/10")} title="History">
               <History className="h-4 w-4" />
