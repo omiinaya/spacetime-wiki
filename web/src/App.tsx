@@ -7,7 +7,7 @@ import {
   FileText, Search, Plus, Hash, BookOpen, ChevronDown, ChevronRight, Menu, X, Library,
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
-  Sun, Moon, Keyboard, Eye, CheckSquare, Square, Tags, MessageSquare,
+  Sun, Moon, Keyboard, Eye, CheckSquare, Square, Tags, MessageSquare, Package,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, usePagesSubscription, useCollectionsSubscription } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -143,6 +143,8 @@ function AppLayout() {
   // Import MD state
   const importRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  const notionImportRef = useRef<HTMLInputElement>(null);
+  const [importingNotion, setImportingNotion] = useState(false);
 
   // Sidebar swipe-to-close refs (mobile)
   const touchStartRef = useRef(0);
@@ -377,6 +379,56 @@ function AppLayout() {
       addToast({ type: "error", title: "Import failed", message: String(err), duration: 5000 });
     }
     finally { setImporting(false); e.target.value = ""; }
+  };
+
+  const handleImportNotion = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportingNotion(true);
+    try {
+      const zip = await JSZip.loadAsync(file);
+      // Collect all .md entries with their paths
+      const mdEntries: { path: string; name: string; dir: string }[] = [];
+      zip.forEach((path, entry) => {
+        if (!entry.dir && path.endsWith(".md")) {
+          const parts = path.split("/");
+          mdEntries.push({
+            path,
+            name: (parts.pop() || "").replace(/\.md$/i, ""),
+            dir: parts.join("/"),
+          });
+        }
+      });
+      if (mdEntries.length === 0) {
+        addToast({ type: "error", title: "No pages found", message: "No Markdown files found in the ZIP archive", duration: 5000 });
+        return;
+      }
+      // Sort by path depth (shallow first = parents created before children)
+      mdEntries.sort((a, b) => a.path.split("/").length - b.path.split("/").length);
+      // Track created page IDs by their directory prefix
+      const pageIdsByDir: Record<string, string> = {};
+      let created = 0;
+      for (const entry of mdEntries) {
+        const markdown = await zip.file(entry.path)?.async("string") || "";
+        const doc = markdownToProseMirror(markdown);
+        const parentId = pageIdsByDir[entry.dir] || "";
+        const id = await api.pages.create(entry.name, JSON.stringify(doc), "", parentId, userId || "anonymous");
+        // Map this entry's path prefix (without .md) so children can find it
+        const childKey = entry.path.replace(/\.md$/, "");
+        pageIdsByDir[childKey] = id;
+        // Also map the directory name itself for sibling lookups
+        pageIdsByDir[entry.dir + "/" + entry.name] = id;
+        created++;
+      }
+      addToast({ type: "success", title: "Wiki imported", message: `Created ${created} pages from "${file.name}"`, duration: 4000 });
+      // Reload pages
+      api.pages.list().then(setPages).catch(() => {});
+    } catch (err) {
+      addToast({ type: "error", title: "Import failed", message: String(err), duration: 5000 });
+    } finally {
+      setImportingNotion(false);
+      e.target.value = "";
+    }
   };
 
   const handleExportPageMD = async (pageId: string) => {
@@ -1240,6 +1292,15 @@ function AppLayout() {
           >
             {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
             {importing ? "Importing..." : "Import MD"}
+          </button>
+          <input ref={notionImportRef} type="file" accept=".zip" onChange={handleImportNotion} className="hidden" />
+          <button
+            onClick={() => notionImportRef.current?.click()}
+            disabled={importingNotion}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+          >
+            {importingNotion ? <Loader2 className="h-3 w-3 animate-spin" /> : <Package className="h-3 w-3" />}
+            {importingNotion ? "Importing..." : "Import Wiki"}
           </button>
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
