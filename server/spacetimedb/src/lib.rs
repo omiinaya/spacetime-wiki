@@ -1826,7 +1826,7 @@ pub fn set_app_setting(ctx: &ReducerContext, key: String, value: String) -> Resu
     if let Some(mut setting) = existing {
         setting.value = value;
         setting.updated_at = now;
-        ctx.db.app_setting().id().update(setting);
+        ctx.db.app_setting().key().update(setting);
     } else {
         ctx.db.app_setting().insert(AppSetting {
             key: key.clone(),
@@ -1835,15 +1835,6 @@ pub fn set_app_setting(ctx: &ReducerContext, key: String, value: String) -> Resu
         });
     }
     Ok(())
-}
-
-#[reducer]
-pub fn get_app_setting(ctx: &ReducerContext, key: String) -> Result<String, String> {
-    let found = ctx.db.app_setting().iter().find(|s| s.key == key);
-    match found {
-        Some(s) => Ok(s.value.clone()),
-        None => Ok(String::new()),
-    }
 }
 
 /// Purge expired trash pages based on the trash_retention_days setting.
