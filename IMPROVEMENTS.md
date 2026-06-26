@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P3 | Feature flags / modular architecture admin panel | enable/disable specific extensions: callouts, mermaid, math, embeds |
 | P4 | Page includes/transclusion (`{{@page_id}}` syntax) | embed content from another page inline, BookStack-style |
 | P4 | MCP (Model Context Protocol) server | expose wiki pages and search as AI-accessible tools/resources |
 
@@ -20,6 +19,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | P3 — Feature flags / modular architecture admin panel with toggleable extensions | ff8a73a |
 | 2026-06-28 | P3 — Collection page sort preference (Manual/Title/Date) per collection in editor | 267e8a7 |
 | 2026-06-28 | P2 — Copy page link to clipboard from sidebar context menu | 4deb760 |
 | 2026-06-28 | P2 — Inline title editing on PageView (click title to rename directly) | 56bf58b |
