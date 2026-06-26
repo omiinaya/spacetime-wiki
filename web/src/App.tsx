@@ -1388,6 +1388,13 @@ function AppLayout() {
               >
                 <Download className="h-3 w-3" /> Export HTML
               </button>
+              <div className="h-px bg-border/50 mx-2 my-1" />
+              <button
+                onClick={() => { const url = `${window.location.origin}/page/${contextMenu.pageId}`; navigator.clipboard.writeText(url).catch(() => {}); setContextMenu(null); showToast({ type: "success", title: "Link copied", duration: 2000 }); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+              >
+                <Link2 className="h-3 w-3" /> Copy link
+              </button>
             </>
           ) : (
             <>
