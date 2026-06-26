@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | Guest/invited users | Invite external users with limited access to specific pages |
 | P4 | Confluence import | Import pages from Confluence space export (HTML/XML) |
 | P4 | MFA/TOTP authentication | Time-based one-time password for 2FA |
 | P4 | Auto-sort rules for content | Automatic sort ordering rules for collections/nested pages |
@@ -21,6 +20,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-29 | **P4 — Guest/invited users!** STDB tables+reducers (Invitation), API client with create/accept/revoke, admin Invitations tab in settings panel with create dialog and revoke controls | 95c854d |
 | 2026-06-28 | **P4 — Synced blocks (reuse across pages)!** STDB tables+reducers, Tiptap extension with React node view, slash command, feature flag, API client | 5904d58 |
 | 2026-06-28 | **P5 — SCIM 2.0 provisioning!** STDB tables+reducers (ScimProvider, ScimEvent), SCIM 2.0 REST API endpoints (Users, Groups, Schemas, ServiceProviderConfig) with Bearer token auth, admin panel provider CRUD + event log | e6c5720 |
 | 2026-06-28 | **P5 — RTL/bidirectional text support!** direction field on Page struct, set_page_direction reducer, LTR/RTL toggle in editor toolbar, dir attribute on content/view containers | 0af60ce |
