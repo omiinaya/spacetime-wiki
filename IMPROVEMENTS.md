@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P2 — Wiki import (Notion/Confluence)
-Add import wizards for Notion (Markdown+ZIP export) and Confluence (HTML/XML export). Parse the exported file structure and create pages preserving hierarchy, content, and metadata. Reuses the existing Markdown import pipeline for Notion exports.
-Files: web/src/App.tsx, web/src/components/
-Difficulty: Medium
-Est: 1.5h
-
 ### P3 — Page color accent picker
 The Page model already has a `color` field and `set_page_color` reducer, but there's no UI for it. Add a color picker in the PageView toolbar (or page properties) that sets the accent color strip. Should show a small color palette (6-8 presets) + custom hex input.
 Files: web/src/pages/PageView.tsx
@@ -42,3 +36,4 @@ Est: 1h
 | 2026-06-26 | P1 — Table toolbar with row/column operations (insert/delete rows/cols, merge/split cells) | 0bea2e9 |
 | 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
 | 2026-06-26 | **P2 — Comment reactions UI (STDB-backed 👍❤️🎉😄😕 with toggle, counts, active state)** | **_CURRENT_** |
+| 2026-06-27 | P2 — Wiki import from ZIP (Notion/Confluence export) with parent-child hierarchy preservation | (this session) |
