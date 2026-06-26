@@ -12,7 +12,7 @@ and works the top pending item each tick.
 |----------|------|-------|
 | P4 | Page includes/transclusion (`{{@page_id}}` syntax) | embed content from another page inline, BookStack-style |
 | P4 | MCP (Model Context Protocol) server | expose wiki pages and search as AI-accessible tools/resources |
-| P3 | TOC scroll-spy | highlight current heading in table of contents as you scroll |
+| P3 | Drag-and-drop visual feedback in sidebar | show insertion line indicator when dragging pages |
 
 ---
 
@@ -20,6 +20,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | P3 — TOC scroll-spy with IntersectionObserver-based active heading highlighting | 1050aa1 |
 | 2026-06-28 | P3 — Feature flags / modular architecture admin panel with toggleable extensions | ff8a73a |
 | 2026-06-28 | P3 — Collection page sort preference (Manual/Title/Date) per collection in editor | 267e8a7 |
 | 2026-06-28 | P2 — Copy page link to clipboard from sidebar context menu | 4deb760 |
