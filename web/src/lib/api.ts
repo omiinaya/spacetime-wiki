@@ -23,6 +23,7 @@ function mapPage(row: unknown[]): Page {
     created_by: String(row[15] ?? ""), updated_by: String(row[16] ?? ""),
     created_at: Number(row[17]) || 0, updated_at: Number(row[18]) || 0,
     published_at: Number(row[19]) || 0, deleted_at: Number(row[20]) || 0,
+    direction: String(row[21] ?? "ltr"),
   };
 }
 function mapCollection(row: unknown[]): Collection { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), description: String(row[3]??""), parent_id: String(row[4]??""), icon: String(row[5]??""), color: String(row[6]??""), sort_order: Number(row[7])||0, created_by: String(row[8]??""), created_at: Number(row[9])||0, updated_at: Number(row[10])||0 }; }
@@ -201,6 +202,7 @@ export interface Page {
   is_template: boolean; template_id: string; sort_order: number;
   created_by: string; updated_by: string; created_at: number;
   updated_at: number; published_at: number; deleted_at: number;
+  direction: string;
 }
 
 export interface Collection {
@@ -475,6 +477,8 @@ export const api = {
       callReducer("set_page_color", [id, color]),
     setPinned: (id: string, isPinned: boolean) =>
       callReducer("set_page_pinned", [id, isPinned]),
+    setDirection: (id: string, direction: string) =>
+      callReducer("set_page_direction", [id, direction]),
     markAsTemplate: (id: string, isTemplate: boolean) =>
       callReducer("mark_as_template", [id, isTemplate]),
     createFromTemplate: (templateId: string, title: string, collectionId: string, createdBy: string) => {

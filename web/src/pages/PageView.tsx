@@ -1290,7 +1290,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
       </div>
 
       {/* Content */}
-      <div className="px-4 md:px-8 py-6">
+      <div className="px-4 md:px-8 py-6" dir={page?.direction || "ltr"}>
         {editor && <EditorContent editor={editor} />}
       </div>
 

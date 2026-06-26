@@ -126,6 +126,7 @@ pub struct Page {
     pub updated_at: u64,
     pub published_at: u64,
     pub deleted_at: u64,
+    pub direction: String,
 }
 
 #[table(accessor = page_revision, public)]
@@ -525,6 +526,7 @@ pub fn create_page(
         full_width: false, is_pinned: false, is_template: false, template_id: String::new(),
         sort_order, created_by: created_by.clone(), updated_by: created_by.clone(),
         created_at: now, updated_at: now, published_at: 0, deleted_at: 0,
+        direction: "ltr".into(),
     });
 
     ctx.db.page_revision().insert(PageRevision {
@@ -763,6 +765,24 @@ pub fn set_page_pinned(ctx: &ReducerContext, id: String, is_pinned: bool) -> Res
     }
     let mut page = found.unwrap();
     page.is_pinned = is_pinned;
+    page.updated_at = now_ms(ctx);
+    ctx.db.page().id().update(page);
+    Ok(())
+}
+
+// ─── Page direction (RTL / bidirectional text) ─────────────────────────────
+
+#[reducer]
+pub fn set_page_direction(ctx: &ReducerContext, id: String, direction: String) -> Result<(), String> {
+    if direction != "ltr" && direction != "rtl" {
+        return Err("Direction must be 'ltr' or 'rtl'".into());
+    }
+    let found = ctx.db.page().iter().find(|p| p.id == id);
+    if found.is_none() {
+        return Err("Page not found".into());
+    }
+    let mut page = found.unwrap();
+    page.direction = direction;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
     Ok(())
