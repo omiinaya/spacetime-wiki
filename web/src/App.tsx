@@ -161,7 +161,7 @@ function AppLayout() {
   // Admin state
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa" | "ldap">("users");
+  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa" | "ldap" | "oauth">("users");
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; description: string; created_by: string; created_at: number; updated_at: number }[]>([]);
@@ -1756,6 +1756,11 @@ function AppLayout() {
                 <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 MFA
               </button>
+              <button onClick={() => setAdminTab("oauth")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "oauth" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z"/><path d="M12 6v12M6 12h12"/></svg>
+                OAuth
+              </button>
               <button onClick={() => setAdminTab("ldap")}
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "ldap" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -2063,6 +2068,7 @@ function AppLayout() {
             {adminTab === "invitations" && <InvitationSettings userId={userId} />}
             {adminTab === "mfa" && <MfaSettings userId={userId} />}
             {adminTab === "ldap" && <LdapSettings userId={userId} />}
+            {adminTab === "oauth" && <OAuthSettings userId={userId} />}
           </div>
         </div>
       )}
@@ -2484,6 +2490,7 @@ function AppLayout() {
           <Route path="/p/:slug" element={<SlugView />} />
           <Route path="/permalink/:id" element={<PermalinkRedirect />} />
           <Route path="/oauth/google/callback" element={<GoogleCallback />} />
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
           <Route path="/oauth/oidc/callback" element={<OidcCallback />} />
           <Route path="/auth/saml/callback" element={<SamlCallback />} />
           <Route path="/login" element={<LoginView />} />
@@ -2957,6 +2964,64 @@ function OidcCallback() {
   return <div className="flex items-center justify-center h-full"><div className="text-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" /><p className="text-xs text-muted-foreground">{status}</p></div></div>;
 }
 
+// ─── Generic OAuth Callback (Slack/Discord/GitHub/GitLab) ─────────────────
+
+function OAuthCallback() {
+  const navigate = useNavigate();
+  const [status, setStatus] = useState("Completing sign-in...");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    const error = params.get("error");
+    if (error || !code) { setStatus(`Authentication failed: ${error || "No authorization code"}`); return; }
+
+    const code_verifier = localStorage.getItem("sw_oauth_verifier") || "";
+    localStorage.removeItem("sw_oauth_verifier");
+    const providerId = localStorage.getItem("sw_oauth_provider_id") || "";
+    localStorage.removeItem("sw_oauth_provider_id");
+
+    if (!providerId) { setStatus("No OAuth provider configured"); return; }
+
+    (async () => {
+      try {
+        setStatus("Exchanging code...");
+        const redirectUri = `${window.location.origin}/oauth/callback`;
+
+        const resp = await fetch(`${window.location.origin}/api/v1/auth/oauth/callback`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider_id: providerId,
+            code,
+            code_verifier,
+            redirect_uri: redirectUri,
+          }),
+        });
+
+        if (!resp.ok) {
+          const detail = await resp.text();
+          throw new Error(detail || "OAuth callback failed");
+        }
+
+        const result = await resp.json();
+        if (result.user) {
+          localStorage.setItem("sw_user_id", result.user.id);
+          localStorage.setItem("sw_user_email", result.user.email || "");
+          navigate("/", { replace: true });
+        } else {
+          throw new Error("No user returned from authentication");
+        }
+      } catch (err: any) {
+        setStatus(`Error: ${err.message || err}`);
+      }
+    })();
+  }, [navigate]);
+
+  return <div className="flex items-center justify-center h-full"><div className="text-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" /><p className="text-xs text-muted-foreground">{status}</p></div></div>;
+}
+
 // ─── SAML 2.0 Callback ─────────────────────────────────────────────────────────
 
 function SamlCallback() {
@@ -3175,12 +3240,14 @@ function LoginView() {
   const [ldapUsername, setLdapUsername] = useState("");
   const [ldapPassword, setLdapPassword] = useState("");
   const [ldapLoading, setLdapLoading] = useState(false);
+  const [oauthProviders, setOauthProviders] = useState<OauthProvider[]>([]);
 
-  // Load active OIDC, SAML, and LDAP providers
+  // Load active OIDC, SAML, LDAP, and OAuth providers
   useEffect(() => {
     api.oidc.listActive().then(setOidcProviders).catch(() => {});
     api.saml.listActive().then(setSamlProviders).catch(() => {});
     api.ldap.listActive().then(setLdapProviders).catch(() => {});
+    api.oauth.listProviders().then(setOauthProviders).catch(() => {});
   }, []);
 
   // Generic OIDC sign-in
@@ -3236,6 +3303,22 @@ function LoginView() {
       localStorage.setItem("sw_oauth_verifier", code_verifier);
       const redirectUri = `${window.location.origin}/oauth/google/callback`;
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&code_challenge=${code_challenge}&code_challenge_method=S256`;
+      window.location.href = url;
+    });
+  };
+
+  // Generic OAuth sign-in (Slack, Discord, GitHub, GitLab)
+  const handleOAuthSignIn = (provider: OauthProvider) => {
+    const code_verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"[b % 66]).join("");
+    crypto.subtle.digest("SHA-256", new TextEncoder().encode(code_verifier)).then(hash => {
+      const code_challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      localStorage.setItem("sw_oauth_verifier", code_verifier);
+      localStorage.setItem("sw_oauth_provider_id", provider.id);
+      const redirectUri = `${window.location.origin}/oauth/callback`;
+      const scopes = encodeURIComponent(provider.scope);
+      const url = `${provider.authorize_url}?client_id=${provider.client_id}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scopes}&code_challenge=${code_challenge}&code_challenge_method=S256`;
       window.location.href = url;
     });
   };
@@ -3514,6 +3597,14 @@ function LoginView() {
             <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Sign in with Google
           </button>
+          {/* Generic OAuth provider buttons (Slack, Discord, GitHub, GitLab) */}
+          {oauthProviders.map(p => (
+            <button key={p.id} onClick={() => handleOAuthSignIn(p)}
+              className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              Sign in with {p.name}
+            </button>
+          ))}
           {/* Passkey / WebAuthn sign-in */}
           <button onClick={handlePasskeySignIn} className="w-full h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
             <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
@@ -5469,6 +5560,334 @@ function LdapSettings({ userId }: { userId: string | null }) {
             {testResult && (
               <div className="mt-2 px-3 py-2 rounded-md text-xs bg-green-500/10 text-green-400">{testResult}</div>
             )}
+
+            <div className="flex gap-2 justify-end pt-4 border-t border-border mt-4">
+              <button onClick={() => setDialogOpen(false)}
+                className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleSave}
+                className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 transition-colors">
+                {editingId ? "Save" : "Add Provider"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── OAuth Provider Settings (Slack, Discord, GitHub, GitLab) ─────────────
+
+function OAuthSettings({ userId }: { userId: string | null }) {
+  const [providers, setProviders] = useState<OauthProvider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [oaName, setOaName] = useState("");
+  const [oaSlug, setOaSlug] = useState("");
+  const [oaType, setOaType] = useState("github");
+  const [oaAuthUrl, setOaAuthUrl] = useState("");
+  const [oaTokenUrl, setOaTokenUrl] = useState("");
+  const [oaUserUrl, setOaUserUrl] = useState("");
+  const [oaScope, setOaScope] = useState("");
+  const [oaClientId, setOaClientId] = useState("");
+  const [oaClientSecret, setOaClientSecret] = useState("");
+  const [oaIcon, setOaIcon] = useState("");
+  const [oaAutoReg, setOaAutoReg] = useState(true);
+  const [oaDefaultRole, setOaDefaultRole] = useState("member");
+  const [oaActive, setOaActive] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadProviders = useCallback(async () => {
+    if (!userId) { setLoading(false); return; }
+    try {
+      const list = await api.oauth.listAllProviders();
+      setProviders(list);
+    } catch (e) { console.error("Failed to load OAuth providers:", e); }
+    finally { setLoading(false); }
+  }, [userId]);
+
+  useEffect(() => { loadProviders(); }, [loadProviders]);
+
+  const openAdd = () => {
+    setEditingId(null);
+    setOaName(""); setOaSlug(""); setOaType("github");
+    setOaAuthUrl(""); setOaTokenUrl(""); setOaUserUrl("");
+    setOaScope(""); setOaClientId(""); setOaClientSecret("");
+    setOaIcon(""); setOaAutoReg(true); setOaDefaultRole("member"); setOaActive(true);
+    setError("");
+    setDialogOpen(true);
+  };
+
+  const openEdit = (p: OauthProvider) => {
+    setEditingId(p.id);
+    setOaName(p.name); setOaSlug(p.slug); setOaType(p.provider_type);
+    setOaAuthUrl(p.authorize_url); setOaTokenUrl(p.token_url); setOaUserUrl(p.userinfo_url);
+    setOaScope(p.scope); setOaClientId(p.client_id); setOaClientSecret("");
+    setOaIcon(p.icon); setOaAutoReg(p.auto_register); setOaDefaultRole(p.default_role); setOaActive(p.is_active);
+    setError("");
+    setDialogOpen(true);
+  };
+
+  const getDefaultUrls = (type: string) => {
+    const defaults: Record<string, { auth: string; token: string; userinfo: string; scope: string; icon: string }> = {
+      github: {
+        auth: "https://github.com/login/oauth/authorize",
+        token: "https://github.com/login/oauth/access_token",
+        userinfo: "https://api.github.com/user",
+        scope: "read:user user:email",
+        icon: "github",
+      },
+      discord: {
+        auth: "https://discord.com/api/oauth2/authorize",
+        token: "https://discord.com/api/oauth2/token",
+        userinfo: "https://discord.com/api/users/@me",
+        scope: "identify email",
+        icon: "discord",
+      },
+      slack: {
+        auth: "https://slack.com/openid/connect/authorize",
+        token: "https://slack.com/api/openid.connect.token",
+        userinfo: "https://slack.com/api/openid.connect.userInfo",
+        scope: "openid email profile",
+        icon: "slack",
+      },
+      gitlab: {
+        auth: "https://gitlab.com/oauth/authorize",
+        token: "https://gitlab.com/oauth/token",
+        userinfo: "https://gitlab.com/api/v4/user",
+        scope: "read_user",
+        icon: "gitlab",
+      },
+    };
+    return defaults[type] || { auth: "", token: "", userinfo: "", scope: "openid email profile", icon: type };
+  };
+
+  const handleTypeChange = (type: string) => {
+    setOaType(type);
+    const defaults = getDefaultUrls(type);
+    if (!editingId) {
+      setOaAuthUrl(defaults.auth);
+      setOaTokenUrl(defaults.token);
+      setOaUserUrl(defaults.userinfo);
+      setOaScope(defaults.scope);
+      setOaIcon(defaults.icon);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!oaName.trim() || !oaClientId.trim()) {
+      setError("Name and client ID are required");
+      return;
+    }
+    if (!oaAuthUrl.trim() || !oaTokenUrl.trim() || !oaUserUrl.trim()) {
+      setError("Authorize URL, token URL, and userinfo URL are required");
+      return;
+    }
+    setError("");
+    try {
+      if (editingId) {
+        await api.oauth.updateProvider(editingId, {
+          name: oaName.trim(), slug: oaSlug.trim() || oaName.trim().toLowerCase().replace(/\s+/g, "-"),
+          provider_type: oaType,
+          authorize_url: oaAuthUrl.trim(), token_url: oaTokenUrl.trim(), userinfo_url: oaUserUrl.trim(),
+          scope: oaScope, client_id: oaClientId.trim(), client_secret: oaClientSecret,
+          icon: oaIcon || oaType, auto_register: oaAutoReg, default_role: oaDefaultRole, is_active: oaActive,
+        });
+      } else {
+        await api.oauth.addProvider(
+          oaName.trim(), oaSlug.trim() || oaName.trim().toLowerCase().replace(/\s+/g, "-"),
+          oaType, oaAuthUrl.trim(), oaTokenUrl.trim(), oaUserUrl.trim(),
+          oaScope, oaClientId.trim(), oaClientSecret, oaIcon || oaType, oaAutoReg, oaDefaultRole,
+          userId || "",
+        );
+      }
+      setDialogOpen(false);
+      await loadProviders();
+    } catch (err: any) { setError(`Failed to save: ${err.message || err}`); }
+  };
+
+  // Provider icon helper
+  const providerIcon = (p: OauthProvider) => {
+    const icons: Record<string, string> = {
+      github: "🔑", discord: "💬", slack: "💎", gitlab: "🦊",
+    };
+    return icons[p.provider_type] || "🔗";
+  };
+
+  if (loading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">OAuth Providers (Slack/Discord/GitHub/GitLab)</p>
+        <button onClick={openAdd}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+          <Plus className="h-3 w-3" /> Add Provider
+        </button>
+      </div>
+
+      {error && <div className="mb-3 px-3 py-2 rounded-md bg-red-500/10 text-red-400 text-xs">{error}</div>}
+
+      <div className="space-y-2">
+        {providers.map(p => (
+          <div key={p.id} className="flex items-center gap-3 px-3 py-2 rounded-md border border-border hover:bg-muted/30 transition-colors">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate flex items-center gap-2">
+                <span className="text-sm">{providerIcon(p)}</span>
+                {p.name}
+                {p.is_active ? (
+                  <span className="text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">Active</span>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Disabled</span>
+                )}
+                <span className="text-[10px] text-muted-foreground/50 bg-muted/50 px-1.5 py-0.5 rounded">{p.provider_type}</span>
+              </p>
+              <p className="text-[10px] text-muted-foreground/60 truncate">{p.authorize_url}</p>
+            </div>
+            <button onClick={() => openEdit(p)}
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button onClick={async () => {
+              if (!confirm(`Delete OAuth provider "${p.name}"?`)) return;
+              await api.oauth.deleteProvider(p.id);
+              setProviders(prev => prev.filter(x => x.id !== p.id));
+            }} className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+        {providers.length === 0 && (
+          <div className="py-4 text-center text-xs text-muted-foreground">
+            No OAuth providers configured. Add one to enable SSO login with Slack, Discord, GitHub, or GitLab.
+          </div>
+        )}
+      </div>
+
+      <div className="pt-4 mt-4 border-t border-border">
+        <h4 className="text-xs font-semibold mb-2 text-muted-foreground">How it works</h4>
+        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+          Configure any OAuth 2.0 provider (Slack, Discord, GitHub, GitLab, or custom).
+          Users will see a <strong className="text-foreground">"Sign in with {providers.find(p => p.is_active)?.name || "Provider"}"</strong> button on the login page.
+          The callback URL is: <code className="bg-muted px-1 rounded">{window.location.origin}/oauth/callback</code>
+        </p>
+      </div>
+
+      {/* Add/Edit dialog */}
+      {dialogOpen && (
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+             onClick={() => setDialogOpen(false)}>
+          <div className="dialog-container w-full max-w-lg mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto"
+               onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold mb-4">{editingId ? "Edit OAuth Provider" : "Add OAuth Provider"}</h3>
+
+            <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+              {/* Basic info */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Name</label>
+                  <input type="text" value={oaName} onChange={e => setOaName(e.target.value)}
+                    placeholder="My GitHub" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Slug</label>
+                  <input type="text" value={oaSlug} onChange={e => setOaSlug(e.target.value)}
+                    placeholder="my-github" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+              </div>
+
+              {/* Provider type selector */}
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Provider Type</label>
+                <select value={oaType} onChange={e => handleTypeChange(e.target.value)}
+                  className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                  <option value="github">GitHub</option>
+                  <option value="discord">Discord</option>
+                  <option value="slack">Slack</option>
+                  <option value="gitlab">GitLab</option>
+                  <option value="generic">Generic/OIDC</option>
+                </select>
+              </div>
+
+              {/* URLs */}
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Authorize URL</label>
+                <input type="text" value={oaAuthUrl} onChange={e => setOaAuthUrl(e.target.value)}
+                  placeholder="https://github.com/login/oauth/authorize" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Token URL</label>
+                  <input type="text" value={oaTokenUrl} onChange={e => setOaTokenUrl(e.target.value)}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Userinfo URL</label>
+                  <input type="text" value={oaUserUrl} onChange={e => setOaUserUrl(e.target.value)}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+              </div>
+
+              {/* Scope */}
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Scope (space-separated)</label>
+                <input type="text" value={oaScope} onChange={e => setOaScope(e.target.value)}
+                  placeholder="read:user user:email" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+
+              {/* Client credentials */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Client ID</label>
+                  <input type="text" value={oaClientId} onChange={e => setOaClientId(e.target.value)}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Client Secret</label>
+                  <input type="password" value={oaClientSecret} onChange={e => setOaClientSecret(e.target.value)}
+                    placeholder={editingId ? "(leave empty to keep existing)" : "Required"}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+              </div>
+
+              {/* Icon */}
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Icon identifier</label>
+                <input type="text" value={oaIcon} onChange={e => setOaIcon(e.target.value)}
+                  placeholder="github" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+
+              {/* Settings */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Default role</label>
+                  <select value={oaDefaultRole} onChange={e => setOaDefaultRole(e.target.value)}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </div>
+                {editingId && (
+                  <div>
+                    <label className="text-[10px] text-muted-foreground/60 mb-1 block">Status</label>
+                    <select value={oaActive ? "true" : "false"} onChange={e => setOaActive(e.target.value === "true")}
+                      className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                      <option value="true">Active</option>
+                      <option value="false">Disabled</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={oaAutoReg} onChange={e => setOaAutoReg(e.target.checked)}
+                  className="rounded border-border" />
+                <span className="text-[10px] text-muted-foreground/80">Auto-register new users on first OAuth login</span>
+              </label>
+            </div>
 
             <div className="flex gap-2 justify-end pt-4 border-t border-border mt-4">
               <button onClick={() => setDialogOpen(false)}
