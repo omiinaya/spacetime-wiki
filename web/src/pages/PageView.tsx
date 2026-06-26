@@ -325,6 +325,13 @@ export function PageView({ pageId, userId }: Props) {
     }
   }, [editingTitle]);
 
+  // ─── TOC: extract headings from page JSON ───────────────────────────────
+
+  const toc = (() => {
+    if (!page) return [];
+    try { return extractHeadings(JSON.parse(page.content || "{}")); } catch { return []; }
+  })();
+
   // Scroll-spy: IntersectionObserver for active heading tracking in TOC
   useEffect(() => {
     if (!showToc || toc.length === 0) return;
@@ -386,11 +393,6 @@ export function PageView({ pageId, userId }: Props) {
     walk(doc);
     return headings;
   }
-
-  const toc = (() => {
-    if (!page) return [];
-    try { return extractHeadings(JSON.parse(page.content || "{}")); } catch { return []; }
-  })();
 
   const loadPage = async () => {
     try {
@@ -477,7 +479,16 @@ export function PageView({ pageId, userId }: Props) {
       ImageEnhanced.configure({ inline: true }),
       Transclusion,
     ],
-    content: page ? JSON.parse(page.content || "{}") : undefined,
+    content: (() => {
+      if (!page) return undefined;
+      try {
+        return JSON.parse(page.content || "{}");
+      } catch {
+        // content is plain text/HTML, not Tiptap JSON — render as plain paragraph
+        const text = page.text_content || page.content?.replace(/<[^>]*>/g, "") || "(Empty page)";
+        return { type: "doc", content: [{ type: "paragraph", content: text ? [{ type: "text", text }] : [] }] };
+      }
+    })(),
     editable: false,
     editorProps: {
       handleClick: (_view, _pos, event) => {

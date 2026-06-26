@@ -41,6 +41,10 @@ export class SubscriptionManager {
   private stateListeners: Set<(state: ConnectionState) => void> = new Set();
   private reconnectDelay = 1000;
   private maxReconnectDelay = 30_000;
+  private everConnected = false;
+  private consecutiveFailures = 0;
+  private maxConsecutiveFailures = 3;
+  private fatal = false;
 
   get connectionState(): ConnectionState {
     return this.state;
@@ -59,6 +63,7 @@ export class SubscriptionManager {
   }
 
   connect() {
+    if (this.fatal) return;
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -75,6 +80,8 @@ export class SubscriptionManager {
     this.ws.onopen = () => {
       console.log("[STDB Sub] Connected to", WS_URL);
       this.setState("connected");
+      this.everConnected = true;
+      this.consecutiveFailures = 0;
       this.reconnectDelay = 1000;
       // Resubscribe all queries
       for (const q of this.queries) {
@@ -110,7 +117,17 @@ export class SubscriptionManager {
       console.log(`[STDB Sub] Disconnected (code=${event.code})`);
       this.setState("disconnected");
       this.ws = null;
-      this.scheduleReconnect();
+      if (this.everConnected || this.consecutiveFailures < this.maxConsecutiveFailures) {
+        this.consecutiveFailures++;
+        this.scheduleReconnect();
+      } else if (!this.fatal) {
+        this.fatal = true;
+        console.warn(
+          `[STDB Sub] Stopped reconnecting after ${this.maxConsecutiveFailures} failures — ` +
+          "the WebSocket subscribe endpoint may not be available on this STDB server. " +
+          "Data still loads via HTTP."
+        );
+      }
     };
 
     this.ws.onerror = (event) => {
