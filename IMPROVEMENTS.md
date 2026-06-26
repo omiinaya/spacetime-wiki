@@ -21,6 +21,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-26 | **Fix STDB v2.4 build errors** — app_setting.key().update(), removed get_app_setting reducer (reducers cannot return values) | _(this commit)_ |
 | 2026-06-28 | **P4 — MCP server built!** 6 tools (wiki_search, wiki_read_page, wiki_list_collections, wiki_list_pages, wiki_get_backlinks, wiki_get_linked_pages) + Resources. Registered in Hermes native MCP client. | |
 | 2026-06-28 | **P4 — Page includes/transclusion!** `{{@page_id}}` syntax in page content renders referenced page inline, with Tiptap extension, visual styling, and full attachment resolution | |
 | 2026-06-28 | P2 — Enhanced command palette (8 actions, keyboard shortcut badges, theme toggle) | 810cd50 |
@@ -30,4 +31,3 @@ and works the top pending item each tick.
 | 2026-06-28 | P3 — Nested collection hierarchies with recursive tree rendering | 5189a1c |
 | 2026-06-28 | P3 — Feature flags / modular architecture admin panel with toggleable extensions | ff8a73a |
 | 2026-06-28 | P3 — Collection page sort preference (Manual/Title/Date) per collection in editor | 267e8a7 |
-| 2026-06-28 | P2 — Copy page link to clipboard from sidebar context menu | 4deb760 |
