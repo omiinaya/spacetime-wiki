@@ -8,12 +8,6 @@ and works the top pending item each tick.
 
 ## Status: PENDING
 
-### P3 — Page color accent picker
-The Page model already has a `color` field and `set_page_color` reducer, but there's no UI for it. Add a color picker in the PageView toolbar (or page properties) that sets the accent color strip. Should show a small color palette (6-8 presets) + custom hex input.
-Files: web/src/pages/PageView.tsx
-Difficulty: Small
-Est: 20min
-
 ### P3 — Dual editor mode (WYSIWYG ↔ Markdown)
 Add a toggle in the PageEditor to switch between WYSIWYG (Tiptap) and raw Markdown editing modes. The export-to-markdown and import-from-markdown functions already exist in PageEditor; wire them into a live toggle with a Codemirror or textarea for the Markdown side.
 Files: web/src/pages/PageEditor.tsx
@@ -35,5 +29,7 @@ Est: 1h
 | 2026-06-26 | P3 — Permanent image upload (paste/drag-and-drop to server storage with attachment:// URL scheme, size limits, and auto-resolution) | 077ecf3 |
 | 2026-06-26 | P1 — Table toolbar with row/column operations (insert/delete rows/cols, merge/split cells) | 0bea2e9 |
 | 2026-06-26 | P2 — Responsive sidebar swipe gestures, backdrop blur, and smooth drawer animation | e928ff8 |
-| 2026-06-26 | **P2 — Comment reactions UI (STDB-backed 👍❤️🎉😄😕 with toggle, counts, active state)** | **_CURRENT_** |
-| 2026-06-27 | P2 — Wiki import from ZIP (Notion/Confluence export) with parent-child hierarchy preservation | (this session) |
+| 2026-06-26 | **P2 — Comment reactions UI (STDB-backed 👍❤️🎉😄😕 with toggle, counts, active state)** | 6374a20 |
+| 2026-06-27 | P2 — Wiki import from ZIP (Notion/Confluence export) with parent-child hierarchy preservation | 1170918 |
+| 2026-06-27 | P2 — Edge-swipe-to-open sidebar gesture with drag-follow animation | b79f7e9 |
+| 2026-06-27 | P3 — Page color accent picker in PageView toolbar (12-color palette + clear) | (this session) |
