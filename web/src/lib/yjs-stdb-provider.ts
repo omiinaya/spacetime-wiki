@@ -11,9 +11,11 @@
  * 3. Register an observer on the Yjs.Doc — when the local user makes edits,
  *    broadcast the encoded update to STDB via the `broadcast_yjs_update` reducer.
  * 4. Manage awareness (cursor presence) via the `collab_session` table.
+ * 5. Expose a y-protocols Awareness instance for Tiptap v3 CollaborationCursor.
  */
 
 import * as Y from "yjs";
+import { Awareness } from "y-protocols/awareness";
 import { api, type CollabUpdate } from "./api";
 
 const COLLAB_COLORS = [
@@ -33,6 +35,8 @@ function getUserColor(userId: string): string {
 
 export class YjsStdbProvider {
   public doc: Y.Doc;
+  /** y-protocols Awareness instance for Tiptap v3 CollaborationCursor */
+  public awareness: Awareness;
   private pageId: string;
   private userId: string;
   private userName: string;
@@ -43,6 +47,7 @@ export class YjsStdbProvider {
 
   constructor(pageId: string, userId: string, userName: string) {
     this.doc = new Y.Doc();
+    this.awareness = new Awareness(this.doc);
     this.pageId = pageId;
     this.userId = userId;
     this.userName = userName;
@@ -53,10 +58,16 @@ export class YjsStdbProvider {
   async initialize(): Promise<void> {
     if (this.destroyed) return;
 
-    // 1. Join the collaboration session
+    // 1. Set local awareness state
+    this.awareness.setLocalStateField("user", {
+      name: this.userName,
+      color: this.color,
+    });
+
+    // 2. Join the collaboration session
     await api.collaboration.joinSession(this.pageId, this.userId, this.userName, this.color);
 
-    // 2. Fetch existing Yjs updates and apply them to reconstruct the doc state
+    // 3. Fetch existing Yjs updates and apply them to reconstruct the doc state
     try {
       const updates = await api.collaboration.getUpdates(this.pageId);
       for (const upd of updates) {
@@ -67,7 +78,7 @@ export class YjsStdbProvider {
       console.warn("YjsStdbProvider: failed to fetch existing updates", err);
     }
 
-    // 3. Register observer to broadcast local edits
+    // 4. Register observer to broadcast local edits
     this.updateHandler = (update: Uint8Array, origin: any) => {
       if (origin === this || origin === "remote") return; // ignore own broadcasts and remote updates
       this.scheduleBroadcast(update);
@@ -132,6 +143,7 @@ export class YjsStdbProvider {
       clearTimeout(this.broadcastDebounce);
       this.broadcastDebounce = null;
     }
+    this.awareness.destroy();
     api.collaboration.leaveSession(this.pageId, this.userId).catch(() => {});
   }
 }

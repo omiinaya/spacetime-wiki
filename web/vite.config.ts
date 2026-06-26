@@ -18,4 +18,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ["highlight.js", "lowlight", "@tiptap/extension-code-block-lowlight"],
+  },
 });
