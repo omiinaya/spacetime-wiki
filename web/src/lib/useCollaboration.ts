@@ -96,18 +96,16 @@ export function useCollaboration(
   }, [sessions, userId]);
 
   const ydoc = ydocRef.current;
-  const provider = providerRef.current;
 
-  // Build Tiptap Collaboration extension config
+  // Build Tiptap Collaboration extension config (v3 API)
   const collaborationExtension = Collaboration.configure({
     document: ydoc,
   });
 
+  // Build CollaborationCursor extension config (v3 API)
+  // Uses the provider's awareness if available, otherwise provides minimal noop
   const collaborationCursorExtension = CollaborationCursor.configure({
-    provider: providerRef.current ? {
-      getCursorPosition: () => null,
-      setCursorPosition: () => {},
-    } as any : undefined,
+    provider: providerRef.current as any,
     user: {
       name: userName || "Unknown",
       color: userId ? getColorForUser(userId) : "#4A90D9",

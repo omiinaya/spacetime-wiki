@@ -434,35 +434,58 @@ function AppLayout() {
     if (!file) return;
     setImportingNotion(true);
     try {
+      // Handle single HTML file import (Notion HTML export single page)
+      if (file.name.endsWith(".html") || file.name.endsWith(".htm")) {
+        const html = await file.text();
+        const doc = htmlToProseMirror(html);
+        const title = file.name.replace(/\.html?$/i, "");
+        const id = await api.pages.create(title, JSON.stringify(doc), "", "", userId || "anonymous");
+        addToast({ type: "success", title: "Imported", message: `"${title}" imported from HTML`, duration: 4000 });
+        navigate(`/page/${id}`);
+        return;
+      }
+
+      // ZIP-based import (Notion Markdown or HTML export)
       const zip = await JSZip.loadAsync(file);
-      // Collect all .md entries with their paths
-      const mdEntries: { path: string; name: string; dir: string }[] = [];
+      // Collect all .md and .html entries with their paths
+      const contentEntries: { path: string; name: string; dir: string; ext: string }[] = [];
       zip.forEach((path, entry) => {
-        if (!entry.dir && path.endsWith(".md")) {
+        if (!entry.dir) {
           const parts = path.split("/");
-          mdEntries.push({
-            path,
-            name: (parts.pop() || "").replace(/\.md$/i, ""),
-            dir: parts.join("/"),
-          });
+          const filename = parts.pop() || "";
+          if (filename.endsWith(".md")) {
+            contentEntries.push({
+              path,
+              name: filename.replace(/\.md$/i, ""),
+              dir: parts.join("/"),
+              ext: ".md",
+            });
+          } else if (filename.endsWith(".html") || filename.endsWith(".htm")) {
+            contentEntries.push({
+              path,
+              name: filename.replace(/\.html?$/i, ""),
+              dir: parts.join("/"),
+              ext: ".html",
+            });
+          }
         }
       });
-      if (mdEntries.length === 0) {
-        addToast({ type: "error", title: "No pages found", message: "No Markdown files found in the ZIP archive", duration: 5000 });
+      if (contentEntries.length === 0) {
+        addToast({ type: "error", title: "No pages found", message: "No Markdown or HTML files found in the ZIP archive", duration: 5000 });
         return;
       }
       // Sort by path depth (shallow first = parents created before children)
-      mdEntries.sort((a, b) => a.path.split("/").length - b.path.split("/").length);
+      contentEntries.sort((a, b) => a.path.split("/").length - b.path.split("/").length);
       // Track created page IDs by their directory prefix
       const pageIdsByDir: Record<string, string> = {};
       let created = 0;
-      for (const entry of mdEntries) {
-        const markdown = await zip.file(entry.path)?.async("string") || "";
-        const doc = markdownToProseMirror(markdown);
+      for (const entry of contentEntries) {
+        const raw = await zip.file(entry.path)?.async("string") || "";
+        const doc = entry.ext === ".html" ? htmlToProseMirror(raw) : markdownToProseMirror(raw);
         const parentId = pageIdsByDir[entry.dir] || "";
         const id = await api.pages.create(entry.name, JSON.stringify(doc), "", parentId, userId || "anonymous");
-        // Map this entry's path prefix (without .md) so children can find it
-        const childKey = entry.path.replace(/\.md$/, "");
+        // Map this entry's path prefix (without extension) so children can find it
+        const childKey = entry.path.replace(/\.\w+$/, "");
         pageIdsByDir[childKey] = id;
         // Also map the directory name itself for sibling lookups
         pageIdsByDir[entry.dir + "/" + entry.name] = id;
@@ -1367,7 +1390,7 @@ function AppLayout() {
             {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
             {importing ? "Importing..." : "Import MD"}
           </button>
-          <input ref={notionImportRef} type="file" accept=".zip" onChange={handleImportNotion} className="hidden" />
+          <input ref={notionImportRef} type="file" accept=".zip,.html,.htm" onChange={handleImportNotion} className="hidden" />
           <button
             onClick={() => notionImportRef.current?.click()}
             disabled={importingNotion}
@@ -3284,6 +3307,98 @@ function ApiKeySection({ userId }: { userId: string | null }) {
 }
 
 // ─── Markdown helpers (duplicated from PageEditor to avoid circular imports) ──
+
+/** Convert simple HTML (Notion HTML export) to ProseMirror JSON */
+function htmlToProseMirror(html: string): any {
+  const doc: any = { type: "doc", content: [] };
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  for (const node of div.childNodes) {
+    if (node.nodeType === 3) { // text node
+      const t = (node.textContent || "").trim();
+      if (t) doc.content.push({ type: "paragraph", content: [{ type: "text", text: t }] });
+      continue;
+    }
+    const el = node as HTMLElement;
+    const tag = el.tagName?.toLowerCase();
+    if (!tag) continue;
+    if (tag === "h1" || tag === "h2" || tag === "h3" || tag === "h4" || tag === "h5" || tag === "h6") {
+      const level = parseInt(tag[1]);
+      doc.content.push({ type: "heading", attrs: { level }, content: [{ type: "text", text: el.textContent || "" }] });
+    } else if (tag === "p") {
+      doc.content.push({ type: "paragraph", content: extractInlineContent(el) });
+    } else if (tag === "ul" || tag === "ol") {
+      const items: any[] = [];
+      el.querySelectorAll(":scope > li").forEach((li) => {
+        items.push({ type: "listItem", content: [{ type: "paragraph", content: extractInlineContent(li as HTMLElement) }] });
+      });
+      doc.content.push({ type: tag === "ul" ? "bulletList" : "orderedList", content: items });
+    } else if (tag === "blockquote") {
+      doc.content.push({ type: "blockquote", content: [{ type: "paragraph", content: extractInlineContent(el) }] });
+    } else if (tag === "pre") {
+      const code = el.querySelector("code");
+      const text = code?.textContent || el.textContent || "";
+      doc.content.push({ type: "codeBlock", content: [{ type: "text", text }] });
+    } else if (tag === "hr") {
+      doc.content.push({ type: "horizontalRule" });
+    } else if (tag === "figure") {
+      const img = el.querySelector("img");
+      if (img) {
+        doc.content.push({ type: "image", attrs: { src: img.getAttribute("src") || "", alt: img.getAttribute("alt") || "" } });
+      }
+    } else if (tag === "table") {
+      const rows: any[] = [];
+      el.querySelectorAll(":scope > tr, :scope > thead > tr, :scope > tbody > tr").forEach((tr) => {
+        const cells: any[] = [];
+        const trEl = tr as HTMLElement;
+        trEl.querySelectorAll("th, td").forEach((td) => {
+          const tdEl = td as HTMLElement;
+          const isHeader = tdEl.tagName === "TH";
+          cells.push({ type: isHeader ? "tableHeader" : "tableCell", content: [{ type: "paragraph", content: extractInlineContent(tdEl) }] });
+        });
+        rows.push({ type: "tableRow", content: cells });
+      });
+      if (rows.length) doc.content.push({ type: "table", content: rows });
+    } else {
+      const text = el.textContent?.trim();
+      if (text) doc.content.push({ type: "paragraph", content: [{ type: "text", text }] });
+    }
+  }
+  if (doc.content.length === 0) doc.content.push({ type: "paragraph", content: [] });
+  return doc;
+}
+
+function extractInlineContent(el: HTMLElement): any[] {
+  const content: any[] = [];
+  for (const child of el.childNodes) {
+    if (child.nodeType === 3) {
+      const t = (child.textContent || "").trim();
+      if (t) content.push({ type: "text", text: t });
+    } else {
+      const c = child as HTMLElement;
+      const tag = c.tagName?.toLowerCase();
+      if (tag === "strong" || tag === "b") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "bold" }] });
+      } else if (tag === "em" || tag === "i") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "italic" }] });
+      } else if (tag === "u") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "underline" }] });
+      } else if (tag === "s" || tag === "del") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "strike" }] });
+      } else if (tag === "code") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "code" }] });
+      } else if (tag === "a") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "link", attrs: { href: c.getAttribute("href") || "" } }] });
+      } else if (tag === "br") {
+        content.push({ type: "text", text: " " });
+      } else {
+        const t = c.textContent?.trim();
+        if (t) content.push({ type: "text", text: t });
+      }
+    }
+  }
+  return content;
+}
 
 function markdownToProseMirror(md: string): any {
   const doc: any = { type: "doc", content: [] };
