@@ -161,7 +161,7 @@ function AppLayout() {
   // Admin state
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa">("users");
+  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa" | "ldap">("users");
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; description: string; created_by: string; created_at: number; updated_at: number }[]>([]);
@@ -1756,6 +1756,11 @@ function AppLayout() {
                 <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 MFA
               </button>
+              <button onClick={() => setAdminTab("ldap")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "ldap" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                LDAP
+              </button>
             </div>
 
             {adminTab === "users" && (
@@ -2057,6 +2062,7 @@ function AppLayout() {
             {adminTab === "passkeys" && <PasskeySettings userId={userId} />}
             {adminTab === "invitations" && <InvitationSettings userId={userId} />}
             {adminTab === "mfa" && <MfaSettings userId={userId} />}
+            {adminTab === "ldap" && <LdapSettings userId={userId} />}
           </div>
         </div>
       )}
@@ -3165,11 +3171,16 @@ function LoginView() {
   const [error, setError] = useState("");
   const [oidcProviders, setOidcProviders] = useState<OidcProvider[]>([]);
   const [samlProviders, setSamlProviders] = useState<SamlProvider[]>([]);
+  const [ldapProviders, setLdapProviders] = useState<LdapProvider[]>([]);
+  const [ldapUsername, setLdapUsername] = useState("");
+  const [ldapPassword, setLdapPassword] = useState("");
+  const [ldapLoading, setLdapLoading] = useState(false);
 
-  // Load active OIDC and SAML providers
+  // Load active OIDC, SAML, and LDAP providers
   useEffect(() => {
     api.oidc.listActive().then(setOidcProviders).catch(() => {});
     api.saml.listActive().then(setSamlProviders).catch(() => {});
+    api.ldap.listActive().then(setLdapProviders).catch(() => {});
   }, []);
 
   // Generic OIDC sign-in
@@ -3253,6 +3264,45 @@ function LoginView() {
       const relayState = provider.id;
       window.location.href = `${provider.sso_url}?SAMLRequest=${encodeURIComponent(base64)}&RelayState=${relayState}`;
     });
+  };
+
+  // LDAP sign-in
+  const handleLdapSignIn = async (providerId: string) => {
+    setError("");
+    if (!ldapUsername.trim() || !ldapPassword.trim()) {
+      setError("LDAP username and password are required");
+      return;
+    }
+    setLdapLoading(true);
+    try {
+      // Call the API server LDAP login endpoint
+      const origin = window.location.origin;
+      const resp = await fetch(`${origin}/api/v1/auth/ldap/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider_id: providerId,
+          username: ldapUsername.trim(),
+          password: ldapPassword,
+        }),
+      });
+      if (!resp.ok) {
+        const detail = await resp.text();
+        throw new Error(detail || "LDAP authentication failed");
+      }
+      const result = await resp.json();
+      if (result.user) {
+        localStorage.setItem("sw_user_id", result.user.id);
+        localStorage.setItem("sw_user_email", result.user.email || "");
+        navigate("/");
+      } else {
+        throw new Error("No user returned from LDAP authentication");
+      }
+    } catch (err: any) {
+      setError(`LDAP sign-in failed: ${err.message || err}`);
+    } finally {
+      setLdapLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -3469,6 +3519,23 @@ function LoginView() {
             <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
             Sign in with Passkey
           </button>
+          {/* LDAP sign-in */}
+          {ldapProviders.map(p => (
+            <div key={p.id} className="space-y-2 pt-2 border-t border-border">
+              <p className="text-xs font-medium text-muted-foreground">Sign in with LDAP ({p.name})</p>
+              <input type="text" value={ldapUsername} onChange={e => setLdapUsername(e.target.value)}
+                placeholder="LDAP username"
+                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <input type="password" value={ldapPassword} onChange={e => setLdapPassword(e.target.value)}
+                placeholder="LDAP password"
+                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <button onClick={() => handleLdapSignIn(p.id)} disabled={ldapLoading}
+                className="w-full h-9 rounded-md border border-primary/30 bg-primary/5 text-sm font-medium hover:bg-primary/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {ldapLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
+                Sign in with LDAP
+              </button>
+            </div>
+          ))}
         </form>
         <p className="text-xs text-muted-foreground text-center">
           {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
@@ -5131,6 +5198,292 @@ export default function App() {
         <AppLayout />
       </ToastProvider>
     </BrowserRouter>
+  );
+}
+
+function LdapSettings({ userId }: { userId: string | null }) {
+  const [providers, setProviders] = useState<import("./lib/api").LdapProvider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [ldapName, setLdapName] = useState("");
+  const [ldapSlug, setLdapSlug] = useState("");
+  const [ldapHost, setLdapHost] = useState("");
+  const [ldapPort, setLdapPort] = useState(389);
+  const [ldapSecure, setLdapSecure] = useState(true);
+  const [ldapBindDn, setLdapBindDn] = useState("");
+  const [ldapBindPw, setLdapBindPw] = useState("");
+  const [ldapBaseDn, setLdapBaseDn] = useState("");
+  const [ldapFilter, setLdapFilter] = useState("(uid={{username}})");
+  const [ldapUserAttr, setLdapUserAttr] = useState("uid");
+  const [ldapEmailAttr, setLdapEmailAttr] = useState("mail");
+  const [ldapNameAttr, setLdapNameAttr] = useState("cn");
+  const [ldapDefaultRole, setLdapDefaultRole] = useState("member");
+  const [ldapAutoReg, setLdapAutoReg] = useState(true);
+  const [ldapActive, setLdapActive] = useState(true);
+  const [testStatus, setTestStatus] = useState("");
+  const [testResult, setTestResult] = useState("");
+  const [error, setError] = useState("");
+
+  const loadProviders = useCallback(async () => {
+    if (!userId) { setLoading(false); return; }
+    try {
+      const list = await api.ldap.list();
+      setProviders(list);
+    } catch (e) { console.error("Failed to load LDAP providers:", e); }
+    finally { setLoading(false); }
+  }, [userId]);
+
+  useEffect(() => { loadProviders(); }, [loadProviders]);
+
+  const openAdd = () => {
+    setEditingId(null);
+    setLdapName(""); setLdapSlug(""); setLdapHost(""); setLdapPort(389);
+    setLdapSecure(true); setLdapBindDn(""); setLdapBindPw("");
+    setLdapBaseDn(""); setLdapFilter("(uid={{username}})"); setLdapUserAttr("uid");
+    setLdapEmailAttr("mail"); setLdapNameAttr("cn"); setLdapDefaultRole("member");
+    setLdapAutoReg(true); setLdapActive(true);
+    setTestStatus(""); setTestResult(""); setError("");
+    setDialogOpen(true);
+  };
+
+  const openEdit = (p: import("./lib/api").LdapProvider) => {
+    setEditingId(p.id);
+    setLdapName(p.name); setLdapSlug(p.slug); setLdapHost(p.host);
+    setLdapPort(p.port); setLdapSecure(p.is_secure); setLdapBindDn(p.bind_dn);
+    setLdapBindPw(""); setLdapBaseDn(p.base_dn); setLdapFilter(p.user_filter);
+    setLdapUserAttr(p.username_attribute); setLdapEmailAttr(p.email_attribute);
+    setLdapNameAttr(p.name_attribute); setLdapDefaultRole(p.default_role);
+    setLdapAutoReg(p.auto_register); setLdapActive(p.is_active);
+    setTestStatus(""); setTestResult(""); setError("");
+    setDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!ldapName.trim() || !ldapHost.trim() || !ldapBaseDn.trim()) {
+      setError("Name, host, and base DN are required");
+      return;
+    }
+    setError("");
+    const provider = {
+      name: ldapName.trim(), slug: ldapSlug.trim() || ldapName.trim().toLowerCase().replace(/\s+/g, "-"),
+      host: ldapHost.trim(), port: ldapPort, is_secure: ldapSecure,
+      bind_dn: ldapBindDn, bind_password: ldapBindPw,
+      base_dn: ldapBaseDn.trim(), user_filter: ldapFilter,
+      username_attribute: ldapUserAttr, email_attribute: ldapEmailAttr,
+      name_attribute: ldapNameAttr, default_role: ldapDefaultRole,
+      auto_register: ldapAutoReg,
+    };
+    try {
+      if (editingId) {
+        await api.ldap.update(editingId, { ...provider, is_active: ldapActive });
+      } else {
+        await api.ldap.add(provider, userId || "");
+      }
+      setDialogOpen(false);
+      await loadProviders();
+    } catch (err: any) { setError(`Failed to save: ${err.message || err}`); }
+  };
+
+  // ─── Render ────────────────────────────────────────────────────────────────
+
+  if (loading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">LDAP Directory Providers</p>
+        <button onClick={openAdd}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+          <Plus className="h-3 w-3" /> Add Provider
+        </button>
+      </div>
+
+      {error && <div className="mb-3 px-3 py-2 rounded-md bg-red-500/10 text-red-400 text-xs">{error}</div>}
+
+      <div className="space-y-2">
+        {providers.map(p => (
+          <div key={p.id} className="flex items-center gap-3 px-3 py-2 rounded-md border border-border hover:bg-muted/30 transition-colors">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate flex items-center gap-2">
+                {p.name}
+                {p.is_active ? (
+                  <span className="text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">Active</span>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Disabled</span>
+                )}
+              </p>
+              <p className="text-[10px] text-muted-foreground/60 truncate">{p.host}:{p.port} · {p.base_dn}</p>
+            </div>
+            <button onClick={() => openEdit(p)}
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button onClick={async () => {
+              if (!confirm(`Delete LDAP provider "${p.name}"?`)) return;
+              await api.ldap.delete(p.id);
+              setProviders(prev => prev.filter(x => x.id !== p.id));
+            }} className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+        {providers.length === 0 && (
+          <div className="py-4 text-center text-xs text-muted-foreground">
+            No LDAP providers configured. Add one to enable LDAP authentication.
+          </div>
+        )}
+      </div>
+
+      <div className="pt-4 mt-4 border-t border-border">
+        <h4 className="text-xs font-semibold mb-2 text-muted-foreground">How it works</h4>
+        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+          Configure an LDAP server (OpenLDAP, Active Directory, FreeIPA, etc.).
+          Users will see a <strong className="text-foreground">"Sign in with LDAP"</strong> section on the login page.
+          The system binds to LDAP using the service account, searches for the user,
+          then authenticates them with their LDAP password.
+        </p>
+      </div>
+
+      {/* Add/Edit dialog */}
+      {dialogOpen && (
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+             onClick={() => setDialogOpen(false)}>
+          <div className="dialog-container w-full max-w-lg mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto"
+               onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold mb-4">{editingId ? "Edit LDAP Provider" : "Add LDAP Provider"}</h3>
+
+            <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+              {/* Basic info */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Name</label>
+                  <input type="text" value={ldapName} onChange={e => setLdapName(e.target.value)}
+                    placeholder="Company LDAP" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Slug</label>
+                  <input type="text" value={ldapSlug} onChange={e => setLdapSlug(e.target.value)}
+                    placeholder="company-ldap" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+              </div>
+
+              {/* Connection */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Host</label>
+                  <input type="text" value={ldapHost} onChange={e => setLdapHost(e.target.value)}
+                    placeholder="ldap.example.com" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Port</label>
+                  <input type="number" value={ldapPort} onChange={e => setLdapPort(parseInt(e.target.value) || 389)}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={ldapSecure} onChange={e => setLdapSecure(e.target.checked)}
+                  className="rounded border-border" />
+                <span className="text-[10px] text-muted-foreground/80">Use LDAPS (SSL/TLS)</span>
+              </label>
+
+              {/* Bind credentials */}
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Bind DN (service account, leave empty for anonymous bind)</label>
+                <input type="text" value={ldapBindDn} onChange={e => setLdapBindDn(e.target.value)}
+                  placeholder="cn=admin,dc=example,dc=com" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Bind Password</label>
+                <input type="password" value={ldapBindPw} onChange={e => setLdapBindPw(e.target.value)}
+                  placeholder={editingId ? "(leave empty to keep existing)" : "Bind password"}
+                  className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+
+              {/* Directory search */}
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">Base DN</label>
+                <input type="text" value={ldapBaseDn} onChange={e => setLdapBaseDn(e.target.value)}
+                  placeholder="dc=example,dc=com" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground/60 mb-1 block">
+                  User Filter (<code className="bg-muted px-1">{"{{username}}"}</code> is replaced with login input)
+                </label>
+                <input type="text" value={ldapFilter} onChange={e => setLdapFilter(e.target.value)}
+                  placeholder='(uid={{username}})' className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+
+              {/* Attribute mapping */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Username attr</label>
+                  <input type="text" value={ldapUserAttr} onChange={e => setLdapUserAttr(e.target.value)}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Email attr</label>
+                  <input type="text" value={ldapEmailAttr} onChange={e => setLdapEmailAttr(e.target.value)}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Name attr</label>
+                  <input type="text" value={ldapNameAttr} onChange={e => setLdapNameAttr(e.target.value)}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                </div>
+              </div>
+
+              {/* Settings */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Default role</label>
+                  <select value={ldapDefaultRole} onChange={e => setLdapDefaultRole(e.target.value)}
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </div>
+                {editingId && (
+                  <div>
+                    <label className="text-[10px] text-muted-foreground/60 mb-1 block">Status</label>
+                    <select value={ldapActive ? "true" : "false"} onChange={e => setLdapActive(e.target.value === "true")}
+                      className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                      <option value="true">Active</option>
+                      <option value="false">Disabled</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={ldapAutoReg} onChange={e => setLdapAutoReg(e.target.checked)}
+                  className="rounded border-border" />
+                <span className="text-[10px] text-muted-foreground/80">Auto-register new users on first LDAP login</span>
+              </label>
+            </div>
+
+            {/* Test connection placeholder */}
+            {testStatus && (
+              <div className="mt-3 px-3 py-2 rounded-md text-xs bg-blue-500/10 text-blue-400">{testStatus}</div>
+            )}
+            {testResult && (
+              <div className="mt-2 px-3 py-2 rounded-md text-xs bg-green-500/10 text-green-400">{testResult}</div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-4 border-t border-border mt-4">
+              <button onClick={() => setDialogOpen(false)}
+                className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleSave}
+                className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 transition-colors">
+                {editingId ? "Save" : "Add Provider"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
