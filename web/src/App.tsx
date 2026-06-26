@@ -3694,7 +3694,7 @@ function BulkExport() {
   const [allPages, setAllPages] = useState<Page[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedColId, setSelectedColId] = useState<string>("__all");
-  const [exportFormat, setExportFormat] = useState<"md" | "html">("md");
+  const [exportFormat, setExportFormat] = useState<"md" | "html" | "pdf">("md");
 
   useEffect(() => {
     (async () => {
@@ -3720,6 +3720,67 @@ function BulkExport() {
   const handleBulkExport = async () => {
     setExporting(true);
     try {
+      if (exportFormat === "pdf") {
+        // Generate a print-ready HTML document with all pages
+        let pdfHtml = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Wiki Export</title>
+<style>
+  @media print { body { margin: 0; padding: 0; } .page-break { page-break-before: always; } }
+  body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; line-height: 1.6; color: #1a1a1a; }
+  h1, h2, h3, h4 { color: #000; margin-top: 1.5em; margin-bottom: 0.5em; }
+  h1 { font-size: 2em; border-bottom: 2px solid #e5e5e5; padding-bottom: 0.3em; }
+  h2 { font-size: 1.5em; border-bottom: 1px solid #e5e5e5; padding-bottom: 0.2em; }
+  h3 { font-size: 1.25em; }
+  pre { background: #f5f5f5; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 13px; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+  pre code { background: none; padding: 0; }
+  blockquote { border-left: 4px solid #d0d0d0; margin: 1em 0; padding: 0.5em 1em; color: #555; background: #fafafa; }
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+  th, td { border: 1px solid #d0d0d0; padding: 8px 12px; text-align: left; }
+  th { background: #f0f0f0; font-weight: 600; }
+  img { max-width: 100%; height: auto; }
+  ul, ol { padding-left: 1.5em; }
+  li { margin: 0.25em 0; }
+  .page-header { border-bottom: 2px solid #333; padding-bottom: 0.5em; margin-bottom: 1em; }
+  .page-footer { font-size: 0.8em; color: #888; border-top: 1px solid #e5e5e5; padding-top: 0.5em; margin-top: 1em; }
+  .cover-page { text-align: center; padding-top: 30vh; }
+  .cover-page h1 { font-size: 2.5em; border: none; }
+  .cover-page p { color: #666; font-size: 1.1em; }
+  .toc { margin: 2em 0; }
+  .toc a { color: #333; text-decoration: none; display: block; padding: 0.3em 0; }
+  .toc a:hover { color: #0066cc; }
+</style></head><body>
+  <div class="cover-page">
+    <h1>Wiki Export</h1>
+    <p>${filteredPages.length} pages exported on ${new Date().toLocaleDateString()}</p>
+  </div>`;
+        for (let i = 0; i < filteredPages.length; i++) {
+          const page = filteredPages[i];
+          const safeTitle = page.title || "Untitled";
+          let contentHtml = "";
+          try {
+            const json = JSON.parse(page.content || "{}");
+            contentHtml = tiptapToHTML(json);
+          } catch { contentHtml = `<p>${page.content || ""}</p>`; }
+          const colName = collections.find(c => c.id === page.collection_id)?.name || "";
+          pdfHtml += `<div class="${i > 0 ? "page-break" : ""}">
+            <div class="page-header"><h1>${safeTitle}</h1>${colName ? `<span style="color:#888;font-size:0.9em">📁 ${colName}</span>` : ""}</div>
+            ${contentHtml}
+            <div class="page-footer">Updated ${new Date(page.updated_at).toLocaleDateString()} | v${page.id.slice(0,8)}</div>
+          </div>`;
+        }
+        pdfHtml += `</body></html>`;
+        // Open in new window for print/PDF save
+        const win = window.open("", "_blank");
+        if (win) {
+          win.document.write(pdfHtml);
+          win.document.close();
+          win.focus();
+        }
+        setExporting(false);
+        return;
+      }
+
       const zip = new JSZip();
       let exported = 0;
 
@@ -3831,6 +3892,16 @@ function BulkExport() {
             }`}
           >
             HTML
+          </button>
+          <button
+            onClick={() => setExportFormat("pdf")}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              exportFormat === "pdf"
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            PDF
           </button>
         </div>
       </div>

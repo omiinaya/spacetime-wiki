@@ -20,6 +20,8 @@ import { MathInline, MathBlock } from "../extensions/Math";
 import { VideoEmbed } from "../extensions/VideoEmbed";
 import { RichEmbed } from "../extensions/RichEmbed";
 import { Drawio } from "../extensions/Drawio";
+import { Mermaid } from "../extensions/Mermaid";
+import { ImageEnhanced } from "../extensions/ImageEnhanced";
 import JSZip from "jszip";
 import { common, createLowlight } from "lowlight";
 import {
@@ -470,6 +472,8 @@ export function PageView({ pageId, userId }: Props) {
       VideoEmbed,
       RichEmbed,
       Drawio,
+      Mermaid,
+      ImageEnhanced.configure({ inline: true }),
     ],
     content: page ? JSON.parse(page.content || "{}") : undefined,
     editable: false,
