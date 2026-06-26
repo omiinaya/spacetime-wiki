@@ -420,8 +420,9 @@ function FloatingToolbar({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || !editor) return;
     const update = () => {
+      if (!editor) return;
       const { selection } = editor.state;
       if (!selection.empty && selection.content().size > 0) {
         const { view } = editor;
@@ -477,8 +478,9 @@ function ImageToolbar({
   const [widthInput, setWidthInput] = useState("");
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || !editor) return;
     const update = () => {
+      if (!editor) return;
       const { selection } = editor.state;
       if ((selection as any).type.name !== "NodeSelection") {
         setPos(null);
@@ -500,12 +502,12 @@ function ImageToolbar({
     };
     editor.on("selectionUpdate", update);
     editor.on("blur", () => setTimeout(() => setPos(null), 200));
-    // Also update on click
-    editor.view.dom.addEventListener("mouseup", update);
+    // Also update on click (if view is available)
+    try { editor.view.dom.addEventListener("mouseup", update); } catch {}
     return () => {
       editor.off("selectionUpdate", update);
       editor.off("blur", () => setPos(null));
-      editor.view.dom.removeEventListener("mouseup", update);
+      try { editor.view.dom.removeEventListener("mouseup", update); } catch {}
     };
   }, [editor]);
 
@@ -636,8 +638,9 @@ function TableToolbar({
   const [insideTable, setInsideTable] = useState(false);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || !editor) return;
     const update = () => {
+      if (!editor) return;
       const { selection } = editor.state;
       const { $from } = selection;
       let inTable = false;
@@ -664,11 +667,11 @@ function TableToolbar({
     };
     editor.on("selectionUpdate", update);
     editor.on("blur", () => setTimeout(() => setPos(null), 200));
-    editor.view.dom.addEventListener("mouseup", update);
+    try { editor.view.dom.addEventListener("mouseup", update); } catch {}
     return () => {
       editor.off("selectionUpdate", update);
       editor.off("blur", () => setPos(null));
-      editor.view.dom.removeEventListener("mouseup", update);
+      try { editor.view.dom.removeEventListener("mouseup", update); } catch {}
     };
   }, [editor]);
 
@@ -846,95 +849,6 @@ export function PageEditor({ userId }: Props) {
     if (stored) setCollabUserName(stored);
   }, []);
 
-  // ─── Auto-save drafts to localStorage ───────────────────────────────────────
-  const [hasDraft, setHasDraft] = useState(false);
-  const [draftDismissed, setDraftDismissed] = useState(false);
-  const lastSavedJson = useRef("");
-
-  const draftKey = isNew ? "sw_draft_new" : `sw_draft_${id}`;
-
-  // Check for existing draft on mount
-  useEffect(() => {
-    if (editor || isNew) {
-      const saved = localStorage.getItem(draftKey);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed && typeof parsed === "object") {
-            // For existing pages, only show banner if draft differs from loaded content
-            if (page) {
-              const currentContent = JSON.stringify(JSON.parse(page.content || "{}"));
-              if (saved !== currentContent) {
-                setHasDraft(true);
-              }
-            } else {
-              setHasDraft(true);
-            }
-          }
-        } catch { /* ignore corrupt draft */ }
-      }
-    }
-  // @ts-expect-error editor used before declaration (useEffect fires after mount)
-  }, [draftKey, page, editor, isNew]);
-
-  // Auto-save interval: every 5 seconds when editor has content
-  useEffect(() => {
-    if (!editor) return;
-    const interval = setInterval(() => {
-      if (preview) return;
-      const json = JSON.stringify(editor.getJSON());
-      if (json !== lastSavedJson.current && json !== "{}") {
-        lastSavedJson.current = json;
-        try {
-          localStorage.setItem(draftKey, json);
-        } catch {
-          // localStorage full or unavailable — silently ignore
-        }
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  // @ts-expect-error editor used before declaration (useEffect fires after mount)
-  }, [editor, draftKey, preview]);
-
-  // Track initial content to seed lastSavedJson
-  useEffect(() => {
-    if (editor && page) {
-      try {
-        const json = JSON.stringify(JSON.parse(page.content || "{}"));
-        lastSavedJson.current = json;
-      } catch { /* ignore */ }
-    } else if (editor && isNew) {
-      lastSavedJson.current = JSON.stringify(editor.getJSON());
-    }
-  // @ts-expect-error editor used before declaration (useEffect fires after mount)
-  }, [editor, page, isNew]);
-
-  // Restore draft content
-  const handleRestoreDraft = () => {
-    const saved = localStorage.getItem(draftKey);
-    if (saved && editor) {
-      try {
-        const parsed = JSON.parse(saved);
-        editor.commands.setContent(parsed);
-      } catch { /* ignore */ }
-    }
-    setHasDraft(false);
-    setDraftDismissed(true);
-  };
-
-  const handleDismissDraft = () => {
-    setHasDraft(false);
-    setDraftDismissed(true);
-  };
-
-  const clearDraft = () => {
-    try {
-      localStorage.removeItem(draftKey);
-    } catch { /* ignore */ }
-    setHasDraft(false);
-    lastSavedJson.current = JSON.stringify(editor ? editor.getJSON() : {});
-  };
-
   // Load all pages for link autocomplete
   useEffect(() => {
     api.pages.list().then(setAllPages).catch(() => {});
@@ -1000,6 +914,8 @@ export function PageEditor({ userId }: Props) {
   };
 
   // ─── Editor ──────────────────────────────────────────────────────────────
+
+  const editorReadyRef = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -1125,7 +1041,91 @@ export function PageEditor({ userId }: Props) {
         class: "prose prose-invert max-w-none focus:outline-none min-h-[60vh]",
       },
     },
+    onCreate: () => { editorReadyRef.current = true; },
   });
+  // ─── Auto-save drafts to localStorage ───────────────────────────────────────
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftDismissed, setDraftDismissed] = useState(false);
+  const lastSavedJson = useRef("");
+
+  const draftKey = isNew ? "sw_draft_new" : `sw_draft_${id}`;
+
+  // Check for existing draft on mount
+  useEffect(() => {
+    if (!editor || !editorReadyRef.current) return;
+    if (isNew) {
+      // For new pages, show draft banner immediately if draft exists
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === "object") {
+            setHasDraft(true);
+          }
+        } catch { /* ignore corrupt draft */ }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey, page, isNew]);
+
+  // Auto-save interval: every 5 seconds when editor has content
+  useEffect(() => {
+    if (!editor || !editorReadyRef.current) return;
+    const interval = setInterval(() => {
+      if (preview) return;
+      const json = JSON.stringify(editor.getJSON());
+      if (json !== lastSavedJson.current && json !== "{}") {
+        lastSavedJson.current = json;
+        try {
+          localStorage.setItem(draftKey, json);
+        } catch {
+          // localStorage full or unavailable — silently ignore
+        }
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey, preview]);
+
+  // Track initial content to seed lastSavedJson
+  useEffect(() => {
+    if (editor && page) {
+      try {
+        const json = JSON.stringify(JSON.parse(page.content || "{}"));
+        lastSavedJson.current = json;
+      } catch { /* ignore */ }
+    } else if (editor && isNew) {
+      lastSavedJson.current = JSON.stringify(editor.getJSON());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, isNew]);
+
+  // Restore draft content
+  const handleRestoreDraft = () => {
+    const saved = localStorage.getItem(draftKey);
+    if (saved && editor) {
+      try {
+        const parsed = JSON.parse(saved);
+        editor.commands.setContent(parsed);
+      } catch { /* ignore */ }
+    }
+    setHasDraft(false);
+    setDraftDismissed(true);
+  };
+
+  const handleDismissDraft = () => {
+    setHasDraft(false);
+    setDraftDismissed(true);
+  };
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch { /* ignore */ }
+    setHasDraft(false);
+    lastSavedJson.current = JSON.stringify(editor ? editor.getJSON() : {});
+  };
+
 
   // Sync content when page loads — resolve attachment:// URLs to blob URLs
   useEffect(() => {
@@ -1312,7 +1312,7 @@ export function PageEditor({ userId }: Props) {
 
   // Listen for / in the editor
   useEffect(() => {
-    if (!editor || preview) return;
+    if (!editor || !editorReadyRef.current || preview) return;
     const handler = (view: any, event: KeyboardEvent) => {
       if (event.key === "/" && !slashOpen) {
         const { from } = view.state.selection;
@@ -1466,8 +1466,8 @@ export function PageEditor({ userId }: Props) {
       }
       return false;
     };
-    editor.view.dom.addEventListener("keydown", handler as any, true);
-    return () => editor.view.dom.removeEventListener("keydown", handler as any, true);
+    try { editor.view.dom.addEventListener("keydown", handler as any, true); } catch {}
+    return () => { try { editor.view.dom.removeEventListener("keydown", handler as any, true); } catch {} };
   }, [editor, slashOpen, preview, filteredCommands, slashIndex, showPageLink, pageLinkQuery, pageLinkIndex, allPages]);
 
   // Close slash menu on click outside

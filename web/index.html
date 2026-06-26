@@ -10,6 +10,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <title>Spacetime Wiki</title>
+    <script>
+      window.__caught_errors = [];
+      window.onerror = function(msg, url, line, col, err) {
+        window.__caught_errors.push({msg: String(msg), url: url, line: line, col: col, stack: err?.stack?.slice(0,1000) || ''});
+        return true;
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        window.__caught_errors.push({type: 'promise', reason: String(e.reason), stack: e.reason?.stack?.slice(0,1000) || ''});
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
