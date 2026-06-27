@@ -37,6 +37,7 @@ function AppLayout() {
   const [pages, setPages] = useState<Page[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFilters, setSearchFilters] = useState<SearchFilterState>(EMPTY_FILTERS);
+  const [allPageTags, setAllPageTags] = useState<Map<string, Set<string>>>(new Map());
 
   // Admin state (declared early for search syntax handler that references allUsers)
   const [adminOpen, setAdminOpen] = useState(false);
@@ -380,6 +381,18 @@ function AppLayout() {
     }
   }, [pagesConnected, colsConnected, subPages.length, subCollections.length]);
 
+  // Load all tags for sidebar filtering
+  useEffect(() => {
+    api.tags.listAll().then((tagRows) => {
+      const map = new Map<string, Set<string>>();
+      for (const tag of tagRows) {
+        if (!map.has(tag.page_id)) map.set(tag.page_id, new Set());
+        map.get(tag.page_id)!.add(tag.name);
+      }
+      setAllPageTags(map);
+    }).catch(() => {});
+  }, []);
+
   // ─── Toast: Page updates from other users via subscriptions ──────────────
   const prevPagesRef = useRef<Page[]>([]);
   useEffect(() => {
@@ -535,6 +548,14 @@ function AppLayout() {
       // Include the entire "to" day (set to end of day)
       const toMs = new Date(searchFilters.dateTo).getTime() + 86_400_000;
       if (p.updated_at > toMs) return false;
+    }
+    // Tag filter
+    if (searchFilters.tags) {
+      const pageTags = allPageTags.get(p.id);
+      if (!pageTags || pageTags.size === 0) return false;
+      const filterTags = searchFilters.tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
+      const matchesTag = filterTags.some((t) => [...pageTags].some((pt) => pt.toLowerCase() === t));
+      if (!matchesTag) return false;
     }
     return true;
   });
