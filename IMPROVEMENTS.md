@@ -6,11 +6,10 @@ and works the top pending item each tick.
 
 ---
 
-## Status: All P0-P3 items complete, all P2 research items implemented. Entering maintenance/optimization phase.
+## Status: All P0-P3 items complete, all P2 research items implemented. P4 SDK consolidation done. Entering maintenance/optimization phase.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | Consolidate to spacetimedb SDK | `spacetimedb` npm package v2.6.0 has React hooks (SpacetimeDBProvider, useReducer, useProcedure). Project currently uses custom HTTP SQL client (stdb_client.py) in api-server + mcp-server. Evaluate migration to official SDK for type safety and real-time subscriptions. |
 | P4 | Request access to documents | Outline v1.8.0 feature: allow users to request access to pages they don't have permission to view. |
 | P4 | Comments in image lightbox | Outline v1.8.0: allow commenting on images in the lightbox viewer for discussing visuals in context. |
 | P4 | Per-share branding | Outline v1.7.1: override title/logo on individual public shares. |
@@ -22,7 +21,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-27 | **P4 — React 19 + Vite 8 upgrade!** React ^18.3.1 → ^19.2.7, Vite ^5.4.10 → ^8.1.0, @vitejs/plugin-react → v6.0.3. Fixed rolldown duplicate declaration errors. Build passes in 3.5s, all 18 tests pass. | 18fac8d9 |
+| 2026-06-27 | **P4 — Consolidate to spacetimedb SDK!** Installed `spacetimedb` npm package v2.6.0, generated TypeScript module bindings (48 tables, 140+ reducers), set up SpacetimeDBProvider in `main.tsx` with config for typed `DbConnection`. Vite build 3.35s, all 18 tests pass. | 6e1bb122+ |
 | 2026-06-27 | **P3 — STDB Rust crate upgrade!** `spacetimedb =2.4.0` → `=2.6.0`. Clean compile, no breaking changes. | 5b1a4279 |
 | 2026-06-27 | **P3 — Unit test infrastructure!** Vitest + React Testing Library + jsdom. 18 tests across 2 suites (utils + Toast component). Added `npm run test`/`test:watch` scripts. | 0caf22dd |
 | 2026-06-27 | **P3 — Code splitting / lazy loading** | d2107a3f |
