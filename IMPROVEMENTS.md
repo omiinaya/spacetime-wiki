@@ -11,9 +11,9 @@ and works the top pending item each tick.
 | Priority | Item | Notes |
 |----------|------|-------|
 | P3 | Add unit test infrastructure | Project has zero test files. Add Vitest + React Testing Library for component testing. |
-| P4 | STDB SDK v2 upgrade | `@clockworklabs/spacetimedb-sdk` ^1.3.3 → ^2.0.0. Research breaking changes and compatibility. |
-| P4 | Rust spacetimedb crate upgrade | Cargo.toml pins `spacetimedb = "=2.4.0"`. Check changelog and upgrade. |
-| P4 | React 19 + Vite 6 upgrade | Major framework upgrade path. Coordinate with other dependency updates. |
+| P3 | STDB Rust crate upgrade | `spacetimedb = "=2.4.0"` → latest is `2.6.0` (crates.io). Check changelog for breaking changes. |
+| P4 | React 19 + Vite 8 upgrade | React latest: 19.2.7 (current: ^18.3.1). Vite latest: 8.1.0 (current: ^5.4.10). Major framework upgrade, coordinate with deps. |
+| P4 | Consolidate to spacetimedb SDK | The deprecated `@clockworklabs/spacetimedb-sdk` npm package was renamed to `spacetimedb` (v2.6.0). Project currently uses custom HTTP SQL client (stdb_client.py) instead of official SDK. Evaluate if migration to official SDK is worthwhile for type safety and subscription support. |
 
 ---
 
