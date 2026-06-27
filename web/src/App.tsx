@@ -1823,6 +1823,20 @@ function AppLayout() {
               >
                 <Link2 className="h-3 w-3" /> Copy link
               </button>
+              <button
+                onClick={() => {
+                  const page = pages.find(p => p.id === contextMenu.pageId);
+                  if (page) {
+                    const mdLink = `[${page.title}](${window.location.origin}/page/${page.slug || page.id})`;
+                    navigator.clipboard.writeText(mdLink).catch(() => {});
+                    showToast({ type: "success", title: "Markdown link copied", duration: 2000 });
+                  }
+                  setContextMenu(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+              >
+                <Code className="h-3 w-3" /> Copy as markdown link
+              </button>
               <div className="h-px bg-border/50 mx-2 my-1" />
               <button
                 onClick={async () => {
