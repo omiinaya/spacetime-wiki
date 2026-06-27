@@ -8,7 +8,7 @@ import {
   MoreHorizontal, Pencil, FolderPlus, Trash2, Copy, Archive, Star, History, Edit3,
   Upload, Loader2, Shield, Link2, RefreshCw, Key, LayoutTemplate, Users, Send, Pin, Download,
   Sun, Moon, Keyboard, Eye, CheckSquare, Square, Tags, MessageSquare, Package,
-  Mail,
+  Mail, Share2,
 } from "lucide-react";
 import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, PasskeyCredential, usePagesSubscription, useCollectionsSubscription, useNotificationsSubscription, useWatchSubscription, Notification as NotifType } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
@@ -25,6 +25,7 @@ import { AiAssistant } from "./components/AiAssistant";
 import { ActivityFeed } from "./components/ActivityFeed";
 import AdminDashboard from "./components/AdminDashboard";
 import { NotificationBell } from "./components/NotificationBell";
+import GraphView from "./components/GraphView";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -1106,6 +1107,7 @@ function AppLayout() {
       { label: "Trash", subtitle: "View deleted pages", icon: <Trash2 className="h-4 w-4" />, shortcut: "G T", action: () => { closePalette(); navigate("/trash"); } },
       { label: "Favorites", subtitle: "Show starred pages", icon: <Star className="h-4 w-4" />, shortcut: "G F", action: () => { closePalette(); navigate("/favorites"); } },
       { label: "Activity", subtitle: "View recent wiki activity", icon: <History className="h-4 w-4" />, shortcut: "G A", action: () => { closePalette(); navigate("/activity"); } },
+      { label: "Graph view", subtitle: "Visualize page relationships", icon: <Share2 className="h-4 w-4" />, shortcut: "G G", action: () => { closePalette(); navigate("/graph"); } },
       { label: "Keyboard shortcuts", subtitle: "View all keyboard shortcuts", icon: <Keyboard className="h-4 w-4" />, shortcut: "?", action: () => { closePalette(); setShortcutsOpen(true); } },
       { label: "Toggle dark mode", subtitle: `Switch to ${theme === "dark" ? "light" : "dark"} theme`, icon: theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />, shortcut: "D", action: () => { closePalette(); setTheme(theme === "dark" ? "light" : "dark"); } },
     ];
@@ -1615,6 +1617,9 @@ function AppLayout() {
         <div className="px-3 py-2 border-t border-border space-y-1">
           <button onClick={() => navigate('/activity')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <History className="h-3 w-3" /> Activity
+          </button>
+          <button onClick={() => navigate('/graph')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+            <Share2 className="h-3 w-3" /> Graph
           </button>
           <button onClick={openTemplates} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <LayoutTemplate className="h-3 w-3" /> Templates
@@ -2626,6 +2631,7 @@ function AppLayout() {
           <Route path="/page/:id/edit" element={<PageEditor userId={userId} />} />
           <Route path="/p/:slug" element={<SlugView />} />
           <Route path="/activity" element={<ActivityView />} />
+          <Route path="/graph" element={<GraphView />} />
           <Route path="/permalink/:id" element={<PermalinkRedirect />} />
           <Route path="/oauth/google/callback" element={<GoogleCallback />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
