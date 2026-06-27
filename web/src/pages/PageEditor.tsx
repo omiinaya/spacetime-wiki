@@ -70,6 +70,7 @@ import {
   Rows3,
 } from "lucide-react";
 import { api, Page, readFileAsBase64, resolveContentAttachments, isAttachmentUrl, MAX_IMAGE_BYTES } from "../lib/api";
+import { showToast } from "../components/Toast";
 import { useCollaboration } from "../lib/useCollaboration";
 import { cn } from "../lib/utils";
 
@@ -1195,13 +1196,14 @@ export function PageEditor({ userId }: Props) {
   };
 
   /** Upload an image file to STDB attachment storage and insert it into the editor */
-  const handleImageFile = async (file: File) => {
+  const handleImageFile = async (file: File, retryCount = 0) => {
     if (file.size > MAX_IMAGE_BYTES) {
-      setError(`Image too large (max ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} MB)`);
+      const msg = `Image too large (max ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} MB)`;
+      showToast({ type: "warning", title: "Image size exceeded", message: msg, duration: 6000 });
       return;
     }
     if (!file.type.startsWith("image/")) {
-      setError("Only image files are supported");
+      showToast({ type: "error", title: "Invalid file type", message: "Only image files are supported", duration: 5000 });
       return;
     }
     try {
@@ -1217,9 +1219,32 @@ export function PageEditor({ userId }: Props) {
       // Store attachment:// URL in the editor — resolved at load time via resolveContentAttachments
       const attUrl = `attachment://${attId}`;
       editor?.chain().focus().setImageEnhanced({ src: attUrl }).run();
+      showToast({ type: "success", title: "Image uploaded", message: file.name, duration: 3000 });
     } catch (err: any) {
       console.error("Image upload failed:", err);
-      setError(`Image upload failed: ${err.message || err}`);
+      const isNetworkError = err instanceof TypeError || err?.name === "AbortError" || err?.message?.includes("fetch");
+      const errorType = isNetworkError ? "network" : "server";
+      const title = errorType === "network"
+        ? "Network error — image upload failed"
+        : "Upload failed";
+      const msg = err?.message || String(err) || "Unknown error";
+      // Offer retry on first attempt
+      if (retryCount < 2) {
+        showToast({
+          type: "error",
+          title,
+          message: `${file.name}: ${msg}`,
+          duration: 8000,
+          action: { label: "Retry", onClick: () => handleImageFile(file, retryCount + 1) },
+        });
+      } else {
+        showToast({
+          type: "error",
+          title: "Upload failed after 3 attempts",
+          message: `${file.name}: ${msg}`,
+          duration: 0, // persistent — user must dismiss
+        });
+      }
     }
   };
 
