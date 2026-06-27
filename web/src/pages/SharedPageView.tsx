@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { sqlQuery } from "../lib/api";
 import { PageView } from "./PageView";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────���────────���───────
 
 interface ShareLinkFromQuery {
   id: string;
@@ -14,6 +14,8 @@ interface ShareLinkFromQuery {
   expires_at: number;
   created_at: number;
   visit_count: number;
+  brand_title: string | null;
+  brand_logo_url: string | null;
 }
 
 // ─── Row mapper (STDB returns positional arrays) ───────────────────────────
@@ -28,6 +30,8 @@ function mapShareLink(row: unknown[]): ShareLinkFromQuery {
     expires_at: Number(row[5]) || 0,
     created_at: Number(row[6]) || 0,
     visit_count: Number(row[7]) || 0,
+    brand_title: row[8] ? String(row[8]) : null,
+    brand_logo_url: row[9] ? String(row[9]) : null,
   };
 }
 
@@ -41,6 +45,8 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
   const [passwordRequired, setPasswordRequired] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [brandTitle, setBrandTitle] = useState<string | null>(null);
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -71,6 +77,13 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
         setError("This share link has expired");
         setLoading(false);
         return;
+      }
+
+      // Store branding info
+      setBrandTitle(link.brand_title);
+      setBrandLogoUrl(link.brand_logo_url);
+      if (link.brand_title) {
+        document.title = link.brand_title;
       }
 
       // If password protected, show password prompt
@@ -118,6 +131,11 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
       if (rows.length > 0) {
         const link = mapShareLink(rows[0]);
         setPageId(link.page_id);
+        setBrandTitle(link.brand_title);
+        setBrandLogoUrl(link.brand_logo_url);
+        if (link.brand_title) {
+          document.title = link.brand_title;
+        }
       } else {
         setError("Share link disappeared");
       }
@@ -129,9 +147,22 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
+  // Branding header (shown on top of error/password/page views)
+  const brandingHeader = brandLogoUrl || brandTitle ? (
+    <div className="flex items-center justify-center gap-3 py-3 px-4 border-b border-border bg-card/50">
+      {brandLogoUrl && (
+        <img src={brandLogoUrl} alt="Brand logo" className="h-8 w-auto object-contain" />
+      )}
+      {brandTitle && (
+        <span className="text-sm font-semibold text-foreground">{brandTitle}</span>
+      )}
+    </div>
+  ) : null;
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] p-4">
+        {brandingHeader && <div className="absolute top-0 left-0 right-0">{brandingHeader}</div>}
         <div className="max-w-md w-full p-6 rounded-xl border border-border bg-card text-center">
           <div className="text-4xl mb-3">🔒</div>
           <h1 className="text-lg font-semibold text-foreground mb-2">Access Error</h1>
@@ -144,6 +175,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+        {brandingHeader && <div className="absolute top-0 left-0 right-0">{brandingHeader}</div>}
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
@@ -152,9 +184,16 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
   if (passwordRequired) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] p-4">
+        {brandingHeader && <div className="absolute top-0 left-0 right-0">{brandingHeader}</div>}
         <div className="max-w-md w-full p-6 rounded-xl border border-border bg-card">
-          <div className="text-4xl mb-3 text-center">🔒</div>
-          <h1 className="text-lg font-semibold text-foreground mb-1 text-center">Password Required</h1>
+          {brandLogoUrl && (
+            <div className="flex justify-center mb-4">
+              <img src={brandLogoUrl} alt="Brand logo" className="h-10 w-auto object-contain" />
+            </div>
+          )}
+          <h1 className="text-lg font-semibold text-foreground mb-1 text-center">
+            {brandTitle || "Password Required"}
+          </h1>
           <p className="text-sm text-muted-foreground mb-4 text-center">
             This shared page is password-protected. Enter the password to continue.
           </p>
@@ -185,7 +224,12 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
   }
 
   if (pageId) {
-    return <PageView pageId={pageId} userId={userId} />;
+    return (
+      <>
+        {brandingHeader}
+        <PageView pageId={pageId} userId={userId} />
+      </>
+    );
   }
 
   return null;

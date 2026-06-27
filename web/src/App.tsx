@@ -235,7 +235,10 @@ function AppLayout() {
   const [sharePassword, setSharePassword] = useState("");
   const [shareDays, setShareDays] = useState(0);
   const [shareUrl, setShareUrl] = useState("");
-  const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string }[]>([]);
+  const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string; brand_title: string | null; brand_logo_url: string | null }[]>([]);
+  const [editBrandShareId, setEditBrandShareId] = useState<string | null>(null);
+  const [editBrandTitle, setEditBrandTitle] = useState("");
+  const [editBrandLogoUrl, setEditBrandLogoUrl] = useState("");
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   // Theme toggle
   const [theme, setTheme] = useState<"dark" | "light">(() => {
@@ -945,6 +948,23 @@ function AppLayout() {
       const links = await api.shareLinks.list(shareDialog.pageId);
       setShareLinks(links);
     }
+  };
+
+  const updateShareBranding = async (shareId: string) => {
+    try {
+      await api.shareLinks.updateBranding(shareId, editBrandTitle || null, editBrandLogoUrl || null);
+      setEditBrandShareId(null);
+      if (shareDialog) {
+        const links = await api.shareLinks.list(shareDialog.pageId);
+        setShareLinks(links);
+      }
+    } catch (e) { alert(String(e)); }
+  };
+
+  const openBrandingEditor = (share: { id: string; brand_title: string | null; brand_logo_url: string | null }) => {
+    setEditBrandShareId(share.id);
+    setEditBrandTitle(share.brand_title || "");
+    setEditBrandLogoUrl(share.brand_logo_url || "");
   };
 
   // ─── Template handlers ──────────────────────────────────────────────────
@@ -2346,11 +2366,41 @@ function AppLayout() {
                 <div className="space-y-1 pt-2 border-t border-border">
                   <p className="text-[10px] text-muted-foreground/60 mb-1">Active shares</p>
                   {shareLinks.map(s => (
-                    <div key={s.id} className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground font-mono truncate flex-1">{s.token.slice(0, 12)}...</span>
-                      <span className="text-[10px] text-muted-foreground/60">{s.visit_count} views</span>
-                      {s.password_hash && <span className="text-[10px]">🔒</span>}
-                      <button onClick={() => deleteShare(s.id)} className="text-red-400 hover:text-red-300 text-[10px]">×</button>
+                    <div key={s.id}>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-muted-foreground font-mono truncate flex-1">{s.token.slice(0, 12)}...</span>
+                        <span className="text-[10px] text-muted-foreground/60">{s.visit_count} views</span>
+                        {s.password_hash && <span className="text-[10px]">🔒</span>}
+                        {s.brand_title && <span className="text-[10px] text-purple-400" title="Custom branding">🎨</span>}
+                        <button onClick={() => openBrandingEditor(s)} className="text-[10px] text-purple-400 hover:text-purple-300" title="Customize branding">🎨</button>
+                        <button onClick={() => deleteShare(s.id)} className="text-red-400 hover:text-red-300 text-[10px]">×</button>
+                      </div>
+                      {editBrandShareId === s.id && (
+                        <div className="ml-4 mt-1 p-2 rounded-md bg-muted/30 border border-border space-y-1.5">
+                          <input
+                            type="text" value={editBrandTitle}
+                            onChange={(e) => setEditBrandTitle(e.target.value)}
+                            placeholder="Custom page title (leave empty for page default)"
+                            className="w-full h-7 px-2 rounded border border-border bg-[#0a0a0a] text-[10px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                          <input
+                            type="text" value={editBrandLogoUrl}
+                            onChange={(e) => setEditBrandLogoUrl(e.target.value)}
+                            placeholder="Logo URL (leave empty for no logo)"
+                            className="w-full h-7 px-2 rounded border border-border bg-[#0a0a0a] text-[10px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                          <div className="flex gap-1.5">
+                            <button onClick={() => updateShareBranding(s.id)}
+                              className="flex-1 h-6 rounded text-[10px] font-medium bg-purple-600 text-white hover:bg-purple-500 transition-colors">
+                              Save branding
+                            </button>
+                            <button onClick={() => setEditBrandShareId(null)}
+                              className="h-6 px-2 rounded text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

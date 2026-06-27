@@ -37,7 +37,7 @@ function mapCommentReaction(row: unknown[]): CommentReaction { return { id: Stri
 function mapTag(row: unknown[]): PageTag { return { id: String(row[0]??""), page_id: String(row[1]??""), name: String(row[2]??""), value: String(row[3]??"") }; }
 function mapAttachment(row: unknown[]): Attachment { return { id: String(row[0]??""), page_id: String(row[1]??""), filename: String(row[2]??""), mime_type: String(row[3]??""), size_bytes: Number(row[4])||0, storage_key: String(row[5]??""), uploaded_by: String(row[6]??""), created_at: Number(row[7])||0 }; }
 function mapCollectionMember(row: unknown[]): CollectionMember { return { id: String(row[0]??""), collection_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
-function mapShareLink(row: unknown[]): ShareLink { return { id: String(row[0]??""), page_id: String(row[1]??""), token: String(row[2]??""), password_hash: String(row[3]??""), created_by: String(row[4]??""), expires_at: Number(row[5])||0, created_at: Number(row[6])||0, visit_count: Number(row[7])||0 }; }
+function mapShareLink(row: unknown[]): ShareLink { return { id: String(row[0]??""), page_id: String(row[1]??""), token: String(row[2]??""), password_hash: String(row[3]??""), created_by: String(row[4]??""), expires_at: Number(row[5])||0, created_at: Number(row[6])||0, visit_count: Number(row[7])||0, brand_title: row[8] ? String(row[8]) : null, brand_logo_url: row[9] ? String(row[9]) : null }; }
 function mapApiKey(row: unknown[]): ApiKey { return { id: String(row[0]??""), user_id: String(row[1]??""), name: String(row[2]??""), key_hash: String(row[3]??""), key_prefix: String(row[4]??""), last_used_at: Number(row[5])||0, created_at: Number(row[6])||0, expires_at: Number(row[7])||0, is_revoked: Boolean(row[8]) }; }
 function mapGroup(row: unknown[]): Group { return { id: String(row[0]??""), name: String(row[1]??""), description: String(row[2]??""), created_by: String(row[3]??""), created_at: Number(row[4])||0, updated_at: Number(row[5])||0 }; }
 function mapGroupMember(row: unknown[]): GroupMember { return { id: String(row[0]??""), group_id: String(row[1]??""), user_id: String(row[2]??""), role: String(row[3]??""), added_by: String(row[4]??""), created_at: Number(row[5])||0 }; }
@@ -262,6 +262,7 @@ export interface CollectionMember {
 export interface ShareLink {
   id: string; page_id: string; token: string; password_hash: string;
   created_by: string; expires_at: number; created_at: number; visit_count: number;
+  brand_title: string | null; brand_logo_url: string | null;
 }
 
 export interface ApiKey {
@@ -903,21 +904,23 @@ export const api = {
   },
 
   shareLinks: {
-    list: (pageId: string) =>
-      sqlQuery(`SELECT * FROM share_link WHERE page_id = '${pageId}'`)
-        .then((rows) => (rows as any as unknown[][]).map(mapShareLink)),
-    create: (pageId: string, password: string, createdBy: string, expiresDays: number) => {
-      const id = genId("share");
-      const token = crypto.randomUUID ? crypto.randomUUID() : genId("sh");
-      return callReducer("create_share_link", [
-        id, pageId, token, password, createdBy, expiresDays,
-      ]).then(() => ({ id, token }));
-    },
-    delete: (id: string) => callReducer("delete_share_link", [id]),
-    verify: (token: string, password: string) =>
-      callReducer("verify_share_password", [token, password]),
-    visit: (token: string) =>
-      callReducer("visit_share_link", [token]),
+  list: (pageId: string) =>
+    sqlQuery(`SELECT * FROM share_link WHERE page_id = '${pageId}'`)
+      .then((rows) => (rows as any as unknown[][]).map(mapShareLink)),
+  create: (pageId: string, password: string, createdBy: string, expiresDays: number) => {
+    const id = genId("share");
+    const token = crypto.randomUUID ? crypto.randomUUID() : genId("sh");
+    return callReducer("create_share_link", [
+      id, pageId, token, password, createdBy, expiresDays,
+    ]).then(() => ({ id, token }));
+  },
+  delete: (id: string) => callReducer("delete_share_link", [id]),
+  updateBranding: (shareId: string, brandTitle: string | null, brandLogoUrl: string | null) =>
+    callReducer("update_share_branding", [shareId, brandTitle ?? "", brandLogoUrl ?? ""]),
+  verify: (token: string, password: string) =>
+    callReducer("verify_share_password", [token, password]),
+  visit: (token: string) =>
+    callReducer("visit_share_link", [token]),
   },
 
   users: {
