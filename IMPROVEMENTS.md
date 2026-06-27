@@ -6,7 +6,6 @@ and works the top pending item each tick.
 
 ---
 
-## Status: Working P4 backlog — REST API Swagger/OpenAPI docs next.
 |## Status: P4 REST API OpenAPI docs done. Next: P2 drag-and-drop sidebar reorder.
 
 || Priority | Item | Notes |
