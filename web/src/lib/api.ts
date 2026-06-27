@@ -1,5 +1,5 @@
 const STDB_HOST = "192.168.1.10:3001";
-const DB_ID = "c2003d19339f9932811b3d54bf9b15e18ae48a47a8c8b7135a47367faa03481e";
+const DB_ID = "c2000df40a4560c4985121fce5ab36ba57e4d170e4fa08a5f00c85880b5102f0";
 
 /** Base URL for the REST API server (Python FastAPI backend). */
 const API_BASE = `http://${STDB_HOST.replace(/:3001$/, ":8000")}`;

@@ -16,7 +16,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const STDB_HOST = "192.168.1.10:3001";
-const DB_ID = "c2003d19339f9932811b3d54bf9b15e18ae48a47a8c8b7135a47367faa03481e";
+const DB_ID = "c2000df40a4560c4985121fce5ab36ba57e4d170e4fa08a5f00c85880b5102f0";
 const WS_URL = `ws://${STDB_HOST}/v1/database/${DB_ID}/subscribe`;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -232,13 +232,20 @@ export function useSubscription<T>(
       headers: { "Content-Type": "text/plain" },
       body: sql,
     })
-      .then((res) => res.json())
-      .then((data) => {
-        const initialRows = ((data[0]?.rows || []) as unknown[][]).map(mapper);
-        rowsRef.current = initialRows;
-        setRows([...initialRows]);
-      })
-      .catch((err) => console.error("[STDB Sub] Initial fetch failed:", err));
+      .then((res) => res.text().then((text) => {
+        // STDB may return non-JSON error messages (e.g. "no such table" or
+        // syntax errors for tables that haven't been published yet).
+        // Handle gracefully by using empty data.
+        try {
+          const data = JSON.parse(text);
+          const initialRows = ((data[0]?.rows || []) as unknown[][]).map(mapper);
+          rowsRef.current = initialRows;
+          setRows([...initialRows]);
+        } catch {
+          console.warn("[STDB Sub] Non-JSON response, using empty data:", text.slice(0, 120));
+        }
+      }))
+      .catch((err) => console.error("[STDB Sub] HTTP fetch failed:", err));
 
     return () => {
       unsub();

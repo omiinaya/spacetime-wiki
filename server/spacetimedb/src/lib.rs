@@ -474,7 +474,7 @@ pub fn create_collection(
     let now = now_ms(ctx);
     let sort_order = next_col_sort_order(ctx, &parent_id);
     ctx.db.collection().insert(Collection {
-        id: id.clone(), name, slug, description, parent_id, icon, color,
+        id: id.clone(), name: name.clone(), slug, description, parent_id, icon, color,
         sort_order, created_by: created_by.clone(),
         created_at: now, updated_at: now,
     });
@@ -737,7 +737,7 @@ pub fn create_page(
 
     ctx.db.page().insert(Page {
         id: id.clone(), title: title.clone(), slug, content: content.clone(),
-        text_content, collection_id, parent_page_id,
+        text_content, collection_id: collection_id.clone(), parent_page_id: parent_page_id.clone(),
         status: "draft".into(), icon: String::new(), color: String::new(),
         full_width: false, is_pinned: false, is_template: false, template_id: String::new(),
         sort_order, created_by: created_by.clone(), updated_by: created_by.clone(),
@@ -818,7 +818,7 @@ pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Resu
     if !valid_statuses.contains(&status.as_str()) {
         return Err("Invalid status".into());
     }
-    page.status = status;
+    page.status = status.clone();
     page.updated_at = now;
     if page.status == "published" && page.published_at == 0 {
         page.published_at = now;
@@ -829,6 +829,7 @@ pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Resu
     if page.status != "deleted" {
         page.deleted_at = 0;
     }
+    let target_name = page.title.clone();
     ctx.db.page().id().update(page);
 
     // Log status change events
@@ -838,8 +839,6 @@ pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Resu
         "archived" => "page.archive",
         _ => "page.status_change",
     };
-    let target_name = page.title.clone();
-    drop(page); // page was moved by .id().update() above - target_name already cloned
     log_event(ctx, event_type, "", &id, &target_name, &format!(r#"{{"new_status":"{}"}}"#, status));
     Ok(())
 }
@@ -1046,10 +1045,10 @@ pub fn add_comment(
     let now = now_ms(ctx);
     ctx.db.comment().insert(Comment {
         id,
-        page_id,
+        page_id: page_id.clone(),
         parent_comment_id,
-        user_id,
-        body,
+        user_id: user_id.clone(),
+        body: body.clone(),
         text_anchor,
         is_resolved: false,
         created_at: now,
