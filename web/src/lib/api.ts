@@ -944,6 +944,8 @@ export const api = {
       ),
     updateRole: (userId: string, newRole: string, updatedBy: string) =>
       callReducer("update_user_role", [userId, newRole, updatedBy]),
+    updateAvatar: (userId: string, avatarUrl: string, updatedBy: string) =>
+      callReducer("update_user_avatar", [userId, avatarUrl, updatedBy]),
   },
 
   apiKeys: {

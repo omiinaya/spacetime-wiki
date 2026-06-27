@@ -164,6 +164,7 @@ import UpdatePasskeyCounterReducer from "./update_passkey_counter_reducer";
 import UpdateSamlProviderReducer from "./update_saml_provider_reducer";
 import UpdateScimProviderReducer from "./update_scim_provider_reducer";
 import UpdateSyncedBlockReducer from "./update_synced_block_reducer";
+import UpdateUserAvatarReducer from "./update_user_avatar_reducer";
 import UpdateUserRoleReducer from "./update_user_role_reducer";
 import UpdateWebhookReducer from "./update_webhook_reducer";
 import VerifyMfaBackupCodeReducer from "./verify_mfa_backup_code_reducer";
@@ -901,6 +902,7 @@ const reducersSchema = __reducers(
   __reducerSchema("update_saml_provider", UpdateSamlProviderReducer),
   __reducerSchema("update_scim_provider", UpdateScimProviderReducer),
   __reducerSchema("update_synced_block", UpdateSyncedBlockReducer),
+  __reducerSchema("update_user_avatar", UpdateUserAvatarReducer),
   __reducerSchema("update_user_role", UpdateUserRoleReducer),
   __reducerSchema("update_webhook", UpdateWebhookReducer),
   __reducerSchema("verify_mfa_backup_code", VerifyMfaBackupCodeReducer),
