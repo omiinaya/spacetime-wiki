@@ -10,10 +10,12 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P3 | Add unit test infrastructure | Project has zero test files. Add Vitest + React Testing Library for component testing. |
-| P3 | STDB Rust crate upgrade | `spacetimedb = "=2.4.0"` → latest is `2.6.0` (crates.io). Check changelog for breaking changes. |
 | P4 | React 19 + Vite 8 upgrade | React latest: 19.2.7 (current: ^18.3.1). Vite latest: 8.1.0 (current: ^5.4.10). Major framework upgrade, coordinate with deps. |
-| P4 | Consolidate to spacetimedb SDK | The deprecated `@clockworklabs/spacetimedb-sdk` npm package was renamed to `spacetimedb` (v2.6.0). Project currently uses custom HTTP SQL client (stdb_client.py) instead of official SDK. Evaluate if migration to official SDK is worthwhile for type safety and subscription support. |
+| P4 | Consolidate to spacetimedb SDK | `spacetimedb` npm package v2.6.0 has React hooks (SpacetimeDBProvider, useReducer, useProcedure). Project currently uses custom HTTP SQL client (stdb_client.py) in api-server + mcp-server. Evaluate migration to official SDK for type safety and real-time subscriptions. |
+| P4 | Request access to documents | Outline v1.8.0 feature: allow users to request access to pages they don't have permission to view. |
+| P4 | Comments in image lightbox | Outline v1.8.0: allow commenting on images in the lightbox viewer for discussing visuals in context. |
+| P4 | Per-share branding | Outline v1.7.1: override title/logo on individual public shares. |
+| P5 | Admin avatar management | Outline v1.8.1: allow admins to change user avatars from admin panel. |
 
 ---
 
@@ -21,6 +23,8 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-27 | **P3 — STDB Rust crate upgrade!** `spacetimedb =2.4.0` → `=2.6.0`. Clean compile, no breaking changes. | 5b1a4279 |
+| 2026-06-27 | **P3 — Unit test infrastructure!** Vitest + React Testing Library + jsdom. 18 tests across 2 suites (utils + Toast component). Added `npm run test`/`test:watch` scripts. | 0caf22dd |
 | 2026-06-27 | **P3 — Code splitting / lazy loading** | d2107a3f |
 | 2026-06-27 | **P2 — Markdown import (.md files)!** Frontend import button in sidebar that reads `.md` files, converts to ProseMirror, and creates page. Server-side `/api/v1/import/markdown` endpoint also exists. | inline in App.tsx |
 | 2026-06-27 | **P2 — Recycle bin with configurable retention!** Full trash dialog with restore/permanent-delete/empty-trash, `trash_retention_days` setting in admin, auto-purge reducer. | inline in lib.rs + App.tsx |
@@ -29,5 +33,3 @@ and works the top pending item each tick.
 | 2026-06-27 | **P2 — Page icon/emoji picker!** Click page icon to show emoji grid, select to set page icon. | inline in PageView.tsx |
 | 2026-06-27 | **P2 — Table of contents (auto-generated)!** Side panel from heading IDs with scroll-spy, active heading highlight, smooth scroll. | inline in PageView.tsx |
 | 2026-06-27 | **P3 — Page relationship map in sidebar!** Slide-out panel showing collection, parent chain, child pages, and backlinks. | b2ba4d17 |
-| 2026-06-27 | **P3 — Copy as markdown link!** Context menu item that copies `[title](url)` formatted markdown link. | e8abba0c |
-| 2026-06-27 | **P2 — Collection-level page count badge!** Already present in sidebar. | inline in App.tsx |
