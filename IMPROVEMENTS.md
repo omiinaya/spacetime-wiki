@@ -11,6 +11,10 @@ and works the top pending item each tick.
 | Priority | Item | Notes |
 |----------|------|-------|
 | P3 | Page relationship map in sidebar | Show parent/child/backlink relationships for the current page in a slide-out panel |
+| P2 | Table of contents (auto-generated) | Auto-generate TOC from heading anchor IDs using HeadingWithId extension. Floating TOC sidebar or inline collapsible. |
+| P2 | Page icon/emoji picker | Set/change page icon from the editor/page header. Page model has `icon` field; emoji picker exists in editor but no dedicated page-level icon setter. |
+| P2 | Public share dialog polish | ShareLink table + reducers exist, share dialog in PageView is partially wired. Needs password-protected links, expiry, copy button, and revoke. |
+| P2 | Recycle bin with configurable retention | Trash page exists. Add retention days setting + auto-purge via STDB reducer. |
 
 ---
 

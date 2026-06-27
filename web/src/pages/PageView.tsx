@@ -29,7 +29,7 @@ import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
   List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye, FolderOpen,
-  Bell,
+  Bell, Share2,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments, resolveTransclusions } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
@@ -356,7 +356,9 @@ export function PageView({ pageId, userId }: Props) {
   const [uploading, setUploading] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [showToc, setShowToc] = useState(false);
+  const [showRelationships, setShowRelationships] = useState(false);
   const [backlinks, setBacklinks] = useState<Page[]>([]);
+  const [childPages, setChildPages] = useState<Page[]>([]);
   const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -503,6 +505,11 @@ export function PageView({ pageId, userId }: Props) {
             other.status !== "deleted",
         );
         setBacklinks(links);
+        // Load child pages (pages that have this page as parent)
+        const children = allPages.filter(
+          (ap) => ap.parent_page_id === p.id && ap.status !== "deleted",
+        );
+        setChildPages(children);
       });
       // Record page view (debounced, deduplicated per viewer)
       const viewer = localStorage.getItem("sw_user_id") || "anonymous";
@@ -1147,6 +1154,9 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             <button onClick={() => setShowToc(!showToc)} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", showToc && "text-primary bg-primary/10")} title="Table of Contents">
               <List className="h-4 w-4" />
             </button>
+            <button onClick={() => setShowRelationships(!showRelationships)} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", showRelationships && "text-primary bg-primary/10")} title="Relationships">
+              <Share2 className="h-4 w-4" />
+            </button>
             {/* Full-width toggle */}
             <button
               onClick={async () => {
@@ -1777,6 +1787,99 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                 {h.text}
               </a>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Relationship Map Panel */}
+      {showRelationships && (
+        <div className="side-panel fixed inset-y-0 right-0 w-72 bg-sidebar border-l border-border z-20 overflow-y-auto">
+          <div className="sticky top-0 bg-sidebar z-10">
+            <div className="flex items-center justify-between px-4 h-12 border-b border-border">
+              <h3 className="text-sm font-semibold flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Relationships</h3>
+              <button onClick={() => setShowRelationships(false)} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div className="p-3 space-y-4">
+            {/* Collection */}
+            {collection && (
+              <div>
+                <p className="text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-1.5">Collection</p>
+                <button
+                  onClick={() => navigate(`/?collection=${collection.id}`)}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left"
+                >
+                  <FolderOpen className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{collection.name}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Parent page */}
+            {parentPages.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-1.5">Parent {parentPages.length > 1 ? "chain" : "page"}</p>
+                <div className="space-y-0.5">
+                  {parentPages.map((pp) => (
+                    <button
+                      key={pp.id}
+                      onClick={() => navigate(`/page/${pp.id}`)}
+                      className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+                      <span className="truncate">{pp.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Child pages */}
+            {childPages.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-1.5">Child pages ({childPages.length})</p>
+                <div className="space-y-0.5">
+                  {childPages.map((cp) => (
+                    <button
+                      key={cp.id}
+                      onClick={() => navigate(`/page/${cp.id}`)}
+                      className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <FileText className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{cp.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Backlinks */}
+            {backlinks.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-1.5">Backlinks ({backlinks.length})</p>
+                <div className="space-y-0.5">
+                  {backlinks.slice(0, 10).map((bp) => (
+                    <button
+                      key={bp.id}
+                      onClick={() => navigate(`/page/${bp.id}`)}
+                      className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <Link2 className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{bp.title}</span>
+                    </button>
+                  ))}
+                  {backlinks.length > 10 && (
+                    <p className="text-[10px] text-muted-foreground/40 px-2 pt-1">+ {backlinks.length - 10} more</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!collection && parentPages.length === 0 && childPages.length === 0 && backlinks.length === 0 && (
+              <p className="text-xs text-muted-foreground py-4 text-center">No relationships found for this page.</p>
+            )}
           </div>
         </div>
       )}
