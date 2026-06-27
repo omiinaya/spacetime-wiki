@@ -33,7 +33,7 @@ function AppLayout() {
   const [pages, setPages] = useState<Page[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFilters, setSearchFilters] = useState<SearchFilterState>(EMPTY_FILTERS);
-  // Parse advanced search syntax from search input: in:Name, author:Name, from:Date, to:Date, date:Date
+  // Parse advanced search syntax from search input: in:Name, author:Name, from:Date, to:Date, date:Date, tag:key:value
   const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     // Extract syntax tokens from the raw query
@@ -42,6 +42,7 @@ function AppLayout() {
     let authId = searchFilters.authorId;
     let dateFrom = searchFilters.dateFrom;
     let dateTo = searchFilters.dateTo;
+    let tagFilters = searchFilters.tags || "";
 
     // Match patterns like "in:CollectionName" or "author:UserName" or "from:2026-01-01" etc.
     const patterns = [
@@ -79,6 +80,19 @@ function AppLayout() {
         dateTo = d;
         return "";
       }},
+      // tag:name or tag:name=value syntax
+      { regex: /\btag:("[^"]+"|\S+)/gi, apply: (match: string) => {
+        const spec = match.replace(/^tag:/i, "").replace(/"/g, "").trim();
+        if (spec) {
+          const existing = tagFilters ? tagFilters.split(",") : [];
+          // Check if already present
+          if (!existing.some(s => s.trim().toLowerCase() === spec.toLowerCase())) {
+            existing.push(spec);
+          }
+          tagFilters = existing.join(",");
+        }
+        return "";
+      }},
     ];
 
     for (const p of patterns) {
@@ -94,13 +108,15 @@ function AppLayout() {
     const filtersChanged = collId !== searchFilters.collectionId ||
       authId !== searchFilters.authorId ||
       dateFrom !== searchFilters.dateFrom ||
-      dateTo !== searchFilters.dateTo;
+      dateTo !== searchFilters.dateTo ||
+      tagFilters !== searchFilters.tags;
     if (filtersChanged) {
       setSearchFilters({
         collectionId: collId,
         authorId: authId,
         dateFrom,
         dateTo,
+        tags: tagFilters,
       });
     }
   }, [searchFilters, collections, setSearchQuery, setSearchFilters, users]),
@@ -416,9 +432,40 @@ function AppLayout() {
   useEffect(() => {
     const timer = setTimeout(async () => {
       try {
-        const results = await api.pages.list();
-        setPages(results);
-      } catch { /* keep existing */ }
+        // Use the REST API search when there are active filters or a query
+        const hasFilters = searchFilters.collectionId || searchFilters.authorId ||
+          searchFilters.dateFrom || searchFilters.dateTo || searchFilters.tags;
+        if (searchQuery || hasFilters) {
+          const result = await api.pages.search({
+            q: searchQuery || "",
+            ...(searchFilters.collectionId ? { collection_id: searchFilters.collectionId } : {}),
+            ...(searchFilters.authorId ? { author_id: searchFilters.authorId } : {}),
+            ...(searchFilters.dateFrom ? { from: searchFilters.dateFrom } : {}),
+            ...(searchFilters.dateTo ? { to: searchFilters.dateTo } : {}),
+            ...(searchFilters.tags ? { tags: searchFilters.tags } : {}),
+            limit: 100,
+          });
+          // Map search results back to Page objects (fetch full pages for matching IDs)
+          if (result.data && result.data.length > 0) {
+            const pageIds = result.data.map(r => r.page_id);
+            const allPages = await api.pages.list();
+            const filtered = allPages.filter(p => pageIds.includes(p.id));
+            setPages(filtered);
+          } else {
+            setPages([]);
+          }
+        } else {
+          // No filters — fetch all pages for sidebar display
+          const results = await api.pages.list();
+          setPages(results);
+        }
+      } catch {
+        // Fall back to client-side approach if API fails
+        try {
+          const results = await api.pages.list();
+          setPages(results);
+        } catch { /* keep existing */ }
+      }
     }, 200);
     return () => clearTimeout(timer);
   }, [searchQuery, searchFilters]);
