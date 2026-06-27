@@ -306,6 +306,8 @@ pub struct ShareLink {
     pub expires_at: u64,
     pub created_at: u64,
     pub visit_count: u32,
+    pub brand_title: Option<String>,
+    pub brand_logo_url: Option<String>,
 }
 
 #[table(accessor = page_permission, public)]
@@ -1210,6 +1212,8 @@ pub fn create_share_link(
     ctx.db.share_link().insert(ShareLink {
         id, page_id, token, password_hash, created_by,
         expires_at, created_at: now, visit_count: 0,
+        brand_title: None,
+        brand_logo_url: None,
     });
     Ok(())
 }
@@ -1217,6 +1221,24 @@ pub fn create_share_link(
 #[reducer]
 pub fn delete_share_link(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.share_link().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn update_share_branding(
+    ctx: &ReducerContext,
+    share_id: String,
+    brand_title: Option<String>,
+    brand_logo_url: Option<String>,
+) -> Result<(), String> {
+    let found = ctx.db.share_link().id().find(&share_id);
+    if found.is_none() {
+        return Err("Share link not found".into());
+    }
+    let mut share = found.unwrap();
+    share.brand_title = brand_title;
+    share.brand_logo_url = brand_logo_url;
+    ctx.db.share_link().id().update(share);
     Ok(())
 }
 
