@@ -20,7 +20,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-27 | **P4 — Graph/network visualization!** Interactive D3 force-directed graph of wiki pages and collections. Pages as colored nodes (by collection), parent-child and backlink edges, collection cluster nodes, toggleable layers (collection/parent-child/backlinks), zoom controls, click-to-select with info panel, double-click to navigate, legend overlay | (pending commit) |
+| 2026-06-27 | **P4 — Graph/network visualization!** Interactive D3 force-directed graph of wiki pages and collections. Pages as colored nodes (by collection), parent-child and backlink edges, collection cluster nodes, toggleable layers (collection/parent-child/backlinks), zoom controls, click-to-select with info panel, double-click to navigate, legend overlay | a6321d4 |
 | 2026-06-26 | **P3 — Search result snippets & highlighting!** Context-based snippets with yellow `<mark>` highlighting around matched terms, case-insensitive multi-match support, increased context window (30 before/50 after), improved visibility at text-[11px] with no truncation | fa5398a |
 | 2026-06-27 | **P3 — Dual editor / Markdown source toggle!** WYSIWYG/Markdown/Split mode tabs with tiptapToMarkdown and markdownToProseMirror conversion, monospace textarea editor, side-by-side split view | 67fb0da |
 | 2026-06-26 | **P3 — Reading time / word count!** Estimated reading time, word count, and character count in PageView footer with live ProseMirror JSON content parsing | 1e585ef |
