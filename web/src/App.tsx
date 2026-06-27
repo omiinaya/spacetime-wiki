@@ -22,6 +22,7 @@ import { KeyboardShortcuts } from "./components/KeyboardShortcuts";
 import { ToastProvider, useToast, initGlobalToast, showToast } from "./components/Toast";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { AiAssistant } from "./components/AiAssistant";
+import { ActivityFeed } from "./components/ActivityFeed";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -1067,6 +1068,7 @@ function AppLayout() {
       { label: "Admin panel", subtitle: "Manage users, groups, settings", icon: <Shield className="h-4 w-4" />, shortcut: "A", action: () => { closePalette(); navigate("/admin"); } },
       { label: "Trash", subtitle: "View deleted pages", icon: <Trash2 className="h-4 w-4" />, shortcut: "G T", action: () => { closePalette(); navigate("/trash"); } },
       { label: "Favorites", subtitle: "Show starred pages", icon: <Star className="h-4 w-4" />, shortcut: "G F", action: () => { closePalette(); navigate("/favorites"); } },
+      { label: "Activity", subtitle: "View recent wiki activity", icon: <History className="h-4 w-4" />, shortcut: "G A", action: () => { closePalette(); navigate("/activity"); } },
       { label: "Keyboard shortcuts", subtitle: "View all keyboard shortcuts", icon: <Keyboard className="h-4 w-4" />, shortcut: "?", action: () => { closePalette(); setShortcutsOpen(true); } },
       { label: "Toggle dark mode", subtitle: `Switch to ${theme === "dark" ? "light" : "dark"} theme`, icon: theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />, shortcut: "D", action: () => { closePalette(); setTheme(theme === "dark" ? "light" : "dark"); } },
     ];
@@ -1532,6 +1534,9 @@ function AppLayout() {
         )}
 
         <div className="px-3 py-2 border-t border-border space-y-1">
+          <button onClick={() => navigate('/activity')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+            <History className="h-3 w-3" /> Activity
+          </button>
           <button onClick={openTemplates} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <LayoutTemplate className="h-3 w-3" /> Templates
           </button>
@@ -2535,6 +2540,7 @@ function AppLayout() {
           <Route path="/page/:id" element={<PageViewWrapper userId={userId} />} />
           <Route path="/page/:id/edit" element={<PageEditor userId={userId} />} />
           <Route path="/p/:slug" element={<SlugView />} />
+          <Route path="/activity" element={<ActivityView />} />
           <Route path="/permalink/:id" element={<PermalinkRedirect />} />
           <Route path="/oauth/google/callback" element={<GoogleCallback />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
@@ -2835,6 +2841,45 @@ function HomeView() {
           {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
           Import MD
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Activity View ─────────────────────────────────────��────────────────────
+
+function ActivityView() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="p-4 md:p-6 lg:p-8 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <History className="h-6 w-6 text-primary" /> Activity
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Recent changes across the wiki — page creates, updates, deletes, and more
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/')}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-muted/50 transition-colors"
+        >
+          Back to home
+        </button>
+      </div>
+
+      {/* Activity Feed */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <ActivityFeed limit={200} onNavigate={(targetId, eventType) => {
+          if (eventType.startsWith("page.") || eventType.startsWith("comment.")) {
+            navigate(`/page/${targetId}`);
+          } else if (eventType.startsWith("collection.")) {
+            navigate(`/?col=${targetId}`);
+          }
+        }} />
       </div>
     </div>
   );
