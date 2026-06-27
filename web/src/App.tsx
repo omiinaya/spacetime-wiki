@@ -591,10 +591,12 @@ function AppLayout() {
     colChildren.get(parentId)!.push(col);
   }
   function getTree(parentId: string): (Collection & { children: Collection[] })[] {
-    return (colChildren.get(parentId) || []).map(col => ({
-      ...col,
-      children: getTree(col.id),
-    }));
+    return (colChildren.get(parentId) || [])
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(col => ({
+        ...col,
+        children: getTree(col.id),
+      }));
   }
   const collectionTree = getTree("");
 
@@ -965,6 +967,7 @@ function AppLayout() {
   // ─── Drag-and-drop ─────────────────────────────────────────────────────
 
   const [dragPageId, setDragPageId] = useState<string | null>(null);
+  const [dragColId, setDragColId] = useState<string | null>(null);
 
   // ─── Command palette (Cmd+K) ────────────────────────────────────────────
 
@@ -981,6 +984,12 @@ function AppLayout() {
     e.dataTransfer.setData("text/plain", pageId);
   };
 
+  const handleColDragStart = (e: React.DragEvent, colId: string) => {
+    setDragColId(colId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", colId);
+  };
+
   const handleDragOver = (e: React.DragEvent, pageId?: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
@@ -995,17 +1004,39 @@ function AppLayout() {
 
   const handleDragEnd = () => {
     setDragPageId(null);
+    setDragColId(null);
     setDragOverTarget(null);
   };
 
   const handleDropOnCollection = async (e: React.DragEvent, colId: string) => {
     e.preventDefault();
-    const pageId = e.dataTransfer.getData("text/plain") || dragPageId;
-    if (pageId && pageId !== colId) {
-      await api.pages.move(pageId, colId, "");
-      setDragPageId(null);
+    const droppedId = e.dataTransfer.getData("text/plain") || dragPageId || dragColId;
+    if (!droppedId || droppedId === colId) { setDragColId(null); return; }
+    // Collection being dropped — reorder within the same parent level
+    if (droppedId.startsWith("col_")) {
+      setDragColId(null);
+      // Find this collection to get its parent_id
+      const droppedCol = collections.find(c => c.id === droppedId);
+      const targetCol = collections.find(c => c.id === colId);
+      if (!droppedCol || !targetCol) return;
+      // Get all siblings at the same parent level, sorted by sort_order
+      const parentId = droppedCol.parent_id || "";
+      const siblings = collections
+        .filter(c => (c.parent_id || "") === parentId)
+        .sort((a, b) => a.sort_order - b.sort_order);
+      // Build new order: remove dropped collection from current position,
+      // insert after the target collection
+      const newOrder = siblings.filter(c => c.id !== droppedId);
+      const targetIdx = newOrder.findIndex(c => c.id === colId);
+      newOrder.splice(targetIdx + 1, 0, droppedCol);
+      await api.collections.reorder(newOrder.map(c => c.id));
       await refreshData();
+      return;
     }
+    // Page being dropped — move to collection
+    await api.pages.move(droppedId, colId, "");
+    setDragPageId(null);
+    await refreshData();
   };
 
   const handleDropOnPage = async (e: React.DragEvent, targetPageId: string) => {
@@ -1171,9 +1202,12 @@ function AppLayout() {
             <button
               onClick={() => toggleCollection(col.id)}
               onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, colId: col.id }); }}
+              draggable
+              onDragStart={(e) => handleColDragStart(e, col.id)}
               onDragOver={(e) => { e.preventDefault(); setDragOverTarget(col.id); }}
               onDrop={(e) => handleDropOnCollection(e, col.id)}
-              className="flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left"
+              onDragEnd={handleDragEnd}
+              className="flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left cursor-grab active:cursor-grabbing"
             >
               {expanded ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
               <span className="text-xs">{col.icon || "📁"}</span>
