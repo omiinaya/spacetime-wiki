@@ -19,6 +19,12 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 
 from stdb_client import sql_query, call_reducer
+from models import (
+    WebAuthnBeginRegisterResponse,
+    WebAuthnRegisterCompleteResponse,
+    WebAuthnBeginAuthResponse,
+    WebAuthnAuthCompleteResponse,
+)
 
 router = APIRouter(prefix="/api/v1/webauthn", tags=["webauthn"])
 
@@ -58,7 +64,7 @@ def base64url_encode(data: bytes) -> str:
 # ─── Registration ──────────────────────────────────────────────────────────────
 
 
-@router.get("/register/begin")
+@router.get("/register/begin", response_model=WebAuthnBeginRegisterResponse)
 async def register_begin(email: str, display_name: str = ""):
     """Generate WebAuthn registration options for a new credential.
 
@@ -109,7 +115,7 @@ async def register_begin(email: str, display_name: str = ""):
     return options
 
 
-@router.post("/register/complete")
+@router.post("/register/complete", response_model=WebAuthnRegisterCompleteResponse)
 async def register_complete(body: dict):
     """Verify and store a WebAuthn registration credential.
 
@@ -196,7 +202,7 @@ async def register_complete(body: dict):
 # ─── Authentication ────────────────────────────────────────────────────────────
 
 
-@router.get("/auth/begin")
+@router.get("/auth/begin", response_model=WebAuthnBeginAuthResponse)
 async def auth_begin(email: Optional[str] = None):
     """Generate WebAuthn authentication options.
 
@@ -243,7 +249,7 @@ async def auth_begin(email: Optional[str] = None):
     return options
 
 
-@router.post("/auth/complete")
+@router.post("/auth/complete", response_model=WebAuthnAuthCompleteResponse)
 async def auth_complete(body: dict):
     """Verify a WebAuthn authentication assertion.
 

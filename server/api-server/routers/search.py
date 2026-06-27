@@ -5,6 +5,7 @@ import time
 from fastapi import APIRouter, HTTPException, Query
 
 from stdb_client import sql_query, call_reducer
+from models import SearchResponse, AutocompleteResult
 
 router = APIRouter(prefix="/api/v1/search", tags=["search"])
 
@@ -16,15 +17,15 @@ def _gen_search_token() -> str:
     return f"search_{rand:x}"
 
 
-@router.get("")
+@router.get("", response_model=SearchResponse)
 async def search(
-    q: str = Query(..., min_length=1),
+    q: str = Query(..., min_length=1, description="Free-text search query"),
     collection_id: str = Query("", description="Filter by collection ID"),
     author_id: str = Query("", description="Filter by author/user ID"),
     from_date: str = Query("", alias="from", description="Date range start (ms epoch or ISO date)"),
     to_date: str = Query("", alias="to", description="Date range end (ms epoch or ISO date)"),
     tags: str = Query("", description="Comma-separated tag:value filters, e.g. 'status:published,priority:high'"),
-    limit: int = Query(50, le=100),
+    limit: int = Query(50, le=100, description="Max results"),
 ):
     """Full-text search with advanced filters.
 
@@ -78,7 +79,6 @@ async def search(
     # If tags are specified, do a second-level filter via SQL
     if tags:
         tag_pairs = [t.strip() for t in tags.split(",") if t.strip()]
-        # We need to filter search_result by page tags
         # Build a WHERE clause: find pages that have ALL specified tags
         tag_conditions = []
         for pair in tag_pairs:
@@ -164,10 +164,10 @@ async def search(
     }
 
 
-@router.get("/autocomplete")
+@router.get("/autocomplete", response_model=list[AutocompleteResult])
 async def autocomplete(
-    q: str = Query(..., min_length=1),
-    limit: int = Query(10, le=25),
+    q: str = Query(..., min_length=1, description="Search query prefix"),
+    limit: int = Query(10, le=25, description="Max suggestions"),
 ):
     """Quick title-only autocomplete search."""
     search_token = _gen_search_token()

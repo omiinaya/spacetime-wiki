@@ -7,6 +7,7 @@ and user info retrieval. Supports auto-registration for new users.
 from fastapi import APIRouter, HTTPException
 
 from stdb_client import sql_query, call_reducer
+from models import OAuthProviderResponse, OAuthLoginResponse, OAuthCallbackResponse, OAuthUserLinkResponse
 
 router = APIRouter(prefix="/api/v1/auth/oauth", tags=["oauth"])
 
@@ -77,21 +78,21 @@ def _map_oauth_user(row: list) -> dict | None:
     }
 
 
-@router.get("/providers")
+@router.get("/providers", response_model=list[OAuthProviderResponse])
 async def list_providers():
     """List all active OAuth providers (without secrets)."""
     rows = await sql_query("SELECT * FROM oauth_provider WHERE is_active = true")
     return [_map_oauth_provider(r) for r in rows if _map_oauth_provider(r)]
 
 
-@router.get("/providers/all")
+@router.get("/providers/all", response_model=list[OAuthProviderResponse])
 async def list_all_providers():
     """List all OAuth providers including inactive (admin only, without secrets)."""
     rows = await sql_query("SELECT * FROM oauth_provider")
     return [_map_oauth_provider(r) for r in rows if _map_oauth_provider(r)]
 
 
-@router.get("/user-links/{user_id}")
+@router.get("/user-links/{user_id}", response_model=list[OAuthUserLinkResponse])
 async def list_user_links(user_id: str):
     """List all OAuth provider links for a user."""
     safe = user_id.replace("'", "''")
@@ -101,7 +102,7 @@ async def list_user_links(user_id: str):
     return [_map_oauth_user(r) for r in rows if _map_oauth_user(r)]
 
 
-@router.post("/login")
+@router.post("/login", response_model=OAuthLoginResponse)
 async def oauth_login(body: dict):
     """Initiate OAuth login. Returns provider config for the frontend to build the redirect URL.
 
@@ -126,7 +127,7 @@ async def oauth_login(body: dict):
     }
 
 
-@router.post("/callback")
+@router.post("/callback", response_model=OAuthCallbackResponse)
 async def oauth_callback(body: dict):
     """Handle OAuth callback.
 

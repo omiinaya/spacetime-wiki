@@ -1,0 +1,3764 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SpacetimeWiki REST API",
+    "description": "Programmatic CRUD and search for pages, collections, and more. SpacetimeWiki is a real-time wiki with rich text editing, hierarchical collections, tagging, search, SSO/OAuth/LDAP auth, SCIM provisioning, WebAuthn/passkeys, import/export, and more.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/auth/keys": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List Api Keys",
+        "description": "List all registered API keys (without the raw key, only metadata).",
+        "operationId": "list_api_keys_api_v1_auth_keys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApiKeyResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Api Keys Api V1 Auth Keys Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/keys/{key_id}": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Revoke Api Key",
+        "description": "Revoke an API key.",
+        "operationId": "revoke_api_key_api_v1_auth_keys__key_id__delete",
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyRevokeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/ldap/login": {
+      "post": {
+        "tags": [
+          "ldap"
+        ],
+        "summary": "Ldap Login",
+        "description": "Authenticate a user against an LDAP directory.",
+        "operationId": "ldap_login_api_v1_auth_ldap_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LDAPLoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/callback": {
+      "post": {
+        "tags": [
+          "oauth"
+        ],
+        "summary": "Oauth Callback",
+        "description": "Handle OAuth callback.\n\nThe frontend sends the authorization code, code_verifier, and provider_id.\nThe backend exchanges the code for tokens and fetches user info.",
+        "operationId": "oauth_callback_api_v1_auth_oauth_callback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/login": {
+      "post": {
+        "tags": [
+          "oauth"
+        ],
+        "summary": "Oauth Login",
+        "description": "Initiate OAuth login. Returns provider config for the frontend to build the redirect URL.\n\nThe frontend should:\n1. Call this endpoint with the provider_id\n2. Generate PKCE code_verifier + code_challenge\n3. Build the authorize URL and redirect the user",
+        "operationId": "oauth_login_api_v1_auth_oauth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthLoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/providers": {
+      "get": {
+        "tags": [
+          "oauth"
+        ],
+        "summary": "List Providers",
+        "description": "List all active OAuth providers (without secrets).",
+        "operationId": "list_providers_api_v1_auth_oauth_providers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthProviderResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Providers Api V1 Auth Oauth Providers Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/providers/all": {
+      "get": {
+        "tags": [
+          "oauth"
+        ],
+        "summary": "List All Providers",
+        "description": "List all OAuth providers including inactive (admin only, without secrets).",
+        "operationId": "list_all_providers_api_v1_auth_oauth_providers_all_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthProviderResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List All Providers Api V1 Auth Oauth Providers All Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/user-links/{user_id}": {
+      "get": {
+        "tags": [
+          "oauth"
+        ],
+        "summary": "List User Links",
+        "description": "List all OAuth provider links for a user.",
+        "operationId": "list_user_links_api_v1_auth_oauth_user_links__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthUserLinkResponse"
+                  },
+                  "title": "Response List User Links Api V1 Auth Oauth User Links  User Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register-key": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register Key",
+        "description": "Register a new API key. Returns the raw key once.",
+        "operationId": "register_key_api_v1_auth_register_key_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyRegisterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/collections": {
+      "get": {
+        "tags": [
+          "collections"
+        ],
+        "summary": "List Collections",
+        "description": "List all collections.",
+        "operationId": "list_collections_api_v1_collections_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionResponse"
+                  },
+                  "title": "Response List Collections Api V1 Collections Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "collections"
+        ],
+        "summary": "Create Collection",
+        "description": "Create a new collection.",
+        "operationId": "create_collection_api_v1_collections_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Description"
+            }
+          },
+          {
+            "name": "icon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Icon"
+            }
+          },
+          {
+            "name": "color",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Color"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/collections/{collection_id}": {
+      "get": {
+        "tags": [
+          "collections"
+        ],
+        "summary": "Get Collection",
+        "description": "Get a single collection by ID.",
+        "operationId": "get_collection_api_v1_collections__collection_id__get",
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "collections"
+        ],
+        "summary": "Update Collection",
+        "description": "Update a collection.",
+        "operationId": "update_collection_api_v1_collections__collection_id__put",
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Collection Id"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Name"
+            }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Description"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionUpdateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "collections"
+        ],
+        "summary": "Delete Collection",
+        "description": "Delete a collection.",
+        "operationId": "delete_collection_api_v1_collections__collection_id__delete",
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import/confluence": {
+      "post": {
+        "tags": [
+          "import"
+        ],
+        "summary": "Import Confluence",
+        "description": "Import a Confluence Cloud/Server space export ZIP.\n\nConfluence space exports contain pages.xml for metadata and\nindividual HTML files per page with Confluence-specific tags\nlike <ac:structured-macro>, <ac:link>, <ri:page>, etc.",
+        "operationId": "import_confluence_api_v1_import_confluence_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_confluence_api_v1_import_confluence_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import/markdown": {
+      "post": {
+        "tags": [
+          "import"
+        ],
+        "summary": "Import Markdown",
+        "description": "Import a single Markdown file as a new page.",
+        "operationId": "import_markdown_api_v1_import_markdown_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_markdown_api_v1_import_markdown_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import/notion": {
+      "post": {
+        "tags": [
+          "import"
+        ],
+        "summary": "Import Notion",
+        "description": "Import a Notion export file (Markdown ZIP or HTML file).",
+        "operationId": "import_notion_api_v1_import_notion_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_notion_api_v1_import_notion_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "List Pages",
+        "description": "List pages, optionally filtered by collection.",
+        "operationId": "list_pages_api_v1_pages_get",
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by collection ID",
+              "title": "Collection Id"
+            },
+            "description": "Filter by collection ID"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Page status filter",
+              "default": "active",
+              "title": "Status"
+            },
+            "description": "Page status filter"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "description": "Max results",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Max results"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PageResponse"
+                  },
+                  "title": "Response List Pages Api V1 Pages Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Create Page",
+        "description": "Create a new page via the create_page reducer.",
+        "operationId": "create_page_api_v1_pages_post",
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Title"
+            }
+          },
+          {
+            "name": "collection_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collection Id"
+            }
+          },
+          {
+            "name": "content",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Content"
+            }
+          },
+          {
+            "name": "icon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Icon"
+            }
+          },
+          {
+            "name": "is_template",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Is Template"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{page_id}": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Get Page",
+        "description": "Get a single page by ID.",
+        "operationId": "get_page_api_v1_pages__page_id__get",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Update Page",
+        "description": "Update a page's title and/or content.",
+        "operationId": "update_page_api_v1_pages__page_id__put",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title"
+            }
+          },
+          {
+            "name": "content",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Content"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageUpdateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Delete Page",
+        "description": "Soft-delete a page.",
+        "operationId": "delete_page_api_v1_pages__page_id__delete",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{page_id}/attachments": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "List Attachments",
+        "description": "List attachments on a page.",
+        "operationId": "list_attachments_api_v1_pages__page_id__attachments_get",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttachmentResponse"
+                  },
+                  "title": "Response List Attachments Api V1 Pages  Page Id  Attachments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{page_id}/comments": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "List Comments",
+        "description": "List comments on a page.",
+        "operationId": "list_comments_api_v1_pages__page_id__comments_get",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CommentResponse"
+                  },
+                  "title": "Response List Comments Api V1 Pages  Page Id  Comments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Create Comment",
+        "description": "Add a comment to a page.",
+        "operationId": "create_comment_api_v1_pages__page_id__comments_post",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          },
+          {
+            "name": "body",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Body"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{page_id}/revisions": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "List Revisions",
+        "description": "List page revision history.",
+        "operationId": "list_revisions_api_v1_pages__page_id__revisions_get",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RevisionResponse"
+                  },
+                  "title": "Response List Revisions Api V1 Pages  Page Id  Revisions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{page_id}/share-links": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "List Share Links",
+        "description": "List share links for a page.",
+        "operationId": "list_share_links_api_v1_pages__page_id__share_links_get",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShareLinkResponse"
+                  },
+                  "title": "Response List Share Links Api V1 Pages  Page Id  Share Links Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Create Share Link",
+        "description": "Create a share link for a page.",
+        "operationId": "create_share_link_api_v1_pages__page_id__share_links_post",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          },
+          {
+            "name": "expires_at",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Expires At"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareLinkCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{page_id}/tags": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "List Tags",
+        "description": "List tags on a page.",
+        "operationId": "list_tags_api_v1_pages__page_id__tags_get",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TagResponse"
+                  },
+                  "title": "Response List Tags Api V1 Pages  Page Id  Tags Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Add Tag",
+        "description": "Add a tag to a page.",
+        "operationId": "add_tag_api_v1_pages__page_id__tags_post",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Value"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Search",
+        "description": "Full-text search with advanced filters.\n\nSupports query syntax:\n- `q` — free-text search against page title + content\n- `collection_id` — narrow to a specific collection\n- `author_id` — narrow to a specific author\n- `from` / `to` — date range on updated_at (ISO dates or epoch ms)\n- `tags` — tag:value filters, colon-separated, comma-delimited",
+        "operationId": "search_api_v1_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Free-text search query",
+              "title": "Q"
+            },
+            "description": "Free-text search query"
+          },
+          {
+            "name": "collection_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Filter by collection ID",
+              "default": "",
+              "title": "Collection Id"
+            },
+            "description": "Filter by collection ID"
+          },
+          {
+            "name": "author_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Filter by author/user ID",
+              "default": "",
+              "title": "Author Id"
+            },
+            "description": "Filter by author/user ID"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Date range start (ms epoch or ISO date)",
+              "default": "",
+              "title": "From"
+            },
+            "description": "Date range start (ms epoch or ISO date)"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Date range end (ms epoch or ISO date)",
+              "default": "",
+              "title": "To"
+            },
+            "description": "Date range end (ms epoch or ISO date)"
+          },
+          {
+            "name": "tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated tag:value filters, e.g. 'status:published,priority:high'",
+              "default": "",
+              "title": "Tags"
+            },
+            "description": "Comma-separated tag:value filters, e.g. 'status:published,priority:high'"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "description": "Max results",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Max results"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/search/autocomplete": {
+      "get": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Autocomplete",
+        "description": "Quick title-only autocomplete search.",
+        "operationId": "autocomplete_api_v1_search_autocomplete_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Search query prefix",
+              "title": "Q"
+            },
+            "description": "Search query prefix"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 25,
+              "description": "Max suggestions",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "Max suggestions"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutocompleteResult"
+                  },
+                  "title": "Response Autocomplete Api V1 Search Autocomplete Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webauthn/auth/begin": {
+      "get": {
+        "tags": [
+          "webauthn"
+        ],
+        "summary": "Auth Begin",
+        "description": "Generate WebAuthn authentication options.\n\nReturns PublicKeyCredentialRequestOptions as JSON that the browser\nshould pass to navigator.credentials.get().\n\nIf email is provided, only allow credentials for that user.",
+        "operationId": "auth_begin_api_v1_webauthn_auth_begin_get",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAuthnBeginAuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webauthn/auth/complete": {
+      "post": {
+        "tags": [
+          "webauthn"
+        ],
+        "summary": "Auth Complete",
+        "description": "Verify a WebAuthn authentication assertion.\n\nExpects the CredentialAssertionResponse from the browser:\n{\n    id: string,\n    rawId: string (base64url),\n    type: \"public-key\",\n    response: {\n        clientDataJSON: string (base64url),\n        authenticatorData: string (base64url),\n        signature: string (base64url),\n        userHandle: string (base64url, optional),\n    },\n}",
+        "operationId": "auth_complete_api_v1_webauthn_auth_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAuthnAuthCompleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webauthn/register/begin": {
+      "get": {
+        "tags": [
+          "webauthn"
+        ],
+        "summary": "Register Begin",
+        "description": "Generate WebAuthn registration options for a new credential.\n\nReturns PublicKeyCredentialCreationOptions as JSON that the browser\nshould pass to navigator.credentials.create().",
+        "operationId": "register_begin_api_v1_webauthn_register_begin_get",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Email"
+            }
+          },
+          {
+            "name": "display_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Display Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAuthnBeginRegisterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webauthn/register/complete": {
+      "post": {
+        "tags": [
+          "webauthn"
+        ],
+        "summary": "Register Complete",
+        "description": "Verify and store a WebAuthn registration credential.\n\nExpects the CredentialCreationResponse from the browser:\n{\n    id: string,\n    rawId: string (base64url),\n    type: \"public-key\",\n    response: {\n        clientDataJSON: string (base64url),\n        attestationObject: string (base64url),\n        transports: string[],\n    },\n    user_id: string,   // wiki user ID (passed through by the client)\n    email: string,      // for challenge lookup\n}",
+        "operationId": "register_complete_api_v1_webauthn_register_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAuthnRegisterCompleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Health check endpoint.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/Groups": {
+      "get": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "List Groups",
+        "operationId": "list_groups_scim_v2_Groups_get",
+        "parameters": [
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filter"
+            }
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Startindex"
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Count"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Create Group",
+        "operationId": "create_group_scim_v2_Groups_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/Groups/{group_id}": {
+      "get": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Get Group",
+        "operationId": "get_group_scim_v2_Groups__group_id__get",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Group Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Update Group",
+        "operationId": "update_group_scim_v2_Groups__group_id__put",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Group Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Delete Group",
+        "operationId": "delete_group_scim_v2_Groups__group_id__delete",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Group Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/Schemas": {
+      "get": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "List Schemas",
+        "operationId": "list_schemas_scim_v2_Schemas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/Schemas/{schema_id}": {
+      "get": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Get Schema",
+        "operationId": "get_schema_scim_v2_Schemas__schema_id__get",
+        "parameters": [
+          {
+            "name": "schema_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Schema Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/ServiceProviderConfig": {
+      "get": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Get Service Provider Config",
+        "operationId": "get_service_provider_config_scim_v2_ServiceProviderConfig_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/Users": {
+      "get": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "List Users",
+        "operationId": "list_users_scim_v2_Users_get",
+        "parameters": [
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filter"
+            }
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Startindex"
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Count"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Create User",
+        "operationId": "create_user_scim_v2_Users_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/Users/{user_id}": {
+      "get": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Get User",
+        "operationId": "get_user_scim_v2_Users__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Update User",
+        "operationId": "update_user_scim_v2_Users__user_id__put",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "scim"
+        ],
+        "summary": "Delete User",
+        "operationId": "delete_user_scim_v2_Users__user_id__delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiKeyRegisterResponse": {
+        "properties": {
+          "api_key": {
+            "type": "string",
+            "title": "Api Key",
+            "description": "Raw API key (only shown once)"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Key name",
+            "default": ""
+          },
+          "key_prefix": {
+            "type": "string",
+            "title": "Key Prefix",
+            "description": "Key prefix",
+            "default": ""
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Warning message",
+            "default": "Save this key — it won't be shown again."
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_key"
+        ],
+        "title": "ApiKeyRegisterResponse"
+      },
+      "ApiKeyResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "API key ID"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Owning user ID",
+            "default": ""
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Key name",
+            "default": ""
+          },
+          "key_prefix": {
+            "type": "string",
+            "title": "Key Prefix",
+            "description": "Prefix for identification",
+            "default": ""
+          },
+          "last_used_at": {
+            "type": "integer",
+            "title": "Last Used At",
+            "description": "Last usage timestamp",
+            "default": 0
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Creation timestamp",
+            "default": 0
+          },
+          "expires_at": {
+            "type": "integer",
+            "title": "Expires At",
+            "description": "Expiry timestamp",
+            "default": 0
+          },
+          "is_revoked": {
+            "type": "boolean",
+            "title": "Is Revoked",
+            "description": "Whether this key is revoked",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ApiKeyResponse"
+      },
+      "ApiKeyRevokeResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "revoked"
+          }
+        },
+        "type": "object",
+        "title": "ApiKeyRevokeResponse"
+      },
+      "AttachmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Attachment ID"
+          },
+          "page_id": {
+            "type": "string",
+            "title": "Page Id",
+            "description": "Page ID"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "Original filename",
+            "default": ""
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type",
+            "description": "MIME type",
+            "default": ""
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes",
+            "description": "File size in bytes",
+            "default": 0
+          },
+          "storage_key": {
+            "type": "string",
+            "title": "Storage Key",
+            "description": "Storage backend key",
+            "default": ""
+          },
+          "uploaded_by": {
+            "type": "string",
+            "title": "Uploaded By",
+            "description": "Uploader user ID",
+            "default": ""
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Upload timestamp (ms epoch)",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "page_id"
+        ],
+        "title": "AttachmentResponse"
+      },
+      "AutocompleteResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Result ID",
+            "default": ""
+          },
+          "page_id": {
+            "type": "string",
+            "title": "Page Id",
+            "description": "Matched page ID",
+            "default": ""
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Page title",
+            "default": ""
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Page slug",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "AutocompleteResult"
+      },
+      "Body_import_confluence_api_v1_import_confluence_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          },
+          "collection_id": {
+            "type": "string",
+            "title": "Collection Id",
+            "default": ""
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By",
+            "default": "api"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_confluence_api_v1_import_confluence_post"
+      },
+      "Body_import_markdown_api_v1_import_markdown_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          },
+          "collection_id": {
+            "type": "string",
+            "title": "Collection Id",
+            "default": ""
+          },
+          "parent_page_id": {
+            "type": "string",
+            "title": "Parent Page Id",
+            "default": ""
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By",
+            "default": "api"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_markdown_api_v1_import_markdown_post"
+      },
+      "Body_import_notion_api_v1_import_notion_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          },
+          "collection_id": {
+            "type": "string",
+            "title": "Collection Id",
+            "default": ""
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By",
+            "default": "api"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_notion_api_v1_import_notion_post"
+      },
+      "CollectionCreateResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "created"
+          }
+        },
+        "type": "object",
+        "title": "CollectionCreateResponse"
+      },
+      "CollectionDeleteResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "deleted"
+          }
+        },
+        "type": "object",
+        "title": "CollectionDeleteResponse"
+      },
+      "CollectionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique collection ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Collection name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "URL-friendly slug",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Collection description",
+            "default": ""
+          },
+          "parent_id": {
+            "type": "string",
+            "title": "Parent Id",
+            "description": "Parent collection ID",
+            "default": ""
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon",
+            "description": "Collection emoji icon",
+            "default": ""
+          },
+          "color": {
+            "type": "string",
+            "title": "Color",
+            "description": "Collection accent color",
+            "default": ""
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order",
+            "description": "Sort order",
+            "default": 0
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By",
+            "description": "User ID of creator",
+            "default": ""
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Creation timestamp (ms epoch)",
+            "default": 0
+          },
+          "updated_at": {
+            "type": "integer",
+            "title": "Updated At",
+            "description": "Last update timestamp (ms epoch)",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CollectionResponse"
+      },
+      "CollectionUpdateResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "updated"
+          }
+        },
+        "type": "object",
+        "title": "CollectionUpdateResponse"
+      },
+      "CommentCreateResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "created"
+          }
+        },
+        "type": "object",
+        "title": "CommentCreateResponse"
+      },
+      "CommentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Comment ID"
+          },
+          "page_id": {
+            "type": "string",
+            "title": "Page Id",
+            "description": "Page ID"
+          },
+          "parent_comment_id": {
+            "type": "string",
+            "title": "Parent Comment Id",
+            "description": "Parent comment ID for threads",
+            "default": ""
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Author user ID",
+            "default": ""
+          },
+          "body": {
+            "type": "string",
+            "title": "Body",
+            "description": "Comment body text",
+            "default": ""
+          },
+          "is_resolved": {
+            "type": "boolean",
+            "title": "Is Resolved",
+            "description": "Whether the comment thread is resolved",
+            "default": false
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Creation timestamp (ms epoch)",
+            "default": 0
+          },
+          "updated_at": {
+            "type": "integer",
+            "title": "Updated At",
+            "description": "Last update timestamp (ms epoch)",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "page_id"
+        ],
+        "title": "CommentResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Service health status",
+            "default": "ok"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service",
+            "description": "Service name",
+            "default": "spacetime-wiki-api"
+          }
+        },
+        "type": "object",
+        "title": "HealthResponse"
+      },
+      "ImportResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Import status"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "Created page ID (single import)"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "Page title (single import)"
+          },
+          "pages_created": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pages Created",
+            "description": "Number of pages created (batch)"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors",
+            "description": "Import errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ImportResponse"
+      },
+      "LDAPLoginResponse": {
+        "properties": {
+          "user": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "User",
+            "description": "Authenticated wiki user object"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "title": "LDAPLoginResponse"
+      },
+      "OAuthCallbackResponse": {
+        "properties": {
+          "user": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "User",
+            "description": "Authenticated wiki user object"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "title": "OAuthCallbackResponse"
+      },
+      "OAuthLoginResponse": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/OAuthProviderResponse",
+            "description": "Provider configuration for building redirect URL"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider"
+        ],
+        "title": "OAuthLoginResponse"
+      },
+      "OAuthProviderResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Provider ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Display name",
+            "default": ""
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "URL slug",
+            "default": ""
+          },
+          "provider_type": {
+            "type": "string",
+            "title": "Provider Type",
+            "description": "Provider type: github, discord, slack, gitlab, generic",
+            "default": ""
+          },
+          "authorize_url": {
+            "type": "string",
+            "title": "Authorize Url",
+            "description": "OAuth authorize URL",
+            "default": ""
+          },
+          "token_url": {
+            "type": "string",
+            "title": "Token Url",
+            "description": "Token exchange URL",
+            "default": ""
+          },
+          "userinfo_url": {
+            "type": "string",
+            "title": "Userinfo Url",
+            "description": "User info URL",
+            "default": ""
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "description": "OAuth scope",
+            "default": ""
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id",
+            "description": "OAuth client ID",
+            "default": ""
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon",
+            "description": "Provider icon URL",
+            "default": ""
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether provider is active",
+            "default": true
+          },
+          "auto_register": {
+            "type": "boolean",
+            "title": "Auto Register",
+            "description": "Auto-register new users",
+            "default": false
+          },
+          "default_role": {
+            "type": "string",
+            "title": "Default Role",
+            "description": "Default role for new users",
+            "default": "member"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By",
+            "description": "Creator user ID",
+            "default": ""
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Creation timestamp",
+            "default": 0
+          },
+          "updated_at": {
+            "type": "integer",
+            "title": "Updated At",
+            "description": "Last update timestamp",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "OAuthProviderResponse"
+      },
+      "OAuthUserLinkResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Link ID"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Wiki user ID"
+          },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id",
+            "description": "OAuth provider ID"
+          },
+          "external_id": {
+            "type": "string",
+            "title": "External Id",
+            "description": "External user ID from provider",
+            "default": ""
+          },
+          "external_username": {
+            "type": "string",
+            "title": "External Username",
+            "description": "External username",
+            "default": ""
+          },
+          "external_email": {
+            "type": "string",
+            "title": "External Email",
+            "description": "External email",
+            "default": ""
+          },
+          "token_expires_at": {
+            "type": "integer",
+            "title": "Token Expires At",
+            "description": "Token expiry timestamp",
+            "default": 0
+          },
+          "last_synced_at": {
+            "type": "integer",
+            "title": "Last Synced At",
+            "description": "Last sync timestamp",
+            "default": 0
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Creation timestamp",
+            "default": 0
+          },
+          "updated_at": {
+            "type": "integer",
+            "title": "Updated At",
+            "description": "Last update timestamp",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "provider_id"
+        ],
+        "title": "OAuthUserLinkResponse"
+      },
+      "PageCreateResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "created"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "Newly created page ID"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "Page title"
+          }
+        },
+        "type": "object",
+        "title": "PageCreateResponse"
+      },
+      "PageDeleteResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "deleted"
+          }
+        },
+        "type": "object",
+        "title": "PageDeleteResponse"
+      },
+      "PageResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique page ID"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Page title"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "URL-friendly slug"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "ProseMirror JSON content",
+            "default": ""
+          },
+          "text_content": {
+            "type": "string",
+            "title": "Text Content",
+            "description": "Plain-text extracted content for search",
+            "default": ""
+          },
+          "collection_id": {
+            "type": "string",
+            "title": "Collection Id",
+            "description": "Parent collection ID",
+            "default": ""
+          },
+          "parent_page_id": {
+            "type": "string",
+            "title": "Parent Page Id",
+            "description": "Parent page ID for hierarchy",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Page status: active, archived, deleted",
+            "default": "active"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon",
+            "description": "Page emoji icon",
+            "default": ""
+          },
+          "color": {
+            "type": "string",
+            "title": "Color",
+            "description": "Page accent color",
+            "default": ""
+          },
+          "full_width": {
+            "type": "boolean",
+            "title": "Full Width",
+            "description": "Use full-width layout",
+            "default": false
+          },
+          "is_template": {
+            "type": "boolean",
+            "title": "Is Template",
+            "description": "Whether this page is a template",
+            "default": false
+          },
+          "template_id": {
+            "type": "string",
+            "title": "Template Id",
+            "description": "Template this page was created from",
+            "default": ""
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order",
+            "description": "Sort order within parent",
+            "default": 0
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By",
+            "description": "User ID of creator",
+            "default": ""
+          },
+          "updated_by": {
+            "type": "string",
+            "title": "Updated By",
+            "description": "User ID of last editor",
+            "default": ""
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Creation timestamp (ms epoch)",
+            "default": 0
+          },
+          "updated_at": {
+            "type": "integer",
+            "title": "Updated At",
+            "description": "Last update timestamp (ms epoch)",
+            "default": 0
+          },
+          "published_at": {
+            "type": "integer",
+            "title": "Published At",
+            "description": "Publish timestamp (ms epoch)",
+            "default": 0
+          },
+          "deleted_at": {
+            "type": "integer",
+            "title": "Deleted At",
+            "description": "Deletion timestamp (ms epoch)",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "slug"
+        ],
+        "title": "PageResponse"
+      },
+      "PageUpdateResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "updated"
+          }
+        },
+        "type": "object",
+        "title": "PageUpdateResponse"
+      },
+      "RevisionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Revision ID"
+          },
+          "page_id": {
+            "type": "string",
+            "title": "Page Id",
+            "description": "Page ID"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Revision title",
+            "default": ""
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "Revision ProseMirror content",
+            "default": ""
+          },
+          "edited_by": {
+            "type": "string",
+            "title": "Edited By",
+            "description": "User ID of editor",
+            "default": ""
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Timestamp (ms epoch)",
+            "default": 0
+          },
+          "revision_number": {
+            "type": "integer",
+            "title": "Revision Number",
+            "description": "Sequential revision number",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "page_id"
+        ],
+        "title": "RevisionResponse"
+      },
+      "SearchFilters": {
+        "properties": {
+          "collection_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Id",
+            "description": "Filter by collection ID"
+          },
+          "author_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Id",
+            "description": "Filter by author/user ID"
+          },
+          "from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From",
+            "description": "Date range start"
+          },
+          "to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To",
+            "description": "Date range end"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags",
+            "description": "Tag filters"
+          }
+        },
+        "type": "object",
+        "title": "SearchFilters"
+      },
+      "SearchResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResultItem"
+            },
+            "type": "array",
+            "title": "Data",
+            "description": "Search results"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query",
+            "description": "Original search query",
+            "default": ""
+          },
+          "filters": {
+            "$ref": "#/components/schemas/SearchFilters",
+            "description": "Applied filters"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total result count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SearchResponse"
+      },
+      "SearchResultItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Search result ID",
+            "default": ""
+          },
+          "search_token": {
+            "type": "string",
+            "title": "Search Token",
+            "description": "Search session token",
+            "default": ""
+          },
+          "page_id": {
+            "type": "string",
+            "title": "Page Id",
+            "description": "Matched page ID",
+            "default": ""
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Matched page title",
+            "default": ""
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Matched page slug",
+            "default": ""
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt",
+            "description": "Contextual excerpt with match highlighting",
+            "default": ""
+          },
+          "match_type": {
+            "type": "string",
+            "title": "Match Type",
+            "description": "Type of match: title, content, tag",
+            "default": ""
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Sort timestamp",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SearchResultItem"
+      },
+      "ShareLinkCreateResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "created"
+          }
+        },
+        "type": "object",
+        "title": "ShareLinkCreateResponse"
+      },
+      "ShareLinkResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Share link ID"
+          },
+          "page_id": {
+            "type": "string",
+            "title": "Page Id",
+            "description": "Page ID"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "Share token",
+            "default": ""
+          },
+          "password_hash": {
+            "type": "string",
+            "title": "Password Hash",
+            "description": "Optional password hash",
+            "default": ""
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By",
+            "description": "Creator user ID",
+            "default": ""
+          },
+          "expires_at": {
+            "type": "integer",
+            "title": "Expires At",
+            "description": "Expiry timestamp (ms epoch)",
+            "default": 0
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Creation timestamp (ms epoch)",
+            "default": 0
+          },
+          "visit_count": {
+            "type": "integer",
+            "title": "Visit Count",
+            "description": "Number of visits",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "page_id"
+        ],
+        "title": "ShareLinkResponse"
+      },
+      "TagCreateResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Operation result",
+            "default": "created"
+          }
+        },
+        "type": "object",
+        "title": "TagCreateResponse"
+      },
+      "TagResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Tag ID"
+          },
+          "page_id": {
+            "type": "string",
+            "title": "Page Id",
+            "description": "Page ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Tag name"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "Tag value",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "page_id",
+          "name"
+        ],
+        "title": "TagResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WebAuthnAuthCompleteResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Authentication status",
+            "default": "ok"
+          },
+          "user": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "User",
+            "description": "Authenticated user data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "title": "WebAuthnAuthCompleteResponse"
+      },
+      "WebAuthnBeginAuthResponse": {
+        "properties": {
+          "challenge": {
+            "type": "string",
+            "title": "Challenge",
+            "description": "Authentication challenge"
+          },
+          "timeout": {
+            "type": "integer",
+            "title": "Timeout",
+            "description": "Timeout in ms",
+            "default": 300000
+          },
+          "rpId": {
+            "type": "string",
+            "title": "Rpid",
+            "description": "Relying party ID",
+            "default": "localhost"
+          },
+          "allowCredentials": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Allowcredentials"
+          },
+          "userVerification": {
+            "type": "string",
+            "title": "Userverification",
+            "default": "preferred"
+          }
+        },
+        "type": "object",
+        "required": [
+          "challenge"
+        ],
+        "title": "WebAuthnBeginAuthResponse"
+      },
+      "WebAuthnBeginRegisterResponse": {
+        "properties": {
+          "challenge": {
+            "type": "string",
+            "title": "Challenge",
+            "description": "Registration challenge"
+          },
+          "rp": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Rp",
+            "description": "Relying party info"
+          },
+          "user": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "User",
+            "description": "User info"
+          },
+          "pubKeyCredParams": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Pubkeycredparams",
+            "description": "Accepted key types"
+          },
+          "timeout": {
+            "type": "integer",
+            "title": "Timeout",
+            "description": "Timeout in ms",
+            "default": 300000
+          },
+          "attestation": {
+            "type": "string",
+            "title": "Attestation",
+            "description": "Attestation preference",
+            "default": "none"
+          },
+          "excludeCredentials": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Excludecredentials"
+          },
+          "authenticatorSelection": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Authenticatorselection"
+          }
+        },
+        "type": "object",
+        "required": [
+          "challenge",
+          "rp",
+          "user",
+          "pubKeyCredParams"
+        ],
+        "title": "WebAuthnBeginRegisterResponse"
+      },
+      "WebAuthnRegisterCompleteResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Registration status",
+            "default": "ok"
+          },
+          "credential_id": {
+            "type": "string",
+            "title": "Credential Id",
+            "description": "Registered credential ID",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "WebAuthnRegisterCompleteResponse"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "SpacetimeWiki API server"
+    }
+  ]
+}

@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException
 
 from stdb_client import sql_query, call_reducer
+from models import LDAPLoginResponse
 
 router = APIRouter(prefix="/api/v1/auth/ldap", tags=["ldap"])
 
@@ -58,7 +59,7 @@ def _map_user(row: list) -> dict | None:
     }
 
 
-@router.post("/login")
+@router.post("/login", response_model=LDAPLoginResponse)
 async def ldap_login(body: dict):
     """Authenticate a user against an LDAP directory."""
     provider_id = body.get("provider_id", "")

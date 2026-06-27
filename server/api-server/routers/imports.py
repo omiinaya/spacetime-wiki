@@ -5,6 +5,7 @@ import html.parser
 import re
 
 from stdb_client import call_reducer, sql_query
+from models import ImportResponse
 
 router = APIRouter(prefix="/api/v1/import", tags=["import"])
 
@@ -130,7 +131,7 @@ def _make_id(prefix: str = "page") -> str:
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 
-@router.post("/markdown")
+@router.post("/markdown", response_model=ImportResponse)
 async def import_markdown(
     file: UploadFile = File(...),
     collection_id: str = Form(""),
@@ -148,7 +149,7 @@ async def import_markdown(
     return {"status": "created", "id": page_id, "title": title}
 
 
-@router.post("/notion")
+@router.post("/notion", response_model=ImportResponse)
 async def import_notion(
     file: UploadFile = File(...),
     collection_id: str = Form(""),
@@ -235,7 +236,7 @@ async def import_notion(
     raise HTTPException(400, "Unsupported file format. Accepted: .md, .html, .zip (Notion Markdown export)")
 
 
-@router.post("/confluence")
+@router.post("/confluence", response_model=ImportResponse)
 async def import_confluence(
     file: UploadFile = File(...),
     collection_id: str = Form(""),

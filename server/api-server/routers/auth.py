@@ -4,11 +4,12 @@ from fastapi import APIRouter, HTTPException
 
 from auth import generate_api_key
 from stdb_client import sql_query, call_reducer, map_api_key
+from models import ApiKeyResponse, ApiKeyRegisterResponse, ApiKeyRevokeResponse
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-@router.get("/keys")
+@router.get("/keys", response_model=list[ApiKeyResponse])
 async def list_api_keys():
     """List all registered API keys (without the raw key, only metadata)."""
     rows = await sql_query("SELECT * FROM api_key")
@@ -21,7 +22,7 @@ async def list_api_keys():
     return keys
 
 
-@router.post("/register-key")
+@router.post("/register-key", response_model=ApiKeyRegisterResponse)
 async def register_key(body: dict):
     """Register a new API key. Returns the raw key once."""
     name = body.get("name", "default")
@@ -39,7 +40,7 @@ async def register_key(body: dict):
     }
 
 
-@router.delete("/keys/{key_id}")
+@router.delete("/keys/{key_id}", response_model=ApiKeyRevokeResponse)
 async def revoke_api_key(key_id: str):
     """Revoke an API key."""
     safe = key_id.replace("'", "''")
