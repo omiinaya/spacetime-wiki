@@ -51,7 +51,7 @@ function AppLayout() {
 
   // Admin state (declared early for search syntax handler that references allUsers)
   const [adminOpen, setAdminOpen] = useState(false);
-  const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
+  const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string; avatar_url: string }[]>([]);
   const [adminTab, setAdminTab] = useState<"dashboard" | "users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "access_requests" | "mfa" | "ldap" | "oauth">("dashboard");
   // Parse advanced search syntax from search input: in:Name, author:Name, from:Date, to:Date, date:Date, tag:key:value
   const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -915,6 +915,14 @@ function AppLayout() {
     try {
       await api.users.updateRole(userId, newRole, currentUser);
       setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    } catch (e) { alert(String(e)); }
+  };
+
+  const updateUserAvatar = async (userId: string, avatarUrl: string) => {
+    const currentUser = localStorage.getItem("sw_user_id") || "";
+    try {
+      await api.users.updateAvatar(userId, avatarUrl, currentUser);
+      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, avatar_url: avatarUrl } : u));
     } catch (e) { alert(String(e)); }
   };
 
@@ -2022,20 +2030,50 @@ function AppLayout() {
               <>
                 <div className="space-y-1 mb-4">
                   {allUsers.map(u => (
-                    <div key={u.id} className="flex items-center gap-3 px-3 py-2 rounded-md border border-border hover:bg-muted/30 transition-colors">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{u.name}</p>
-                        <p className="text-[10px] text-muted-foreground/60 truncate">{u.email}</p>
+                    <div key={u.id} className="flex flex-col gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-6 h-6 shrink-0">
+                          {u.avatar_url ? (
+                            <img src={u.avatar_url} alt="" className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          ) : null}
+                          <div className={`w-full h-full rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary ${u.avatar_url ? 'hidden' : ''}`}>
+                            {(u.name || "?").charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{u.name}</p>
+                          <p className="text-[10px] text-muted-foreground/60 truncate">{u.email}</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            defaultValue={u.avatar_url}
+                            placeholder="Avatar URL"
+                            id={`avatar-input-${u.id}`}
+                            className="w-32 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                          <button
+                            onClick={() => {
+                              const input = document.getElementById(`avatar-input-${u.id}`) as HTMLInputElement;
+                              const url = input?.value?.trim() ?? "";
+                              updateUserAvatar(u.id, url);
+                            }}
+                            className="h-7 px-2 rounded-md text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                            title="Save avatar URL"
+                          >
+                            Save
+                          </button>
+                        </div>
+                        <select
+                          value={u.role}
+                          onChange={(e) => updateUserRole(u.id, e.target.value)}
+                          className="h-7 pl-2 pr-6 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        >
+                          <option value="admin">Admin</option>
+                          <option value="member">Member</option>
+                          <option value="viewer">Viewer</option>
+                        </select>
                       </div>
-                      <select
-                        value={u.role}
-                        onChange={(e) => updateUserRole(u.id, e.target.value)}
-                        className="h-7 pl-2 pr-6 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                      >
-                        <option value="admin">Admin</option>
-                        <option value="member">Member</option>
-                        <option value="viewer">Viewer</option>
-                      </select>
                     </div>
                   ))}
                   {allUsers.length === 0 && (

@@ -459,6 +459,29 @@ pub fn update_user_role(
     Ok(())
 }
 
+#[reducer]
+pub fn update_user_avatar(
+    ctx: &ReducerContext,
+    user_id: String,
+    avatar_url: String,
+    updated_by: String,
+) -> Result<(), String> {
+    // Only admins can change avatars
+    let updater = ctx.db.user().iter().find(|u| u.id == updated_by);
+    if updater.is_none() || updater.unwrap().role != "admin" {
+        return Err("Only admins can change user avatars".into());
+    }
+    let found = ctx.db.user().iter().find(|u| u.id == user_id);
+    if found.is_none() {
+        return Err("User not found".into());
+    }
+    let mut user = found.unwrap();
+    user.avatar_url = avatar_url;
+    user.updated_at = now_ms(ctx);
+    ctx.db.user().id().update(user);
+    Ok(())
+}
+
 // ─── Collections ─────────────────────────────────────────────────────────────
 
 #[reducer]
