@@ -6,14 +6,12 @@ and works the top pending item each tick.
 
 ---
 
-## Status: Working P4 backlog items — Graph/network visualization next.
+## Status: Working P4 backlog — REST API Swagger/OpenAPI docs next.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | Graph/network visualization | Interactive D3/force-graph view of page relationships (backlinks, collections) as a visual browser |
 | P4 | REST API Swagger/OpenAPI docs | Generate OpenAPI 3.0 spec for the FastAPI REST API endpoints |
 | P2 | Drag-and-drop sidebar reorder | Use @dnd-kit/core for reordering pages and collections in the sidebar with drop targets between items |
-| P3 | Dual editor / Markdown source toggle | Add a toggle switch between WYSIWYG (Tiptap) and raw Markdown source editing with live preview |
 
 
 ---
@@ -22,7 +20,9 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-27 | **P4 — Graph/network visualization!** Interactive D3 force-directed graph of wiki pages and collections. Pages as colored nodes (by collection), parent-child and backlink edges, collection cluster nodes, toggleable layers (collection/parent-child/backlinks), zoom controls, click-to-select with info panel, double-click to navigate, legend overlay | (pending commit) |
 | 2026-06-26 | **P3 — Search result snippets & highlighting!** Context-based snippets with yellow `<mark>` highlighting around matched terms, case-insensitive multi-match support, increased context window (30 before/50 after), improved visibility at text-[11px] with no truncation | fa5398a |
+| 2026-06-27 | **P3 — Dual editor / Markdown source toggle!** WYSIWYG/Markdown/Split mode tabs with tiptapToMarkdown and markdownToProseMirror conversion, monospace textarea editor, side-by-side split view | 67fb0da |
 | 2026-06-26 | **P3 — Reading time / word count!** Estimated reading time, word count, and character count in PageView footer with live ProseMirror JSON content parsing | 1e585ef |
 | 2026-06-26 | **P2 — Auto-notify watchers on page changes!** STDB helper functions + wiring into create_page, update_page, add_comment — collection watchers notified on new pages, page watchers notified on updates and comments, skips the event actor | 91dc2b0 |
 | 2026-06-26 | **P2 — Notification center / watch pages!** STDB `watch` + `notification` tables with toggle_watch, create_notification, mark_read, mark_all_read, clear_all reducers. NotificationBell component with bell icon, unread badge, dropdown with mark-read/delete actions. Watch/unwatch toggle in PageView actions bar. Real-time notification delivery via STDB subscriptions with toast alerts. | 8adbd6d |
