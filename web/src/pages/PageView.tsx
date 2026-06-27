@@ -1305,6 +1305,45 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
         {editor && <EditorContent editor={editor} />}
       </div>
 
+      {/* Reading time / word count footer */}
+      {(() => {
+        let wordCount = 0;
+        let charCount = 0;
+        try {
+          const doc = JSON.parse(page.content || "{}");
+          const walkText = (node: any) => {
+            if (!node) return;
+            if (node.type === "text" && node.text) {
+              const text = node.text;
+              charCount += text.length;
+              const words = text.trim().split(/\s+/);
+              wordCount += words.filter((w: string) => w.length > 0).length;
+            }
+            if (node.content) {
+              node.content.forEach(walkText);
+            }
+          };
+          walkText(doc);
+        } catch {
+          // fallback to text_content if not valid JSON
+          const text = page.text_content || "";
+          charCount = text.length;
+          wordCount = text.trim().split(/\s+/).filter((w) => w.length > 0).length;
+        }
+        const readingTimeMin = Math.max(1, Math.round(wordCount / 238));
+        return (
+          <div className="px-4 md:px-8 pb-2 border-b border-border/50">
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground/60">
+              <span title="Word count">{wordCount.toLocaleString()} words</span>
+              <span>·</span>
+              <span title="Character count">{charCount.toLocaleString()} characters</span>
+              <span>·</span>
+              <span title="Estimated reading time">{readingTimeMin} min read</span>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Inline comment anchor popup */}
       {anchorComment && (
         <div
