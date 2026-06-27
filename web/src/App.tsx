@@ -1178,7 +1178,42 @@ function AppLayout() {
                     {page.color && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: page.color }} />}
                     {page.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary" fill="currentColor" />}
                     <span className="truncate">{page.title}</span>
-                    {searchQuery && page.text_content && (<span className="block text-[10px] text-muted-foreground/50 truncate mt-0.5 max-w-full">{(() => { const idx = page.text_content.toLowerCase().indexOf(searchQuery.toLowerCase()); if (idx < 0) return page.text_content.slice(0, 60).replace(/\n/g, " "); const start = Math.max(0, idx - 20); const end = Math.min(page.text_content.length, idx + searchQuery.length + 40); const snippet = page.text_content.slice(start, end).replace(/\n/g, " "); return (start > 0 ? "…" : "") + snippet + (end < page.text_content.length ? "…" : ""); })()}</span>)}
+                    {searchQuery && page.text_content && (
+                      <span className="block text-[11px] text-muted-foreground/60 mt-0.5 max-w-full leading-relaxed">
+                        {(() => {
+                          const q = searchQuery.toLowerCase();
+                          const text = page.text_content.replace(/\n/g, " ");
+                          const idx = text.toLowerCase().indexOf(q);
+                          if (idx < 0) return text.slice(0, 80);
+                          const start = Math.max(0, idx - 30);
+                          const end = Math.min(text.length, idx + q.length + 50);
+                          const snippet = text.slice(start, end);
+                          const parts: JSX.Element[] = [];
+                          // Split by the query (case-insensitive), preserving match cases
+                          const lowerSnippet = snippet.toLowerCase();
+                          let cursor = 0;
+                          let matchIdx = lowerSnippet.indexOf(q, cursor);
+                          if (start > 0) parts.push(<span key="lead" className="opacity-50">…</span>);
+                          while (matchIdx >= 0) {
+                            if (matchIdx > cursor) {
+                              parts.push(<span key={`t-${cursor}`}>{snippet.slice(cursor, matchIdx)}</span>);
+                            }
+                            parts.push(
+                              <mark key={`m-${matchIdx}`} className="bg-yellow-500/30 text-foreground rounded-sm px-0.5">
+                                {snippet.slice(matchIdx, matchIdx + q.length)}
+                              </mark>
+                            );
+                            cursor = matchIdx + q.length;
+                            matchIdx = lowerSnippet.indexOf(q, cursor);
+                          }
+                          if (cursor < snippet.length) {
+                            parts.push(<span key={`t-${cursor}`}>{snippet.slice(cursor)}</span>);
+                          }
+                          if (end < text.length) parts.push(<span key="trail" className="opacity-50">…</span>);
+                          return parts;
+                        })()}
+                      </span>
+                    )}
                     {page.status === "draft" && <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-yellow-500/10 text-yellow-500 shrink-0">Draft</span>}
                     {page.status === "archived" && <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Archived</span>}
                     {page.is_template && <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400 shrink-0">Template</span>}
