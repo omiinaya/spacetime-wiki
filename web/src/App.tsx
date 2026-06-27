@@ -22,6 +22,7 @@ import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { AiAssistant } from "./components/AiAssistant";
 import { ActivityFeed } from "./components/ActivityFeed";
 import { NotificationBell } from "./components/NotificationBell";
+import { AccessRequestPanel } from "./components/AccessRequestPanel";
 import React from "react";
 
 // Inline components: HomeView, ActivityView, FavoritesView, PageViewWrapper, SlugView,
@@ -51,7 +52,7 @@ function AppLayout() {
   // Admin state (declared early for search syntax handler that references allUsers)
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"dashboard" | "users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa" | "ldap" | "oauth">("dashboard");
+  const [adminTab, setAdminTab] = useState<"dashboard" | "users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "access_requests" | "mfa" | "ldap" | "oauth">("dashboard");
   // Parse advanced search syntax from search input: in:Name, author:Name, from:Date, to:Date, date:Date, tag:key:value
   const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -1974,6 +1975,11 @@ function AppLayout() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "invitations" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <Mail className="h-3 w-3 inline mr-1" />Invitations
               </button>
+              <button onClick={() => setAdminTab("access_requests")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "access_requests" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                Access Requests
+              </button>
               <button onClick={() => setAdminTab("mfa")}
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "mfa" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -2290,6 +2296,7 @@ function AppLayout() {
             {adminTab === "scim" && <ScimSettings userId={userId} />}
             {adminTab === "passkeys" && <PasskeySettings userId={userId} />}
             {adminTab === "invitations" && <InvitationSettings userId={userId} />}
+            {adminTab === "access_requests" && <AccessRequestPanel userId={userId} />}
             {adminTab === "mfa" && <MfaSettings userId={userId} />}
             {adminTab === "ldap" && <LdapSettings userId={userId} />}
             {adminTab === "oauth" && <OAuthSettings userId={userId} />}
