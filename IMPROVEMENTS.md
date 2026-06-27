@@ -6,7 +6,14 @@ and works the top pending item each tick.
 
 ---
 
-## Status: No PENDING items — all verified done. Running deep research for new improvements.
+## Status: ✅ P1 — Dedicated /favorites page done (commit pending). Next: P2 revision compare on hover.
+
+| Priority | Item | Notes |
+|----------|------|-------|
+| P2 | Page revision compare on hover | Quick preview tooltip showing what changed in each revision in the revision panel |
+| P2 | Collection-level page count badge | Show page count next to collection names in sidebar |
+| P3 | "Copy as markdown link" in context menu | Copy `[title](slug)` formatted markdown link for a page |
+| P3 | Page relationship map in sidebar | Show parent/child/backlink relationships for the current page in a slide-out panel |
 
 ---
 
@@ -14,6 +21,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-27 | **P1 — Dedicated /favorites page!** Fully featured favorites page at `/favorites` route with collection-grouped star listing, empty state with onboarding guidance, loading spinner, and quick navigation. Command palette "G F" shortcut now works. | inline in App.tsx |
 | 2026-06-27 | **P2 — Drag-and-drop sidebar reorder!** HTML5 native drag-and-drop for reordering pages and collections in sidebar with drop targets, cross-collection moves, and drag-to-trash | inline in App.tsx |
 | 2026-06-27 | **P1 — Breadcrumbs component!** Auto-generated breadcrumb trail from page parent hierarchy showing collection → parent pages → current page with clickable navigation | inline in PageView.tsx |
 | 2026-06-27 | **P1 — Callouts/notices in editor!** Info, warning, tip, danger callout blocks via custom Tiptap extension | Callout.ts extension |
