@@ -22,6 +22,7 @@ declare module "@tiptap/core" {
         width?: string;
         align?: "left" | "center" | "right";
         caption?: string;
+        imageId?: string;
       }) => ReturnType;
     };
   }
@@ -255,6 +256,14 @@ export const ImageEnhanced = Node.create<ImageEnhancedOptions>({
         },
         renderHTML: (attrs) => ({}),
       },
+      imageId: {
+        default: null,
+        parseHTML: (el) => (el as HTMLImageElement).getAttribute("data-image-id"),
+        renderHTML: (attrs) => {
+          if (!attrs.imageId) return {};
+          return { "data-image-id": attrs.imageId };
+        },
+      },
     };
   },
 
@@ -336,9 +345,13 @@ export const ImageEnhanced = Node.create<ImageEnhancedOptions>({
       setImageEnhanced:
         (options) =>
         ({ commands }) => {
+          const attrs = {
+            ...options,
+            imageId: options.imageId || crypto.randomUUID?.() || `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+          };
           return commands.insertContent({
             type: this.name,
-            attrs: options,
+            attrs,
           });
         },
     };
