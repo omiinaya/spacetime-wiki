@@ -1,6 +1,9 @@
 const STDB_HOST = "127.0.0.1:3001";
 const DB_ID = "c20000000000000000000000000000000000000000000000000000000000000000";
 
+/** Base URL for the REST API server (Python FastAPI backend). */
+const API_BASE = `http://${STDB_HOST.replace(/:3001$/, ":8000")}`;
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function genId(prefix: string): string {
@@ -697,6 +700,30 @@ export const api = {
       callReducer("batch_delete_pages", [pageIds]),
     batchAddTag: (pageIds: string[], name: string, value: string) =>
       callReducer("batch_add_tag", [pageIds, name, value]),
+
+    // ── Search (via REST API) ──
+    search: (params: {
+      q: string;
+      collection_id?: string;
+      author_id?: string;
+      from?: string;
+      to?: string;
+      tags?: string;
+      limit?: number;
+    }): Promise<{ data: Array<{ id: string; search_token: string; page_id: string; title: string; slug: string; excerpt: string; match_type: string }>; query: string; filters: any; total: number }> => {
+      const queryParams = new URLSearchParams();
+      queryParams.set("q", params.q);
+      if (params.collection_id) queryParams.set("collection_id", params.collection_id);
+      if (params.author_id) queryParams.set("author_id", params.author_id);
+      if (params.from) queryParams.set("from", params.from);
+      if (params.to) queryParams.set("to", params.to);
+      if (params.tags) queryParams.set("tags", params.tags);
+      if (params.limit) queryParams.set("limit", String(params.limit));
+      return fetch(`${API_BASE}/api/v1/search?${queryParams.toString()}`).then(async (res) => {
+        if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+        return res.json();
+      });
+    },
   },
 
   collections: {

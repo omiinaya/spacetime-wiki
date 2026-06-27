@@ -1,33 +1,194 @@
-"""Search endpoints."""
+"""Search endpoints — uses STDB search_pages reducer with full filter support."""
 
-from fastapi import APIRouter, Query
+import time
 
-from stdb_client import sql_query, map_page
+from fastapi import APIRouter, HTTPException, Query
+
+from stdb_client import sql_query, call_reducer
 
 router = APIRouter(prefix="/api/v1/search", tags=["search"])
 
 
+def _gen_search_token() -> str:
+    """Generate a unique search token."""
+    ts = int(time.time() * 1000)
+    rand = (ts * 1103515245 + 12345) & 0xFFFFFFFF
+    return f"search_{rand:x}"
+
+
 @router.get("")
-async def search(q: str = Query(..., min_length=1), limit: int = Query(20, le=50)):
-    """Full-text search across page titles and content."""
-    rows = await sql_query("SELECT * FROM page WHERE status != 'deleted'")
-    query = q.lower()
+async def search(
+    q: str = Query(..., min_length=1),
+    collection_id: str = Query("", description="Filter by collection ID"),
+    author_id: str = Query("", description="Filter by author/user ID"),
+    from_date: str = Query("", alias="from", description="Date range start (ms epoch or ISO date)"),
+    to_date: str = Query("", alias="to", description="Date range end (ms epoch or ISO date)"),
+    tags: str = Query("", description="Comma-separated tag:value filters, e.g. 'status:published,priority:high'"),
+    limit: int = Query(50, le=100),
+):
+    """Full-text search with advanced filters.
+
+    Supports query syntax:
+    - `q` — free-text search against page title + content
+    - `collection_id` — narrow to a specific collection
+    - `author_id` — narrow to a specific author
+    - `from` / `to` — date range on updated_at (ISO dates or epoch ms)
+    - `tags` — tag:value filters, colon-separated, comma-delimited
+    """
+    search_token = _gen_search_token()
+
+    # Parse date params: try as epoch ms, fall back to ISO 8601
+    date_from: int = 0
+    date_to: int = 0
+
+    if from_date:
+        try:
+            date_from = int(from_date)
+        except ValueError:
+            import datetime
+            try:
+                dt = datetime.datetime.fromisoformat(from_date)
+                date_from = int(dt.timestamp() * 1000)
+            except ValueError:
+                raise HTTPException(400, f"Invalid from_date format: {from_date}. Use ISO date or epoch ms.")
+
+    if to_date:
+        try:
+            date_to = int(to_date)
+        except ValueError:
+            import datetime
+            try:
+                dt = datetime.datetime.fromisoformat(to_date)
+                # Include the entire day (end of day)
+                dt = dt.replace(hour=23, minute=59, second=59, microsecond=999000)
+                date_to = int(dt.timestamp() * 1000)
+            except ValueError:
+                raise HTTPException(400, f"Invalid to_date format: {to_date}. Use ISO date or epoch ms.")
+
+    # Call the search_pages reducer
+    await call_reducer("search_pages", [
+        search_token,
+        q,
+        collection_id,
+        author_id,
+        date_from,
+        date_to,
+    ])
+
+    # If tags are specified, do a second-level filter via SQL
+    if tags:
+        tag_pairs = [t.strip() for t in tags.split(",") if t.strip()]
+        # We need to filter search_result by page tags
+        # Build a WHERE clause: find pages that have ALL specified tags
+        tag_conditions = []
+        for pair in tag_pairs:
+            if ":" in pair:
+                tag_name, tag_value = pair.split(":", 1)
+                safe_name = tag_name.strip().replace("'", "''")
+                safe_value = tag_value.strip().replace("'", "''")
+                tag_conditions.append(
+                    f"EXISTS (SELECT 1 FROM page_tag WHERE page_id = sr.page_id AND name = '{safe_name}' AND value = '{safe_value}')"
+                )
+            else:
+                safe_name = pair.strip().replace("'", "''")
+                tag_conditions.append(
+                    f"EXISTS (SELECT 1 FROM page_tag WHERE page_id = sr.page_id AND name = '{safe_name}')"
+                )
+        tag_where = " AND ".join(tag_conditions)
+        rows = await sql_query(
+            f"SELECT s.* FROM search_result s WHERE s.search_token = '{search_token}' ORDER BY s.created_at DESC"
+        )
+    else:
+        rows = await sql_query(
+            f"SELECT * FROM search_result WHERE search_token = '{search_token}' ORDER BY created_at DESC"
+        )
+
+    # Apply tag filter in Python if tag_where was built
+    if tags:
+        tag_pairs_list = [t.strip() for t in tags.split(",") if t.strip()]
+        filtered = []
+        for row in rows:
+            page_id = str(row[2]) if len(row) > 2 else ""
+            if not page_id:
+                continue
+            # Check each tag condition
+            all_match = True
+            for pair in tag_pairs_list:
+                if ":" in pair:
+                    tag_name, tag_value = pair.split(":", 1)
+                    safe_name = tag_name.strip().replace("'", "''")
+                    safe_value = tag_value.strip().replace("'", "''")
+                    tag_rows = await sql_query(
+                        f"SELECT 1 FROM page_tag WHERE page_id = '{page_id.replace(chr(39), chr(39)*2)}' AND name = '{safe_name}' AND value = '{safe_value}'"
+                    )
+                    if not tag_rows:
+                        all_match = False
+                        break
+                else:
+                    safe_name = pair.strip().replace("'", "''")
+                    tag_rows = await sql_query(
+                        f"SELECT 1 FROM page_tag WHERE page_id = '{page_id.replace(chr(39), chr(39)*2)}' AND name = '{safe_name}'"
+                    )
+                    if not tag_rows:
+                        all_match = False
+                        break
+            if all_match:
+                filtered.append(row)
+        rows = filtered
+
+    # Map results
     results = []
-    for r in rows:
-        page = map_page(r)
-        if query in page["title"].lower() or query in page.get("text_content", "").lower():
-            results.append(page)
-    return results[:limit]
+    for r in rows[:limit]:
+        results.append({
+            "id": str(r[0] or "") if len(r) > 0 else "",
+            "search_token": str(r[1] or "") if len(r) > 1 else "",
+            "page_id": str(r[2] or "") if len(r) > 2 else "",
+            "title": str(r[3] or "") if len(r) > 3 else "",
+            "slug": str(r[4] or "") if len(r) > 4 else "",
+            "excerpt": str(r[5] or "") if len(r) > 5 else "",
+            "match_type": str(r[6] or "") if len(r) > 6 else "",
+            "created_at": int(r[7] or 0) if len(r) > 7 else 0,
+        })
+
+    return {
+        "data": results,
+        "query": q,
+        "filters": {
+            "collection_id": collection_id or None,
+            "author_id": author_id or None,
+            "from": from_date or None,
+            "to": to_date or None,
+            "tags": tags or None,
+        },
+        "total": len(results),
+    }
 
 
 @router.get("/autocomplete")
-async def autocomplete(q: str = Query(..., min_length=1), limit: int = Query(10, le=25)):
+async def autocomplete(
+    q: str = Query(..., min_length=1),
+    limit: int = Query(10, le=25),
+):
     """Quick title-only autocomplete search."""
-    rows = await sql_query("SELECT * FROM page WHERE status != 'deleted'")
-    query = q.lower()
+    search_token = _gen_search_token()
+    # Search with no filters
+    await call_reducer("search_pages", [
+        search_token,
+        q,
+        "",  # collection_id
+        "",  # author_id
+        0,   # date_from
+        0,   # date_to
+    ])
+    rows = await sql_query(
+        f"SELECT * FROM search_result WHERE search_token = '{search_token}' ORDER BY created_at DESC"
+    )
     results = []
-    for r in rows:
-        page = map_page(r)
-        if query in page["title"].lower():
-            results.append({"id": page["id"], "title": page["title"], "slug": page.get("slug", "")})
-    return results[:limit]
+    for r in rows[:limit]:
+        results.append({
+            "id": str(r[0] or "") if len(r) > 0 else "",
+            "page_id": str(r[2] or "") if len(r) > 2 else "",
+            "title": str(r[3] or "") if len(r) > 3 else "",
+            "slug": str(r[4] or "") if len(r) > 4 else "",
+        })
+    return results

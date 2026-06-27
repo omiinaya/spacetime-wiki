@@ -3619,9 +3619,9 @@ pub struct MfaBackupCode {
 pub fn enable_totp(
     ctx: &ReducerContext,
     user_id: String,
-    /// base32-encoded TOTP secret
+    // base32-encoded TOTP secret
     totp_secret: String,
-    /// Plain-text backup codes (will be hashed before storing)
+    // Plain-text backup codes (will be hashed before storing)
     backup_codes: Vec<String>,
 ) -> Result<(), String> {
     // Validate user exists
@@ -3635,6 +3635,7 @@ pub fn enable_totp(
     let id = format!("mfa_{:x}", now);
 
     // Upsert: remove existing MFA method for this user first
+    let user_id_clone = user_id.clone();
     let existing: Vec<String> = ctx.db.mfa_method().iter()
         .filter(|m| m.user_id == user_id)
         .map(|m| m.id.clone())
@@ -3660,7 +3661,7 @@ pub fn enable_totp(
             let bid = format!("mbc_{:x}", now_ms(ctx) + ctx.db.mfa_backup_code().iter().count() as u64);
             ctx.db.mfa_backup_code().insert(MfaBackupCode {
                 id: bid,
-                user_id: user_id.clone(),
+                user_id: user_id_clone.clone(),
                 code_hash,
                 is_used: false,
                 created_at: now,
@@ -3867,11 +3868,12 @@ pub fn add_oauth_provider(
         }
     } else { scope };
     let now = now_ms(ctx);
+    let provider_type_clone = provider_type.clone();
     ctx.db.oauth_provider().insert(OauthProvider {
         id, name, slug, provider_type,
         authorize_url, token_url, userinfo_url,
         scope: scopes_clean, client_id, client_secret,
-        icon: if icon.is_empty() { provider_type.clone() } else { icon },
+        icon: if icon.is_empty() { provider_type_clone.clone() } else { icon },
         is_active: true, auto_register,
         default_role: role_clean,
         created_by, created_at: now, updated_at: now,

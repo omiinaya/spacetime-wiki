@@ -8,6 +8,7 @@ export interface SearchFilterState {
   authorId: string;
   dateFrom: string;
   dateTo: string;
+  tags: string;
 }
 
 export const EMPTY_FILTERS: SearchFilterState = {
@@ -15,6 +16,7 @@ export const EMPTY_FILTERS: SearchFilterState = {
   authorId: "",
   dateFrom: "",
   dateTo: "",
+  tags: "",
 };
 
 interface Props {
