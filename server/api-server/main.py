@@ -1,8 +1,12 @@
 """SpacetimeWiki REST API — FastAPI application."""
 
+import json
+import os
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -18,6 +22,7 @@ from routers.webauthn import router as webauthn_router
 from routers.imports import router as imports_router
 from routers.ldap_auth import router as ldap_router
 from routers.oauth import router as oauth_router
+from models import HealthResponse
 
 # ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -25,7 +30,10 @@ limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="SpacetimeWiki REST API",
-    description="Programmatic CRUD and search for pages, collections, and more.",
+    description="Programmatic CRUD and search for pages, collections, and more. "
+    "SpacetimeWiki is a real-time wiki with rich text editing, "
+    "hierarchical collections, tagging, search, SSO/OAuth/LDAP auth, "
+    "SCIM provisioning, WebAuthn/passkeys, import/export, and more.",
     version="1.0.0",
     docs_url="/docs",
 )
@@ -60,9 +68,26 @@ app.include_router(oauth_router)
 
 # ─── Health ────────────────────────────────────────────────────────────────────
 
-@app.get("/health")
+
+@app.get("/health", response_model=HealthResponse)
 async def health():
+    """Health check endpoint."""
     return {"status": "ok", "service": "spacetime-wiki-api"}
+
+
+# ─── OpenAPI spec download ─────────────────────────────────────────────────────
+
+
+_SPEC_PATH = os.path.join(os.path.dirname(__file__), "openapi.json")
+
+
+@app.get("/openapi-spec.json")
+async def download_openapi_spec():
+    """Download the generated OpenAPI 3.0 spec as a static file."""
+    if os.path.exists(_SPEC_PATH):
+        return FileResponse(_SPEC_PATH, media_type="application/json", filename="openapi.json")
+    # Fall back to the auto-generated spec
+    return JSONResponse(app.openapi())
 
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
