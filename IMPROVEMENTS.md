@@ -22,7 +22,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-28 | **P4 — Image paste error handling!** Toast notifications with categorized errors (size/type/network/server), retry action for upload failures, success confirmation. | Inline |
+| 2026-06-28 | **P4 — Image paste error handling!** Toast notifications with categorized errors (size/type/network/server), retry action for upload failures, success confirmation. | 3187a3bb |
 | 2026-06-28 | **P5 — Admin avatar management!** `update_user_avatar` reducer, TypeScript binding, API call, admin panel UI with avatar preview and URL input per user. | 20c96f4e |
 | 2026-06-27 | **P4 — Per-share branding!** Custom title override and logo URL per share link. | fbe7441e |
 | 2026-06-27 | **P4 — Shared page viewer route!** `/shared/:token` route with full SharedPageView component. | 7156ce9d |
@@ -30,4 +30,4 @@ and works the top pending item each tick.
 | 2026-06-27 | **P4 — Request access to documents!** access_request table, approve/deny reducers. | a124ddd9 |
 | 2026-06-27 | **P4 — Consolidate to spacetimedb SDK!** Installed `spacetimedb` npm package v2.6.0. | 31727812 |
 | 2026-06-27 | **P3 — STDB Rust crate upgrade!** `spacetimedb =2.4.0` → `=2.6.0`. | 5b1a4279 |
-|| 2026-06-27 | **P3 — Unit test infrastructure!** Vitest + React Testing Library + jsdom. 18 tests. | 0caf22dd |
+| 2026-06-27 | **P3 — Unit test infrastructure!** Vitest + React Testing Library + jsdom. 18 tests. | 0caf22dd |
