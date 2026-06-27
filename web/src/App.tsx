@@ -301,8 +301,6 @@ function AppLayout() {
   const { rows: subCollections, connected: colsConnected } = useCollectionsSubscription();
   // Subscribe to notifications (real-time)
   const { rows: subNotifications } = useNotificationsSubscription(userId || undefined);
-  // Subscribe to watches (real-time)
-  const { rows: subWatches } = useWatchSubscription(userId || undefined);
 
   // Sync subscription data to local state
   useEffect(() => {
