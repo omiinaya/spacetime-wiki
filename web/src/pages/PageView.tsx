@@ -29,6 +29,7 @@ import {
   ArrowLeft, Edit3, Star, Archive, Trash2, Copy, Loader2,
   MessageSquare, Clock, Send, History, RotateCcw, X, ChevronRight, Download, Paperclip,
   List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye, FolderOpen,
+  Bell,
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments, resolveTransclusions } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
@@ -259,6 +260,7 @@ export function PageView({ pageId, userId }: Props) {
   const [anchorComment, setAnchorComment] = useState<{ from: number; to: number; text: string } | null>(null);
   const [anchorInput, setAnchorInput] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isWatching, setIsWatching] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [showConfirm, setShowConfirm] = useState<"publish" | "archive" | "delete" | null>(null);
   const [collection, setCollection] = useState<Collection | null>(null);
@@ -659,6 +661,12 @@ export function PageView({ pageId, userId }: Props) {
     setIsFavorite(!isFavorite);
   };
 
+  const handleToggleWatch = async () => {
+    if (!userId) return;
+    await api.watch.toggle(userId, "page", pageId);
+    setIsWatching(!isWatching);
+  };
+
   // ─── Export ──────────────────────────────────────────────────────────────
 
   const handleExportMD = async () => {
@@ -1024,6 +1032,9 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           <div className="page-actions flex items-center gap-1">
             <button onClick={handleToggleFavorite} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", isFavorite && "text-yellow-500")} title="Favorite">
               <Star className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
+            </button>
+            <button onClick={handleToggleWatch} className={cn("p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted", isWatching && "text-blue-500")} title={isWatching ? "Unwatch page" : "Watch page for changes"}>
+              <Bell className="h-4 w-4" fill={isWatching ? "currentColor" : "none"} />
             </button>
             <button onClick={async () => {
               const newVal = !page?.is_pinned;

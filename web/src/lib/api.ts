@@ -54,6 +54,8 @@ function mapInvitation(row: unknown[]): Invitation { return { id: String(row[0]?
 function mapCollectionSortRule(row: unknown[]): CollectionSortRule { return { collection_id: String(row[0]??""), sort_field: String(row[1]??""), sort_direction: String(row[2]??""), auto_apply: Boolean(row[3]), updated_by: String(row[4]??""), updated_at: Number(row[5])||0 }; }
 function mapLdapProvider(row: unknown[]): LdapProvider { return { id: String(row[0]??""), name: String(row[1]??""), slug: String(row[2]??""), host: String(row[3]??""), port: Number(row[4])||389, is_secure: Boolean(row[5]), bind_dn: String(row[6]??""), bind_password: String(row[7]??""), base_dn: String(row[8]??""), user_filter: String(row[9]??""), username_attribute: String(row[10]??""), email_attribute: String(row[11]??""), name_attribute: String(row[12]??""), default_role: String(row[13]??""), auto_register: Boolean(row[14]), is_active: Boolean(row[15]), created_by: String(row[16]??""), created_at: Number(row[17])||0, updated_at: Number(row[18])||0 }; }
 function mapLdapUser(row: unknown[]): LdapUser { return { id: String(row[0]??""), user_id: String(row[1]??""), ldap_provider_id: String(row[2]??""), dn: String(row[3]??""), external_id: String(row[4]??""), last_synced_at: Number(row[5])||0, created_at: Number(row[6])||0 }; }
+function mapWatch(row: unknown[]): Watch { return { id: String(row[0]??""), user_id: String(row[1]??""), target_type: String(row[2]??""), target_id: String(row[3]??""), created_at: Number(row[4])||0 }; }
+function mapNotification(row: unknown[]): Notification { return { id: String(row[0]??""), user_id: String(row[1]??""), event_type: String(row[2]??""), target_id: String(row[3]??""), title: String(row[4]??""), message: String(row[5]??""), actor_id: String(row[6]??""), icon: String(row[7]??""), is_read: Boolean(row[8]), created_at: Number(row[9])||0 }; }
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -480,6 +482,29 @@ export interface LdapUser {
   dn: string;
   external_id: string;
   last_synced_at: number;
+  created_at: number;
+}
+
+// ─── Watch / Notification Types ─────────────────────────────────────────────────
+
+export interface Watch {
+  id: string;
+  user_id: string;
+  target_type: string; // "page" | "collection"
+  target_id: string;
+  created_at: number;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  event_type: string;
+  target_id: string;
+  title: string;
+  message: string;
+  actor_id: string;
+  icon: string;
+  is_read: boolean;
   created_at: number;
 }
 
@@ -1486,6 +1511,55 @@ export const api = {
     unlinkUser: (id: string) =>
       callReducer("unlink_oauth_user", [id]),
   },
+  // ── Watch / Notifications ──
+  watch: {
+    toggle: (userId: string, targetType: string, targetId: string) => {
+      const id = genId("watch");
+      return callReducer("toggle_watch", [id, userId, targetType, targetId]);
+    },
+    listByUser: (userId: string): Promise<Watch[]> =>
+      sqlQuery(`SELECT * FROM watch WHERE user_id = '${userId}'`)
+        .then((rows) => (rows as any as unknown[][]).map(mapWatch)),
+    listByTarget: (targetType: string, targetId: string): Promise<Watch[]> =>
+      sqlQuery(`SELECT * FROM watch WHERE target_type = '${targetType}' AND target_id = '${targetId}'`)
+        .then((rows) => (rows as any as unknown[][]).map(mapWatch)),
+    isWatching: async (userId: string, targetType: string, targetId: string): Promise<boolean> => {
+      const rows = await sqlQuery(
+        `SELECT id FROM watch WHERE user_id = '${userId}' AND target_type = '${targetType}' AND target_id = '${targetId}'`
+      );
+      return rows.length > 0;
+    },
+    getWatchers: (targetType: string, targetId: string): Promise<Watch[]> =>
+      sqlQuery(`SELECT * FROM watch WHERE target_type = '${targetType}' AND target_id = '${targetId}'`)
+        .then((rows) => (rows as any as unknown[][]).map(mapWatch)),
+  },
+  notifications: {
+    list: (userId: string, limit: number = 50): Promise<Notification[]> =>
+      sqlQuery(`SELECT * FROM notification WHERE user_id = '${userId}' ORDER BY created_at DESC LIMIT ${limit}`)
+        .then((rows) => (rows as any as unknown[][]).map(mapNotification)),
+    listUnread: (userId: string, limit: number = 50): Promise<Notification[]> =>
+      sqlQuery(`SELECT * FROM notification WHERE user_id = '${userId}' AND is_read = false ORDER BY created_at DESC LIMIT ${limit}`)
+        .then((rows) => (rows as any as unknown[][]).map(mapNotification)),
+    unreadCount: async (userId: string): Promise<number> => {
+      const rows = await sqlQuery(`SELECT COUNT(*) FROM notification WHERE user_id = '${userId}' AND is_read = false`);
+      return Number((rows[0] as any)?.[0] ?? 0);
+    },
+    create: (
+      userId: string, eventType: string, targetId: string,
+      title: string, message: string, actorId: string, icon: string,
+    ) => {
+      const id = genId("notif");
+      return callReducer("create_notification", [id, userId, eventType, targetId, title, message, actorId, icon]).then(() => id);
+    },
+    markRead: (id: string) =>
+      callReducer("mark_notification_read", [id]),
+    markAllRead: (userId: string) =>
+      callReducer("mark_all_notifications_read", [userId]),
+    delete: (id: string) =>
+      callReducer("delete_notification", [id]),
+    clearAll: (userId: string) =>
+      callReducer("clear_all_notifications", [userId]),
+  },
 };
 
 // ─── Transclusion resolver ────────────────────────────────────────────────────
@@ -1648,6 +1722,8 @@ export const SUBSCRIPTION_SQLS = {
   dbCellsForBase: (baseId: string) =>
     `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = '${baseId}'`,
   collectionSortRules: "SELECT * FROM collection_sort_rule",
+  notifications: (userId: string) => `SELECT * FROM notification WHERE user_id = '${userId}' ORDER BY created_at DESC LIMIT 100`,
+  watch: (userId: string) => `SELECT * FROM watch WHERE user_id = '${userId}'`,
 } as const;
 
 export function usePagesSubscription() {
@@ -1656,6 +1732,22 @@ export function usePagesSubscription() {
 
 export function useCollectionsSubscription() {
   return useSubscription(SUBSCRIPTION_SQLS.collections, (row: unknown[]) => mapCollection(row));
+}
+
+export function useNotificationsSubscription(userId: string | undefined) {
+  return useSubscription(
+    userId ? SUBSCRIPTION_SQLS.notifications(userId) : "SELECT * FROM notification WHERE 1=0",
+    (row: unknown[]) => mapNotification(row),
+    userId,
+  );
+}
+
+export function useWatchSubscription(userId: string | undefined) {
+  return useSubscription(
+    userId ? SUBSCRIPTION_SQLS.watch(userId) : "SELECT * FROM watch WHERE 1=0",
+    (row: unknown[]) => mapWatch(row),
+    userId,
+  );
 }
 
 export function useCollabSessionsSubscription(pageId: string | undefined) {
