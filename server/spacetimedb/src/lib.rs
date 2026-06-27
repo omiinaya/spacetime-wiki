@@ -55,6 +55,45 @@ fn now_ms_ts() -> u64 {
         .as_millis() as u64
 }
 
+// ─── Audit Event Log ─────────────────────────────────────────────────────────
+
+#[table(accessor = audit_event, public)]
+#[derive(Debug, Clone)]
+pub struct AuditEvent {
+    #[primary_key]
+    pub id: String,
+    /// The type of event: "page.create" | "page.update" | "page.delete" | "page.restore" | "page.publish" | "page.archive" | "collection.create" | "collection.delete" | "comment.create" | "comment.delete" | "group.create" | "group.delete" | "user.create" | "user.role_change"
+    pub event_type: String,
+    /// The user who performed the action
+    pub actor_id: String,
+    /// The target entity ID (page_id, collection_id, etc.)
+    pub target_id: String,
+    /// Human-readable target name (page title, collection name, etc.) for display
+    pub target_name: String,
+    /// JSON metadata with extra context
+    pub metadata: String,
+    pub created_at: u64,
+}
+
+fn log_event(
+    ctx: &ReducerContext,
+    event_type: &str,
+    actor_id: &str,
+    target_id: &str,
+    target_name: &str,
+    metadata: &str,
+) {
+    ctx.db.audit_event().insert(AuditEvent {
+        id: make_id("ae", ctx),
+        event_type: event_type.to_string(),
+        actor_id: actor_id.to_string(),
+        target_id: target_id.to_string(),
+        target_name: target_name.to_string(),
+        metadata: metadata.to_string(),
+        created_at: now_ms(ctx),
+    });
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 fn now_ms(ctx: &ReducerContext) -> u64 {
@@ -442,12 +481,14 @@ pub fn create_collection(
     // Creator gets admin access
     ctx.db.collection_member().insert(CollectionMember {
         id: make_id("cm", ctx),
-        collection_id: id,
-        user_id: created_by,
+        collection_id: id.clone(),
+        user_id: created_by.clone(),
         role: "admin".into(),
         added_by: String::new(),
         created_at: now,
     });
+
+    log_event(ctx, "collection.create", &created_by, &id, &name, r#"{}"#);
     Ok(())
 }
 
@@ -705,9 +746,11 @@ pub fn create_page(
     });
 
     ctx.db.page_revision().insert(PageRevision {
-        id: make_id("rev", ctx), page_id: id, title, content,
-        edited_by: created_by, created_at: now, revision_number: 1,
+        id: make_id("rev", ctx), page_id: id.clone(), title: title.clone(), content: content.clone(),
+        edited_by: created_by.clone(), created_at: now, revision_number: 1,
     });
+
+    log_event(ctx, "page.create", &created_by, &id, &title, &format!(r#"{{"collection_id":"{}","parent_page_id":"{}"}}"#, collection_id, parent_page_id));
     Ok(())
 }
 
@@ -743,9 +786,11 @@ pub fn update_page(
         .filter(|r| r.page_id == id)
         .map(|r| r.revision_number).max().unwrap_or(0);
     ctx.db.page_revision().insert(PageRevision {
-        id: make_id("rev", ctx), page_id: id, title, content,
-        edited_by: updated_by, created_at: now, revision_number: max_rev + 1,
+        id: make_id("rev", ctx), page_id: id.clone(), title: title.clone(), content: content.clone(),
+        edited_by: updated_by.clone(), created_at: now, revision_number: max_rev + 1,
     });
+
+    log_event(ctx, "page.update", &updated_by, &id, &title, r#"{}"#);
     Ok(())
 }
 
@@ -773,6 +818,17 @@ pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Resu
         page.deleted_at = 0;
     }
     ctx.db.page().id().update(page);
+
+    // Log status change events
+    let event_type = match status.as_str() {
+        "published" => "page.publish",
+        "deleted" => "page.delete",
+        "archived" => "page.archive",
+        _ => "page.status_change",
+    };
+    let target_name = page.title.clone();
+    drop(page); // page was moved by .id().update() above - target_name already cloned
+    log_event(ctx, event_type, "", &id, &target_name, &format!(r#"{{"new_status":"{}"}}"#, status));
     Ok(())
 }
 

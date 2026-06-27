@@ -33,6 +33,11 @@ function AppLayout() {
   const [pages, setPages] = useState<Page[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFilters, setSearchFilters] = useState<SearchFilterState>(EMPTY_FILTERS);
+
+  // Admin state (declared early for search syntax handler that references allUsers)
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
+  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa" | "ldap" | "oauth">("users");
   // Parse advanced search syntax from search input: in:Name, author:Name, from:Date, to:Date, date:Date, tag:key:value
   const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -54,13 +59,13 @@ function AppLayout() {
       }},
       { regex: /\bauthor:("[^"]+"|\S+)/gi, apply: (match: string) => {
         const name = match.replace(/^author:/i, "").replace(/"/g, "").trim();
-        const found = users.find(u => (u.name || u.email).toLowerCase() === name.toLowerCase());
+        const found = allUsers.find(u => (u.name || u.email).toLowerCase() === name.toLowerCase());
         if (found) authId = found.id;
         return "";
       }},
       { regex: /\bby:("[^"]+"|\S+)/gi, apply: (match: string) => {
         const name = match.replace(/^by:/i, "").replace(/"/g, "").trim();
-        const found = users.find(u => (u.name || u.email).toLowerCase() === name.toLowerCase());
+        const found = allUsers.find(u => (u.name || u.email).toLowerCase() === name.toLowerCase());
         if (found) authId = found.id;
         return "";
       }},
@@ -119,7 +124,7 @@ function AppLayout() {
         tags: tagFilters,
       });
     }
-  }, [searchFilters, collections, setSearchQuery, setSearchFilters, users]),
+  }, [searchFilters, collections, setSearchQuery, setSearchFilters, allUsers]);
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [pageLimits, setPageLimits] = useState<Record<string, number>>({});
   const PAGE_LIMIT = 50;
@@ -173,11 +178,6 @@ function AppLayout() {
   // Trash state
   const [trashPages, setTrashPages] = useState<Page[]>([]);
   const [trashLoading, setTrashLoading] = useState(false);
-
-  // Admin state
-  const [adminOpen, setAdminOpen] = useState(false);
-  const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa" | "ldap" | "oauth">("users");
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; description: string; created_by: string; created_at: number; updated_at: number }[]>([]);
@@ -1799,7 +1799,7 @@ function AppLayout() {
                 <Mail className="h-3 w-3 inline mr-1" />Invitations
               </button>
               <button onClick={() => setAdminTab("mfa")}
-                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "mfa" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground}`}>
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "mfa" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 MFA
               </button>

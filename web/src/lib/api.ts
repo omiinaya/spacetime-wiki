@@ -1671,3 +1671,52 @@ export function useCollabUpdatesSubscription(pageId: string | undefined) {
     (row: unknown[]) => mapCollabUpdate(row),
   );
 }
+
+// ─── Audit Event Types ────────────────────────────────────────────────────────
+
+export interface AuditEvent {
+  id: string;
+  event_type: string;
+  actor_id: string;
+  target_id: string;
+  target_name: string;
+  metadata: string;
+  created_at: number;
+}
+
+function mapAuditEvent(row: unknown[]): AuditEvent {
+  return {
+    id: String(row[0] ?? ""),
+    event_type: String(row[1] ?? ""),
+    actor_id: String(row[2] ?? ""),
+    target_id: String(row[3] ?? ""),
+    target_name: String(row[4] ?? ""),
+    metadata: String(row[5] ?? ""),
+    created_at: Number(row[6]) || 0,
+  };
+}
+
+// ─── Audit Event API ──────────────────────────────────────────────────────────
+
+export const auditApi = {
+  /** Fetch recent audit events, newest first. Supports optional limit. */
+  list: (limit = 100, offset = 0): Promise<AuditEvent[]> => {
+    const sql = `SELECT * FROM audit_event ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAuditEvent));
+  },
+  /** Fetch audit events for a specific target (page, collection, etc.) */
+  listByTarget: (targetId: string, limit = 50): Promise<AuditEvent[]> => {
+    const sql = `SELECT * FROM audit_event WHERE target_id = '${targetId}' ORDER BY created_at DESC LIMIT ${limit}`;
+    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAuditEvent));
+  },
+  /** Fetch audit events by a specific actor (user) */
+  listByActor: (actorId: string, limit = 50): Promise<AuditEvent[]> => {
+    const sql = `SELECT * FROM audit_event WHERE actor_id = '${actorId}' ORDER BY created_at DESC LIMIT ${limit}`;
+    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAuditEvent));
+  },
+  /** Fetch audit events by type */
+  listByType: (eventType: string, limit = 50): Promise<AuditEvent[]> => {
+    const sql = `SELECT * FROM audit_event WHERE event_type = '${eventType}' ORDER BY created_at DESC LIMIT ${limit}`;
+    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAuditEvent));
+  },
+};
