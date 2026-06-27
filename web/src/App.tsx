@@ -13,8 +13,6 @@ import {
 import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, PasskeyCredential, usePagesSubscription, useCollectionsSubscription, useNotificationsSubscription, useWatchSubscription, Notification as NotifType } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
 import { connectSubscriptions, disconnectSubscriptions, defaultSubscriptionManager } from "./lib/subscriptions";
-import { PageEditor } from "./pages/PageEditor";
-import { PageView } from "./pages/PageView";
 import { SearchFilters, EMPTY_FILTERS, type SearchFilterState } from "./components/SearchFilters";
 import { WebhookSettings } from "./components/WebhookSettings";
 import { TemplatePicker } from "./components/TemplatePicker";
@@ -23,9 +21,27 @@ import { ToastProvider, useToast, initGlobalToast, showToast } from "./component
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { AiAssistant } from "./components/AiAssistant";
 import { ActivityFeed } from "./components/ActivityFeed";
-import AdminDashboard from "./components/AdminDashboard";
 import { NotificationBell } from "./components/NotificationBell";
-import GraphView from "./components/GraphView";
+import React from "react";
+
+const HomeView = React.lazy(() => import("./pages/HomeView"));
+const ActivityView = React.lazy(() => import("./pages/ActivityView"));
+const FavoritesView = React.lazy(() => import("./pages/FavoritesView"));
+const PageViewWrapper = React.lazy(() => import("./pages/PageViewWrapper"));
+const SlugView = React.lazy(() => import("./pages/SlugView"));
+const PermalinkRedirect = React.lazy(() => import("./pages/PermalinkRedirect"));
+const LoginView = React.lazy(() => import("./pages/LoginView"));
+const GoogleCallback = React.lazy(() => import("./pages/GoogleCallback"));
+const OidcCallback = React.lazy(() => import("./pages/OidcCallback"));
+const OAuthCallback = React.lazy(() => import("./pages/OAuthCallback"));
+const SamlCallback = React.lazy(() => import("./pages/SamlCallback"));
+
+// Lazy-loaded route-level components
+const PageEditor = React.lazy(() => import("./pages/PageEditor").then(m => ({ default: m.PageEditor })));
+const AdminDashboard = React.lazy(() => import("./components/AdminDashboard"));
+const GraphView = React.lazy(() => import("./components/GraphView"));
+
+const RouteFallback = () => <div className="flex items-center justify-center h-full"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>;
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -1982,7 +1998,7 @@ function AppLayout() {
               </button>
             </div>
 
-            {adminTab === "dashboard" && <AdminDashboard userId={userId} />}
+            {adminTab === "dashboard" && <React.Suspense fallback={<div className="flex items-center justify-center p-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}><AdminDashboard userId={userId} /></React.Suspense>}
             {adminTab === "users" && (
               <>
                 <div className="space-y-1 mb-4">
@@ -2698,20 +2714,20 @@ function AppLayout() {
         </div>
 
         <Routes>
-          <Route path="/" element={<HomeView />} />
-          <Route path="/new" element={<PageEditor userId={userId} />} />
-          <Route path="/page/:id" element={<PageViewWrapper userId={userId} />} />
-          <Route path="/page/:id/edit" element={<PageEditor userId={userId} />} />
-          <Route path="/p/:slug" element={<SlugView />} />
-          <Route path="/activity" element={<ActivityView />} />
-          <Route path="/favorites" element={<FavoritesView />} />
-          <Route path="/graph" element={<GraphView />} />
-          <Route path="/permalink/:id" element={<PermalinkRedirect />} />
-          <Route path="/oauth/google/callback" element={<GoogleCallback />} />
-          <Route path="/oauth/callback" element={<OAuthCallback />} />
-          <Route path="/oauth/oidc/callback" element={<OidcCallback />} />
-          <Route path="/auth/saml/callback" element={<SamlCallback />} />
-          <Route path="/login" element={<LoginView />} />
+          <Route path="/" element={<React.Suspense fallback={<RouteFallback />}><HomeView /></React.Suspense>} />
+          <Route path="/new" element={<React.Suspense fallback={<RouteFallback />}><PageEditor userId={userId} /></React.Suspense>} />
+          <Route path="/page/:id" element={<React.Suspense fallback={<RouteFallback />}><PageViewWrapper userId={userId} /></React.Suspense>} />
+          <Route path="/page/:id/edit" element={<React.Suspense fallback={<RouteFallback />}><PageEditor userId={userId} /></React.Suspense>} />
+          <Route path="/p/:slug" element={<React.Suspense fallback={<RouteFallback />}><SlugView /></React.Suspense>} />
+          <Route path="/activity" element={<React.Suspense fallback={<RouteFallback />}><ActivityView /></React.Suspense>} />
+          <Route path="/favorites" element={<React.Suspense fallback={<RouteFallback />}><FavoritesView /></React.Suspense>} />
+          <Route path="/graph" element={<React.Suspense fallback={<RouteFallback />}><GraphView /></React.Suspense>} />
+          <Route path="/permalink/:id" element={<React.Suspense fallback={<RouteFallback />}><PermalinkRedirect /></React.Suspense>} />
+          <Route path="/oauth/google/callback" element={<React.Suspense fallback={<RouteFallback />}><GoogleCallback /></React.Suspense>} />
+          <Route path="/oauth/callback" element={<React.Suspense fallback={<RouteFallback />}><OAuthCallback /></React.Suspense>} />
+          <Route path="/oauth/oidc/callback" element={<React.Suspense fallback={<RouteFallback />}><OidcCallback /></React.Suspense>} />
+          <Route path="/auth/saml/callback" element={<React.Suspense fallback={<RouteFallback />}><SamlCallback /></React.Suspense>} />
+          <Route path="/login" element={<React.Suspense fallback={<RouteFallback />}><LoginView /></React.Suspense>} />
         </Routes>
       </main>
 
@@ -2792,391 +2808,9 @@ function AppLayout() {
   );
 }
 
-// ─── Home View ───────────────────────────────────────────────────────────────
+// ─── Login View ──────────────────────────────────────────────────────────────
+// (Moved to pages/LoginView.tsx)
 
-function HomeView() {
-  const navigate = useNavigate();
-  const [recentPages, setRecentPages] = useState<Page[]>([]);
-  const [importing, setImporting] = useState(false);
-  const importRef = useRef<HTMLInputElement>(null);
-  const [trendingPages, setTrendingPages] = useState<{page_id: string; views: number; title: string; icon: string}[]>([]);
-
-  useEffect(() => {
-    api.pages.list().then((pages) => {
-      setRecentPages(
-        pages
-          .filter((p: any) => p.status === "published" || p.status === "draft")
-          .sort((a: any, b: any) => b.updated_at - a.updated_at)
-          .slice(0, 10),
-      );
-    });
-    // Load trending pages
-    api.analytics.getTrending(5).then(async (trending) => {
-      const enriched = await Promise.all(trending.map(async (t: any) => {
-        try {
-          const p = await api.pages.get(t.page_id);
-          return { ...t, title: p?.title || "Unknown", icon: p?.icon || "" };
-        } catch {
-          return { ...t, title: "Unknown", icon: "" };
-        }
-      }));
-      setTrendingPages(enriched.filter((t: any) => t.title !== "Unknown"));
-    }).catch(() => {});
-  }, []);
-
-  const handleImportMD = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImporting(true);
-    try {
-      const text = await file.text();
-      const title = file.name.replace(/\.md$/i, "");
-      const doc = markdownToProseMirror(text);
-      const id = await api.pages.create(title, JSON.stringify(doc), "", "", "anonymous");
-      navigate(`/page/${id}`);
-    } catch (err) { console.error(err); }
-    finally { setImporting(false); e.target.value = ""; }
-  };
-
-  const hasPages = recentPages.length > 0;
-
-  // ─── Onboarding for empty wikis ────────────────────────────────────────
-  if (!hasPages) {
-    return (
-      <div className="p-4 md:p-6 lg:p-8 max-w-3xl mx-auto">
-        {/* Hero */}
-        <div className="text-center py-8 md:py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
-            <Library className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Spacetime Wiki</h1>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Your team's knowledge base, powered by SpacetimeDB for real-time collaboration.
-            Start by creating your first page or importing existing content.
-          </p>
-        </div>
-
-        {/* Quick actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
-          <button
-            onClick={() => navigate("/new")}
-            className="flex flex-col items-center gap-2 p-6 rounded-xl border border-border bg-card hover:bg-secondary hover:border-primary/30 transition-all group"
-          >
-            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <Plus className="h-6 w-6 text-primary" />
-            </div>
-            <span className="text-sm font-semibold">Create a page</span>
-            <span className="text-xs text-muted-foreground text-center">Start writing in our rich WYSIWYG editor with markdown support</span>
-          </button>
-          <button
-            onClick={() => importRef.current?.click()}
-            disabled={importing}
-            className="flex flex-col items-center gap-2 p-6 rounded-xl border border-border bg-card hover:bg-secondary hover:border-primary/30 transition-all group disabled:opacity-50"
-          >
-            <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-              {importing ? <Loader2 className="h-6 w-6 animate-spin text-emerald-500" /> : <Upload className="h-6 w-6 text-emerald-500" />}
-            </div>
-            <span className="text-sm font-semibold">Import Markdown</span>
-            <span className="text-xs text-muted-foreground text-center">Drag or select .md files to instantly create wiki pages</span>
-            <input ref={importRef} type="file" accept=".md,.txt" onChange={handleImportMD} className="hidden" />
-          </button>
-          <button
-            onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }))}
-            className="flex flex-col items-center gap-2 p-6 rounded-xl border border-border bg-card hover:bg-secondary hover:border-primary/30 transition-all group"
-          >
-            <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-              <Keyboard className="h-6 w-6 text-purple-400" />
-            </div>
-            <span className="text-sm font-semibold">Keyboard shortcuts</span>
-            <span className="text-xs text-muted-foreground text-center">Press <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">?</kbd> to see all shortcuts</span>
-          </button>
-        </div>
-
-        {/* Feature tour */}
-        <div className="mb-8">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">What you can do</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {[
-              { icon: <Edit3 className="h-4 w-4" />, title: "Rich editing", desc: "WYSIWYG, Markdown, or split view with / commands, emoji picker, and drag-and-drop blocks" },
-              { icon: <Search className="h-4 w-4" />, title: "Full-text search", desc: "Instant search across all pages with collection, author, and date filters" },
-              { icon: <BookOpen className="h-4 w-4" />, title: "Collections & tags", desc: "Organize pages into collections with custom icons, colors, and labels/tags" },
-              { icon: <MessageSquare className="h-4 w-4" />, title: "Comments & history", desc: "Leave comments, restore previous revisions, and compare visual diffs" },
-              { icon: <Shield className="h-4 w-4" />, title: "Permissions & sharing", desc: "Role-based access control, public share links with passwords, and SSO (OIDC/SAML)" },
-              { icon: <Download className="h-4 w-4" />, title: "Import/export", desc: "Import from Markdown, export as MD, HTML, JSON, PDF, or ZIP with attachments" },
-              { icon: <Star className="h-4 w-4" />, title: "Favorites & pinning", desc: "Star your frequently-accessed pages and pin important ones to the top" },
-              { icon: <LayoutTemplate className="h-4 w-4" />, title: "Templates & embeds", desc: "Create pages from templates, embed YouTube/Figma/30+ providers, and diagrams" },
-            ].map((feature, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-secondary transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary">
-                  {feature.icon}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold">{feature.title}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{feature.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer note */}
-        <div className="text-center pb-8">
-          <p className="text-[11px] text-muted-foreground/60">
-            Spacetime Wiki &middot; Built with SpacetimeDB + React + Tiptap
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Home</h1>
-        <p className="text-sm text-muted-foreground mt-1">Welcome to Spacetime Wiki — your team's knowledge base.</p>
-      </div>
-
-      {recentPages.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Recently Updated</h2>
-          <div className="grid gap-2">
-            {recentPages.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => navigate(`/page/${page.id}`)}
-                className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-secondary transition-colors text-left"
-              >
-                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{page.title}</div>
-                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                    <span>Updated {timeAgo(page.updated_at)}</span>
-                    {page.status === "draft" && <span className="text-yellow-500">· Draft</span>}
-                    {page.status === "archived" && <span className="text-muted-foreground">· Archived</span>}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {trendingPages.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <Eye className="h-3.5 w-3.5" /> Trending
-          </h2>
-          <div className="grid gap-2">
-            {trendingPages.map((item) => (
-              <button
-                key={item.page_id}
-                onClick={() => navigate(`/page/${item.page_id}`)}
-                className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-secondary transition-colors text-left"
-              >
-                {item.icon ? <span className="text-base">{item.icon}</span> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{item.title}</div>
-                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Eye className="h-3 w-3" />
-                    <span>{item.views} view{item.views !== 1 ? "s" : ""}</span>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="p-8 rounded-lg border border-border bg-card text-center">
-        <FileText className="h-8 w-8 mx-auto text-muted-foreground/40 mb-3" />
-        <h3 className="text-sm font-medium mb-1">Create your first page</h3>
-        <p className="text-xs text-muted-foreground mb-3">Start documenting your knowledge.</p>
-        <button
-          onClick={() => navigate("/new")}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="h-3.5 w-3.5" /> New Page
-        </button>
-        <input ref={importRef} type="file" accept=".md,.txt" onChange={handleImportMD} className="hidden" />
-        <button
-          onClick={() => importRef.current?.click()}
-          disabled={importing}
-          className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-        >
-          {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-          Import MD
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Activity View ─────────────────────────────────────��────────────────────
-
-function ActivityView() {
-  const navigate = useNavigate();
-
-  return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <History className="h-6 w-6 text-primary" /> Activity
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Recent changes across the wiki — page creates, updates, deletes, and more
-          </p>
-        </div>
-        <button
-          onClick={() => navigate('/')}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-muted/50 transition-colors"
-        >
-          Back to home
-        </button>
-      </div>
-
-      {/* Activity Feed */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <ActivityFeed limit={200} onNavigate={(targetId, eventType) => {
-          if (eventType.startsWith("page.") || eventType.startsWith("comment.")) {
-            navigate(`/page/${targetId}`);
-          } else if (eventType.startsWith("collection.")) {
-            navigate(`/?col=${targetId}`);
-          }
-        }} />
-      </div>
-    </div>
-  );
-}
-
-// ─── Favorites View ────────────────────────────────────────────────────────────
-
-function FavoritesView() {
-  const navigate = useNavigate();
-  const [favoritePages, setFavoritePages] = useState<Page[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const allCols = await api.collections.list();
-        if (cancelled) return;
-        setCollections(allCols);
-
-        // Fetch current user via login state
-        const userId = localStorage.getItem("sw_user_id");
-        if (!userId) { setLoading(false); return; }
-
-        const rows = await api.favorites.list(userId);
-        const favPageIds = new Set((rows as any[][] || []).map((r: any) => String(r[2])));
-        if (cancelled) return;
-        const allPages = await api.pages.list();
-        if (cancelled) return;
-        setFavoritePages(allPages.filter(p => favPageIds.has(p.id) && p.status !== "deleted"));
-      } catch {}
-      finally { if (!cancelled) setLoading(false); }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Group favorites by collection
-  const byCollection: Record<string, Page[]> = {};
-  for (const p of favoritePages) {
-    const key = p.collection_id || "__none__";
-    if (!byCollection[key]) byCollection[key] = [];
-    byCollection[key].push(p);
-  }
-  const colNames: Record<string, string> = {};
-  for (const c of collections) colNames[c.id] = c.name;
-
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Star className="h-6 w-6 text-yellow-400" /> Favorites
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Your starred pages — quick access to your most important content
-          </p>
-        </div>
-        <button
-          onClick={() => navigate('/')}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-muted/50 transition-colors"
-        >
-          Back to home
-        </button>
-      </div>
-
-      {favoritePages.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-border rounded-xl">
-          <Star className="h-12 w-12 mx-auto mb-4 text-muted-foreground/40" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">No favorites yet</h3>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
-            Star pages you use frequently by clicking the star icon next to a page title. They'll appear here for quick access.
-          </p>
-          <button
-            onClick={() => navigate('/')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <FileText className="h-4 w-4" /> Browse pages
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(byCollection).map(([colId, pages]) => (
-            <div key={colId} className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/20">
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-semibold">{colNames[colId] || "Uncategorized"}</span>
-                <span className="text-[11px] text-muted-foreground ml-auto">{pages.length} page{pages.length !== 1 ? "s" : ""}</span>
-              </div>
-              <div className="divide-y divide-border/50">
-                {pages.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => navigate(`/page/${p.id}`)}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors group"
-                  >
-                    <span className="text-lg shrink-0">{p.icon || "📄"}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate">{p.title}</div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
-                        Updated {timeAgo(p.updated_at)}
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Page View Wrapper ───────────────────────────────────────────────────────
-
-function PageViewWrapper({ userId }: { userId: string | null }) {
-  const { id } = useParams<{ id: string }>();
-  if (!id) return null;
-  return <PageView pageId={id} userId={userId} />;
-}
 
 // ─── Login View ──────────────────────────────────────────────────────────────
 
