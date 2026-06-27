@@ -854,6 +854,9 @@ export const api = {
     list: (pageId: string) =>
       sqlQuery(`SELECT * FROM page_tag WHERE page_id = '${pageId}'`)
         .then((rows) => (rows as any as unknown[][]).map(mapTag)),
+    listAll: () =>
+      sqlQuery("SELECT * FROM page_tag")
+        .then((rows) => (rows as any as unknown[][]).map(mapTag)),
     add: (pageId: string, name: string, value: string) => {
       const id = genId("tag");
       return callReducer("add_tag", [id, pageId, name, value]).then(() => id);

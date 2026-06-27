@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Filter, X, Calendar, Folder, User, RotateCcw } from "lucide-react";
+import { Filter, X, Calendar, Folder, User, Tags as TagsIcon, RotateCcw } from "lucide-react";
 import { cn } from "../lib/utils";
 import { api, Collection } from "../lib/api";
 
@@ -47,12 +47,13 @@ export function SearchFilters({ filters, onChange }: Props) {
   }, [open]);
 
   const hasActiveFilters =
-    filters.collectionId || filters.authorId || filters.dateFrom || filters.dateTo;
+    filters.collectionId || filters.authorId || filters.dateFrom || filters.dateTo || filters.tags;
 
   const activeCount = [
     filters.collectionId,
     filters.authorId,
     filters.dateFrom || filters.dateTo,
+    filters.tags,
   ].filter(Boolean).length;
 
   const update = (key: keyof SearchFilterState, value: string) => {
@@ -157,6 +158,21 @@ export function SearchFilters({ filters, onChange }: Props) {
             </div>
           </div>
 
+          {/* Tag filter */}
+          <div>
+            <label className="flex items-center gap-1 text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-1.5">
+              <TagsIcon className="h-3 w-3" /> Tags
+            </label>
+            <input
+              type="text"
+              value={filters.tags}
+              onChange={(e) => update("tags", e.target.value)}
+              placeholder="important, meeting, draft"
+              className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+            />
+            <p className="text-[9px] text-muted-foreground/40 mt-1">Comma-separated. Filters pages matching ANY of these tags.</p>
+          </div>
+
           {/* Active filter chips */}
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
@@ -185,6 +201,14 @@ export function SearchFilters({ filters, onChange }: Props) {
                     }}
                     className="hover:text-primary/80"
                   >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </span>
+              )}
+              {filters.tags && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-[10px] text-primary">
+                  <TagsIcon className="h-2.5 w-2.5" /> {filters.tags}
+                  <button onClick={() => update("tags", "")} className="hover:text-primary/80">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
