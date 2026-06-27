@@ -2,57 +2,23 @@
 
 use spacetimedb::*;
 use sha2::{Digest, Sha256};
-use hmac::{Hmac, Mac};
-use sha1::Sha1;
 
-type HmacSha1 = Hmac<Sha1>;
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-// ─── TOTP helpers ────────────────────────────────────────────────────────────
-
-fn hotp(secret: &[u8], counter: u64) -> u32 {
-    let counter_bytes = counter.to_be_bytes();
-    let mut mac = HmacSha1::new_from_slice(secret).expect("HMAC accepts any key size");
-    mac.update(&counter_bytes);
-    let result = mac.finalize().into_bytes();
-    let offset = (result[19] & 0xf) as usize;
-    let code = ((result[offset] & 0x7f) as u32) << 24
-        | (result[offset + 1] as u32) << 16
-        | (result[offset + 2] as u32) << 8
-        | (result[offset + 3] as u32);
-    code % 1_000_000
+fn now_ms(ctx: &ReducerContext) -> u64 {
+    ctx.timestamp.to_micros_since_unix_epoch() as u64 / 1000
 }
 
-fn totp(secret: &[u8], timestamp_ms: u64) -> u32 {
-    let counter = timestamp_ms / 30_000;
-    hotp(secret, counter)
+fn make_id(prefix: &str, ctx: &ReducerContext) -> String {
+    let ts = now_ms(ctx);
+    let rand: u32 = (ts as u32).wrapping_mul(1103515245).wrapping_add(12345);
+    format!("{}_{:x}", prefix, rand)
 }
 
-fn verify_totp_code(secret: &[u8], code: u32, timestamp_ms: u64) -> bool {
-    let counter = timestamp_ms / 30_000;
-    // Allow ±1 window (30s each) for clock drift = 3 windows total
-    for offset in [0u64, 1, 2] {
-        if hotp(secret, counter + offset) == code || hotp(secret, counter - offset) == code {
-            return true;
-        }
-    }
-    false
-}
-
-fn random_base32(len: usize) -> String {
-    let charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".as_bytes();
-    let mut result = String::with_capacity(len);
-    for i in 0..len {
-        let idx = (now_ms_ts() as usize * 1103515245 + i).wrapping_mul(12345) % charset.len();
-        result.push(charset[idx] as char);
-    }
-    result
-}
-
-fn now_ms_ts() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as u64
+fn hash_password(password: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(password.as_bytes());
+    format!("{:x}", hasher.finalize())
 }
 
 // ─── Audit Event Log ─────────────────────────────────────────────────────────
@@ -92,24 +58,6 @@ fn log_event(
         metadata: metadata.to_string(),
         created_at: now_ms(ctx),
     });
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-fn now_ms(ctx: &ReducerContext) -> u64 {
-    ctx.timestamp.to_micros_since_unix_epoch() as u64 / 1000
-}
-
-fn make_id(prefix: &str, ctx: &ReducerContext) -> String {
-    let ts = now_ms(ctx);
-    let rand: u32 = (ts as u32).wrapping_mul(1103515245).wrapping_add(12345);
-    format!("{}_{:x}", prefix, rand)
-}
-
-fn hash_password(password: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(password.as_bytes());
-    format!("{:x}", hasher.finalize())
 }
 
 // ─── Tables ──────────────────────────────────────────────────────────────────
@@ -2892,8 +2840,8 @@ pub fn scim_sync_user(
     ctx: &ReducerContext,
     email: String,
     name: String,
-    external_id: String,
-    provider_id: String,
+    _external_id: String,
+    _provider_id: String,
     default_role: String,
     auto_register: bool,
 ) -> Result<(), String> {
@@ -2959,7 +2907,7 @@ pub fn scim_sync_group(
     ctx: &ReducerContext,
     group_id: String,
     name: String,
-    external_id: String,
+    _external_id: String,
     provider_id: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
@@ -3847,6 +3795,57 @@ pub fn verify_totp(
     }
 }
 
+/// Verify a TOTP code using HMAC-SHA1 (RFC 6238).
+/// Checks the current 30-second window and adjacent windows (±1) for clock drift.
+fn verify_totp_code(secret: &[u8], code: u32, now_ms: u64) -> bool {
+    use hmac::{Hmac, Mac};
+    use sha1::Sha1;
+
+    type HmacSha1 = Hmac<Sha1>;
+
+    let time_step: u64 = 30; // 30-second windows
+    let counter = now_ms / 1000 / time_step;
+    let modulus: u32 = 1_000_000; // 6-digit code
+
+    // Check current, previous, and next time windows for tolerance
+    for delta in &[0u64, 1, u64::MAX] {
+        let c = if *delta == u64::MAX {
+            counter.wrapping_sub(1)
+        } else {
+            counter + delta
+        };
+
+        // Convert counter to 8-byte big-endian
+        let mut counter_bytes = [0u8; 8];
+        counter_bytes[..8].copy_from_slice(&c.to_be_bytes());
+
+        // Compute HMAC-SHA1
+        let mut mac = match HmacSha1::new_from_slice(secret) {
+            Ok(m) => m,
+            Err(_) => return false,
+        };
+        mac.update(&counter_bytes);
+        let result = mac.finalize();
+        let hmac_result = result.into_bytes();
+
+        // Dynamic truncation per RFC 4226
+        let offset = (hmac_result[19] & 0x0f) as usize;
+        let binary_code = u32::from_be_bytes([
+            hmac_result[offset] & 0x7f,
+            hmac_result[offset + 1],
+            hmac_result[offset + 2],
+            hmac_result[offset + 3],
+        ]);
+        let otp = binary_code % modulus;
+
+        if otp == code {
+            return true;
+        }
+    }
+    false
+}
+
+/// Simple RFC 4648 base32 decoding (no padding required)
 #[reducer]
 pub fn verify_mfa_backup_code(
     ctx: &ReducerContext,
@@ -4010,7 +4009,6 @@ pub fn mark_notification_read(ctx: &ReducerContext, id: String) -> Result<(), St
 
 #[reducer]
 pub fn mark_all_notifications_read(ctx: &ReducerContext, user_id: String) -> Result<(), String> {
-    let now = now_ms(ctx);
     let to_update: Vec<String> = ctx.db.notification().iter()
         .filter(|n| n.user_id == user_id && !n.is_read)
         .map(|n| n.id.clone())
