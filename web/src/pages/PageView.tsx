@@ -359,7 +359,7 @@ export function PageView({ pageId, userId }: Props) {
   const [showRelationships, setShowRelationships] = useState(false);
   const [backlinks, setBacklinks] = useState<Page[]>([]);
   const [childPages, setChildPages] = useState<Page[]>([]);
-  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[] | null>(null);
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string; imageId?: string }[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
@@ -583,10 +583,10 @@ export function PageView({ pageId, userId }: Props) {
           const clickedAlt = target.getAttribute("alt") || "";
           try {
             const content = JSON.parse(page!.content || "{}");
-            const images: { src: string; alt: string }[] = [];
+            const images: { src: string; alt: string; imageId?: string }[] = [];
             const walkNodes = (node: any) => {
               if (node.attrs?.src && typeof node.attrs.src === "string") {
-                images.push({ src: node.attrs.src, alt: node.attrs.alt || "" });
+                images.push({ src: node.attrs.src, alt: node.attrs.alt || "", imageId: node.attrs.imageId || undefined });
               }
               if (node.content) {
                 node.content.forEach(walkNodes);
@@ -2169,6 +2169,27 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           images={lightboxImages}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxImages(null)}
+          pageId={page?.id}
+          comments={comments}
+          onAddComment={async (imageId, body) => {
+            if (!userId) return;
+            await api.comments.add(pageId, "", userId, body, `image:${imageId}`);
+            const coms = await api.comments.list(pageId);
+            setComments(coms);
+            // Reload reactions for all comments
+            const reactionPromises = coms.map(c => api.comments.listReactions(c.id));
+            const reactionResults = await Promise.all(reactionPromises);
+            const reactionMap: Record<string, Record<string, string[]>> = {};
+            for (let i = 0; i < coms.length; i++) {
+              const emojiGroups: Record<string, string[]> = {};
+              for (const r of reactionResults[i]) {
+                if (!emojiGroups[r.emoji]) emojiGroups[r.emoji] = [];
+                emojiGroups[r.emoji].push(r.user_id);
+              }
+              reactionMap[coms[i].id] = emojiGroups;
+            }
+            setReactions(reactionMap);
+          }}
         />
       )}
     </div>

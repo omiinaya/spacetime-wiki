@@ -819,7 +819,7 @@ export function PageEditor({ userId }: Props) {
 
   // Keyboard shortcuts modal
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[] | null>(null);
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string; imageId?: string }[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [editorMode, setEditorMode] = useState<"wysiwyg" | "markdown" | "split">("wysiwyg");
@@ -1026,10 +1026,10 @@ export function PageEditor({ userId }: Props) {
           const clickedAlt = target.getAttribute("alt") || "";
           try {
             const jsonContent = editor?.getJSON();
-            const images: { src: string; alt: string }[] = [];
+            const images: { src: string; alt: string; imageId?: string }[] = [];
             const walkNodes = (node: any) => {
               if (node.attrs?.src && typeof node.attrs.src === "string") {
-                images.push({ src: node.attrs.src, alt: node.attrs.alt || "" });
+                images.push({ src: node.attrs.src, alt: node.attrs.alt || "", imageId: node.attrs.imageId || undefined });
               }
               if (node.content) {
                 node.content.forEach(walkNodes);
@@ -2122,6 +2122,7 @@ export function PageEditor({ userId }: Props) {
           images={lightboxImages}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxImages(null)}
+          pageId={page?.id}
         />
       )}
     </div>

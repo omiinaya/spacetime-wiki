@@ -1,31 +1,41 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { X, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 
 // ─── Image Lightbox ──────────────────────────────────────────────────────────
 // Fullscreen overlay for viewing images with zoom, pan, keyboard navigation,
-// and gallery navigation (prev/next) when viewing multiple images on a page.
+// gallery navigation (prev/next), and image-specific comments.
 
 interface GalleryImage {
   src: string;
   alt?: string;
+  imageId?: string;
 }
 
 interface ImageLightboxProps {
   images: GalleryImage[];
   initialIndex?: number;
   onClose: () => void;
+  pageId?: string;
+  onAddComment?: (imageId: string, body: string) => void;
+  comments?: Array<{ id: string; body: string; user_id: string; created_at: number; text_anchor?: string }>;
 }
 
-export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightboxProps) {
+export function ImageLightbox({ images, initialIndex = 0, onClose, pageId, onAddComment, comments }: ImageLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, posX: 0, posY: 0 });
   const imgRef = useRef<HTMLImageElement>(null);
+  const [commentInput, setCommentInput] = useState("");
+  const [showComments, setShowComments] = useState(false);
 
   const current = images[currentIndex];
   const isMulti = images.length > 1;
+  const imageId = current?.imageId;
+
+  // Filter comments for this specific image
+  const imageComments = comments?.filter(c => 'text_anchor' in c && (c as any).text_anchor === `image:${imageId}`) || [];
 
   // ── Reset zoom on image change ───────────────────────────────────────────
   const resetZoom = useCallback(() => {
@@ -156,6 +166,21 @@ export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightb
     }
   };
 
+  // ── Add comment handler ──────────────────────────────────────────────────
+  const handleSubmitComment = () => {
+    const body = commentInput.trim();
+    if (!body || !imageId || !onAddComment) return;
+    onAddComment(imageId, body);
+    setCommentInput("");
+  };
+
+  const handleCommentKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmitComment();
+    }
+  };
+
   // ── Render ───────────────────────────────────────────────────────────────
   if (!current) return null;
 
@@ -175,6 +200,26 @@ export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightb
       >
         <X className="h-5 w-5" />
       </button>
+
+      {/* Comments toggle button */}
+      {imageId && onAddComment && (
+        <button
+          onClick={() => setShowComments(!showComments)}
+          className={`fixed top-4 right-16 z-10 p-2 rounded-full transition-colors ${
+            showComments
+              ? "bg-primary/40 text-white"
+              : "bg-black/50 text-white/90 hover:bg-black/70 hover:text-white"
+          }`}
+          title="Toggle comments"
+        >
+          <MessageSquare className="h-5 w-5" />
+          {imageComments.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+              {imageComments.length}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* Gallery counter */}
       {isMulti && (
@@ -239,6 +284,58 @@ export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightb
         </button>
       </div>
 
+      {/* Comments sidebar */}
+      {showComments && imageId && onAddComment && (
+        <div className="fixed right-0 top-0 bottom-0 w-72 z-20 bg-black/70 backdrop-blur-md border-l border-white/10 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+            <h3 className="text-sm font-medium text-white/90">Comments</h3>
+            <button
+              onClick={() => setShowComments(false)}
+              className="p-1 rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Comments list */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+            {imageComments.length === 0 && (
+              <p className="text-xs text-white/40 text-center pt-8">No comments on this image yet.</p>
+            )}
+            {imageComments.map((c) => (
+              <div key={c.id} className="bg-white/5 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[11px] font-medium text-white/50 truncate max-w-[120px]">{c.user_id}</span>
+                  <span className="text-[10px] text-white/30">
+                    {new Date(c.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="text-sm text-white/80 whitespace-pre-wrap break-words">{c.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Comment input */}
+          <div className="p-3 border-t border-white/10">
+            <textarea
+              className="w-full bg-white/10 rounded-lg px-3 py-2 text-sm text-white/90 placeholder-white/30 resize-none outline-none focus:ring-1 focus:ring-primary/50 min-h-[60px]"
+              placeholder="Add a comment..."
+              value={commentInput}
+              onChange={(e) => setCommentInput(e.target.value)}
+              onKeyDown={handleCommentKeyDown}
+              rows={2}
+            />
+            <button
+              onClick={handleSubmitComment}
+              disabled={!commentInput.trim()}
+              className="mt-2 w-full py-1.5 rounded-lg bg-primary/80 hover:bg-primary text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Comment
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Image */}
       <img
         ref={imgRef}
@@ -249,6 +346,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightb
           ${isDragging ? "cursor-grabbing" : ""}
           ${!isDragging && zoom > 1 ? "cursor-grab" : ""}
           ${zoom <= 1 ? "cursor-default" : ""}
+          ${showComments ? "mr-72" : ""}
         `}
         style={{
           transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
