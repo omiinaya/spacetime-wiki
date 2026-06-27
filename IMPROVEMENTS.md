@@ -6,13 +6,12 @@ and works the top pending item each tick.
 
 ---
 
-## Status: Working P2 backlog items — Admin dashboard / wiki statistics next.
+## Status: Working P2 backlog items — Notification center / watch pages next.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P2 | Admin dashboard / wiki statistics | Wiki stats view (page count, users, collections, storage, top contributors) |
-| P3 | Reading time / word count | Show estimated reading time and word count in PageView footer with live ProseMirror content calculation |
 | P2 | Notification center / watch pages | Allow users to watch pages/collections and receive in-app notifications on changes (STDB tables + reducers + frontend bell icon + dropdown) |
+| P3 | Reading time / word count | Show estimated reading time and word count in PageView footer with live ProseMirror content calculation |
 | P4 | Graph/network visualization | Interactive D3/force-graph view of page relationships (backlinks, collections) as a visual browser |
 
 
@@ -22,6 +21,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-26 | **P2 — Admin dashboard / wiki statistics!** SQL-powered stats cards (pages, users, collections, comments, attachments + storage), page status breakdown with bar chart, top contributors leaderboard, and recent activity feed from audit_event. Dashboard tab added as first admin panel tab. | e613e67 |
 | 2026-06-26 | **P2 — Activity feed / audit trail page!** Dedicated `/activity` route with sidebar link, command palette entry (G A shortcut), reusable ActivityFeed component with 200-event limit and click-to-navigate | bcaf7c2 |
 | 2026-06-26 | **P4 — Advanced search syntax!** Tag filters (tag: syntax), in:, author:, by:, from:, to:, date: full support. Backend search.py rewritten to use STDB search_pages reducer with filter params. Frontend search API client + wiring. STDB build errors fixed (MFA enable_totp, add_oauth_provider) | f96752f |
 | 2026-06-29 | **P4 — Slack/Discord/GitHub/GitLab OAuth SSO!** Frontend login buttons with PKCE, OAuthCallback component, admin CRUD UI for OAuth providers, FastAPI callback endpoint for code exchange + auto-registration | c5b81ed |
@@ -29,4 +29,3 @@ and works the top pending item each tick.
 | 2026-06-29 | **P4 — Guest/invited users!** STDB tables+reducers (Invitation), API client with create/accept/revoke, admin Invitations tab in settings panel with create dialog and revoke controls | 95c854d |
 | 2026-06-29 | **P4 — MFA/TOTP authentication!** STDB tables (mfa_method, mfa_backup_code) + reducers (enable_totp, disable_mfa, verify_totp, verify_mfa_backup_code), admin panel MFA tab with QR code setup and backup codes, TOTP verification during login flow | 2fc008f |
 | 2026-06-28 | **P4 — Synced blocks (reuse across pages)!** STDB tables+reducers, Tiptap extension with React node view, slash command, feature flag, API client | 5904d58 |
-| 2026-06-28 | **P5 — RTL/bidirectional text support!** direction field on Page struct, toggle in editor toolbar | 0af60ce |
