@@ -285,6 +285,34 @@ function AppLayout() {
 
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
+  // ─── Real-time subscriptions ────────────────────────────────────────────
+  // Replace polling-based loadData() with STDB WebSocket subscriptions
+  // for real-time updates across browser tabs/users
+
+  // Connect on mount, disconnect on unmount
+  useEffect(() => {
+    connectSubscriptions();
+    return () => { disconnectSubscriptions(); };
+  }, []);
+
+  // Subscribe to pages (real-time)
+  const { rows: subPages, connected: pagesConnected } = usePagesSubscription();
+  // Subscribe to collections (real-time)
+  const { rows: subCollections, connected: colsConnected } = useCollectionsSubscription();
+  // Subscribe to notifications (real-time)
+  const { rows: subNotifications } = useNotificationsSubscription(userId || undefined);
+  // Subscribe to watches (real-time)
+  const { rows: subWatches } = useWatchSubscription(userId || undefined);
+
+  // Sync subscription data to local state
+  useEffect(() => {
+    setPages(subPages);
+  }, [subPages]);
+
+  useEffect(() => {
+    setCollections(subCollections);
+  }, [subCollections]);
+
   // ─── Notification state ───────────────────────────────────────────────────
   const [notificationList, setNotificationList] = useState<NotifType[]>([]);
   const prevNotifLenRef = useRef(0);
@@ -345,34 +373,6 @@ function AppLayout() {
   useEffect(() => {
     setUserId(localStorage.getItem("sw_user_id"));
   }, [location.pathname]);
-
-  // ─── Real-time subscriptions ────────────────────────────────────────────
-  // Replace polling-based loadData() with STDB WebSocket subscriptions
-  // for real-time updates across browser tabs/users
-
-  // Connect on mount, disconnect on unmount
-  useEffect(() => {
-    connectSubscriptions();
-    return () => { disconnectSubscriptions(); };
-  }, []);
-
-  // Subscribe to pages (real-time)
-  const { rows: subPages, connected: pagesConnected } = usePagesSubscription();
-  // Subscribe to collections (real-time)
-  const { rows: subCollections, connected: colsConnected } = useCollectionsSubscription();
-  // Subscribe to notifications (real-time)
-  const { rows: subNotifications } = useNotificationsSubscription(userId || undefined);
-  // Subscribe to watches (real-time)
-  const { rows: subWatches } = useWatchSubscription(userId || undefined);
-
-  // Sync subscription data to local state
-  useEffect(() => {
-    setPages(subPages);
-  }, [subPages]);
-
-  useEffect(() => {
-    setCollections(subCollections);
-  }, [subCollections]);
 
   // Stop loading once we have data from either source
   useEffect(() => {
