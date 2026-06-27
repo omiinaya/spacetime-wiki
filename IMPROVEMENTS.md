@@ -6,11 +6,10 @@ and works the top pending item each tick.
 
 ---
 
-## Status: P4 image paste error handling done. Comprehensive test coverage expanded from 27→84 tests. 7 suites total. Added 3 new research items to backlog after testing infra evaluation.
+## Status: P5 Rust compiler warnings fixed (4 errors + 1 warning eliminated). Build clean. Next: P5 Accessibility (a11y) pass.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | Fix Rust compiler warnings | 7 warnings in `server/spacetimedb/src/lib.rs`: unused params (`external_id`, `provider_id`, `now`), dead functions (`totp`, `random_base32`, `now_ms_ts`). |
 | P5 | Accessibility (a11y) pass | Add aria labels, keyboard nav improvements, focus management, screen reader support across all components. |
 | P5 | GitHub Actions CI/CD | Automated test run, TypeScript check, Rust build on push/PR. |
 | P4 | E2E test infra (Playwright) | Integration tests for critical paths: auth flow, page CRUD, search, sharing. |
@@ -21,6 +20,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | **P5 — Fix Rust compiler warnings!** Removed duplicate `now_ms`/`make_id`/`hash_password` helpers, implemented `verify_totp_code` (HMAC-SHA1 TOTP per RFC 6238), fixed unused `now` variable. Build now compiles cleanly with 0 errors and 0 warnings. | (working tree) |
 | 2026-06-28 | **P5 — Comprehensive test coverage!** 4 new suites: ImageLightbox (25), AdminDashboard (8), AccessRequestPanel (12), PageTags (12). Total: 84 tests across 7 suites. | 3187a3bb |
 | 2026-06-28 | **P5 — Admin avatar management!** `update_user_avatar` reducer, TypeScript binding, API call, admin panel UI with avatar preview and URL input per user. | 20c96f4e |
 | 2026-06-27 | **P4 — Per-share branding!** Custom title override and logo URL per share link. | fbe7441e |
@@ -29,4 +29,3 @@ and works the top pending item each tick.
 | 2026-06-27 | **P4 — Request access to documents!** access_request table, approve/deny reducers. | a124ddd9 |
 | 2026-06-27 | **P4 — Consolidate to spacetimedb SDK!** Installed `spacetimedb` npm package v2.6.0. | 31727812 |
 | 2026-06-27 | **P3 — STDB Rust crate upgrade!** `spacetimedb =2.4.0` → `=2.6.0`. | 5b1a4279 |
-| 2026-06-27 | **P3 — Unit test infrastructure!** Vitest + React Testing Library + jsdom. 18 tests. | 0caf22dd |
