@@ -751,6 +751,12 @@ pub fn create_page(
     });
 
     log_event(ctx, "page.create", &created_by, &id, &title, &format!(r#"{{"collection_id":"{}","parent_page_id":"{}"}}"#, collection_id, parent_page_id));
+    // Notify collection watchers about new page
+    notify_collection_watchers_new_page(
+        ctx, &collection_id, &id, &created_by, &title,
+        &format!("New page \"{}\" was created", title),
+        &String::new(),
+    );
     Ok(())
 }
 
@@ -791,6 +797,12 @@ pub fn update_page(
     });
 
     log_event(ctx, "page.update", &updated_by, &id, &title, r#"{}"#);
+    // Notify page watchers about update
+    notify_page_watchers(
+        ctx, &id, "page.update", &updated_by, &title,
+        &format!("Page \"{}\" was updated", title),
+        &String::new(),
+    );
     Ok(())
 }
 
@@ -1043,6 +1055,21 @@ pub fn add_comment(
         created_at: now,
         updated_at: now,
     });
+    // Notify page watchers about new comment
+    let page_title = ctx.db.page().iter()
+        .find(|p| p.id == page_id)
+        .map(|p| p.title.clone())
+        .unwrap_or_else(|| String::from("Unknown page"));
+    let body_excerpt: String = body.chars().take(80).collect();
+    let comment_message = if body_excerpt.len() < body.len() {
+        format!("{} commented on \"{}\": \"{}...\"", user_id, page_title, body_excerpt)
+    } else {
+        format!("{} commented on \"{}\": \"{}\"", user_id, page_title, body_excerpt)
+    };
+    notify_page_watchers(
+        ctx, &page_id, "comment.create", &user_id,
+        &page_title, &comment_message, &String::new(),
+    );
     Ok(())
 }
 
@@ -3969,6 +3996,68 @@ pub fn clear_all_notifications(ctx: &ReducerContext, user_id: String) -> Result<
         ctx.db.notification().id().delete(id);
     }
     Ok(())
+}
+
+// ─── Auto-notify watchers helpers ─────────────────────────────────────────────
+// Called from page/comment reducers to automatically create notifications
+// for users who watch a given page (or whose watched collection the page lives in).
+
+/// Notify all watchers of a page about an event (page.update, comment.create, etc.).
+/// Skips the actor who triggered the event.
+fn notify_page_watchers(
+    ctx: &ReducerContext,
+    page_id: &str,
+    event_type: &str,
+    actor_id: &str,
+    title: &str,
+    message: &str,
+    icon: &str,
+) {
+    for watcher in ctx.db.watch().iter().filter(|w| {
+        w.target_type == "page" && w.target_id == page_id && w.user_id != actor_id
+    }) {
+        ctx.db.notification().insert(Notification {
+            id: make_id("notif", ctx),
+            user_id: watcher.user_id.clone(),
+            event_type: event_type.to_string(),
+            target_id: page_id.to_string(),
+            title: title.to_string(),
+            message: message.to_string(),
+            actor_id: actor_id.to_string(),
+            icon: icon.to_string(),
+            is_read: false,
+            created_at: now_ms(ctx),
+        });
+    }
+}
+
+/// Notify collection watchers when a new page is created in that collection.
+/// Skips the creator.
+fn notify_collection_watchers_new_page(
+    ctx: &ReducerContext,
+    collection_id: &str,
+    page_id: &str,
+    actor_id: &str,
+    title: &str,
+    message: &str,
+    icon: &str,
+) {
+    for watcher in ctx.db.watch().iter().filter(|w| {
+        w.target_type == "collection" && w.target_id == collection_id && w.user_id != actor_id
+    }) {
+        ctx.db.notification().insert(Notification {
+            id: make_id("notif", ctx),
+            user_id: watcher.user_id.clone(),
+            event_type: "page.create".to_string(),
+            target_id: page_id.to_string(),
+            title: title.to_string(),
+            message: message.to_string(),
+            actor_id: actor_id.to_string(),
+            icon: icon.to_string(),
+            is_read: false,
+            created_at: now_ms(ctx),
+        });
+    }
 }
 
 // ─── OAuth 2.0 Provider (Slack/Discord/GitHub/GitLab) ──────────────────────
