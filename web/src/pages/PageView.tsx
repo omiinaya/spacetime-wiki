@@ -31,7 +31,7 @@ import {
   List, FileText, Link2, LayoutTemplate, Shield, Maximize2, Palette, Pin, Eye, FolderOpen,
   Bell, Share2,
 } from "lucide-react";
-import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments, resolveTransclusions } from "../lib/api";
+import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments, resolveTransclusions, accessRequestApi } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
 import { diffArrays } from "diff";
 import { PagePermissions } from "../components/PagePermissions";
@@ -367,6 +367,10 @@ export function PageView({ pageId, userId }: Props) {
   const [parentPages, setParentPages] = useState<Page[]>([]);
   const [showMediaBrowser, setShowMediaBrowser] = useState(false);
   const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
+
+  // Access request state
+  const [showAccessRequest, setShowAccessRequest] = useState(false);
+  const [accessReason, setAccessReason] = useState("");
 
   // Inline title editing
   const [editingTitle, setEditingTitle] = useState(false);
@@ -1045,10 +1049,76 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
   if (error || !page) {
     return (
       <div className="p-4 md:p-6 lg:p-8 max-w-4xl mx-auto">
-        <div className="p-8 rounded-lg border border-destructive/30 bg-destructive/5 text-center">
+        <div className="p-8 rounded-lg border border-destructive/30 bg-destructive/5 text-center space-y-3">
           <p className="text-sm text-destructive">{error || "Page not found"}</p>
-          <button onClick={() => navigate("/")} className="mt-3 text-xs text-primary hover:underline">Go home</button>
+          <p className="text-[10px] text-muted-foreground/60">You may not have permission to view this page.</p>
+          <div className="flex items-center justify-center gap-2">
+            <button onClick={() => navigate("/")} className="text-xs text-primary hover:underline">Go home</button>
+            {userId && (
+              <button
+                onClick={() => setShowAccessRequest(true)}
+                className="text-xs px-3 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                Request Access
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Access Request dialog */}
+        {showAccessRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowAccessRequest(false)}>
+            <div className="w-full max-w-sm mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" /> Request Access
+                </h3>
+                <button onClick={() => setShowAccessRequest(false)} className="p-1 rounded hover:bg-muted">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground/60 mb-3">
+                Request permission to view this page. The page owner and admins will be notified.
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] text-muted-foreground/60 mb-1 block">Reason (optional)</label>
+                  <textarea
+                    value={accessReason}
+                    onChange={e => setAccessReason(e.target.value)}
+                    placeholder="e.g. I need to review this document for the project..."
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowAccessRequest(false)}
+                    className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const id = `arq_${Date.now().toString(16)}_${Math.random().toString(36).slice(2, 6)}`;
+                        await accessRequestApi.create(id, pageId, userId || "", accessReason);
+                        setShowAccessRequest(false);
+                        setAccessReason("");
+                        showToast({ type: "success", title: "Access Request Sent", message: "The page owner has been notified.", duration: 4000 });
+                      } catch (e: any) {
+                        showToast({ type: "error", title: "Failed", message: e.message || "Could not send request", duration: 5000 });
+                      }
+                    }}
+                    className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
+                  >
+                    Send Request
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

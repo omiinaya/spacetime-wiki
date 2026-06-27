@@ -4059,6 +4059,229 @@ fn notify_collection_watchers_new_page(
     }
 }
 
+// ─── Access Request System (P4) ──────────────────────────────────────────────
+//
+// Outline v1.8.0 feature: allow users to request access to pages they don't have
+// permission to view. Page owners and admins are notified and can approve or deny
+// the request. Approved requests automatically grant page-level viewer permission.
+// Denied requests record the decision for audit.
+
+#[table(accessor = access_request, public)]
+#[derive(Debug, Clone)]
+pub struct AccessRequest {
+    #[primary_key]
+    pub id: String,
+    /// The page the user wants access to
+    pub page_id: String,
+    /// The user requesting access
+    pub requester_id: String,
+    /// Optional user-supplied reason for the request
+    pub reason: String,
+    /// "pending" | "approved" | "denied"
+    pub status: String,
+    /// Who responded (admin or page owner) — empty if still pending
+    pub responded_by: String,
+    /// When the request was resolved (ms epoch), 0 if still pending
+    pub responded_at: u64,
+    pub created_at: u64,
+}
+
+#[reducer]
+pub fn create_access_request(
+    ctx: &ReducerContext,
+    id: String,
+    page_id: String,
+    requester_id: String,
+    reason: String,
+) -> Result<(), String> {
+    // Check page exists
+    let page = ctx.db.page().id().find(&page_id);
+    if page.is_none() {
+        return Err("Page not found".into());
+    }
+    let page = page.unwrap();
+
+    // Check user exists
+    let user = ctx.db.user().id().find(&requester_id);
+    if user.is_none() {
+        return Err("User not found".into());
+    }
+
+    // Check if user already has a pending request for this page
+    let existing = ctx.db.access_request().iter().find(|r| {
+        r.page_id == page_id && r.requester_id == requester_id && r.status == "pending"
+    });
+    if existing.is_some() {
+        return Err("You already have a pending access request for this page".into());
+    }
+
+    let now = now_ms(ctx);
+    let reason_clone = reason.clone();
+    ctx.db.access_request().insert(AccessRequest {
+        id,
+        page_id: page_id.clone(),
+        requester_id: requester_id.clone(),
+        reason,
+        status: "pending".into(),
+        responded_by: String::new(),
+        responded_at: 0,
+        created_at: now,
+    });
+
+    // Notify the page creator/owner and all admins about the access request
+    let requester_name = user.unwrap().name.clone();
+    let page_title = page.title.clone();
+    let message = format!(
+        "{} requested access to page \"{}\"",
+        requester_name, page_title
+    );
+
+    // Notify page owner
+    if page.created_by != requester_id {
+        let _ = ctx.db.notification().insert(Notification {
+            id: make_id("notif", ctx),
+            user_id: page.created_by.clone(),
+            event_type: "access_request".to_string(),
+            target_id: page_id.clone(),
+            title: "Access Request".to_string(),
+            message: message.clone(),
+            actor_id: requester_id.clone(),
+            icon: "🔑".into(),
+            is_read: false,
+            created_at: now,
+        });
+    }
+
+    // Also notify all admins about the request
+    for admin in ctx.db.user().iter().filter(|u| u.role == "admin" && u.id != requester_id && u.id != page.created_by) {
+        let _ = ctx.db.notification().insert(Notification {
+            id: make_id("notif", ctx),
+            user_id: admin.id.clone(),
+            event_type: "access_request".to_string(),
+            target_id: page_id.clone(),
+            title: "Access Request".to_string(),
+            message: message.clone(),
+            actor_id: requester_id.clone(),
+            icon: "🔑".into(),
+            is_read: false,
+            created_at: now,
+        });
+    }
+
+    log_event(
+        ctx,
+        "access_request.create",
+        &requester_id,
+        &page_id,
+        &page_title,
+        &format!(r#"{{"reason":"{}"}}"#, reason_clone.replace('"', "\\\"")),
+    );
+    Ok(())
+}
+
+#[reducer]
+pub fn approve_access_request(
+    ctx: &ReducerContext,
+    id: String,
+    responder_id: String,
+) -> Result<(), String> {
+    let request = ctx.db.access_request().id().find(&id);
+    if request.is_none() {
+        return Err("Access request not found".into());
+    }
+    let request = request.unwrap();
+    if request.status != "pending" {
+        return Err("Access request is not pending".into());
+    }
+
+    let now = now_ms(ctx);
+
+    // Grant page-level viewer permission
+    let perm_id = make_id("pp", ctx);
+    ctx.db.page_permission().insert(PagePermission {
+        id: perm_id,
+        page_id: request.page_id.clone(),
+        user_id: request.requester_id.clone(),
+        group_id: String::new(),
+        role: "viewer".into(),
+        created_at: now,
+    });
+
+    // Update request status
+    let mut req = request;
+    req.status = "approved".into();
+    req.responded_by = responder_id.clone();
+    req.responded_at = now;
+    let req_page_id = req.page_id.clone();
+    let req_id = req.id.clone();
+    let req_requester_id = req.requester_id.clone();
+    ctx.db.access_request().id().update(req);
+
+    // Notify the requester that their request was approved
+    let _ = ctx.db.notification().insert(Notification {
+        id: make_id("notif", ctx),
+        user_id: req_requester_id,
+        event_type: "access_request.approved".to_string(),
+        target_id: req_page_id.clone(),
+        title: "Access Approved".to_string(),
+        message: format!("Your request to access \"{}\" has been approved", {
+            ctx.db.page().id().find(&req_page_id).map(|p| p.title).unwrap_or_default()
+        }),
+        actor_id: responder_id.clone(),
+        icon: "✅".into(),
+        is_read: false,
+        created_at: now,
+    });
+
+    log_event(ctx, "access_request.approve", &responder_id, &req_page_id, &req_id, r#"{}"#);
+    Ok(())
+}
+
+#[reducer]
+pub fn deny_access_request(
+    ctx: &ReducerContext,
+    id: String,
+    responder_id: String,
+) -> Result<(), String> {
+    let request = ctx.db.access_request().id().find(&id);
+    if request.is_none() {
+        return Err("Access request not found".into());
+    }
+    let request = request.unwrap();
+    if request.status != "pending" {
+        return Err("Access request is not pending".into());
+    }
+
+    let now = now_ms(ctx);
+    let mut req = request;
+    req.status = "denied".into();
+    req.responded_by = responder_id.clone();
+    req.responded_at = now;
+    let req_page_id = req.page_id.clone();
+    let req_id = req.id.clone();
+    let req_requester_id = req.requester_id.clone();
+    ctx.db.access_request().id().update(req);
+
+    // Notify the requester that their request was denied
+    let _ = ctx.db.notification().insert(Notification {
+        id: make_id("notif", ctx),
+        user_id: req_requester_id,
+        event_type: "access_request.denied".to_string(),
+        target_id: req_page_id.clone(),
+        title: "Access Denied".to_string(),
+        message: format!("Your request to access \"{}\" has been denied", {
+            ctx.db.page().id().find(&req_page_id).map(|p| p.title).unwrap_or_default()
+        }),
+        actor_id: responder_id.clone(),
+        icon: "❌".into(),
+        is_read: false,
+        created_at: now,
+    });
+
+    log_event(ctx, "access_request.deny", &responder_id, &req_page_id, &req_id, r#"{}"#);
+    Ok(())
+}
+
 // ─── OAuth 2.0 Provider (Slack/Discord/GitHub/GitLab) ──────────────────────
 
 #[table(accessor = oauth_provider, public)]

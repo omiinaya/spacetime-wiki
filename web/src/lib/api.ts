@@ -56,6 +56,8 @@ function mapLdapProvider(row: unknown[]): LdapProvider { return { id: String(row
 function mapLdapUser(row: unknown[]): LdapUser { return { id: String(row[0]??""), user_id: String(row[1]??""), ldap_provider_id: String(row[2]??""), dn: String(row[3]??""), external_id: String(row[4]??""), last_synced_at: Number(row[5])||0, created_at: Number(row[6])||0 }; }
 function mapWatch(row: unknown[]): Watch { return { id: String(row[0]??""), user_id: String(row[1]??""), target_type: String(row[2]??""), target_id: String(row[3]??""), created_at: Number(row[4])||0 }; }
 function mapNotification(row: unknown[]): Notification { return { id: String(row[0]??""), user_id: String(row[1]??""), event_type: String(row[2]??""), target_id: String(row[3]??""), title: String(row[4]??""), message: String(row[5]??""), actor_id: String(row[6]??""), icon: String(row[7]??""), is_read: Boolean(row[8]), created_at: Number(row[9])||0 }; }
+function mapAccessRequest(row: unknown[]): AccessRequest { return { id: String(row[0]??""), page_id: String(row[1]??""), requester_id: String(row[2]??""), reason: String(row[3]??""), status: String(row[4]??""), responded_by: String(row[5]??""), responded_at: Number(row[6])||0, created_at: Number(row[7])||0 };
+}
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
@@ -492,6 +494,17 @@ export interface Watch {
   user_id: string;
   target_type: string; // "page" | "collection"
   target_id: string;
+  created_at: number;
+}
+
+export interface AccessRequest {
+  id: string;
+  page_id: string;
+  requester_id: string;
+  reason: string;
+  status: string; // "pending" | "approved" | "denied"
+  responded_by: string;
+  responded_at: number;
   created_at: number;
 }
 
@@ -1818,5 +1831,39 @@ export const auditApi = {
   listByType: (eventType: string, limit = 50): Promise<AuditEvent[]> => {
     const sql = `SELECT * FROM audit_event WHERE event_type = '${eventType}' ORDER BY created_at DESC LIMIT ${limit}`;
     return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAuditEvent));
+  },
+};
+
+// ─── Access Request API (P4) ────────────────────────────────────────────────────
+
+export const accessRequestApi = {
+  /** Create a new access request for a page */
+  create: (id: string, pageId: string, requesterId: string, reason: string): Promise<void> =>
+    callReducer("create_access_request", [id, pageId, requesterId, reason]),
+
+  /** Approve a pending access request (grants page-level viewer permission) */
+  approve: (id: string, responderId: string): Promise<void> =>
+    callReducer("approve_access_request", [id, responderId]),
+
+  /** Deny a pending access request */
+  deny: (id: string, responderId: string): Promise<void> =>
+    callReducer("deny_access_request", [id, responderId]),
+
+  /** Fetch all pending access requests (for admins and page owners) */
+  listPending: (): Promise<AccessRequest[]> => {
+    const sql = "SELECT * FROM access_request WHERE status = 'pending' ORDER BY created_at DESC";
+    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAccessRequest));
+  },
+
+  /** Fetch access requests for a specific page */
+  listByPage: (pageId: string): Promise<AccessRequest[]> => {
+    const sql = `SELECT * FROM access_request WHERE page_id = '${pageId}' ORDER BY created_at DESC`;
+    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAccessRequest));
+  },
+
+  /** Fetch access requests by a specific requester */
+  listByRequester: (requesterId: string): Promise<AccessRequest[]> => {
+    const sql = `SELECT * FROM access_request WHERE requester_id = '${requesterId}' ORDER BY created_at DESC`;
+    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAccessRequest));
   },
 };
