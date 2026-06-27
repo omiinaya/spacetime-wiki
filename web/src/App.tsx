@@ -24,17 +24,10 @@ import { ActivityFeed } from "./components/ActivityFeed";
 import { NotificationBell } from "./components/NotificationBell";
 import React from "react";
 
-const HomeView = React.lazy(() => import("./pages/HomeView"));
-const ActivityView = React.lazy(() => import("./pages/ActivityView"));
-const FavoritesView = React.lazy(() => import("./pages/FavoritesView"));
-const PageViewWrapper = React.lazy(() => import("./pages/PageViewWrapper"));
-const SlugView = React.lazy(() => import("./pages/SlugView"));
-const PermalinkRedirect = React.lazy(() => import("./pages/PermalinkRedirect"));
-const LoginView = React.lazy(() => import("./pages/LoginView"));
-const GoogleCallback = React.lazy(() => import("./pages/GoogleCallback"));
-const OidcCallback = React.lazy(() => import("./pages/OidcCallback"));
-const OAuthCallback = React.lazy(() => import("./pages/OAuthCallback"));
-const SamlCallback = React.lazy(() => import("./pages/SamlCallback"));
+// Inline components: HomeView, ActivityView, FavoritesView, PageViewWrapper, SlugView,
+// PermalinkRedirect, LoginView, GoogleCallback, OidcCallback, OAuthCallback, SamlCallback
+// are defined inline below — no lazy import needed for route-level components already
+// in the main bundle.
 
 // Lazy-loaded route-level components
 const PageEditor = React.lazy(() => import("./pages/PageEditor").then(m => ({ default: m.PageEditor })));
