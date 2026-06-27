@@ -232,13 +232,20 @@ export function useSubscription<T>(
       headers: { "Content-Type": "text/plain" },
       body: sql,
     })
-      .then((res) => res.json())
-      .then((data) => {
-        const initialRows = ((data[0]?.rows || []) as unknown[][]).map(mapper);
-        rowsRef.current = initialRows;
-        setRows([...initialRows]);
-      })
-      .catch((err) => console.error("[STDB Sub] Initial fetch failed:", err));
+      .then((res) => res.text().then((text) => {
+        // STDB may return non-JSON error messages (e.g. "no such table" or
+        // syntax errors for tables that haven't been published yet).
+        // Handle gracefully by using empty data.
+        try {
+          const data = JSON.parse(text);
+          const initialRows = ((data[0]?.rows || []) as unknown[][]).map(mapper);
+          rowsRef.current = initialRows;
+          setRows([...initialRows]);
+        } catch {
+          console.warn("[STDB Sub] Non-JSON response, using empty data:", text.slice(0, 120));
+        }
+      }))
+      .catch((err) => console.error("[STDB Sub] HTTP fetch failed:", err));
 
     return () => {
       unsub();
