@@ -10,7 +10,7 @@ import {
   Sun, Moon, Keyboard, Eye, CheckSquare, Square, Tags, MessageSquare, Package,
   Mail,
 } from "lucide-react";
-import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, PasskeyCredential, usePagesSubscription, useCollectionsSubscription } from "./lib/api";
+import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, PasskeyCredential, usePagesSubscription, useCollectionsSubscription, useNotificationsSubscription, useWatchSubscription, Notification as NotifType } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
 import { connectSubscriptions, disconnectSubscriptions, defaultSubscriptionManager } from "./lib/subscriptions";
 import { PageEditor } from "./pages/PageEditor";
@@ -24,6 +24,7 @@ import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { AiAssistant } from "./components/AiAssistant";
 import { ActivityFeed } from "./components/ActivityFeed";
 import AdminDashboard from "./components/AdminDashboard";
+import { NotificationBell } from "./components/NotificationBell";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -284,6 +285,39 @@ function AppLayout() {
 
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
+  // ─── Notification state ───────────────────────────────────────────────────
+  const [notificationList, setNotificationList] = useState<NotifType[]>([]);
+  const prevNotifLenRef = useRef(0);
+
+  // Sync subscription notifications to local state
+  useEffect(() => {
+    setNotificationList(subNotifications);
+    // Show toast when new notification arrives
+    if (subNotifications.length > prevNotifLenRef.current && prevNotifLenRef.current > 0) {
+      const latest = subNotifications[0];
+      if (latest && !latest.is_read) {
+        showToast({
+          type: "info",
+          title: latest.title,
+          message: latest.message,
+          duration: 5000,
+          action: latest.target_id ? {
+            label: "View",
+            onClick: () => window.location.assign(`/page/${latest.target_id}`),
+          } : undefined,
+        });
+      }
+    }
+    prevNotifLenRef.current = subNotifications.length;
+  }, [subNotifications]);
+
+  const refreshNotifications = useCallback(() => {
+    // Notifications are already updated via subscriptions, but trigger a re-fetch
+    if (userId) {
+      api.notifications.list(userId, 100).then(setNotificationList).catch(() => {});
+    }
+  }, [userId]);
+
   // ─── AI Assistant state ────────────────────────────────────────────────────
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
@@ -326,6 +360,10 @@ function AppLayout() {
   const { rows: subPages, connected: pagesConnected } = usePagesSubscription();
   // Subscribe to collections (real-time)
   const { rows: subCollections, connected: colsConnected } = useCollectionsSubscription();
+  // Subscribe to notifications (real-time)
+  const { rows: subNotifications } = useNotificationsSubscription(userId || undefined);
+  // Subscribe to watches (real-time)
+  const { rows: subWatches } = useWatchSubscription(userId || undefined);
 
   // Sync subscription data to local state
   useEffect(() => {
@@ -1236,9 +1274,16 @@ function AppLayout() {
             <Library className="h-3.5 w-3.5 text-white" />
           </div>
           <span className="font-semibold text-sm">Spacetime Wiki</span>
-          <button className="md:hidden ml-auto p-1" onClick={() => setSidebarOpen(false)}>
-            <X className="h-4 w-4" />
-          </button>
+          <div className="ml-auto flex items-center gap-1">
+            <NotificationBell
+              userId={userId}
+              notifications={notificationList}
+              onRefresh={refreshNotifications}
+            />
+            <button className="md:hidden p-1" onClick={() => setSidebarOpen(false)}>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Search */}

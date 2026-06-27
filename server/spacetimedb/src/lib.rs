@@ -3820,6 +3820,157 @@ fn base32_decode(input: &str) -> Option<Vec<u8>> {
     Some(output)
 }
 
+// ─── Watch / Notification System (P2) ─────────────────────────────────────────
+// Allows users to watch pages and collections, receiving in-app notifications
+// when those watched items are updated by other users.
+
+#[table(accessor = watch, public)]
+#[derive(Debug, Clone)]
+pub struct Watch {
+    #[primary_key]
+    pub id: String,
+    pub user_id: String,
+    /// "page" or "collection"
+    pub target_type: String,
+    pub target_id: String,
+    pub created_at: u64,
+}
+
+#[table(accessor = notification, public)]
+#[derive(Debug, Clone)]
+pub struct Notification {
+    #[primary_key]
+    pub id: String,
+    /// The user who receives this notification
+    pub user_id: String,
+    /// "page.create" | "page.update" | "page.delete" | "page.publish" | "page.archive" |
+    /// "comment.create" | "collection.create" | "collection.update" | "collection.delete"
+    pub event_type: String,
+    /// The target ID (page_id, collection_id, etc.)
+    pub target_id: String,
+    /// Human-readable title for display in the notification dropdown
+    pub title: String,
+    /// Human-readable message body
+    pub message: String,
+    /// The user who triggered the event
+    pub actor_id: String,
+    /// Icon/emoji for the notification (e.g. page icon, or a generic icon)
+    pub icon: String,
+    /// Whether the notification has been read
+    pub is_read: bool,
+    pub created_at: u64,
+}
+
+#[reducer]
+pub fn toggle_watch(
+    ctx: &ReducerContext,
+    id: String,
+    user_id: String,
+    target_type: String,
+    target_id: String,
+) -> Result<(), String> {
+    if target_type != "page" && target_type != "collection" {
+        return Err("target_type must be 'page' or 'collection'".into());
+    }
+    // Check if watch already exists (toggle off)
+    let existing = ctx.db.watch().iter()
+        .find(|w| w.user_id == user_id && w.target_type == target_type && w.target_id == target_id);
+    if let Some(w) = existing {
+        ctx.db.watch().id().delete(&w.id);
+        return Ok(());
+    }
+    ctx.db.watch().insert(Watch {
+        id,
+        user_id,
+        target_type,
+        target_id,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn create_notification(
+    ctx: &ReducerContext,
+    id: String,
+    user_id: String,
+    event_type: String,
+    target_id: String,
+    title: String,
+    message: String,
+    actor_id: String,
+    icon: String,
+) -> Result<(), String> {
+    let valid_events = [
+        "page.create", "page.update", "page.delete",
+        "page.publish", "page.archive",
+        "comment.create", "collection.create",
+        "collection.update", "collection.delete",
+    ];
+    if !valid_events.contains(&event_type.as_str()) {
+        return Err("Invalid event type for notification".into());
+    }
+    ctx.db.notification().insert(Notification {
+        id,
+        user_id,
+        event_type,
+        target_id,
+        title,
+        message,
+        actor_id,
+        icon,
+        is_read: false,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+#[reducer]
+pub fn mark_notification_read(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    let found = ctx.db.notification().iter().find(|n| n.id == id);
+    if found.is_none() {
+        return Err("Notification not found".into());
+    }
+    let mut notif = found.unwrap();
+    notif.is_read = true;
+    ctx.db.notification().id().update(notif);
+    Ok(())
+}
+
+#[reducer]
+pub fn mark_all_notifications_read(ctx: &ReducerContext, user_id: String) -> Result<(), String> {
+    let now = now_ms(ctx);
+    let to_update: Vec<String> = ctx.db.notification().iter()
+        .filter(|n| n.user_id == user_id && !n.is_read)
+        .map(|n| n.id.clone())
+        .collect();
+    for id in &to_update {
+        if let Some(mut n) = ctx.db.notification().iter().find(|n| &n.id == id) {
+            n.is_read = true;
+            ctx.db.notification().id().update(n);
+        }
+    }
+    Ok(())
+}
+
+#[reducer]
+pub fn delete_notification(ctx: &ReducerContext, id: String) -> Result<(), String> {
+    ctx.db.notification().id().delete(&id);
+    Ok(())
+}
+
+#[reducer]
+pub fn clear_all_notifications(ctx: &ReducerContext, user_id: String) -> Result<(), String> {
+    let to_delete: Vec<String> = ctx.db.notification().iter()
+        .filter(|n| n.user_id == user_id)
+        .map(|n| n.id.clone())
+        .collect();
+    for id in &to_delete {
+        ctx.db.notification().id().delete(id);
+    }
+    Ok(())
+}
+
 // ─── OAuth 2.0 Provider (Slack/Discord/GitHub/GitLab) ──────────────────────
 
 #[table(accessor = oauth_provider, public)]
