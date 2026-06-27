@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { api, Page, PageRevision, Comment, Collection, resolveContentAttachments, resolveTransclusions } from "../lib/api";
 import { cn, formatDate, timeAgo } from "../lib/utils";
+import { diffArrays } from "diff";
 import { PagePermissions } from "../components/PagePermissions";
 import { RevisionDiff } from "../components/RevisionDiff";
 import { ImageLightbox } from "../components/ImageLightbox";
@@ -42,6 +43,59 @@ import { MentionInput } from "../components/MentionInput";
 import { MediaManager } from "../components/MediaManager";
 
 const lowlight = createLowlight(common);
+
+// ─── Diff helpers (same logic as RevisionDiff) ─────────────────────────────────
+
+function tiptapToPlain(doc: any): string {
+  const parts: string[] = [];
+  function walk(node: any) {
+    if (!node) return;
+    if (node.type === "text") { parts.push(node.text || ""); }
+    if (node.content) { for (const child of node.content) walk(child); }
+    if (node.type === "paragraph" || node.type === "heading" || node.type === "codeBlock" || node.type === "blockquote" || node.type === "callout" || node.type === "listItem") { parts.push("\n"); }
+    if (node.type === "horizontalRule") { parts.push("\n---\n"); }
+  }
+  walk(doc);
+  return parts.join("");
+}
+
+function tryParseTiptap(json: string): any {
+  try { const p = JSON.parse(json); if (p && p.type === "doc") return p; } catch {}
+  return null;
+}
+
+function revisionContentToLines(content: string): string[] {
+  const doc = tryParseTiptap(content);
+  if (doc) return tiptapToPlain(doc).split("\n");
+  return content.split("\n");
+}
+
+interface RevisionDiffPreview {
+  titleChanged: boolean;
+  addedCount: number;
+  removedCount: number;
+  sampleLines: string[];
+}
+
+function computeDiffPreview(oldRev: PageRevision, newRev: PageRevision): RevisionDiffPreview {
+  const titleChanged = oldRev.title !== newRev.title;
+  const oldLines = revisionContentToLines(oldRev.content);
+  const newLines = revisionContentToLines(newRev.content);
+  const changes = diffArrays(oldLines, newLines);
+  let addedCount = 0, removedCount = 0;
+  const sampleLines: string[] = [];
+  for (const change of changes) {
+    const lines = change.value as string[];
+    if (change.added) {
+      addedCount += lines.length;
+      if (sampleLines.length < 5) sampleLines.push(...lines.slice(0, 5 - sampleLines.length).map(l => `+ ${l}`));
+    } else if (change.removed) {
+      removedCount += lines.length;
+      if (sampleLines.length < 5) sampleLines.push(...lines.slice(0, 5 - sampleLines.length).map(l => `- ${l}`));
+    }
+  }
+  return { titleChanged, addedCount, removedCount, sampleLines };
+}
 
 // ─── Markdown export helper ──────────────────────────────────────────────────
 
@@ -267,6 +321,23 @@ export function PageView({ pageId, userId }: Props) {
   const [showExport, setShowExport] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [viewCount, setViewCount] = useState(0);
+
+  // Revision diff preview on hover
+  const [hoveredRevId, setHoveredRevId] = useState<string | null>(null);
+  const revisionDiffPreviews = useMemo(() => {
+    const map = new Map<string, RevisionDiffPreview>();
+    if (revisions.length < 2) return map;
+    for (let i = 0; i < revisions.length; i++) {
+      const rev = revisions[i];
+      const prev = revisions[i - 1];
+      if (prev) {
+        map.set(rev.id, computeDiffPreview(prev, rev));
+      } else {
+        map.set(rev.id, { titleChanged: false, addedCount: 0, removedCount: 0, sampleLines: [] });
+      }
+    }
+    return map;
+  }, [revisions]);
 
   // Diff state
   const [diffOldRev, setDiffOldRev] = useState<PageRevision | null>(null);
@@ -1725,8 +1796,40 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             {revisions.length === 0 && (
               <p className="text-xs text-muted-foreground py-4 text-center">No revisions yet.</p>
             )}
-            {[...revisions].reverse().map((rev, i) => (
-              <div key={rev.id} className="p-3 rounded-lg border border-border bg-card">
+            {[...revisions].reverse().map((rev, i) => {
+              const preview = revisionDiffPreviews.get(rev.id);
+              const isHovered = hoveredRevId === rev.id;
+              return (
+              <div key={rev.id}
+                onMouseEnter={() => setHoveredRevId(rev.id)}
+                onMouseLeave={() => setHoveredRevId(null)}
+                className="relative p-3 rounded-lg border border-border bg-card"
+              >
+                {isHovered && preview && (preview.titleChanged || preview.addedCount > 0 || preview.removedCount > 0) && (
+                  <div className="absolute left-0 right-0 bottom-full mb-1.5 z-30 mx-2">
+                    <div className="bg-popover border border-border rounded-lg shadow-xl p-2.5 text-[10px]">
+                      {preview.titleChanged && (
+                        <div className="flex items-center gap-1.5 mb-1.5 pb-1.5 border-b border-border/50">
+                          <span className="text-[10px] font-medium text-foreground/80">Title changed</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-green-400 font-medium">+{preview.addedCount}</span>
+                        <span className="text-red-400 font-medium">-{preview.removedCount}</span>
+                      </div>
+                      {preview.sampleLines.length > 0 && (
+                        <div className="space-y-0.5 max-h-20 overflow-hidden">
+                          {preview.sampleLines.slice(0, 4).map((line, li) => (
+                            <div key={li} className={cn("font-mono leading-tight truncate", line.startsWith("+ ") ? "text-green-300" : line.startsWith("- ") ? "text-red-300" : "text-muted-foreground")}>{line}</div>
+                          ))}
+                          {(preview.addedCount + preview.removedCount) > 4 && (
+                            <div className="text-muted-foreground/60 mt-0.5">… and {preview.addedCount + preview.removedCount - 4} more changes</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium">v{rev.revision_number}</span>
                   <span className="text-[10px] text-muted-foreground">{formatDate(rev.created_at)}</span>
@@ -1757,7 +1860,8 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                   )}
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
       )}
