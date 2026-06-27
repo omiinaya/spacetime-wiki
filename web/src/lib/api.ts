@@ -661,10 +661,15 @@ export const api = {
     },
     listDeleted: () =>
       sqlQuery("SELECT * FROM page WHERE status = 'deleted'").then((rows) => (rows as any as unknown[][]).map(mapPage)),
-    get: (id: string) =>
-      sqlQuery(`SELECT * FROM page WHERE id = '${id}'`).then(
-        (rows) => ((rows as any as unknown[][])[0] ? mapPage((rows as any as unknown[][])[0]) : null),
-      ),
+    get: async (id: string) => {
+      // Try as ID first, then as slug
+      let rows = await sqlQuery(`SELECT * FROM page WHERE id = '${id}'`);
+      if ((rows as any as unknown[][]).length === 0) {
+        rows = await sqlQuery(`SELECT * FROM page WHERE slug = '${id}'`);
+      }
+      const row = (rows as any as unknown[][])[0];
+      return row ? mapPage(row) : null;
+    },
     getBySlug: (slug: string) =>
       sqlQuery(`SELECT * FROM page WHERE slug = '${slug}'`).then(
         (rows) => ((rows as any as unknown[][])[0] ? mapPage((rows as any as unknown[][])[0]) : null),

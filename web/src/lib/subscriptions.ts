@@ -113,10 +113,22 @@ export class SubscriptionManager {
       }
     };
 
+    this.ws.onerror = (event) => {
+      if (!this.everConnected) {
+        // STDB server doesn't support the subscribe WebSocket endpoint
+        console.warn("[STDB Sub] WebSocket subscribe endpoint not available (common on older STDB versions). Data loads via HTTP.");
+        this.fatal = true;
+        this.ws?.close();
+      } else {
+        console.warn("[STDB Sub] WebSocket error:", event);
+      }
+    };
+
     this.ws.onclose = (event) => {
       console.log(`[STDB Sub] Disconnected (code=${event.code})`);
       this.setState("disconnected");
       this.ws = null;
+      if (this.fatal) return;
       if (this.everConnected || this.consecutiveFailures < this.maxConsecutiveFailures) {
         this.consecutiveFailures++;
         this.scheduleReconnect();
@@ -128,10 +140,6 @@ export class SubscriptionManager {
           "Data still loads via HTTP."
         );
       }
-    };
-
-    this.ws.onerror = (event) => {
-      console.error("[STDB Sub] WebSocket error:", event);
     };
   }
 
