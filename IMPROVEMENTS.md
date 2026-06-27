@@ -6,11 +6,10 @@ and works the top pending item each tick.
 
 ---
 
-## Status: Working P2 backlog items — Activity feed / audit trail page next.
+## Status: Working P2 backlog items — Admin dashboard / wiki statistics next.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P2 | Activity feed / audit trail page | Dedicated "Recent activity" page showing page creates, updates, deletes, restores with user info |
 | P2 | Admin dashboard / wiki statistics | Wiki stats view (page count, users, collections, storage, top contributors) |
 | P3 | Reading time / word count | Show estimated reading time and word count in PageView footer with live ProseMirror content calculation |
 | P2 | Notification center / watch pages | Allow users to watch pages/collections and receive in-app notifications on changes (STDB tables + reducers + frontend bell icon + dropdown) |
@@ -23,6 +22,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-26 | **P2 — Activity feed / audit trail page!** Dedicated `/activity` route with sidebar link, command palette entry (G A shortcut), reusable ActivityFeed component with 200-event limit and click-to-navigate | bcaf7c2 |
 | 2026-06-26 | **P4 — Advanced search syntax!** Tag filters (`tag:` syntax), `in:`, `author:`, `by:`, `from:`, `to:`, `date:` full support. Backend search.py rewritten to use STDB `search_pages` reducer with filter params. Frontend search API client + wiring. STDB build errors fixed (MFA enable_totp, add_oauth_provider) | _(this commit)_ |
 | 2026-06-29 | **P4 — Slack/Discord/GitHub/GitLab OAuth SSO!** Frontend login buttons with PKCE, OAuthCallback component, admin CRUD UI for OAuth providers, FastAPI callback endpoint for code exchange + auto-registration | c5b81ed |
 | 2026-06-29 | **P4 — Confluence import!** Server-side endpoint (`POST /api/v1/import/confluence`) with Confluence HTML→ProseMirror converter, pages.xml/entities.xml hierarchy parsing, ZIP upload support. Frontend sidebar "Import Confluence" button with status feedback | _(this commit)_ |
