@@ -10,8 +10,11 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
+| P2 | Auto-notify watchers on page changes | Auto-create notification records when watched pages are created/updated/commented on by other users — call create_notification reducer from page create/update/delete and comment create reducers |
 | P3 | Reading time / word count | Show estimated reading time and word count in PageView footer with live ProseMirror content calculation |
+| P3 | Search result snippets & highlighting | Show matching term context in search results with highlight markers |
 | P4 | Graph/network visualization | Interactive D3/force-graph view of page relationships (backlinks, collections) as a visual browser |
+| P4 | REST API Swagger/OpenAPI docs | Generate OpenAPI 3.0 spec for the FastAPI REST API endpoints |
 
 
 ---
