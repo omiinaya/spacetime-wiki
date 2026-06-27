@@ -2,8 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import "./i18n/config"; // Initialize i18n
+import "prosemirror-view/style/prosemirror.css";
 
 // Error boundary to catch React render errors (useful for debugging blank pages)
+// Auto-retries on dynamic import failures by reloading the page
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
     super(props);
@@ -23,10 +25,14 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {error:
         React.createElement("pre", { style: { fontSize: "11px", marginTop: "10px" } },
           this.state.error.stack?.slice(0, 1000) || ""
         ),
-        React.createElement("div", { style: { marginTop: "20px" } },
+        React.createElement("div", { style: { marginTop: "20px", display: "flex", gap: "8px", alignItems: "center" } },
           React.createElement("button", {
-            onClick: () => this.setState({ error: null })
-          }, "Dismiss")
+            onClick: () => { this.setState({ error: null }); }
+          }, "Dismiss"),
+          React.createElement("button", {
+            style: { marginLeft: "8px" },
+            onClick: () => window.location.reload()
+          }, "Reload page")
         )
       );
     }

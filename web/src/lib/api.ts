@@ -1736,7 +1736,7 @@ export function useCollectionsSubscription() {
 
 export function useNotificationsSubscription(userId: string | undefined) {
   return useSubscription(
-    userId ? SUBSCRIPTION_SQLS.notifications(userId) : "SELECT * FROM notification WHERE 1=0",
+    userId ? SUBSCRIPTION_SQLS.notifications(userId) : null,
     (row: unknown[]) => mapNotification(row),
     userId,
   );
@@ -1744,7 +1744,7 @@ export function useNotificationsSubscription(userId: string | undefined) {
 
 export function useWatchSubscription(userId: string | undefined) {
   return useSubscription(
-    userId ? SUBSCRIPTION_SQLS.watch(userId) : "SELECT * FROM watch WHERE 1=0",
+    userId ? SUBSCRIPTION_SQLS.watch(userId) : null,
     (row: unknown[]) => mapWatch(row),
     userId,
   );
@@ -1752,14 +1752,14 @@ export function useWatchSubscription(userId: string | undefined) {
 
 export function useCollabSessionsSubscription(pageId: string | undefined) {
   return useSubscription(
-    pageId ? SUBSCRIPTION_SQLS.collabSessions(pageId) : "SELECT * FROM collab_session WHERE 1=0",
+    pageId ? SUBSCRIPTION_SQLS.collabSessions(pageId) : null,
     (row: unknown[]) => mapCollabSession(row),
   );
 }
 
 export function useCollabUpdatesSubscription(pageId: string | undefined) {
   return useSubscription(
-    pageId ? SUBSCRIPTION_SQLS.collabUpdates(pageId) : "SELECT * FROM collab_update WHERE 1=0",
+    pageId ? SUBSCRIPTION_SQLS.collabUpdates(pageId) : null,
     (row: unknown[]) => mapCollabUpdate(row),
   );
 }
