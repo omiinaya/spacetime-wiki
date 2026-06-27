@@ -21,7 +21,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-27 | **P1 — Dedicated /favorites page!** Fully featured favorites page at `/favorites` route with collection-grouped star listing, empty state with onboarding guidance, loading spinner, and quick navigation. Command palette "G F" shortcut now works. | inline in App.tsx |
+| 2026-06-27 | **P1 — Dedicated /favorites page!** Fully featured favorites page at `/favorites` route with collection-grouped star listing, empty state with onboarding guidance, loading spinner, and quick navigation. Command palette "G F" shortcut now works. | 12e650b0 |
 | 2026-06-27 | **P2 — Drag-and-drop sidebar reorder!** HTML5 native drag-and-drop for reordering pages and collections in sidebar with drop targets, cross-collection moves, and drag-to-trash | inline in App.tsx |
 | 2026-06-27 | **P1 — Breadcrumbs component!** Auto-generated breadcrumb trail from page parent hierarchy showing collection → parent pages → current page with clickable navigation | inline in PageView.tsx |
 | 2026-06-27 | **P1 — Callouts/notices in editor!** Info, warning, tip, danger callout blocks via custom Tiptap extension | Callout.ts extension |
