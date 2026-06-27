@@ -57,7 +57,7 @@ function mapLdapUser(row: unknown[]): LdapUser { return { id: String(row[0]??"")
 
 // ─── STDB SQL ────────────────────────────────────────────────────────────────
 
-async function sqlQuery(sql: string): Promise<Record<string, unknown>[]> {
+export async function sqlQuery(sql: string): Promise<Record<string, unknown>[]> {
   const res = await fetch(`http://${STDB_HOST}/v1/database/${DB_ID}/sql`, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },

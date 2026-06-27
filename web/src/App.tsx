@@ -23,6 +23,7 @@ import { ToastProvider, useToast, initGlobalToast, showToast } from "./component
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { AiAssistant } from "./components/AiAssistant";
 import { ActivityFeed } from "./components/ActivityFeed";
+import AdminDashboard from "./components/AdminDashboard";
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ function AppLayout() {
   // Admin state (declared early for search syntax handler that references allUsers)
   const [adminOpen, setAdminOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
-  const [adminTab, setAdminTab] = useState<"users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa" | "ldap" | "oauth">("users");
+  const [adminTab, setAdminTab] = useState<"dashboard" | "users" | "groups" | "webhooks" | "sso" | "settings" | "features" | "export" | "scim" | "passkeys" | "invitations" | "mfa" | "ldap" | "oauth">("dashboard");
   // Parse advanced search syntax from search input: in:Name, author:Name, from:Date, to:Date, date:Date, tag:key:value
   const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -1762,6 +1763,11 @@ function AppLayout() {
 
             {/* Tab bar */}
             <div className="flex gap-1 mb-4 border-b border-border">
+              <button onClick={() => setAdminTab("dashboard")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "dashboard" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <svg className="h-3 w-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Dashboard
+              </button>
               <button onClick={() => setAdminTab("users")}
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${adminTab === "users" ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
                 Users
@@ -1820,6 +1826,7 @@ function AppLayout() {
               </button>
             </div>
 
+            {adminTab === "dashboard" && <AdminDashboard userId={userId} />}
             {adminTab === "users" && (
               <>
                 <div className="space-y-1 mb-4">
