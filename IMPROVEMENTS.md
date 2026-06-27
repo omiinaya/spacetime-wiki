@@ -20,7 +20,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-26 | **P2 — Notification center / watch pages!** STDB `watch` + `notification` tables with toggle_watch, create_notification, mark_read, mark_all_read, clear_all reducers. NotificationBell component with bell icon, unread badge, dropdown with mark-read/delete actions. Watch/unwatch toggle in PageView actions bar. Real-time notification delivery via STDB subscriptions with toast alerts. | TBD |
+| 2026-06-26 | **P2 — Notification center / watch pages!** STDB `watch` + `notification` tables with toggle_watch, create_notification, mark_read, mark_all_read, clear_all reducers. NotificationBell component with bell icon, unread badge, dropdown with mark-read/delete actions. Watch/unwatch toggle in PageView actions bar. Real-time notification delivery via STDB subscriptions with toast alerts. | 8adbd6d |
 | 2026-06-26 | **P2 — Admin dashboard / wiki statistics!** SQL-powered stats cards (pages, users, collections, comments, attachments + storage), page status breakdown with bar chart, top contributors leaderboard, and recent activity feed from audit_event. Dashboard tab added as first admin panel tab. | e613e67 |
 | 2026-06-26 | **P2 — Activity feed / audit trail page!** Dedicated `/activity` route with sidebar link, command palette entry (G A shortcut), reusable ActivityFeed component with 200-event limit and click-to-navigate | bcaf7c2 |
 | 2026-06-26 | **P4 — Advanced search syntax!** Tag filters (tag: syntax), in:, author:, by:, from:, to:, date: full support. Backend search.py rewritten to use STDB search_pages reducer with filter params. Frontend search API client + wiring. STDB build errors fixed (MFA enable_totp, add_oauth_provider) | f96752f |
