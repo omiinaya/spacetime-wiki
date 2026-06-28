@@ -6,11 +6,11 @@ and works the top pending item each tick.
 
 ---
 
-## Status: All ROADMAP features implemented. 1 P5 item pending (Pre-commit hooks done).
+## Status: All ROADMAP features implemented. All P5 backlog items complete.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | README.md with setup guide | Currently empty — missing getting-started docs, architecture overview, contribution guide. |
+| — | All backlog items complete | ✓ README, Pre-commit hooks, Dependabot, Docker Compose, CI/CD, a11y, tests, warnings all done. |
 
 ---
 
@@ -18,6 +18,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | **P5 — README.md with setup guide!** Full project README with architecture, features, project structure, dev commands, env vars, API reference, testing guide, and contribution guide. | Inline |
 | 2026-06-28 | **P5 — Pre-commit hooks!** Husky + lint-staged runs tsc + vitest --changed on staged TS files, plus cargo check on Rust files. Fast pre-commit gate. | Inline |
 | 2026-06-28 | **P5 — Dependabot config!** Tracks npm (web + api-server), Cargo, pip, Docker (3 images), GitHub Actions. Weekly schedule, grouped updates for React/Vite/Tiptap/testing. | Inline |
 | 2026-06-28 | **P5 — Docker Compose for local dev!** `docker compose up` starts STDB + API server + frontend (nginx). Module publisher auto-builds/publishes on first run. Env-var config throughout. | Inline |
