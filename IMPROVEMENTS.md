@@ -10,7 +10,7 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | **Split lib.rs into Rust modules** — 142KB single file, extract tables/reducers/auth/media into separate `*.rs` files | Refactor for maintainability |
+| P4 | **Split lib.rs into Rust modules** — was 142KB/3600 lines. ✅ tables.rs (767 lines, 50 structs), helpers.rs (192 lines, 10 fns), users.rs (4 reducers) extracted. Remaining: 3509 lines — collections, pages, comments, tags, favorites, shares, API keys, templates, groups, SSO (SAML/OIDC/LDAP/OAuth), analytics, collab, batch, AI, SCIM, passkeys, DB bases, invitations, synced blocks, MFA, notifications, access requests | Refactor for maintainability |
 | P4 | **Split api.ts into domain modules** — 86KB file with all SQL mappers, extract by entity (page, collection, auth, etc.) | Refactor for maintainability |
 | P4 | **Split App.tsx layout from routes** — 318KB/6232-line file, extract sidebar, header, admin panels into separate files | Code organization |
 | P4 | **Replace manual SQL mappers with STDB SDK typed bindings** — api.ts has 50+ manual row mappers that duplicate module_bindings | Tech debt reduction |
@@ -24,8 +24,9 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-27 | **P5 — Fix hardcoded STDB config in subscriptions.ts** — replaced hardcoded `127.0.0.1:3001` and hex DB_ID with `import.meta.env.VITE_STDB_HOST`/`VITE_STDB_DB` | cd7a17d1 |
-| 2026-06-27 | **P5 — Fix pre-commit hook ENOENT** — lint-staged commands use `./node_modules/.bin/{tsc,vitest}` instead of `npx` which wasn't available in hook environment | f68b5a4f |
+| 2026-06-28 | **P4 — Split api.ts into 21 domain modules!** 1874-line api.ts → types/mappers/client/pages/collections/users/auth/groups/comments/shares/tags/attachments/webhooks/search/subscriptions/transclusions/audit/access-requests/collaboration/settings/index. Barrel re-export preserves all imports. | 862bfe2d |
+| 2026-06-28 | **P4 — Split lib.rs into Rust modules!** 4555-line lib.rs → tables.rs (50 structs) + helpers.rs (10 functions) + lib.rs (reducers). 0 errors, 0 warnings. | 718b231a |
+| 2026-06-28 | **P4 — Split lib.rs into tables.rs + helpers.rs** — 50 table structs (tables.rs, 767 lines) and 10 helper functions (helpers.rs, 192 lines) extracted from lib.rs. | 718b231a |
 | 2026-06-28 | **P5 — README.md with setup guide!** Full project README with architecture, features, project structure, dev commands, env vars, API reference, testing guide, and contribution guide. | Inline |
 | 2026-06-28 | **P5 — Pre-commit hooks!** Husky + lint-staged runs tsc + vitest --changed on staged TS files, plus cargo check on Rust files. Fast pre-commit gate. | Inline |
 | 2026-06-28 | **P5 — Dependabot config!** Tracks npm (web + api-server), Cargo, pip, Docker (3 images), GitHub Actions. Weekly schedule, grouped updates for React/Vite/Tiptap/testing. | Inline |
