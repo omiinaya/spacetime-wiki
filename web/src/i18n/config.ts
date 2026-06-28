@@ -4,8 +4,10 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 import en from "./locales/en.json";
 import es from "./locales/es.json";
+import fr from "./locales/fr.json";
+import de from "./locales/de.json";
 
-const SUPPORTED_LANGUAGES = ["en", "es"];
+const SUPPORTED_LANGUAGES = ["en", "es", "fr", "de"];
 
 // Load saved preference first, then fall back to browser detection
 const savedLang = (() => {
@@ -23,6 +25,8 @@ void i18n
     resources: {
       en: { translation: en },
       es: { translation: es },
+      fr: { translation: fr },
+      de: { translation: de },
     },
     lng: savedLang,
     fallbackLng: "en",
