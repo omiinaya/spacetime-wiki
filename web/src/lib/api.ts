@@ -1,8 +1,8 @@
-const STDB_HOST = "127.0.0.1:3001";
-const DB_ID = "c20000000000000000000000000000000000000000000000000000000000000000";
+const STDB_HOST = import.meta.env.VITE_STDB_HOST || "127.0.0.1:3001";
+const DB_ID = import.meta.env.VITE_STDB_DB || "c20000000000000000000000000000000000000000000000000000000000000000";
 
 /** Base URL for the REST API server (Python FastAPI backend). */
-const API_BASE = `http://${STDB_HOST.replace(/:3001$/, ":8000")}`;
+const API_BASE = import.meta.env.VITE_API_BASE || `http://${STDB_HOST.replace(/:3001$/, ":8000")}`;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
