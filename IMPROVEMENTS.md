@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | **Extract SSO providers from lib.rs into sso.rs** | ~300 lines of SAML/OIDC/LDAP/OAuth provider reducers (add_saml_provider → unlink_oauth_user) can go into an `sso.rs` module. |
 | P4 | **Extract App.tsx admin panels into AdminPanels.tsx** | App.tsx is 2941 lines. The admin panel rendering + handlers (openAdmin, updateUserRole, admin tab switching) can be extracted into a dedicated component. |
 | P5 | **Add Rust unit tests for permissions reducers** | create_group, update_group, set_collection_group_permission, set_page_permission all have business logic (role validation, duplicate checks) that should be tested. |
 | P4 | **Extract App.tsx sidebar tree into SidebarTree.tsx** | The recursive collection tree renderer + drag/drop + context menu + batch selection logic occupies ~500+ lines in App.tsx. Extract to separate component. |
@@ -22,6 +21,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | **P4 — Extract SSO providers from lib.rs into sso.rs** — 15 reducers (SAML/OIDC/LDAP/OAuth) extracted. lib.rs: 2556→2079 lines. 0 cargo errors, 0 TS errors. | e4a401f6 |
 | 2026-06-28 | **P4 — Extract LoginView + SSO handlers from App.tsx into LoginView.tsx** — Removed 327 lines of inline login form + SSO handlers (OIDC/SAML/Google/OAuth/Passkey/LDAP). App.tsx 3268→2941 lines. 0 TS errors. | 6da0679b |
 | 2026-06-28 | **P4 — Extract groups/permissions from lib.rs into permissions.rs** — 10 reducers (create_group → remove_page_permission) extracted. lib.rs: 2755→2556 lines. Added 7 Rust unit tests. 0 cargo errors. | 13d4ac83 |
 | 2026-06-28 | **P5 — Add TypeScript tests — NotificationBell component** — 35 tests covering rendering, dropdown, actions, navigation, and accessibility. | f0b63577 |
@@ -29,4 +29,3 @@ and works the top pending item each tick.
 | 2026-06-28 | **P5 — Add STDB btree indexes for query performance** — 50+ `#[index(btree)]` annotations across all 30+ tables on hot path fields (page_id, user_id, collection_id, email, slug, token, session_id). | 1e33b435 |
 | 2026-06-28 | **P5 — Audit unused frontend CSS + bundle size** — 2.8MB bundle (good for Tailwind+purge). Removed 8 unused npm deps (tippy.js, y-prosemirror, @playwright/test, @testing-library/user-event, @tiptap/extension-bubble-menu, @tiptap/extension-mention, @tiptap/extension-underline, @tiptap/suggestion, @tiptap/y-tiptap). | 5de7a82c |
 | 2026-06-28 | **P5 — Add French (fr) and German (de) i18n locale files** — 283 keys each across all 11 sections. Updated config.ts to register both. | 4a7ee8ec |
-| 2026-06-28 | **P5 — Add Rust doc comments to public types and reducers** — All 50+ table structs now have `///` doc comments describing purpose and usage. | f605e09d |
