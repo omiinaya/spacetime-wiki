@@ -1,0 +1,32 @@
+{
+  "name": "spacetime-wiki",
+  "version": "1.0.0",
+  "description": "SpacetimeDB-powered knowledge wiki — Outline-inspired with feature parity",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "web/src/**/*.{ts,tsx}": [
+      "cd web && npx tsc --noEmit",
+      "cd web && npx vitest run --changed --reporter=verbose --no-color 2>&1 | tail -5"
+    ],
+    "server/spacetimedb/src/**/*.rs": []
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omiinaya/spacetime-wiki.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/omiinaya/spacetime-wiki/issues"
+  },
+  "homepage": "https://github.com/omiinaya/spacetime-wiki#readme",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8"
+  }
+}
