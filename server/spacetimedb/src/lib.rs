@@ -1,341 +1,10 @@
 #![allow(clippy::too_many_arguments)]
 
 use spacetimedb::*;
-use sha2::{Digest, Sha256};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-fn now_ms(ctx: &ReducerContext) -> u64 {
-    ctx.timestamp.to_micros_since_unix_epoch() as u64 / 1000
-}
-
-fn make_id(prefix: &str, ctx: &ReducerContext) -> String {
-    let ts = now_ms(ctx);
-    let rand: u32 = (ts as u32).wrapping_mul(1103515245).wrapping_add(12345);
-    format!("{}_{:x}", prefix, rand)
-}
-
-fn hash_password(password: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(password.as_bytes());
-    format!("{:x}", hasher.finalize())
-}
-
-// ─── Audit Event Log ─────────────────────────────────────────────────────────
-
-#[table(accessor = audit_event, public)]
-#[derive(Debug, Clone)]
-pub struct AuditEvent {
-    #[primary_key]
-    pub id: String,
-    /// The type of event: "page.create" | "page.update" | "page.delete" | "page.restore" | "page.publish" | "page.archive" | "collection.create" | "collection.delete" | "comment.create" | "comment.delete" | "group.create" | "group.delete" | "user.create" | "user.role_change"
-    pub event_type: String,
-    /// The user who performed the action
-    pub actor_id: String,
-    /// The target entity ID (page_id, collection_id, etc.)
-    pub target_id: String,
-    /// Human-readable target name (page title, collection name, etc.) for display
-    pub target_name: String,
-    /// JSON metadata with extra context
-    pub metadata: String,
-    pub created_at: u64,
-}
-
-fn log_event(
-    ctx: &ReducerContext,
-    event_type: &str,
-    actor_id: &str,
-    target_id: &str,
-    target_name: &str,
-    metadata: &str,
-) {
-    ctx.db.audit_event().insert(AuditEvent {
-        id: make_id("ae", ctx),
-        event_type: event_type.to_string(),
-        actor_id: actor_id.to_string(),
-        target_id: target_id.to_string(),
-        target_name: target_name.to_string(),
-        metadata: metadata.to_string(),
-        created_at: now_ms(ctx),
-    });
-}
-
-// ─── Tables ──────────────────────────────────────────────────────────────────
-
-#[table(accessor = group, public)]
-#[derive(Debug, Clone)]
-pub struct Group {
-    #[primary_key]
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
-
-#[table(accessor = group_member, public)]
-#[derive(Debug, Clone)]
-pub struct GroupMember {
-    #[primary_key]
-    pub id: String,
-    pub group_id: String,
-    pub user_id: String,
-    pub role: String,
-    pub added_by: String,
-    pub created_at: u64,
-}
-
-#[table(accessor = collection_group_permission, public)]
-#[derive(Debug, Clone)]
-pub struct CollectionGroupPermission {
-    #[primary_key]
-    pub id: String,
-    pub collection_id: String,
-    pub group_id: String,
-    pub role: String,
-    pub created_at: u64,
-}
-
-#[table(accessor = user, public)]
-#[derive(Debug, Clone)]
-pub struct User {
-    #[primary_key]
-    pub id: String,
-    pub name: String,
-    pub email: String,
-    pub password_hash: String,
-    pub role: String,
-    pub avatar_url: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
-
-#[table(accessor = collection, public)]
-#[derive(Debug, Clone)]
-pub struct Collection {
-    #[primary_key]
-    pub id: String,
-    pub name: String,
-    pub slug: String,
-    pub description: String,
-    pub parent_id: String,
-    pub icon: String,
-    pub color: String,
-    pub sort_order: u32,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
-
-#[table(accessor = collection_member, public)]
-#[derive(Debug, Clone)]
-pub struct CollectionMember {
-    #[primary_key]
-    pub id: String,
-    pub collection_id: String,
-    pub user_id: String,
-    pub role: String,
-    pub added_by: String,
-    pub created_at: u64,
-}
-
-#[table(accessor = page, public)]
-#[derive(Debug, Clone)]
-pub struct Page {
-    #[primary_key]
-    pub id: String,
-    pub title: String,
-    pub slug: String,
-    pub content: String,
-    pub text_content: String,
-    pub collection_id: String,
-    pub parent_page_id: String,
-    pub status: String,
-    pub icon: String,
-    pub color: String,
-    pub full_width: bool,
-    pub is_pinned: bool,
-    pub is_template: bool,
-    pub template_id: String,
-    pub sort_order: u32,
-    pub created_by: String,
-    pub updated_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-    pub published_at: u64,
-    pub deleted_at: u64,
-    pub direction: String,
-}
-
-#[table(accessor = page_revision, public)]
-#[derive(Debug, Clone)]
-pub struct PageRevision {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    pub title: String,
-    pub content: String,
-    pub edited_by: String,
-    pub created_at: u64,
-    pub revision_number: u32,
-}
-
-#[table(accessor = comment, public)]
-#[derive(Debug, Clone)]
-pub struct Comment {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    pub parent_comment_id: String,
-    pub user_id: String,
-    pub body: String,
-    pub text_anchor: String,
-    pub is_resolved: bool,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
-
-#[table(accessor = attachment, public)]
-#[derive(Debug, Clone)]
-pub struct Attachment {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    pub filename: String,
-    pub mime_type: String,
-    pub size_bytes: u64,
-    pub storage_key: String,
-    pub uploaded_by: String,
-    pub created_at: u64,
-}
-
-#[table(accessor = page_tag, public)]
-#[derive(Debug, Clone)]
-pub struct PageTag {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    pub name: String,
-    pub value: String,
-}
-
-#[table(accessor = favorite, public)]
-#[derive(Debug, Clone)]
-pub struct Favorite {
-    #[primary_key]
-    pub id: String,
-    pub user_id: String,
-    pub page_id: String,
-    pub created_at: u64,
-}
-
-#[table(accessor = comment_reaction, public)]
-#[derive(Debug, Clone)]
-pub struct CommentReaction {
-    #[primary_key]
-    pub id: String,
-    pub comment_id: String,
-    pub user_id: String,
-    /// Emoji character, e.g. "👍", "❤️", "🎉"
-    pub emoji: String,
-    pub created_at: u64,
-}
-
-#[table(accessor = share_link, public)]
-#[derive(Debug, Clone)]
-pub struct ShareLink {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    pub token: String,
-    pub password_hash: String,
-    pub created_by: String,
-    pub expires_at: u64,
-    pub created_at: u64,
-    pub visit_count: u32,
-    pub brand_title: Option<String>,
-    pub brand_logo_url: Option<String>,
-}
-
-#[table(accessor = page_permission, public)]
-#[derive(Debug, Clone)]
-pub struct PagePermission {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    pub user_id: String,
-    pub group_id: String,
-    pub role: String,
-    pub created_at: u64,
-}
-
-#[table(accessor = api_key, public)]
-#[derive(Debug, Clone)]
-pub struct ApiKey {
-    #[primary_key]
-    pub id: String,
-    pub user_id: String,
-    pub name: String,
-    pub key_hash: String,
-    pub key_prefix: String,
-    pub last_used_at: u64,
-    pub created_at: u64,
-    pub expires_at: u64,
-    pub is_revoked: bool,
-}
-
-// ─── Webhooks ────────────────────────────────────────────────────────────────
-
-#[table(accessor = webhook, public)]
-#[derive(Debug, Clone)]
-pub struct Webhook {
-    #[primary_key]
-    pub id: String,
-    pub name: String,
-    pub url: String,
-    /// JSON array of event types, e.g. '["page.create","page.update","page.delete"]'
-    pub events: String,
-    pub is_active: bool,
-    pub secret: String,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
-
-#[table(accessor = webhook_event, public)]
-#[derive(Debug, Clone)]
-pub struct WebhookEvent {
-    #[primary_key]
-    pub id: String,
-    pub webhook_id: String,
-    pub event_type: String,
-    pub page_id: String,
-    pub payload: String,
-    pub status: String, // "pending" | "sent" | "failed"
-    pub response_code: u32,
-    pub response_body: String,
-    pub created_at: u64,
-    pub sent_at: u64,
-}
-
-// ─── Helper: sort orders ────────────────────────────────────────────────────
-
-fn next_sort_order(ctx: &ReducerContext, collection_id: &str, parent_page_id: &str) -> u32 {
-    ctx.db.page().iter()
-        .filter(|p| p.collection_id == collection_id && p.parent_page_id == parent_page_id)
-        .map(|p| p.sort_order)
-        .max()
-        .unwrap_or(0) + 1
-}
-
-fn next_col_sort_order(ctx: &ReducerContext, parent_id: &str) -> u32 {
-    ctx.db.collection().iter()
-        .filter(|c| c.parent_id == parent_id)
-        .map(|c| c.sort_order)
-        .max()
-        .unwrap_or(0) + 1
-}
+mod helpers;
+mod tables;
+use crate::tables::*;
+use crate::helpers::*;
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
@@ -521,17 +190,6 @@ pub fn reorder_collections(ctx: &ReducerContext, ordered_ids: Vec<String>) -> Re
 // sort_direction: "asc" | "desc"
 // auto_apply: if true, pages are automatically re-sorted when created/updated
 
-#[table(accessor = collection_sort_rule, public)]
-#[derive(Debug, Clone)]
-pub struct CollectionSortRule {
-    #[primary_key]
-    pub collection_id: String,
-    pub sort_field: String,     // "title" | "created_at" | "updated_at" | "manual"
-    pub sort_direction: String, // "asc" | "desc"
-    pub auto_apply: bool,
-    pub updated_by: String,
-    pub updated_at: u64,
-}
 
 #[reducer]
 pub fn set_collection_sort_rule(
@@ -1695,22 +1353,6 @@ pub fn cleanup_webhook_events(ctx: &ReducerContext, older_than_ms: u64) -> Resul
 
 // ─── Full-Text Search ──────────────────────────────────────────────────────────
 
-#[table(accessor = search_result, public)]
-#[derive(Debug, Clone)]
-pub struct SearchResult {
-    #[primary_key]
-    pub id: String,
-    /// Unique token per search query, used to group results
-    pub search_token: String,
-    pub page_id: String,
-    pub title: String,
-    pub slug: String,
-    /// First ~200 chars of text_content for excerpt
-    pub excerpt: String,
-    /// "title" or "content" — what matched (title matches ranked first)
-    pub match_type: String,
-    pub created_at: u64,
-}
 
 #[reducer]
 pub fn search_pages(
@@ -1831,30 +1473,6 @@ pub fn cleanup_search_results(ctx: &ReducerContext, older_than_ms: u64) -> Resul
 
 // ─── SAML 2.0 SSO ─────────────────────────────────────────────────────────────
 
-#[table(accessor = saml_provider, public)]
-#[derive(Debug, Clone)]
-pub struct SamlProvider {
-    #[primary_key]
-    pub id: String,
-    pub name: String,
-    pub slug: String,
-    /// IdP entity ID (issuer)
-    pub entity_id: String,
-    /// IdP SSO URL (where to send AuthnRequest)
-    pub sso_url: String,
-    /// IdP X.509 certificate (for signature verification, optional)
-    pub certificate: String,
-    /// Name ID format, e.g. "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-    pub name_id_format: String,
-    /// JSON mapping of SAML attributes → user fields, e.g. {"email":"email","firstName":"name"}
-    pub attribute_mapping: String,
-    /// Whether to auto-register users who don't exist
-    pub auto_register: bool,
-    pub is_active: bool,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
 #[reducer]
 pub fn add_saml_provider(
@@ -1944,22 +1562,6 @@ pub fn delete_saml_provider(ctx: &ReducerContext, id: String) -> Result<(), Stri
 
 // ─── OIDC SSO ─────────────────────────────────────────────────────────────────
 
-#[table(accessor = oidc_provider, public)]
-#[derive(Debug, Clone)]
-pub struct OidcProvider {
-    #[primary_key]
-    pub id: String,
-    pub name: String,
-    pub slug: String,
-    pub issuer_url: String,
-    pub client_id: String,
-    pub client_secret: String,
-    pub scopes: String,
-    pub is_active: bool,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
 #[reducer]
 pub fn add_oidc_provider(
@@ -2041,55 +1643,8 @@ pub fn delete_oidc_provider(ctx: &ReducerContext, id: String) -> Result<(), Stri
 
 // ─── LDAP Authentication ───────────────────────────────────────────────────────
 
-#[table(accessor = ldap_provider, public)]
-#[derive(Debug, Clone)]
-pub struct LdapProvider {
-    #[primary_key]
-    pub id: String,
-    pub name: String,
-    pub slug: String,
-    pub host: String,
-    pub port: u16,
-    /// Whether to use LDAPS (SSL/TLS)
-    pub is_secure: bool,
-    /// Distinguished Name of the bind user (empty for anonymous bind)
-    pub bind_dn: String,
-    pub bind_password: String,
-    /// Base DN for user searches, e.g. "dc=example,dc=com"
-    pub base_dn: String,
-    /// LDAP filter to find users, e.g. "(uid={{username}})" — {{username}} is replaced with the login input
-    pub user_filter: String,
-    /// LDAP attribute that holds the username/login (e.g. "uid", "cn", "sAMAccountName")
-    pub username_attribute: String,
-    /// LDAP attribute that holds the email address (e.g. "mail")
-    pub email_attribute: String,
-    /// LDAP attribute that holds the display name (e.g. "displayName", "cn")
-    pub name_attribute: String,
-    /// Default role assigned to new LDAP users
-    pub default_role: String,
-    /// If true, automatically create wiki accounts for authenticated LDAP users
-    pub auto_register: bool,
-    pub is_active: bool,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
 /// Tracks which wiki users are linked to LDAP directory entries
-#[table(accessor = ldap_user, public)]
-#[derive(Debug, Clone)]
-pub struct LdapUser {
-    #[primary_key]
-    pub id: String,
-    pub user_id: String,
-    pub ldap_provider_id: String,
-    /// Full DN of the user in LDAP
-    pub dn: String,
-    /// Unique external ID (e.g. objectGUID or entryUUID)
-    pub external_id: String,
-    pub last_synced_at: u64,
-    pub created_at: u64,
-}
 
 #[reducer]
 pub fn add_ldap_provider(
@@ -2221,17 +1776,6 @@ pub fn link_ldap_user(
 
 // ─── Page Analytics ───────────────────────────────────────────────────────────
 
-#[table(accessor = page_view, public)]
-#[derive(Debug, Clone)]
-pub struct PageView {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    pub user_id: String,
-    /// Client IP or "anonymous"
-    pub viewer: String,
-    pub viewed_at: u64,
-}
 
 #[reducer]
 pub fn record_page_view(
@@ -2260,14 +1804,6 @@ pub fn record_page_view(
 
 // ─── App Settings (key-value store) ──────────────────────────────────────────
 
-#[table(accessor = app_setting, public)]
-#[derive(Debug, Clone)]
-pub struct AppSetting {
-    #[primary_key]
-    pub key: String,
-    pub value: String,
-    pub updated_at: u64,
-}
 
 #[reducer]
 pub fn set_app_setting(ctx: &ReducerContext, key: String, value: String) -> Result<(), String> {
@@ -2326,32 +1862,7 @@ pub fn purge_expired_trash(ctx: &ReducerContext) -> Result<(), String> {
 // Awareness (cursor presence) uses the `collab_session` table: users join/leave
 // as they open/close pages, and update their cursor position on every move.
 
-#[table(accessor = collab_update, public)]
-#[derive(Debug, Clone)]
-pub struct CollabUpdate {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    /// Base64-encoded Yjs binary update (the diff/state)
-    pub update_data: String,
-    pub user_id: String,
-    pub created_at: u64,
-}
 
-#[table(accessor = collab_session, public)]
-#[derive(Debug, Clone)]
-pub struct CollabSession {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    pub user_id: String,
-    pub user_name: String,
-    pub color: String,
-    /// JSON: { "from": number, "to": number } or null
-    pub cursor_position: String,
-    pub last_seen_at: u64,
-    pub joined_at: u64,
-}
 
 #[reducer]
 pub fn broadcast_yjs_update(
@@ -2542,38 +2053,8 @@ pub fn batch_add_tag(
 
 // ─── AI Assistant ─────────────────────────────────────���───────────────────────
 
-#[table(accessor = ai_config, public)]
-#[derive(Debug, Clone)]
-pub struct AiConfig {
-    #[primary_key]
-    pub key: String,
-    pub value: String,
-    pub updated_at: u64,
-}
 
-#[table(accessor = ai_chat_session, public)]
-#[derive(Debug, Clone)]
-pub struct AiChatSession {
-    #[primary_key]
-    pub id: String,
-    pub user_id: String,
-    pub title: String,
-    /// Optional page ID that provides context for the chat (RAG)
-    pub page_context_id: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
-#[table(accessor = ai_chat_message, public)]
-#[derive(Debug, Clone)]
-pub struct AiChatMessage {
-    #[primary_key]
-    pub id: String,
-    pub session_id: String,
-    pub role: String,  // "user" | "assistant" | "system"
-    pub content: String,
-    pub created_at: u64,
-}
 
 #[reducer]
 pub fn set_ai_config(ctx: &ReducerContext, key: String, value: String) -> Result<(), String> {
@@ -2663,50 +2144,7 @@ pub fn delete_ai_chat_message(ctx: &ReducerContext, id: String) -> Result<(), St
 // Allows external IdPs (Okta, Azure AD, OneLogin) to auto-provision users
 // and groups into the wiki via a standard REST API.
 
-#[table(accessor = scim_provider, public)]
-#[derive(Debug, Clone)]
-pub struct ScimProvider {
-    #[primary_key]
-    pub id: String,
-    pub name: String,
-    pub slug: String,
-    /// Bearer token the SCIM client (IdP) must present when calling our SCIM API
-    pub api_token_hash: String,
-    /// Whether this provider is active — SCIM API calls from inactive providers are rejected
-    pub is_active: bool,
-    /// Which user role to assign auto-provisioned users (admin, member, viewer)
-    pub default_role: String,
-    /// Whether to auto-register users who don't exist yet
-    pub auto_register: bool,
-    /// Whether to deactivate (set role=viewer) or delete users when deprovisioned
-    pub deprovision_behavior: String, // "deactivate" | "delete"
-    /// When true, groups pushed from SCIM are also created in the wiki groups system
-    pub sync_groups: bool,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
-#[table(accessor = scim_event, public)]
-#[derive(Debug, Clone)]
-pub struct ScimEvent {
-    #[primary_key]
-    pub id: String,
-    pub provider_id: String,
-    /// SCIM resource type: "User" | "Group"
-    pub resource_type: String,
-    /// SCIM operation: "POST" | "PUT" | "PATCH" | "DELETE"
-    pub operation: String,
-    /// SCIM external ID (the IdP's user/group ID)
-    pub external_id: String,
-    /// Wiki user ID or group ID affected
-    pub local_id: String,
-    /// Outcome: "success" | "skipped" | "error"
-    pub status: String,
-    /// Human-readable detail about what happened
-    pub detail: String,
-    pub created_at: u64,
-}
 
 #[reducer]
 pub fn add_scim_provider(
@@ -2952,38 +2390,7 @@ pub fn scim_deprovision_group(
 // Credentials are stored as COSE public keys verified by the API server.
 // Challenges are stored in STDB for the registration/authentication flow.
 
-#[table(accessor = passkey_credential, public)]
-#[derive(Debug, Clone)]
-pub struct PasskeyCredential {
-    #[primary_key]
-    pub id: String,
-    pub user_id: String,
-    /// Base64url-encoded credential ID (from browser)
-    pub credential_id: String,
-    /// Base64-encoded COSE public key bytes
-    pub public_key: String,
-    /// Signature counter — monotonically increasing
-    pub counter: u64,
-    /// JSON array of transport types, e.g. ["internal","usb","nfc","ble"]
-    pub transports: String,
-    /// User-agent / device description shown in the UI
-    pub device_name: String,
-    pub created_at: u64,
-    pub last_used_at: u64,
-}
 
-#[table(accessor = passkey_challenge, public)]
-#[derive(Debug, Clone)]
-pub struct PasskeyChallenge {
-    #[primary_key]
-    pub challenge: String,
-    /// Empty for authentication, user email for registration
-    pub user_handle: String,
-    /// "registration" | "authentication"
-    pub purpose: String,
-    pub created_at: u64,
-    pub expires_at: u64,
-}
 
 #[reducer]
 pub fn store_passkey_credential(
@@ -3114,56 +2521,9 @@ pub fn delete_passkey_credential(
     Ok(())
 }
 
-#[table(accessor = db_base, public)]
-#[derive(Debug, Clone)]
-pub struct DbBase {
-    #[primary_key]
-    pub id: String,
-    pub page_id: String,
-    pub title: String,
-    pub view_type: String, // "table" | "kanban"
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
-#[table(accessor = db_column, public)]
-#[derive(Debug, Clone)]
-pub struct DbColumn {
-    #[primary_key]
-    pub id: String,
-    pub base_id: String,
-    pub name: String,
-    pub field_type: String, // "text","number","select","multi_select","date","checkbox","user","url"
-    pub options: String,    // JSON: { "choices": ["a","b","c"] } for select types
-    pub sort_order: u32,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
-#[table(accessor = db_row, public)]
-#[derive(Debug, Clone)]
-pub struct DbRow {
-    #[primary_key]
-    pub id: String,
-    pub base_id: String,
-    pub sort_order: u32,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
-#[table(accessor = db_cell, public)]
-#[derive(Debug, Clone)]
-pub struct DbCell {
-    #[primary_key]
-    pub id: String,
-    pub row_id: String,
-    pub column_id: String,
-    pub value: String, // JSON value: string, number, or array for multi_select
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
 #[reducer]
 pub fn create_db_base(
@@ -3352,33 +2712,6 @@ pub fn reorder_db_rows(
 // Admins can invite external users by email, granting limited access to specific
 // pages and/or collections. Invitations are accepted via a unique token link.
 
-#[table(accessor = invitation, public)]
-#[derive(Debug, Clone)]
-pub struct Invitation {
-    #[primary_key]
-    pub id: String,
-    pub email: String,
-    /// The wiki user who created the invitation (must be admin)
-    pub invited_by: String,
-    /// Role to assign on acceptance: "viewer" (default) | "member"
-    pub role: String,
-    /// JSON array of page IDs the guest gets access to, e.g. '["page_1","page_2"]'
-    pub page_ids: String,
-    /// JSON array of collection IDs the guest gets access to, e.g. '["col_1"]'
-    pub collection_ids: String,
-    /// Unique token for the invitation link (URL-safe random string)
-    pub token: String,
-    /// "pending" | "accepted" | "expired" | "revoked"
-    pub status: String,
-    /// Optional personal message shown to the invitee
-    pub message: String,
-    /// Max acceptance deadline (ms epoch), 0 = never expires
-    pub expires_at: u64,
-    /// How many times the invite link was opened
-    pub view_count: u32,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
 #[reducer]
 pub fn create_invitation(
@@ -3551,32 +2884,7 @@ pub fn record_invitation_view(ctx: &ReducerContext, token: String) -> Result<(),
 
 // ─── Synced Blocks (P4) — edit once, update everywhere ──────────────────────────
 
-#[table(accessor = synced_block, public)]
-#[derive(Debug, Clone)]
-pub struct SyncedBlock {
-    #[primary_key]
-    pub id: String,
-    pub title: String,
-    /// Prosemirror JSON content of the block
-    pub content: String,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-    pub updated_by: String,
-}
 
-#[table(accessor = synced_block_ref, public)]
-#[derive(Debug, Clone)]
-pub struct SyncedBlockRef {
-    #[primary_key]
-    pub id: String,
-    /// The synced block this reference points to
-    pub block_id: String,
-    /// The page that contains this reference
-    pub page_id: String,
-    pub created_by: String,
-    pub created_at: u64,
-}
 
 #[reducer]
 pub fn create_synced_block(
@@ -3663,32 +2971,7 @@ pub fn remove_synced_block_ref(ctx: &ReducerContext, id: String) -> Result<(), S
 
 // ─── MFA / TOTP Authentication ───────────────────────────────────────────────
 
-#[table(accessor = mfa_method, public)]
-#[derive(Debug, Clone)]
-pub struct MfaMethod {
-    #[primary_key]
-    pub id: String,
-    pub user_id: String,
-    /// "totp" for now; extensible for future methods like "sms", "email"
-    pub method_type: String,
-    /// base32-encoded TOTP secret
-    pub totp_secret: String,
-    pub is_enabled: bool,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
-#[table(accessor = mfa_backup_code, public)]
-#[derive(Debug, Clone)]
-pub struct MfaBackupCode {
-    #[primary_key]
-    pub id: String,
-    pub user_id: String,
-    /// sha256 hash of the backup code
-    pub code_hash: String,
-    pub is_used: bool,
-    pub created_at: u64,
-}
 
 #[reducer]
 pub fn enable_totp(
@@ -3797,53 +3080,6 @@ pub fn verify_totp(
 
 /// Verify a TOTP code using HMAC-SHA1 (RFC 6238).
 /// Checks the current 30-second window and adjacent windows (±1) for clock drift.
-fn verify_totp_code(secret: &[u8], code: u32, now_ms: u64) -> bool {
-    use hmac::{Hmac, Mac};
-    use sha1::Sha1;
-
-    type HmacSha1 = Hmac<Sha1>;
-
-    let time_step: u64 = 30; // 30-second windows
-    let counter = now_ms / 1000 / time_step;
-    let modulus: u32 = 1_000_000; // 6-digit code
-
-    // Check current, previous, and next time windows for tolerance
-    for delta in &[0u64, 1, u64::MAX] {
-        let c = if *delta == u64::MAX {
-            counter.wrapping_sub(1)
-        } else {
-            counter + delta
-        };
-
-        // Convert counter to 8-byte big-endian
-        let mut counter_bytes = [0u8; 8];
-        counter_bytes[..8].copy_from_slice(&c.to_be_bytes());
-
-        // Compute HMAC-SHA1
-        let mut mac = match HmacSha1::new_from_slice(secret) {
-            Ok(m) => m,
-            Err(_) => return false,
-        };
-        mac.update(&counter_bytes);
-        let result = mac.finalize();
-        let hmac_result = result.into_bytes();
-
-        // Dynamic truncation per RFC 4226
-        let offset = (hmac_result[19] & 0x0f) as usize;
-        let binary_code = u32::from_be_bytes([
-            hmac_result[offset] & 0x7f,
-            hmac_result[offset + 1],
-            hmac_result[offset + 2],
-            hmac_result[offset + 3],
-        ]);
-        let otp = binary_code % modulus;
-
-        if otp == code {
-            return true;
-        }
-    }
-    false
-}
 
 /// Simple RFC 4648 base32 decoding (no padding required)
 #[reducer]
@@ -3867,69 +3103,12 @@ pub fn verify_mfa_backup_code(
 }
 
 /// Simple RFC 4648 base32 decoding (no padding required)
-fn base32_decode(input: &str) -> Option<Vec<u8>> {
-    let chars: Vec<char> = input.to_uppercase().chars().filter(|c| *c != ' ').collect();
-    if chars.is_empty() {
-        return None;
-    }
-    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-    let mut bits = 0u64;
-    let mut bit_count = 0u32;
-    let mut output = Vec::new();
-
-    for &ch in &chars {
-        let val = alphabet.find(ch)? as u64;
-        bits = (bits << 5) | val;
-        bit_count += 5;
-        if bit_count >= 8 {
-            bit_count -= 8;
-            output.push((bits >> bit_count) as u8);
-            bits &= (1 << bit_count) - 1;
-        }
-    }
-    Some(output)
-}
 
 // ─── Watch / Notification System (P2) ─────────────────────────────────────────
 // Allows users to watch pages and collections, receiving in-app notifications
 // when those watched items are updated by other users.
 
-#[table(accessor = watch, public)]
-#[derive(Debug, Clone)]
-pub struct Watch {
-    #[primary_key]
-    pub id: String,
-    pub user_id: String,
-    /// "page" or "collection"
-    pub target_type: String,
-    pub target_id: String,
-    pub created_at: u64,
-}
 
-#[table(accessor = notification, public)]
-#[derive(Debug, Clone)]
-pub struct Notification {
-    #[primary_key]
-    pub id: String,
-    /// The user who receives this notification
-    pub user_id: String,
-    /// "page.create" | "page.update" | "page.delete" | "page.publish" | "page.archive" |
-    /// "comment.create" | "collection.create" | "collection.update" | "collection.delete"
-    pub event_type: String,
-    /// The target ID (page_id, collection_id, etc.)
-    pub target_id: String,
-    /// Human-readable title for display in the notification dropdown
-    pub title: String,
-    /// Human-readable message body
-    pub message: String,
-    /// The user who triggered the event
-    pub actor_id: String,
-    /// Icon/emoji for the notification (e.g. page icon, or a generic icon)
-    pub icon: String,
-    /// Whether the notification has been read
-    pub is_read: bool,
-    pub created_at: u64,
-}
 
 #[reducer]
 pub fn toggle_watch(
@@ -4040,68 +3219,6 @@ pub fn clear_all_notifications(ctx: &ReducerContext, user_id: String) -> Result<
     Ok(())
 }
 
-// ─── Auto-notify watchers helpers ─────────────────────────────────────────────
-// Called from page/comment reducers to automatically create notifications
-// for users who watch a given page (or whose watched collection the page lives in).
-
-/// Notify all watchers of a page about an event (page.update, comment.create, etc.).
-/// Skips the actor who triggered the event.
-fn notify_page_watchers(
-    ctx: &ReducerContext,
-    page_id: &str,
-    event_type: &str,
-    actor_id: &str,
-    title: &str,
-    message: &str,
-    icon: &str,
-) {
-    for watcher in ctx.db.watch().iter().filter(|w| {
-        w.target_type == "page" && w.target_id == page_id && w.user_id != actor_id
-    }) {
-        ctx.db.notification().insert(Notification {
-            id: make_id("notif", ctx),
-            user_id: watcher.user_id.clone(),
-            event_type: event_type.to_string(),
-            target_id: page_id.to_string(),
-            title: title.to_string(),
-            message: message.to_string(),
-            actor_id: actor_id.to_string(),
-            icon: icon.to_string(),
-            is_read: false,
-            created_at: now_ms(ctx),
-        });
-    }
-}
-
-/// Notify collection watchers when a new page is created in that collection.
-/// Skips the creator.
-fn notify_collection_watchers_new_page(
-    ctx: &ReducerContext,
-    collection_id: &str,
-    page_id: &str,
-    actor_id: &str,
-    title: &str,
-    message: &str,
-    icon: &str,
-) {
-    for watcher in ctx.db.watch().iter().filter(|w| {
-        w.target_type == "collection" && w.target_id == collection_id && w.user_id != actor_id
-    }) {
-        ctx.db.notification().insert(Notification {
-            id: make_id("notif", ctx),
-            user_id: watcher.user_id.clone(),
-            event_type: "page.create".to_string(),
-            target_id: page_id.to_string(),
-            title: title.to_string(),
-            message: message.to_string(),
-            actor_id: actor_id.to_string(),
-            icon: icon.to_string(),
-            is_read: false,
-            created_at: now_ms(ctx),
-        });
-    }
-}
-
 // ─── Access Request System (P4) ──────────────────────────────────────────────
 //
 // Outline v1.8.0 feature: allow users to request access to pages they don't have
@@ -4109,25 +3226,6 @@ fn notify_collection_watchers_new_page(
 // the request. Approved requests automatically grant page-level viewer permission.
 // Denied requests record the decision for audit.
 
-#[table(accessor = access_request, public)]
-#[derive(Debug, Clone)]
-pub struct AccessRequest {
-    #[primary_key]
-    pub id: String,
-    /// The page the user wants access to
-    pub page_id: String,
-    /// The user requesting access
-    pub requester_id: String,
-    /// Optional user-supplied reason for the request
-    pub reason: String,
-    /// "pending" | "approved" | "denied"
-    pub status: String,
-    /// Who responded (admin or page owner) — empty if still pending
-    pub responded_by: String,
-    /// When the request was resolved (ms epoch), 0 if still pending
-    pub responded_at: u64,
-    pub created_at: u64,
-}
 
 #[reducer]
 pub fn create_access_request(
@@ -4327,61 +3425,8 @@ pub fn deny_access_request(
 
 // ─── OAuth 2.0 Provider (Slack/Discord/GitHub/GitLab) ──────────────────────
 
-#[table(accessor = oauth_provider, public)]
-#[derive(Debug, Clone)]
-pub struct OauthProvider {
-    #[primary_key]
-    pub id: String,
-    pub name: String,
-    pub slug: String,
-    /// Provider type: "slack" | "discord" | "github" | "gitlab" | "generic"
-    pub provider_type: String,
-    /// OAuth authorize endpoint URL
-    pub authorize_url: String,
-    /// OAuth token endpoint URL
-    pub token_url: String,
-    /// OAuth userinfo endpoint URL (called with the access token)
-    pub userinfo_url: String,
-    /// Space-separated scopes, e.g. "openid email profile" or "read:user user:email"
-    pub scope: String,
-    /// OAuth client ID (public)
-    pub client_id: String,
-    /// OAuth client secret (stored encrypted)
-    pub client_secret: String,
-    /// Icon identifier for the login button, e.g. "slack", "discord", "github"
-    pub icon: String,
-    pub is_active: bool,
-    /// If true, auto-register users who authenticate successfully
-    pub auto_register: bool,
-    /// Default role for auto-registered users
-    pub default_role: String,
-    pub created_by: String,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
 /// Tracks which wiki users are linked to OAuth provider accounts
-#[table(accessor = oauth_user, public)]
-#[derive(Debug, Clone)]
-pub struct OauthUser {
-    #[primary_key]
-    pub id: String,
-    pub user_id: String,
-    pub provider_id: String,
-    /// The external user ID from the OAuth provider (e.g. GitHub user ID, Slack user ID)
-    pub external_id: String,
-    /// The external username/login from the provider (e.g. GitHub handle)
-    pub external_username: String,
-    /// Email from the provider (used for matching existing users)
-    pub external_email: String,
-    /// Stored encrypted access token for API calls (e.g. Slack bot token)
-    pub access_token: String,
-    pub refresh_token: String,
-    pub token_expires_at: u64,
-    pub last_synced_at: u64,
-    pub created_at: u64,
-    pub updated_at: u64,
-}
 
 #[reducer]
 pub fn add_oauth_provider(
