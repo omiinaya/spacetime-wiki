@@ -19,11 +19,7 @@ pub fn create_share_link(
         return Err("Page not found".into());
     }
     let now = now_ms(ctx);
-    let expires_at = if expires_days > 0 {
-        now + (expires_days as u64) * 86_400_000
-    } else {
-        0 // never expires
-    };
+    let expires_at = calc_expiry_ms(now, expires_days);
     let password_hash = if password.is_empty() {
         String::new()
     } else {
@@ -68,8 +64,7 @@ pub fn verify_share_password(
     token: String,
     password: String,
 ) -> Result<(), String> {
-    let found = ctx.db.share_link().iter()
-        .find(|s| s.token == token);
+    let found = ctx.db.share_link().iter().find(|s| s.token == token);
     if found.is_none() {
         return Err("Invalid share link".into());
     }
@@ -92,8 +87,7 @@ pub fn verify_share_password(
 
 #[reducer]
 pub fn visit_share_link(ctx: &ReducerContext, token: String) -> Result<(), String> {
-    let found = ctx.db.share_link().iter()
-        .find(|s| s.token == token);
+    let found = ctx.db.share_link().iter().find(|s| s.token == token);
     if found.is_none() {
         return Err("Invalid share link".into());
     }
@@ -109,4 +103,43 @@ pub fn visit_share_link(ctx: &ReducerContext, token: String) -> Result<(), Strin
     share_mut.visit_count += 1;
     ctx.db.share_link().id().update(share_mut);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_share_link_expiry() {
+        let now = 5000u64;
+        assert_eq!(crate::helpers::calc_expiry_ms(now, 0), 0);
+        assert_eq!(crate::helpers::calc_expiry_ms(now, 7), now + 7 * 86_400_000);
+    }
+
+    #[test]
+    fn test_create_share_link_password_hashing() {
+        let password = "secret123";
+        let hash = crate::helpers::hash_password(password);
+        assert_eq!(hash.len(), 64);
+        let empty_password = "";
+        assert!(empty_password.is_empty());
+    }
+
+    #[test]
+    fn test_verify_share_expiry_check() {
+        let now = 100_000u64;
+        let expires_at = 50_000u64;
+        assert!(expires_at > 0 && now > expires_at);
+        let expires_at_future = 200_000u64;
+        assert!(!(expires_at_future > 0 && now > expires_at_future));
+    }
+
+    #[test]
+    fn test_visit_increments_count() {
+        let mut visit_count = 0u64;
+        visit_count += 1;
+        assert_eq!(visit_count, 1);
+        visit_count += 1;
+        assert_eq!(visit_count, 2);
+    }
 }

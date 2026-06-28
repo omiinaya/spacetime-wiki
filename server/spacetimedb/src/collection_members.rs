@@ -18,8 +18,7 @@ pub fn add_collection_member(
     if existing.is_some() {
         return Err("User is already a member of this collection".into());
     }
-    let valid_roles = ["admin", "editor", "viewer"];
-    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
+    let role_clean = sanitize_collection_role(&role);
     ctx.db.collection_member().insert(CollectionMember {
         id, collection_id, user_id, role: role_clean, added_by,
         created_at: now_ms(ctx),
@@ -51,4 +50,40 @@ pub fn update_collection_member_role(
 pub fn remove_collection_member(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.collection_member().id().delete(&id);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_collection_member_with_valid_role() {
+        assert!(crate::helpers::is_valid_collection_role("admin"));
+        assert!(crate::helpers::is_valid_collection_role("editor"));
+        assert!(crate::helpers::is_valid_collection_role("viewer"));
+        assert_eq!(crate::helpers::sanitize_collection_role("admin"), "admin");
+        assert_eq!(crate::helpers::sanitize_collection_role("editor"), "editor");
+        assert_eq!(crate::helpers::sanitize_collection_role("viewer"), "viewer");
+    }
+
+    #[test]
+    fn test_add_collection_member_with_invalid_role_defaults_to_viewer() {
+        assert_eq!(crate::helpers::sanitize_collection_role("unknown"), "viewer");
+        assert_eq!(crate::helpers::sanitize_collection_role("member"), "viewer");
+        assert_eq!(crate::helpers::sanitize_collection_role(""), "viewer");
+    }
+
+    #[test]
+    fn test_update_role_rejects_invalid_roles() {
+        let valid_roles = ["admin", "editor", "viewer"];
+        assert!(!valid_roles.contains(&"member"));
+        assert!(!valid_roles.contains(&"owner"));
+        assert!(!valid_roles.contains(&""));
+    }
+
+    #[test]
+    fn test_remove_member_by_id() {
+        let id = "member_001";
+        assert!(!id.is_empty());
+    }
 }

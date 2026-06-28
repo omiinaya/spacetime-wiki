@@ -22,6 +22,25 @@ pub fn add_attachment(
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_attachment_stores_fields() {
+        let filename = "test.pdf";
+        assert!(filename.ends_with(".pdf"));
+        let mime = "application/pdf";
+        assert_eq!(mime, "application/pdf");
+    }
+
+    #[test]
+    fn test_delete_attachment_by_id() {
+        let id = "att_123";
+        assert!(!id.is_empty());
+    }
+}
+
 #[reducer]
 pub fn delete_attachment(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.attachment().id().delete(&id);

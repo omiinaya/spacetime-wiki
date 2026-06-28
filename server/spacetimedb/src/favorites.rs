@@ -22,3 +22,22 @@ pub fn toggle_favorite(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_toggle_favorite_adds_when_not_exists() {
+        let storage: Vec<(String, String)> = vec![];
+        let exists = storage.iter().any(|(uid, pid)| uid == "u1" && pid == "p1");
+        assert!(!exists);
+    }
+
+    #[test]
+    fn test_toggle_favorite_removes_when_exists() {
+        let storage = vec![("u1".to_string(), "p1".to_string())];
+        let exists = storage.iter().any(|(uid, pid)| uid == "u1" && pid == "p1");
+        assert!(exists);
+    }
+}

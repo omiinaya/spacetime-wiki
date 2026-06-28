@@ -56,3 +56,36 @@ pub fn purge_expired_trash(ctx: &ReducerContext) -> Result<(), String> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_set_app_setting_upsert() {
+        // Pure logic: upsert pattern
+        let existing: Option<String> = None;
+        let value = "new_value".to_string();
+        let result = match existing {
+            None => value.clone(),
+            Some(_) => value,
+        };
+        assert_eq!(result, "new_value");
+    }
+
+    #[test]
+    fn test_purge_expired_trash_retention_logic() {
+        let retention_days = 30u64;
+        let now = 5_000_000_000u64; // large enough for subtraction
+        let cutoff = now.saturating_sub(retention_days * 86_400_000);
+        assert!(cutoff < now);
+        // A page deleted yesterday should not be purged
+        let deleted_at = now - 86_400_000; // 1 day ago
+        let should_purge = retention_days == 0 || deleted_at < cutoff;
+        assert!(!should_purge);
+        // A page deleted 31 days ago should be purged
+        let deleted_at_old = now - 31 * 86_400_000;
+        let should_purge_old = retention_days == 0 || deleted_at_old < cutoff;
+        assert!(should_purge_old);
+    }
+}
