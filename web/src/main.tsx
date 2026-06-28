@@ -8,7 +8,7 @@ import { DbConnection } from "./module_bindings";
 
 // SpacetimeDB connection configuration
 const STDB_HOST = import.meta.env.VITE_STDB_HOST || "192.168.1.10:3001";
-const STDB_DB = import.meta.env.VITE_STDB_DB || "spacetime_wiki";
+const STDB_DB = import.meta.env.VITE_STDB_DB || "c2000df40a4560c4985121fce5ab36ba57e4d170e4fa08a5f00c85880b5102f0";
 const STDB_TOKEN = import.meta.env.VITE_STDB_TOKEN || undefined;
 
 const connectionBuilder = DbConnection.builder()
