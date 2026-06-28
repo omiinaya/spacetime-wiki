@@ -71,6 +71,7 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
         className="w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl max-h-[80vh] flex flex-col"
+        role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -79,7 +80,7 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
             <Keyboard className="h-4 w-4 text-muted-foreground" />
             Keyboard Shortcuts
           </h3>
-          <button onClick={onClose} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
+          <button onClick={onClose} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted" aria-label="Close keyboard shortcuts">
             <X className="h-4 w-4" />
           </button>
         </div>
