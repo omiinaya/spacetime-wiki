@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: ISC
 
 import type { Comment, CommentReaction } from "./types";
-import { sqlQuery, callReducer, genId } from "./client";
+import { tableQuery, sqlQuery, callReducer, genId } from "./client";
 import { mapComment, mapCommentReaction } from "./mappers";
 
 export async function getComments(pageId: string): Promise<Comment[]> {
-  return sqlQuery(`SELECT * FROM comment WHERE page_id = '${pageId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapComment));
+  return tableQuery(`SELECT * FROM comment WHERE page_id = '${pageId}'`, mapComment);
 }
 
 export async function addComment(
@@ -33,8 +32,7 @@ export async function addCommentReaction(commentId: string, userId: string, emoj
 }
 
 export async function listCommentReactions(commentId: string): Promise<CommentReaction[]> {
-  return sqlQuery(`SELECT * FROM comment_reaction WHERE comment_id = '${commentId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapCommentReaction));
+  return tableQuery(`SELECT * FROM comment_reaction WHERE comment_id = '${commentId}'`, mapCommentReaction);
 }
 
 export async function hasCommentReaction(commentId: string, userId: string, emoji: string): Promise<boolean> {

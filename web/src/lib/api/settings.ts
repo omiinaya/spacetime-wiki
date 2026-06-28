@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: ISC
 
 import type { AiConfig, AiChatSession, AiChatMessage, Invitation, Watch, Notification, AppSetting, DbBase, DbColumn, DbRow, DbCell, SyncedBlock, SyncedBlockRef, ScimProvider, ScimEvent, PagePermission, CollectionGroupPermission } from "./types";
-import { sqlQuery, callReducer, genId } from "./client";
+import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId } from "./client";
 import { mapAiConfig, mapAiChatSession, mapAiChatMessage, mapAppSetting, mapDbBase, mapDbColumn, mapDbRow, mapDbCell, mapSyncedBlock, mapSyncedBlockRef, mapInvitation, mapWatch, mapNotification, mapScimProvider, mapScimEvent, mapPagePermission, mapCollectionGroupPermission } from "./mappers";
 
 // ─── App Settings ─────────────────────────────────────────────────────────────
 
 export async function getAppSetting(key: string): Promise<string> {
   const rows = await sqlQuery(`SELECT * FROM app_setting WHERE key = '${key}'`);
-  return rows.length > 0 ? String((rows as any as unknown[][])[0]?.[1] ?? "") : "";
+  return rows.length > 0 ? String(rows[0]?.[1] ?? "") : "";
 }
 
 export async function setAppSetting(key: string, value: string): Promise<void> {
@@ -19,12 +19,11 @@ export async function setAppSetting(key: string, value: string): Promise<void> {
 
 export async function getAiConfig(key: string): Promise<string> {
   const rows = await sqlQuery(`SELECT * FROM ai_config WHERE key = '${key}'`);
-  return rows.length > 0 ? String((rows as any as unknown[][])[0]?.[1] ?? "") : "";
+  return rows.length > 0 ? String(rows[0]?.[1] ?? "") : "";
 }
 
 export async function getAllAiConfig(): Promise<AiConfig[]> {
-  return sqlQuery("SELECT * FROM ai_config")
-    .then((rows) => (rows as any as unknown[][]).map(mapAiConfig));
+  return tableQuery("SELECT * FROM ai_config", mapAiConfig);
 }
 
 export async function setAiConfig(key: string, value: string): Promise<void> {
@@ -34,13 +33,11 @@ export async function setAiConfig(key: string, value: string): Promise<void> {
 // ─── AI Chat Sessions ─────────────────────────────────────────────────────────
 
 export async function getAiChatSessions(userId: string): Promise<AiChatSession[]> {
-  return sqlQuery(`SELECT * FROM ai_chat_session WHERE user_id = '${userId}' ORDER BY updated_at DESC`)
-    .then((rows) => (rows as any as unknown[][]).map(mapAiChatSession));
+  return tableQuery(`SELECT * FROM ai_chat_session WHERE user_id = '${userId}' ORDER BY updated_at DESC`, mapAiChatSession);
 }
 
 export async function getAiChatSession(id: string): Promise<AiChatSession | null> {
-  return sqlQuery(`SELECT * FROM ai_chat_session WHERE id = '${id}'`)
-    .then((rows) => (rows as any as unknown[][])[0] ? mapAiChatSession((rows as any as unknown[][])[0]) : null);
+  return tableQueryOne(`SELECT * FROM ai_chat_session WHERE id = '${id}'`, mapAiChatSession);
 }
 
 export async function createAiChatSession(userId: string, title: string, pageContextId: string = ""): Promise<string> {
@@ -56,8 +53,7 @@ export async function deleteAiChatSession(id: string): Promise<void> {
 // ─── AI Chat Messages ─────────────────────────────────────────────────────────
 
 export async function getAiChatMessages(sessionId: string): Promise<AiChatMessage[]> {
-  return sqlQuery(`SELECT * FROM ai_chat_message WHERE session_id = '${sessionId}' ORDER BY created_at ASC`)
-    .then((rows) => (rows as any as unknown[][]).map(mapAiChatMessage));
+  return tableQuery(`SELECT * FROM ai_chat_message WHERE session_id = '${sessionId}' ORDER BY created_at ASC`, mapAiChatMessage);
 }
 
 export async function addAiChatMessage(sessionId: string, role: string, content: string): Promise<string> {
@@ -76,13 +72,11 @@ export async function getDbBases(pageId?: string): Promise<DbBase[]> {
   let sql = "SELECT * FROM db_base";
   if (pageId) sql += ` WHERE page_id = '${pageId}'`;
   sql += " ORDER BY created_at ASC";
-  return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapDbBase));
+  return tableQuery(sql, mapDbBase);
 }
 
 export async function getDbBase(id: string): Promise<DbBase | null> {
-  return sqlQuery(`SELECT * FROM db_base WHERE id = '${id}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapDbBase((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM db_base WHERE id = '${id}'`, mapDbBase);
 }
 
 export async function createDbBase(pageId: string, title: string, viewType: string, createdBy: string): Promise<string> {
@@ -97,8 +91,7 @@ export async function deleteDbBase(id: string): Promise<void> {
 // ─── Database Columns ─────────────────────────────────────────────────────────
 
 export async function getDbColumns(baseId: string): Promise<DbColumn[]> {
-  return sqlQuery(`SELECT * FROM db_column WHERE base_id = '${baseId}' ORDER BY sort_order ASC`)
-    .then((rows) => (rows as any as unknown[][]).map(mapDbColumn));
+  return tableQuery(`SELECT * FROM db_column WHERE base_id = '${baseId}' ORDER BY sort_order ASC`, mapDbColumn);
 }
 
 export async function createDbColumn(baseId: string, name: string, fieldType: string, options: string = "{}", sortOrder: number = 0): Promise<string> {
@@ -109,14 +102,11 @@ export async function createDbColumn(baseId: string, name: string, fieldType: st
 // ─── Database Rows ────────────────────────────────────────────────────────────
 
 export async function getDbRows(baseId: string): Promise<DbRow[]> {
-  return sqlQuery(`SELECT * FROM db_row WHERE base_id = '${baseId}' ORDER BY sort_order ASC`)
-    .then((rows) => (rows as any as unknown[][]).map(mapDbRow));
+  return tableQuery(`SELECT * FROM db_row WHERE base_id = '${baseId}' ORDER BY sort_order ASC`, mapDbRow);
 }
 
 export async function getDbRow(id: string): Promise<DbRow | null> {
-  return sqlQuery(`SELECT * FROM db_row WHERE id = '${id}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapDbRow((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM db_row WHERE id = '${id}'`, mapDbRow);
 }
 
 export async function createDbRow(baseId: string, sortOrder: number, createdBy: string): Promise<string> {
@@ -135,14 +125,14 @@ export async function reorderDbRows(rowIds: string[], newSortOrders: number[]): 
 // ─── Database Cells ───────────────────────────────────────────────────────────
 
 export async function getDbCells(rowId: string): Promise<DbCell[]> {
-  return sqlQuery(`SELECT * FROM db_cell WHERE row_id = '${rowId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapDbCell));
+  return tableQuery(`SELECT * FROM db_cell WHERE row_id = '${rowId}'`, mapDbCell);
 }
 
 export async function getDbCellsForBase(baseId: string): Promise<DbCell[]> {
-  return sqlQuery(
-    `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = '${baseId}'`
-  ).then((rows) => (rows as any as unknown[][]).map(mapDbCell));
+  return tableQuery(
+    `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = '${baseId}'`,
+    mapDbCell,
+  );
 }
 
 export async function setDbCell(rowId: string, columnId: string, value: string): Promise<void> {
@@ -154,19 +144,14 @@ export async function updateDbCell(rowId: string, columnId: string, value: strin
   return setDbCell(rowId, columnId, value);
 }
 
-// ─── Synced Blocks ────────────────────────────────────────────────────────────
+// ─── Synced Blocks ─────────────────────────────────────���──────────────────────
 
 export async function getSyncedBlocks(): Promise<SyncedBlock[]> {
-  return sqlQuery("SELECT * FROM synced_block ORDER BY updated_at DESC")
-    .then((rows) => (rows as any as unknown[][]).map(mapSyncedBlock));
+  return tableQuery("SELECT * FROM synced_block ORDER BY updated_at DESC", mapSyncedBlock);
 }
 
 export async function getSyncedBlock(id: string): Promise<SyncedBlock | null> {
-  return sqlQuery(`SELECT * FROM synced_block WHERE id = '${id}'`)
-    .then((rows) => {
-      const arr = rows as any as unknown[][];
-      return arr.length > 0 ? mapSyncedBlock(arr[0]) : null;
-    });
+  return tableQueryOne(`SELECT * FROM synced_block WHERE id = '${id}'`, mapSyncedBlock);
 }
 
 export async function createSyncedBlock(title: string, content: string, createdBy: string): Promise<string> {
@@ -192,13 +177,11 @@ export async function removeSyncedBlockRef(id: string): Promise<void> {
 }
 
 export async function listSyncedBlockRefs(blockId: string): Promise<SyncedBlockRef[]> {
-  return sqlQuery(`SELECT * FROM synced_block_ref WHERE block_id = '${blockId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapSyncedBlockRef));
+  return tableQuery(`SELECT * FROM synced_block_ref WHERE block_id = '${blockId}'`, mapSyncedBlockRef);
 }
 
 export async function listSyncedBlockRefsByPage(pageId: string): Promise<SyncedBlockRef[]> {
-  return sqlQuery(`SELECT * FROM synced_block_ref WHERE page_id = '${pageId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapSyncedBlockRef));
+  return tableQuery(`SELECT * FROM synced_block_ref WHERE page_id = '${pageId}'`, mapSyncedBlockRef);
 }
 
 // ─── Invitations ──────────────────────────────────────────────────────────────
@@ -232,24 +215,15 @@ export async function recordInvitationView(token: string): Promise<void> {
 }
 
 export async function getInvitations(): Promise<Invitation[]> {
-  return sqlQuery("SELECT * FROM invitation ORDER BY created_at DESC")
-    .then((rows) => (rows as any as unknown[][]).map(mapInvitation));
+  return tableQuery("SELECT * FROM invitation ORDER BY created_at DESC", mapInvitation);
 }
 
 export async function getInvitation(id: string): Promise<Invitation | null> {
-  return sqlQuery(`SELECT * FROM invitation WHERE id = '${id}'`)
-    .then((rows) => {
-      const arr = rows as any as unknown[][];
-      return arr.length > 0 ? mapInvitation(arr[0]) : null;
-    });
+  return tableQueryOne(`SELECT * FROM invitation WHERE id = '${id}'`, mapInvitation);
 }
 
 export async function getInvitationByToken(token: string): Promise<Invitation | null> {
-  return sqlQuery(`SELECT * FROM invitation WHERE token = '${token}'`)
-    .then((rows) => {
-      const arr = rows as any as unknown[][];
-      return arr.length > 0 ? mapInvitation(arr[0]) : null;
-    });
+  return tableQueryOne(`SELECT * FROM invitation WHERE token = '${token}'`, mapInvitation);
 }
 
 // ─── Watch / Toggle ───────────────────────────────────────────────────────────
@@ -260,13 +234,11 @@ export async function toggleWatch(userId: string, targetType: string, targetId: 
 }
 
 export async function getWatchByUser(userId: string): Promise<Watch[]> {
-  return sqlQuery(`SELECT * FROM watch WHERE user_id = '${userId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapWatch));
+  return tableQuery(`SELECT * FROM watch WHERE user_id = '${userId}'`, mapWatch);
 }
 
 export async function getWatchByTarget(targetType: string, targetId: string): Promise<Watch[]> {
-  return sqlQuery(`SELECT * FROM watch WHERE target_type = '${targetType}' AND target_id = '${targetId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapWatch));
+  return tableQuery(`SELECT * FROM watch WHERE target_type = '${targetType}' AND target_id = '${targetId}'`, mapWatch);
 }
 
 export async function isWatching(userId: string, targetType: string, targetId: string): Promise<boolean> {
@@ -279,18 +251,16 @@ export async function isWatching(userId: string, targetType: string, targetId: s
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export async function getNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
-  return sqlQuery(`SELECT * FROM notification WHERE user_id = '${userId}' ORDER BY created_at DESC LIMIT ${limit}`)
-    .then((rows) => (rows as any as unknown[][]).map(mapNotification));
+  return tableQuery(`SELECT * FROM notification WHERE user_id = '${userId}' ORDER BY created_at DESC LIMIT ${limit}`, mapNotification);
 }
 
 export async function getUnreadNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
-  return sqlQuery(`SELECT * FROM notification WHERE user_id = '${userId}' AND is_read = false ORDER BY created_at DESC LIMIT ${limit}`)
-    .then((rows) => (rows as any as unknown[][]).map(mapNotification));
+  return tableQuery(`SELECT * FROM notification WHERE user_id = '${userId}' AND is_read = false ORDER BY created_at DESC LIMIT ${limit}`, mapNotification);
 }
 
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   const rows = await sqlQuery(`SELECT COUNT(*) FROM notification WHERE user_id = '${userId}' AND is_read = false`);
-  return Number((rows[0] as any)?.[0] ?? 0);
+  return Number(rows[0]?.[0] ?? 0);
 }
 
 export async function createNotification(
@@ -317,10 +287,10 @@ export async function clearAllNotifications(userId: string): Promise<void> {
   return callReducer("clear_all_notifications", [userId]);
 }
 
-// ─── SCIM Providers ───────────────────────────────────────────────────────────
+// ─── SCIM Providers ─────────────────────────────────────��─────────────────────
 
 export async function getScimProviders(): Promise<ScimProvider[]> {
-  return sqlQuery("SELECT * FROM scim_provider").then((rows) => (rows as any as unknown[][]).map(mapScimProvider));
+  return tableQuery("SELECT * FROM scim_provider", mapScimProvider);
 }
 
 export async function addScimProvider(name: string, slug: string, apiToken: string, defaultRole: string,
@@ -371,7 +341,7 @@ export async function scimDeprovisionGroup(): Promise<void> {
 
 // ─── Favorites ────────────────────────────────────────────────────────────────
 
-export async function getFavorites(userId: string): Promise<Record<string, unknown>[]> {
+export async function getFavorites(userId: string): Promise<unknown[][]> {
   return sqlQuery(`SELECT * FROM favorite WHERE user_id = '${userId}'`);
 }
 

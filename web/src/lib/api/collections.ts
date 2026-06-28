@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: ISC
 
 import type { Collection, CollectionMember, CollectionGroupPermission, CollectionSortRule } from "./types";
-import { sqlQuery, callReducer, genId } from "./client";
+import { tableQuery, tableQueryOne, callReducer, genId } from "./client";
 import { mapCollection, mapCollectionMember, mapCollectionGroupPermission, mapCollectionSortRule } from "./mappers";
 
 export async function listCollections(): Promise<Collection[]> {
-  return sqlQuery("SELECT * FROM collection").then((rows) => (rows as any as unknown[][]).map(mapCollection));
+  return tableQuery("SELECT * FROM collection", mapCollection);
 }
 
 export async function getCollection(id: string): Promise<Collection | null> {
-  return sqlQuery(`SELECT * FROM collection WHERE id = '${id}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapCollection((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM collection WHERE id = '${id}'`, mapCollection);
 }
 
 export async function createCollection(
@@ -57,16 +55,11 @@ export async function applyCollectionAutoSort(collectionId: string): Promise<voi
 }
 
 export async function getCollectionSortRule(collectionId: string): Promise<CollectionSortRule | null> {
-  return sqlQuery(`SELECT * FROM collection_sort_rule WHERE collection_id = '${collectionId}'`)
-    .then((rows) => {
-      const arr = rows as any as unknown[][];
-      return arr.length > 0 ? mapCollectionSortRule(arr[0]) : null;
-    });
+  return tableQueryOne(`SELECT * FROM collection_sort_rule WHERE collection_id = '${collectionId}'`, mapCollectionSortRule);
 }
 
 export async function listCollectionSortRules(): Promise<CollectionSortRule[]> {
-  return sqlQuery("SELECT * FROM collection_sort_rule")
-    .then((rows) => (rows as any as unknown[][]).map(mapCollectionSortRule));
+  return tableQuery("SELECT * FROM collection_sort_rule", mapCollectionSortRule);
 }
 
 // ── Collection Members ──
@@ -85,8 +78,7 @@ export async function removeCollectionMember(id: string): Promise<void> {
 }
 
 export async function listCollectionMembers(collectionId: string): Promise<CollectionMember[]> {
-  return sqlQuery(`SELECT * FROM collection_member WHERE collection_id = '${collectionId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapCollectionMember));
+  return tableQuery(`SELECT * FROM collection_member WHERE collection_id = '${collectionId}'`, mapCollectionMember);
 }
 
 // ── Collection Group Permissions ──
@@ -101,8 +93,7 @@ export async function removeCollectionGroupPermission(id: string): Promise<void>
 }
 
 export async function listCollectionGroupPermissions(collectionId: string): Promise<CollectionGroupPermission[]> {
-  return sqlQuery(`SELECT * FROM collection_group_permission WHERE collection_id = '${collectionId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapCollectionGroupPermission));
+  return tableQuery(`SELECT * FROM collection_group_permission WHERE collection_id = '${collectionId}'`, mapCollectionGroupPermission);
 }
 
 // ── API section for the `api` object ──

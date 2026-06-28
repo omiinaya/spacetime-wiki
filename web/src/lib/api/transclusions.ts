@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ISC
 
 import type { Page } from "./types";
-import { sqlQuery } from "./client";
+import { tableQuery } from "./client";
 import { mapPage } from "./mappers";
 import { getPage } from "./pages";
 
@@ -14,9 +14,9 @@ async function resolvePageRef(ref: string): Promise<Page | null> {
   if (page) return page;
   // Try as slug
   try {
-    const rows = await sqlQuery(`SELECT * FROM page WHERE slug = '${ref}'`);
+    const rows = await tableQuery(`SELECT * FROM page WHERE slug = '${ref}'`, mapPage);
     if (rows.length > 0) {
-      return mapPage((rows as any as unknown[][])[0]);
+      return rows[0];
     }
   } catch { /* ignore */ }
   return null;

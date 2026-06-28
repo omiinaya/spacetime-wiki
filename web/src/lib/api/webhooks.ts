@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: ISC
 
 import type { Webhook, WebhookEvent } from "./types";
-import { sqlQuery, callReducer, genId } from "./client";
+import { tableQuery, tableQueryOne, callReducer, genId } from "./client";
 import { mapWebhook, mapWebhookEvent } from "./mappers";
 
 export async function listWebhooks(): Promise<Webhook[]> {
-  return sqlQuery("SELECT * FROM webhook")
-    .then((rows) => (rows as any as unknown[][]).map(mapWebhook));
+  return tableQuery("SELECT * FROM webhook", mapWebhook);
 }
 
 export async function getWebhook(id: string): Promise<Webhook | null> {
-  return sqlQuery(`SELECT * FROM webhook WHERE id = '${id}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapWebhook((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM webhook WHERE id = '${id}'`, mapWebhook);
 }
 
 export async function createWebhook(name: string, url: string, events: string, secret: string, createdBy: string): Promise<string> {
@@ -29,8 +26,7 @@ export async function deleteWebhook(id: string): Promise<void> {
 }
 
 export async function getWebhookEvents(webhookId: string): Promise<WebhookEvent[]> {
-  return sqlQuery(`SELECT * FROM webhook_event WHERE webhook_id = '${webhookId}' ORDER BY created_at DESC`)
-    .then((rows) => (rows as any as unknown[][]).map(mapWebhookEvent));
+  return tableQuery(`SELECT * FROM webhook_event WHERE webhook_id = '${webhookId}' ORDER BY created_at DESC`, mapWebhookEvent);
 }
 
 export async function fireWebhookEvent(webhookId: string, eventType: string, pageId: string, payload: string): Promise<void> {

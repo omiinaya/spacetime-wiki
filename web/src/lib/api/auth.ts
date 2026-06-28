@@ -1,25 +1,21 @@
 // SPDX-License-Identifier: ISC
 
 import type { OidcProvider, SamlProvider, LdapProvider, LdapUser, ApiKey, PasskeyCredential, PasskeyChallenge, MfaMethod, MfaBackupCode, OauthProvider, OauthUser } from "./types";
-import { sqlQuery, callReducer, genId } from "./client";
+import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId } from "./client";
 import { mapOidcProvider, mapSamlProvider, mapLdapProvider, mapLdapUser, mapApiKey, mapPasskeyCredential, mapPasskeyChallenge, mapMfaMethod, mapMfaBackupCode } from "./mappers";
 
 // ─── OIDC Providers ────────────────────────────────────────────────────────────
 
 export async function getOidcProviders(): Promise<OidcProvider[]> {
-  return sqlQuery("SELECT * FROM oidc_provider")
-    .then((rows) => (rows as any as unknown[][]).map(mapOidcProvider));
+  return tableQuery("SELECT * FROM oidc_provider", mapOidcProvider);
 }
 
 export async function getOidcProvider(id: string): Promise<OidcProvider | null> {
-  return sqlQuery(`SELECT * FROM oidc_provider WHERE id = '${id}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapOidcProvider((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM oidc_provider WHERE id = '${id}'`, mapOidcProvider);
 }
 
 export async function listActiveOidcProviders(): Promise<OidcProvider[]> {
-  return sqlQuery("SELECT * FROM oidc_provider WHERE is_active = true")
-    .then((rows) => (rows as any as unknown[][]).map(mapOidcProvider));
+  return tableQuery("SELECT * FROM oidc_provider WHERE is_active = true", mapOidcProvider);
 }
 
 export async function addOidcProvider(
@@ -46,22 +42,18 @@ export async function deleteOidcProvider(id: string): Promise<void> {
   return callReducer("delete_oidc_provider", [id]);
 }
 
-// ─── SAML Providers ────────────────────────────────────────────────────────────
+// ─── SAML Providers ─────────────────────────���──────────────────────────────────
 
 export async function getSamlProviders(): Promise<SamlProvider[]> {
-  return sqlQuery("SELECT * FROM saml_provider")
-    .then((rows) => (rows as any as unknown[][]).map(mapSamlProvider));
+  return tableQuery("SELECT * FROM saml_provider", mapSamlProvider);
 }
 
 export async function getSamlProvider(id: string): Promise<SamlProvider | null> {
-  return sqlQuery(`SELECT * FROM saml_provider WHERE id = '${id}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapSamlProvider((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM saml_provider WHERE id = '${id}'`, mapSamlProvider);
 }
 
 export async function listActiveSamlProviders(): Promise<SamlProvider[]> {
-  return sqlQuery("SELECT * FROM saml_provider WHERE is_active = true")
-    .then((rows) => (rows as any as unknown[][]).map(mapSamlProvider));
+  return tableQuery("SELECT * FROM saml_provider WHERE is_active = true", mapSamlProvider);
 }
 
 export async function addSamlProvider(
@@ -94,18 +86,15 @@ export async function deleteSamlProvider(id: string): Promise<void> {
 // ─── LDAP Providers ────────────────────────────────────────────────────────────
 
 export async function getLdapProviders(): Promise<LdapProvider[]> {
-  return sqlQuery("SELECT * FROM ldap_provider")
-    .then((rows) => (rows as any as unknown[][]).map(mapLdapProvider));
+  return tableQuery("SELECT * FROM ldap_provider", mapLdapProvider);
 }
 
 export async function listActiveLdapProviders(): Promise<LdapProvider[]> {
-  return sqlQuery("SELECT * FROM ldap_provider WHERE is_active = true")
-    .then((rows) => (rows as any as unknown[][]).map(mapLdapProvider));
+  return tableQuery("SELECT * FROM ldap_provider WHERE is_active = true", mapLdapProvider);
 }
 
 export async function getLdapProvider(id: string): Promise<LdapProvider | null> {
-  return sqlQuery(`SELECT * FROM ldap_provider WHERE id = '${id}'`)
-    .then((rows) => rows.length > 0 ? mapLdapProvider((rows as any as unknown[][])[0]) : null);
+  return tableQueryOne(`SELECT * FROM ldap_provider WHERE id = '${id}'`, mapLdapProvider);
 }
 
 export async function addLdapProvider(provider: {
@@ -146,15 +135,13 @@ export async function deleteLdapProvider(id: string): Promise<void> {
 }
 
 export async function linkLdapUser(providerId: string): Promise<LdapUser[]> {
-  return sqlQuery(`SELECT * FROM ldap_user WHERE ldap_provider_id = '${providerId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapLdapUser));
+  return tableQuery(`SELECT * FROM ldap_user WHERE ldap_provider_id = '${providerId}'`, mapLdapUser);
 }
 
 // ─── API Keys ──────────────────────────────────────────────────────────────────
 
 export async function getApiKeys(userId: string): Promise<ApiKey[]> {
-  return sqlQuery(`SELECT * FROM api_key WHERE user_id = '${userId}' AND is_revoked = false`)
-    .then((rows) => (rows as any as unknown[][]).map(mapApiKey));
+  return tableQuery(`SELECT * FROM api_key WHERE user_id = '${userId}' AND is_revoked = false`, mapApiKey);
 }
 
 export async function createApiKey(userId: string, name: string, keyHash: string, keyPrefix: string, expiresDays: number): Promise<string> {
@@ -169,8 +156,7 @@ export async function revokeApiKey(id: string): Promise<void> {
 // ─── Passkeys / WebAuthn ───────────────────────────────────────────────────────
 
 export async function getPasskeyCredentials(userId: string): Promise<PasskeyCredential[]> {
-  return sqlQuery(`SELECT * FROM passkey_credential WHERE user_id = '${userId}' ORDER BY created_at DESC`)
-    .then((rows) => (rows as any as unknown[][]).map(mapPasskeyCredential));
+  return tableQuery(`SELECT * FROM passkey_credential WHERE user_id = '${userId}' ORDER BY created_at DESC`, mapPasskeyCredential);
 }
 
 export async function storePasskeyCredential(
@@ -198,8 +184,7 @@ export async function deletePasskeyCredential(id: string): Promise<void> {
 }
 
 export async function getPasskeyChallenges(userId: string): Promise<PasskeyCredential[]> {
-  return sqlQuery(`SELECT * FROM passkey_credential WHERE user_id = '${userId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapPasskeyCredential));
+  return tableQuery(`SELECT * FROM passkey_credential WHERE user_id = '${userId}'`, mapPasskeyCredential);
 }
 
 // ─── TOTP / MFA ────────────────────────────────────────────────────────────────
@@ -221,16 +206,11 @@ export async function verifyMfaBackupCode(userId: string, code: string): Promise
 }
 
 export async function getMfaMethod(userId: string): Promise<MfaMethod | null> {
-  return sqlQuery(`SELECT * FROM mfa_method WHERE user_id = '${userId}'`)
-    .then((rows) => {
-      const arr = rows as any as unknown[][];
-      return arr.length > 0 ? mapMfaMethod(arr[0]) : null;
-    });
+  return tableQueryOne(`SELECT * FROM mfa_method WHERE user_id = '${userId}'`, mapMfaMethod);
 }
 
 export async function getMfaBackupCodes(userId: string): Promise<MfaBackupCode[]> {
-  return sqlQuery(`SELECT * FROM mfa_backup_code WHERE user_id = '${userId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapMfaBackupCode));
+  return tableQuery(`SELECT * FROM mfa_backup_code WHERE user_id = '${userId}'`, mapMfaBackupCode);
 }
 
 export async function isMfaEnabled(userId: string): Promise<boolean> {
