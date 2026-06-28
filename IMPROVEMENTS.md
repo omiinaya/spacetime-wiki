@@ -10,7 +10,7 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | **Extract remaining lib.rs sections into domain modules** | ✅ API Keys done (3 reducers → api_keys.rs). Next targets: App Settings (50L), Collection Members (50L), Share Links (108L). 8 modules extracted, 2960 lines remain in lib.rs. |
+| P4 | **Extract remaining lib.rs sections into domain modules** | ✅ API Keys + App Settings done (5 reducers extracted). Next targets: Collection Members (50L), Share Links (108L). 9 modules extracted, 2911 lines remain in lib.rs. |
 | P5 | **Add Rust tests for extracted modules** | 0 tests in comments/tags/favorites/attachments/pages/users/templates modules. Only helpers.rs has 12 tests. Add basic unit tests for each module's reducer logic. |
 | P5 | **Add TypeScript tests for frontend components** | Only 7 test files exist in web/src/test/. Could add tests for PageEditor, Sidebar, Search, Auth components. |
 
