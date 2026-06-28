@@ -22,6 +22,10 @@ mod api_keys;
 pub(crate) use api_keys::*;
 mod app_settings;
 pub(crate) use app_settings::*;
+mod collection_members;
+pub(crate) use collection_members::*;
+mod share_links;
+pub(crate) use share_links::*;
 
 // ─── Collections ─────────────────────────────────────────────────────────────
 
@@ -216,166 +220,6 @@ pub fn apply_collection_auto_sort(ctx: &ReducerContext, collection_id: String) -
             sort_idx += 1;
         }
     }
-    Ok(())
-}
-
-// ─── Collection Members ──────────────────────────────────────────────────────
-
-#[reducer]
-pub fn add_collection_member(
-    ctx: &ReducerContext,
-    id: String,
-    collection_id: String,
-    user_id: String,
-    role: String,
-    added_by: String,
-) -> Result<(), String> {
-    let existing = ctx.db.collection_member().iter()
-        .find(|m| m.collection_id == collection_id && m.user_id == user_id);
-    if existing.is_some() {
-        return Err("User is already a member of this collection".into());
-    }
-    let valid_roles = ["admin", "editor", "viewer"];
-    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
-    ctx.db.collection_member().insert(CollectionMember {
-        id, collection_id, user_id, role: role_clean, added_by,
-        created_at: now_ms(ctx),
-    });
-    Ok(())
-}
-
-#[reducer]
-pub fn update_collection_member_role(
-    ctx: &ReducerContext,
-    id: String,
-    new_role: String,
-) -> Result<(), String> {
-    let valid_roles = ["admin", "editor", "viewer"];
-    if !valid_roles.contains(&new_role.as_str()) {
-        return Err("Invalid role. Must be admin, editor, or viewer".into());
-    }
-    let found = ctx.db.collection_member().iter().find(|m| m.id == id);
-    if found.is_none() {
-        return Err("Member not found".into());
-    }
-    let mut member = found.unwrap();
-    member.role = new_role;
-    ctx.db.collection_member().id().update(member);
-    Ok(())
-}
-
-#[reducer]
-pub fn remove_collection_member(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    ctx.db.collection_member().id().delete(&id);
-    Ok(())
-}
-
-// ─── Share Links ─────────────────────────────────────────────────────────────
-
-#[reducer]
-pub fn create_share_link(
-    ctx: &ReducerContext,
-    id: String,
-    page_id: String,
-    token: String,
-    password: String,
-    created_by: String,
-    expires_days: u32,
-) -> Result<(), String> {
-    let page_exists = ctx.db.page().iter().any(|p| p.id == page_id);
-    if !page_exists {
-        return Err("Page not found".into());
-    }
-    let now = now_ms(ctx);
-    let expires_at = if expires_days > 0 {
-        now + (expires_days as u64) * 86_400_000
-    } else {
-        0 // never expires
-    };
-    let password_hash = if password.is_empty() {
-        String::new()
-    } else {
-        hash_password(&password)
-    };
-    ctx.db.share_link().insert(ShareLink {
-        id, page_id, token, password_hash, created_by,
-        expires_at, created_at: now, visit_count: 0,
-        brand_title: None,
-        brand_logo_url: None,
-    });
-    Ok(())
-}
-
-#[reducer]
-pub fn delete_share_link(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    ctx.db.share_link().id().delete(&id);
-    Ok(())
-}
-
-#[reducer]
-pub fn update_share_branding(
-    ctx: &ReducerContext,
-    share_id: String,
-    brand_title: Option<String>,
-    brand_logo_url: Option<String>,
-) -> Result<(), String> {
-    let found = ctx.db.share_link().id().find(&share_id);
-    if found.is_none() {
-        return Err("Share link not found".into());
-    }
-    let mut share = found.unwrap();
-    share.brand_title = brand_title;
-    share.brand_logo_url = brand_logo_url;
-    ctx.db.share_link().id().update(share);
-    Ok(())
-}
-
-#[reducer]
-pub fn verify_share_password(
-    ctx: &ReducerContext,
-    token: String,
-    password: String,
-) -> Result<(), String> {
-    let found = ctx.db.share_link().iter()
-        .find(|s| s.token == token);
-    if found.is_none() {
-        return Err("Invalid share link".into());
-    }
-    let share = found.unwrap();
-    let now = now_ms(ctx);
-    if share.expires_at > 0 && now > share.expires_at {
-        return Err("Share link has expired".into());
-    }
-    if !share.password_hash.is_empty() {
-        if hash_password(&password) != share.password_hash {
-            return Err("Incorrect password".into());
-        }
-    }
-    // Increment visit count
-    let mut share_mut = share;
-    share_mut.visit_count += 1;
-    ctx.db.share_link().id().update(share_mut);
-    Ok(())
-}
-
-#[reducer]
-pub fn visit_share_link(ctx: &ReducerContext, token: String) -> Result<(), String> {
-    let found = ctx.db.share_link().iter()
-        .find(|s| s.token == token);
-    if found.is_none() {
-        return Err("Invalid share link".into());
-    }
-    let share = found.unwrap();
-    let now = now_ms(ctx);
-    if share.expires_at > 0 && now > share.expires_at {
-        return Err("Share link has expired".into());
-    }
-    if !share.password_hash.is_empty() {
-        return Err("Password required".into());
-    }
-    let mut share_mut = share;
-    share_mut.visit_count += 1;
-    ctx.db.share_link().id().update(share_mut);
     Ok(())
 }
 
