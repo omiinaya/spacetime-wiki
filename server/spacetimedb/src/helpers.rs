@@ -190,3 +190,76 @@ pub(crate) fn notify_collection_watchers_new_page(
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hash_password_sha256() {
+        let hash = hash_password("hello");
+        assert_eq!(hash.len(), 64);
+        assert_eq!(hash, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
+    }
+
+    #[test]
+    fn test_hash_password_empty() {
+        let hash = hash_password("");
+        assert_eq!(hash.len(), 64);
+        assert_eq!(hash, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+    }
+
+    #[test]
+    fn test_hash_password_different() {
+        assert_ne!(hash_password("a"), hash_password("b"));
+    }
+
+    #[test]
+    fn test_base32_decode_standard() {
+        let result = base32_decode("NBSWY3DP").unwrap();
+        assert_eq!(result, b"hello");
+    }
+
+    #[test]
+    fn test_base32_decode_with_spaces() {
+        // Spaces should be stripped before decoding
+        let without_spaces = base32_decode("NBSWY3DP").unwrap();
+        let with_spaces = base32_decode("NBSW Y3DP").unwrap();
+        assert_eq!(without_spaces, with_spaces);
+    }
+
+    #[test]
+    fn test_base32_decode_empty() {
+        assert!(base32_decode("").is_none());
+    }
+
+    #[test]
+    fn test_base32_decode_lowercase() {
+        assert_eq!(base32_decode("nbswy3dp").unwrap(), b"hello");
+    }
+
+    #[test]
+    fn test_base32_decode_invalid_char() {
+        assert!(base32_decode("NBSWY3D!").is_none());
+    }
+
+    #[test]
+    fn test_verify_totp_rfc6238() {
+        assert!(verify_totp_code(b"12345678901234567890", 755224, 0));
+    }
+
+    #[test]
+    fn test_verify_totp_wrong_code() {
+        assert!(!verify_totp_code(b"12345678901234567890", 123456, 0));
+    }
+
+    #[test]
+    fn test_verify_totp_empty_secret() {
+        assert!(!verify_totp_code(&[], 755224, 0));
+    }
+
+    #[test]
+    fn test_verify_totp_clock_drift() {
+        assert!(verify_totp_code(b"12345678901234567890", 287082, 30000));
+    }
+}
