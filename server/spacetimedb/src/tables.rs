@@ -7,11 +7,14 @@ use spacetimedb::*;
 pub struct AuditEvent {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub event_type: String,
+    #[index(btree)]
     pub actor_id: String,
     pub target_id: String,
     pub target_name: String,
     pub metadata: String,
+    #[index(btree)]
     pub created_at: u64,
 }
 
@@ -34,7 +37,9 @@ pub struct Group {
 pub struct GroupMember {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub group_id: String,
+    #[index(btree)]
     pub user_id: String,
     pub role: String,
     pub added_by: String,
@@ -46,13 +51,14 @@ pub struct GroupMember {
 pub struct CollectionGroupPermission {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub collection_id: String,
     pub group_id: String,
     pub role: String,
     pub created_at: u64,
 }
 
-// ─── Users ───────────────────────────────────────────────────────────────────
+// ─── Users ─────────────────��─────────────────────────────────────────────────
 
 #[table(accessor = user, public)]
 #[derive(Debug, Clone)]
@@ -60,6 +66,7 @@ pub struct User {
     #[primary_key]
     pub id: String,
     pub name: String,
+    #[index(btree)]
     pub email: String,
     pub password_hash: String,
     pub role: String,
@@ -76,12 +83,14 @@ pub struct Collection {
     #[primary_key]
     pub id: String,
     pub name: String,
+    #[index(btree)]
     pub slug: String,
     pub description: String,
     pub parent_id: String,
     pub icon: String,
     pub color: String,
     pub sort_order: u32,
+    #[index(btree)]
     pub created_by: String,
     pub created_at: u64,
     pub updated_at: u64,
@@ -92,7 +101,9 @@ pub struct Collection {
 pub struct CollectionMember {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub collection_id: String,
+    #[index(btree)]
     pub user_id: String,
     pub role: String,
     pub added_by: String,
@@ -110,6 +121,7 @@ pub struct Page {
     pub slug: String,
     pub content: String,
     pub text_content: String,
+    #[index(btree)]
     pub collection_id: String,
     pub parent_page_id: String,
     pub status: String,
@@ -120,9 +132,11 @@ pub struct Page {
     pub is_template: bool,
     pub template_id: String,
     pub sort_order: u32,
+    #[index(btree)]
     pub created_by: String,
     pub updated_by: String,
     pub created_at: u64,
+    #[index(btree)]
     pub updated_at: u64,
     pub published_at: u64,
     pub deleted_at: u64,
@@ -134,6 +148,7 @@ pub struct Page {
 pub struct PageRevision {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
     pub title: String,
     pub content: String,
@@ -149,6 +164,7 @@ pub struct PageRevision {
 pub struct Comment {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
     pub parent_comment_id: String,
     pub user_id: String,
@@ -166,6 +182,7 @@ pub struct Comment {
 pub struct Attachment {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
     pub filename: String,
     pub mime_type: String,
@@ -182,7 +199,9 @@ pub struct Attachment {
 pub struct PageTag {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
+    #[index(btree)]
     pub name: String,
     pub value: String,
 }
@@ -194,7 +213,9 @@ pub struct PageTag {
 pub struct Favorite {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub user_id: String,
+    #[index(btree)]
     pub page_id: String,
     pub created_at: u64,
 }
@@ -206,6 +227,7 @@ pub struct Favorite {
 pub struct CommentReaction {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub comment_id: String,
     pub user_id: String,
     pub emoji: String,
@@ -219,7 +241,9 @@ pub struct CommentReaction {
 pub struct ShareLink {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
+    #[index(btree)]
     pub token: String,
     pub password_hash: String,
     pub created_by: String,
@@ -237,6 +261,7 @@ pub struct ShareLink {
 pub struct PagePermission {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
     pub user_id: String,
     pub group_id: String,
@@ -251,6 +276,7 @@ pub struct PagePermission {
 pub struct ApiKey {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub user_id: String,
     pub name: String,
     pub key_hash: String,
@@ -283,10 +309,12 @@ pub struct Webhook {
 pub struct WebhookEvent {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub webhook_id: String,
     pub event_type: String,
     pub page_id: String,
     pub payload: String,
+    #[index(btree)]
     pub status: String,
     pub response_code: u32,
     pub response_body: String,
@@ -396,7 +424,9 @@ pub struct LdapProvider {
 pub struct LdapUser {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub user_id: String,
+    #[index(btree)]
     pub ldap_provider_id: String,
     pub dn: String,
     pub external_id: String,
@@ -411,6 +441,7 @@ pub struct LdapUser {
 pub struct PageView {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
     pub user_id: String,
     pub viewer: String,
@@ -435,6 +466,7 @@ pub struct AppSetting {
 pub struct CollabUpdate {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
     pub update_data: String,
     pub user_id: String,
@@ -446,6 +478,7 @@ pub struct CollabUpdate {
 pub struct CollabSession {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
     pub user_id: String,
     pub user_name: String,
@@ -483,6 +516,7 @@ pub struct AiChatSession {
 pub struct AiChatMessage {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub session_id: String,
     pub role: String,
     pub content: String,
@@ -514,6 +548,7 @@ pub struct ScimProvider {
 pub struct ScimEvent {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub provider_id: String,
     pub resource_type: String,
     pub operation: String,
@@ -531,6 +566,7 @@ pub struct ScimEvent {
 pub struct PasskeyCredential {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub user_id: String,
     pub credential_id: String,
     pub public_key: String,
@@ -559,6 +595,7 @@ pub struct PasskeyChallenge {
 pub struct DbBase {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
     pub title: String,
     pub view_type: String,
@@ -572,6 +609,7 @@ pub struct DbBase {
 pub struct DbColumn {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub base_id: String,
     pub name: String,
     pub field_type: String,
@@ -586,6 +624,7 @@ pub struct DbColumn {
 pub struct DbRow {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub base_id: String,
     pub sort_order: u32,
     pub created_by: String,
@@ -598,7 +637,9 @@ pub struct DbRow {
 pub struct DbCell {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub row_id: String,
+    #[index(btree)]
     pub column_id: String,
     pub value: String,
     pub created_at: u64,
@@ -612,11 +653,13 @@ pub struct DbCell {
 pub struct Invitation {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub email: String,
     pub invited_by: String,
     pub role: String,
     pub page_ids: String,
     pub collection_ids: String,
+    #[index(btree)]
     pub token: String,
     pub status: String,
     pub message: String,
@@ -646,7 +689,9 @@ pub struct SyncedBlock {
 pub struct SyncedBlockRef {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub block_id: String,
+    #[index(btree)]
     pub page_id: String,
     pub created_by: String,
     pub created_at: u64,
@@ -659,6 +704,7 @@ pub struct SyncedBlockRef {
 pub struct MfaMethod {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub user_id: String,
     pub method_type: String,
     pub totp_secret: String,
@@ -672,6 +718,7 @@ pub struct MfaMethod {
 pub struct MfaBackupCode {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub user_id: String,
     pub code_hash: String,
     pub is_used: bool,
@@ -685,8 +732,10 @@ pub struct MfaBackupCode {
 pub struct Watch {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub user_id: String,
     pub target_type: String,
+    #[index(btree)]
     pub target_id: String,
     pub created_at: u64,
 }
@@ -696,6 +745,7 @@ pub struct Watch {
 pub struct Notification {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub user_id: String,
     pub event_type: String,
     pub target_id: String,
@@ -704,6 +754,7 @@ pub struct Notification {
     pub actor_id: String,
     pub icon: String,
     pub is_read: bool,
+    #[index(btree)]
     pub created_at: u64,
 }
 
@@ -714,6 +765,7 @@ pub struct Notification {
 pub struct AccessRequest {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub page_id: String,
     pub requester_id: String,
     pub reason: String,
@@ -753,7 +805,9 @@ pub struct OauthProvider {
 pub struct OauthUser {
     #[primary_key]
     pub id: String,
+    #[index(btree)]
     pub user_id: String,
+    #[index(btree)]
     pub provider_id: String,
     pub external_id: String,
     pub external_username: String,
