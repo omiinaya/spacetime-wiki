@@ -16,6 +16,8 @@ mod favorites;
 pub(crate) use favorites::*;
 mod attachments;
 pub(crate) use attachments::*;
+mod templates;
+pub(crate) use templates::*;
 
 // ─── Collections ─────────────────────────────────────────────────────────────
 
@@ -426,47 +428,6 @@ pub fn update_api_key_usage(ctx: &ReducerContext, id: String) -> Result<(), Stri
     let mut key = found.unwrap();
     key.last_used_at = now_ms(ctx);
     ctx.db.api_key().id().update(key);
-    Ok(())
-}
-
-// ─── Templates ──────────────────────────────────────────────────────────────
-
-#[reducer]
-pub fn mark_as_template(ctx: &ReducerContext, id: String, is_template: bool) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
-    page.is_template = is_template;
-    page.updated_at = now_ms(ctx);
-    ctx.db.page().id().update(page);
-    Ok(())
-}
-
-#[reducer]
-pub fn create_from_template(
-    ctx: &ReducerContext,
-    new_id: String,
-    template_id: String,
-    title: String,
-    collection_id: String,
-    created_by: String,
-) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == template_id && p.is_template);
-    if found.is_none() {
-        return Err("Template not found".into());
-    }
-    let template = found.unwrap();
-    create_page(
-        ctx, new_id.clone(), title, template.content,
-        collection_id, String::new(), created_by,
-    )?;
-    // Mark which template was used
-    if let Some(mut new_page) = ctx.db.page().iter().find(|p| p.id == new_id) {
-        new_page.template_id = template_id;
-        ctx.db.page().id().update(new_page);
-    }
     Ok(())
 }
 

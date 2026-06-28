@@ -10,7 +10,9 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | **Further extract lib.rs into domain modules** — 3195 lines remain in lib.rs (was 3508) across ~31 sections | **Extracted Pages + RTL section** (315 lines → `pages.rs`). 17 sections moved (pages, users). Next targets: Comments, Tags, Favorites, Attachments (each 20-80 lines). |
+| P4 | **Extract remaining lib.rs sections into domain modules** | Next targets: Templates (40L), API Keys (55L), App Settings (50L), Collection Members (50L), Share Links (108L). 26 sections remain in 3053-line lib.rs. |
+| P5 | **Add Rust tests for extracted modules** | 0 tests in comments/tags/favorites/attachments/pages/users modules. Only helpers.rs has 12 tests. Add basic unit tests for each module's reducer logic. |
+| P5 | **Add TypeScript tests for frontend components** | Only 7 test files exist in web/src/test/. Could add tests for PageEditor, Sidebar, Search, Auth components. |
 
 ---
 
@@ -18,10 +20,10 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-28 | **P4 — Extract Pages+RTL from lib.rs into `pages.rs`** — moved 17 page reducers (create/update/delete/duplicate/move/reorder/set_icon/color/width/pinned/direction, empty_trash, restore) + RTL direction into dedicated module. Removed 315 lines from lib.rs (3508→3193). Build clean. | _(current)_ |
-| 2026-06-28 | **P4 — Auto-generated schema-based row mappers!** Built `fromStdbRow()` utility that introspects STDB module_bindings schemas at runtime to auto-map positional rows to typed objects. Added `typedQuery`/`typedQueryOne` helpers. Converted `pages.ts` (8 query calls) to eliminate manual `mapPage`/`mapRevision`. 0 TS errors, 89 tests pass. | _(current)_ |
-| 2026-06-28 | **P5 — Add Rust unit tests!** 12 tests: hash_password, base32_decode, verify_totp_code, and more added to helpers.rs | efd60f8a |
-| 2026-06-28 | **P5 — Complete .env.example!** 88 lines documenting all env vars across all 4 services (STDB, API server, frontend, module publisher) | fe2ed807 |
-| 2026-06-28 | **P4 — Split App.tsx layout from routes!** 6232→3268 lines (48% reduction). 10 admin panels + tiptap helpers extracted. Duplicate login page components removed. | 1e360f28 |
-| 2026-06-28 | **P4 — Split lib.rs into Rust modules!** 4555-line lib.rs → tables.rs (50 structs) + helpers.rs (10 functions) + lib.rs (reducers). 0 errors, 0 warnings. | 718b231a |
-| 2026-06-28 | **P4 — Split api.ts into 21 domain modules!** 1874-line api.ts → types/mappers/client/pages/collections/users/auth/groups/comments/shares/tags/attachments/webhooks/search/subscriptions/transclusions/audit/access-requests/collaboration/settings/index. Barrel re-export preserves all imports. | 862bfe2d |
+| 2026-06-28 | **P4 — Extract Comments, Tags, Favorites, Attachments from lib.rs into domain modules** — 4 new modules (comments.rs 84L, tags.rs 24L, favorites.rs 24L, attachments.rs 29L). lib.rs 3195→3053 lines. 21/31 sections now extracted. | 23aa41d8 |
+| 2026-06-28 | **P4 — Extract Pages+RTL from lib.rs into `pages.rs`** — moved 17 page reducers. Removed 315 lines from lib.rs (3508→3193). | ab180024 |
+| 2026-06-28 | **P4 — Auto-generated schema-based row mappers!** `fromStdbRow()` + `typedQuery`/`typedQueryOne`. | _(current)_ |
+| 2026-06-28 | **P5 — Add Rust unit tests!** 12 tests in helpers.rs | efd60f8a |
+| 2026-06-28 | **P5 — Complete .env.example!** 88 lines documenting all env vars. | fe2ed807 |
+| 2026-06-28 | **P4 — Split App.tsx layout from routes!** 6232→3268 lines (48% reduction). | 1e360f28 |
+| 2026-06-28 | **P4 — Split api.ts into 21 domain modules!** 1874-line api.ts → domain modules. | 862bfe2d |
