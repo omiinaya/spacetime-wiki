@@ -10,12 +10,11 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | **Add TypeScript tests — NotificationBell component** | NotificationBell.tsx renders bell icon + unread count. Test: shows count, empty state, refresh click. |
-| P5 | **Add TypeScript tests — TemplatePicker component** | TemplatePicker.tsx lists templates from props. Test: renders templates, selects one, cancel. |
-| P5 | **Add STDB table indexes for query performance** | Hot paths query by collection_id, page_id, user_id, page_tag.name — linear scan currently. Add `#[index(btree)]` on applicable fields in tables.rs for sub-ms lookups. |
-| P5 | **Audit unused frontend CSS + bundle size** | Tailwind generates all utilities. Could add `content: [...]` purge paths and run `tailwindcss -o output.css --minify` to measure. Also audit unused npm deps. |
-| P5 | **Add French (fr) and German (de) i18n locale files** | Currently only en.json and es.json exist with 315 keys each. Translate for fr and de to expand language coverage. |
-| P5 | **Add Rust doc comments to public types and reducers** | tables.rs has 50+ table structs without doc comments. Adding `///` would improve DX for module maintainers. |
+| P4 | **Extract SSO providers from lib.rs into sso.rs** | ~300 lines of SAML/OIDC/LDAP/OAuth provider reducers (add_saml_provider → unlink_oauth_user) can go into an `sso.rs` module. |
+| P4 | **Extract App.tsx admin panels into AdminPanels.tsx** | App.tsx is 2941 lines. The admin panel rendering + handlers (openAdmin, updateUserRole, admin tab switching) can be extracted into a dedicated component. |
+| P5 | **Add Rust unit tests for permissions reducers** | create_group, update_group, set_collection_group_permission, set_page_permission all have business logic (role validation, duplicate checks) that should be tested. |
+| P4 | **Extract App.tsx sidebar tree into SidebarTree.tsx** | The recursive collection tree renderer + drag/drop + context menu + batch selection logic occupies ~500+ lines in App.tsx. Extract to separate component. |
+| P4 | **Extract collaboration from lib.rs into collaboration.rs** | broadcast_yjs_update, join_collab_session, leave_collab_session, update_cursor_position, cleanup_stale_collab_sessions, cleanup_old_collab_updates. ~80 lines. |
 
 ---
 
@@ -23,6 +22,8 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | **P4 — Extract LoginView + SSO handlers from App.tsx into LoginView.tsx** — Removed 327 lines of inline login form + SSO handlers (OIDC/SAML/Google/OAuth/Passkey/LDAP). App.tsx 3268→2941 lines. 0 TS errors. | 6da0679b |
+| 2026-06-28 | **P4 — Extract groups/permissions from lib.rs into permissions.rs** — 10 reducers (create_group → remove_page_permission) extracted. lib.rs: 2755→2556 lines. Added 7 Rust unit tests. 0 cargo errors. | 13d4ac83 |
 | 2026-06-28 | **P5 — Add TypeScript tests — NotificationBell component** — 35 tests covering rendering, dropdown, actions, navigation, and accessibility. | f0b63577 |
 | 2026-06-28 | **P5 — Add TypeScript tests — TemplatePicker component** — 27 tests covering rendering, template list, creation flow, modal interaction, and accessibility. | 6f390e7b |
 | 2026-06-28 | **P5 — Add STDB btree indexes for query performance** — 50+ `#[index(btree)]` annotations across all 30+ tables on hot path fields (page_id, user_id, collection_id, email, slug, token, session_id). | 1e33b435 |
