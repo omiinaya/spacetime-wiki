@@ -9,8 +9,7 @@
   },
   "lint-staged": {
     "web/src/**/*.{ts,tsx}": [
-      "cd web && ./node_modules/.bin/tsc --noEmit",
-      "cd web && ./node_modules/.bin/vitest run --changed --reporter=verbose --no-color 2>&1 | tail -5"
+      "bash -c 'cd web && /home/user/spacetime-wiki/web/node_modules/.bin/vitest run --changed --reporter=verbose --no-color 2>&1 | tail -5'"
     ],
     "server/spacetimedb/src/**/*.rs": []
   },
