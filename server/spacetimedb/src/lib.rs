@@ -8,6 +8,14 @@ use crate::tables::*;
 use crate::helpers::*;
 mod pages;
 pub(crate) use pages::*;
+mod comments;
+pub(crate) use comments::*;
+mod tags;
+pub(crate) use tags::*;
+mod favorites;
+pub(crate) use favorites::*;
+mod attachments;
+pub(crate) use attachments::*;
 
 // ─── Collections ─────────────────────────────────────────────────────────────
 
@@ -253,156 +261,6 @@ pub fn update_collection_member_role(
 #[reducer]
 pub fn remove_collection_member(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.collection_member().id().delete(&id);
-    Ok(())
-}
-
-// ─── Comments ────────────────────────────────────────────────────────────────
-
-#[reducer]
-pub fn add_comment(
-    ctx: &ReducerContext,
-    id: String,
-    page_id: String,
-    parent_comment_id: String,
-    user_id: String,
-    body: String,
-    text_anchor: String,
-) -> Result<(), String> {
-    let now = now_ms(ctx);
-    ctx.db.comment().insert(Comment {
-        id,
-        page_id: page_id.clone(),
-        parent_comment_id,
-        user_id: user_id.clone(),
-        body: body.clone(),
-        text_anchor,
-        is_resolved: false,
-        created_at: now,
-        updated_at: now,
-    });
-    // Notify page watchers about new comment
-    let page_title = ctx.db.page().iter()
-        .find(|p| p.id == page_id)
-        .map(|p| p.title.clone())
-        .unwrap_or_else(|| String::from("Unknown page"));
-    let body_excerpt: String = body.chars().take(80).collect();
-    let comment_message = if body_excerpt.len() < body.len() {
-        format!("{} commented on \"{}\": \"{}...\"", user_id, page_title, body_excerpt)
-    } else {
-        format!("{} commented on \"{}\": \"{}\"", user_id, page_title, body_excerpt)
-    };
-    notify_page_watchers(
-        ctx, &page_id, "comment.create", &user_id,
-        &page_title, &comment_message, &String::new(),
-    );
-    Ok(())
-}
-
-#[reducer]
-pub fn resolve_comment(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.comment().iter().find(|c| c.id == id);
-    if found.is_none() {
-        return Err("Comment not found".into());
-    }
-    let mut com = found.unwrap();
-    com.is_resolved = true;
-    com.updated_at = now_ms(ctx);
-    ctx.db.comment().id().update(com);
-    Ok(())
-}
-
-#[reducer]
-pub fn delete_comment(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    ctx.db.comment().id().delete(&id);
-    // Clean up reactions on deleted comment
-    for r in ctx.db.comment_reaction().iter().filter(|r| r.comment_id == id) {
-        ctx.db.comment_reaction().id().delete(&r.id);
-    }
-    Ok(())
-}
-
-#[reducer]
-pub fn add_comment_reaction(ctx: &ReducerContext, id: String, comment_id: String, user_id: String, emoji: String) -> Result<(), String> {
-    // Check if reaction already exists (toggle off)
-    let existing = ctx.db.comment_reaction().iter()
-        .find(|r| r.comment_id == comment_id && r.user_id == user_id && r.emoji == emoji);
-    if existing.is_some() {
-        ctx.db.comment_reaction().id().delete(&existing.unwrap().id);
-        return Ok(());
-    }
-    ctx.db.comment_reaction().insert(CommentReaction {
-        id, comment_id, user_id, emoji,
-        created_at: now_ms(ctx),
-    });
-    Ok(())
-}
-
-// ─── Tags ────────────────────────────────────────────────────────────────────
-
-#[reducer]
-pub fn add_tag(
-    ctx: &ReducerContext,
-    id: String,
-    page_id: String,
-    name: String,
-    value: String,
-) -> Result<(), String> {
-    ctx.db.page_tag().insert(PageTag {
-        id, page_id, name: name.to_lowercase().trim().to_string(), value,
-    });
-    Ok(())
-}
-
-#[reducer]
-pub fn remove_tag(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    ctx.db.page_tag().id().delete(&id);
-    Ok(())
-}
-
-// ─── Favorites ───────────────────────────────────────────────────────────────
-
-#[reducer]
-pub fn toggle_favorite(
-    ctx: &ReducerContext,
-    id: String,
-    user_id: String,
-    page_id: String,
-) -> Result<(), String> {
-    let existing = ctx.db.favorite().iter()
-        .find(|f| f.user_id == user_id && f.page_id == page_id);
-    if let Some(fav) = existing {
-        ctx.db.favorite().id().delete(&fav.id);
-    } else {
-        ctx.db.favorite().insert(Favorite {
-            id, user_id, page_id, created_at: now_ms(ctx),
-        });
-    }
-    Ok(())
-}
-
-// ─── Attachments ─────────────────────────────────────────────────────────────
-
-#[reducer]
-pub fn add_attachment(
-    ctx: &ReducerContext,
-    id: String,
-    page_id: String,
-    filename: String,
-    mime_type: String,
-    size_bytes: u64,
-    storage_key: String,
-    uploaded_by: String,
-) -> Result<(), String> {
-    ctx.db.attachment().insert(Attachment {
-        id, page_id, filename, mime_type, size_bytes, storage_key, uploaded_by,
-        created_at: now_ms(ctx),
-    });
-    Ok(())
-}
-
-#[reducer]
-pub fn delete_attachment(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    ctx.db.attachment().id().delete(&id);
     Ok(())
 }
 
