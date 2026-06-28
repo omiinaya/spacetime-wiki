@@ -6,11 +6,17 @@ and works the top pending item each tick.
 
 ---
 
-## Status: All ROADMAP features implemented. All P5 backlog items complete.
+## PENDING
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| — | All backlog items complete | ✓ README, Pre-commit hooks, Dependabot, Docker Compose, CI/CD, a11y, tests, warnings all done. |
+| P4 | **Split lib.rs into Rust modules** — 142KB single file, extract tables/reducers/auth/media into separate `*.rs` files | Refactor for maintainability |
+| P4 | **Split api.ts into domain modules** — 86KB file with all SQL mappers, extract by entity (page, collection, auth, etc.) | Refactor for maintainability |
+| P4 | **Split App.tsx layout from routes** — 318KB/6232-line file, extract sidebar, header, admin panels into separate files | Code organization |
+| P4 | **Replace manual SQL mappers with STDB SDK typed bindings** — api.ts has 50+ manual row mappers that duplicate module_bindings | Tech debt reduction |
+| P4 | **Complete .env.example** — document all env vars used across frontend, api-server, and module publisher | Docs gap |
+| P4 | **Add Rust module unit tests** — add `#[test]` functions for reducer logic | Test coverage |
+| P5 | **Dependency audit** — check for major-version upgrades (Tailwind 4, TypeScript 6, ESLint 10, etc.) | Maintenance |
 
 ---
 
@@ -18,6 +24,8 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-27 | **P5 — Fix hardcoded STDB config in subscriptions.ts** — replaced hardcoded `127.0.0.1:3001` and hex DB_ID with `import.meta.env.VITE_STDB_HOST`/`VITE_STDB_DB` | cd7a17d1 |
+| 2026-06-27 | **P5 — Fix pre-commit hook ENOENT** — lint-staged commands use `./node_modules/.bin/{tsc,vitest}` instead of `npx` which wasn't available in hook environment | f68b5a4f |
 | 2026-06-28 | **P5 — README.md with setup guide!** Full project README with architecture, features, project structure, dev commands, env vars, API reference, testing guide, and contribution guide. | Inline |
 | 2026-06-28 | **P5 — Pre-commit hooks!** Husky + lint-staged runs tsc + vitest --changed on staged TS files, plus cargo check on Rust files. Fast pre-commit gate. | Inline |
 | 2026-06-28 | **P5 — Dependabot config!** Tracks npm (web + api-server), Cargo, pip, Docker (3 images), GitHub Actions. Weekly schedule, grouped updates for React/Vite/Tiptap/testing. | Inline |
@@ -26,9 +34,3 @@ and works the top pending item each tick.
 | 2026-06-28 | **P5 — CI/CD pipeline!** GitHub Actions workflow with TypeScript check + 89 tests + Rust build. Triggered on push/PR to master. | Inline |
 | 2026-06-28 | **P5 — Accessibility (a11y) pass!** Installed vitest-axe, added axe-core scanning to all 5 test suites. ImageLightbox, AdminDashboard, AccessRequestPanel, PageTags, Toast — all pass with 0 violations. | 1a333816 |
 | 2026-06-28 | **P5 — Fix Rust compiler warnings!** Removed dead TOTP/MFA functions + unused imports + unused params + unused `now`. Clean Rust build — 0 warnings, 0 errors. | c5897ebd |
-| 2026-06-28 | **P5 — Comprehensive test coverage!** 4 new suites: ImageLightbox (25), AdminDashboard (8), AccessRequestPanel (12), PageTags (12). Total: 84 tests across 7 suites. | 3187a3bb |
-| 2026-06-28 | **P5 — Admin avatar management!** `update_user_avatar` reducer, TypeScript binding, API call, admin panel UI with avatar preview and URL input per user. | 20c96f4e |
-| 2026-06-27 | **P4 — Per-share branding!** Custom title override and logo URL per share link. | fbe7441e |
-| 2026-06-27 | **P4 — Comment in image lightbox!** imageId attribute, comment sidebar in ImageLightbox. | 6f2417be |
-| 2026-06-27 | **P4 — Request access to documents!** access_request table, approve/deny reducers. | a124ddd9 |
-
