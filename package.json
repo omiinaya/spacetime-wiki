@@ -9,8 +9,8 @@
   },
   "lint-staged": {
     "web/src/**/*.{ts,tsx}": [
-      "cd web && npx tsc --noEmit",
-      "cd web && npx vitest run --changed --reporter=verbose --no-color 2>&1 | tail -5"
+      "cd web && ./node_modules/.bin/tsc --noEmit",
+      "cd web && ./node_modules/.bin/vitest run --changed --reporter=verbose --no-color 2>&1 | tail -5"
     ],
     "server/spacetimedb/src/**/*.rs": []
   },
