@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | **Add TypeScript tests — SearchFilters component** | SearchFilters.tsx (222 lines) interacts with api.collections.list and api.users.list. Test: renders, fetches collections/users, filter state, clear, accessibility. |
 | P5 | **Add TypeScript tests — KeyboardShortcuts component** | KeyboardShortcuts.tsx (118 lines) — purely presentational modal with 5 shortcut groups. No API mocks needed. Test: renders groups, close button, accessibility. |
 | P5 | **Add TypeScript tests — NotificationBell component** | NotificationBell.tsx renders bell icon + unread count. Test: shows count, empty state, refresh click. |
 | P5 | **Add TypeScript tests — TemplatePicker component** | TemplatePicker.tsx lists templates from props. Test: renders templates, selects one, cancel. |
@@ -25,7 +24,8 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-28 | **P5 — Add Rust tests for extracted modules** — 70 total tests (58 new). All 11 extracted modules now have unit test coverage: helpers (31), users (4), pages (4), comments (3), tags (2), favorites (2), attachments (2), templates (2), api_keys (3), app_settings (2), collection_members (4), share_links (4). Extracted 6 pure helper functions. | _(current)_ |
+| 2026-06-28 | **P5 — Add TypeScript tests for SearchFilters component** — 22 tests covering rendering, dropdown open/close, data fetching, filter state changes, clear all, filter chips, and 4 accessibility scenarios. Also fixed a11y: added htmlFor/id on `<select>` elements and aria-label on all filter chip close buttons. | fe31c9cc |
+| 2026-06-28 | **P5 — Add Rust tests for extracted modules** — 70 total tests (58 new). All 11 extracted modules now have unit test coverage. | _(current)_ |
 | 2026-06-28 | **P4 — Extract Collection Members + Share Links from lib.rs** — 2 new modules (collection_members.rs 3 reducers, share_links.rs 5 reducers). lib.rs 2911→2755 lines. 11 modules extracted. | 8e1e99e8 |
 | 2026-06-28 | **P4 — Extract Templates from lib.rs into `templates.rs`** — moved mark_as_template and create_from_template. lib.rs 3053→3014 lines. 7 modules extracted. | d6f350d5 |
 | 2026-06-28 | **P4 — Extract Comments, Tags, Favorites, Attachments from lib.rs** — 4 new modules, lib.rs 3195→3053 lines. | 23aa41d8 |
