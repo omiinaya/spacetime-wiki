@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ISC
 
 import type { AccessRequest } from "./types";
-import { sqlQuery, callReducer } from "./client";
+import { tableQuery, callReducer } from "./client";
 import { mapAccessRequest } from "./mappers";
 
 export const accessRequestApi = {
@@ -20,18 +20,18 @@ export const accessRequestApi = {
   /** Fetch all pending access requests (for admins and page owners) */
   listPending: (): Promise<AccessRequest[]> => {
     const sql = "SELECT * FROM access_request WHERE status = 'pending' ORDER BY created_at DESC";
-    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAccessRequest));
+    return tableQuery(sql, mapAccessRequest);
   },
 
   /** Fetch access requests for a specific page */
   listByPage: (pageId: string): Promise<AccessRequest[]> => {
     const sql = `SELECT * FROM access_request WHERE page_id = '${pageId}' ORDER BY created_at DESC`;
-    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAccessRequest));
+    return tableQuery(sql, mapAccessRequest);
   },
 
   /** Fetch access requests by a specific requester */
   listByRequester: (requesterId: string): Promise<AccessRequest[]> => {
     const sql = `SELECT * FROM access_request WHERE requester_id = '${requesterId}' ORDER BY created_at DESC`;
-    return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapAccessRequest));
+    return tableQuery(sql, mapAccessRequest);
   },
 };

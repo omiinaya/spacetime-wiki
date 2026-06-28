@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: ISC
 
+import type { Infer as __Infer } from "spacetimedb";
+
 export const STDB_HOST = import.meta.env.VITE_STDB_HOST || "127.0.0.1:3001";
 export const DB_ID = import.meta.env.VITE_STDB_DB || "c20000000000000000000000000000000000000000000000000000000000000000";
 
 /** Base URL for the REST API server (Python FastAPI backend). */
 export const API_BASE = import.meta.env.VITE_API_BASE || `http://${STDB_HOST.replace(/:3001$/, ":8000")}`;
 
-export function genId(prefix: string): string {
-  const ts = Date.now();
-  const rand = ((ts * 1103515245 + 12345) >>> 0).toString(16);
-  return `${prefix}_${rand}`;
-}
-
-export async function sqlQuery(sql: string): Promise<Record<string, unknown>[]> {
+/**
+ * Execute a raw SQL query against STDB and return rows as positional arrays.
+ *
+ * STDB's HTTP SQL endpoint returns rows as positional arrays (`unknown[][]`)
+ * indexed by column position in the SELECT clause.
+ */
+export async function sqlQuery(sql: string): Promise<unknown[][]> {
   const res = await fetch(`http://${STDB_HOST}/v1/database/${DB_ID}/sql`, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
@@ -20,7 +22,90 @@ export async function sqlQuery(sql: string): Promise<Record<string, unknown>[]> 
   });
   if (!res.ok) throw new Error(`STDB query failed: ${res.status}`);
   const data = await res.json();
-  return (data[0]?.rows || []) as Record<string, unknown>[];
+  return (data[0]?.rows || []) as unknown[][];
+}
+
+/**
+ * Execute a SQL query and map each positional row array into a typed object
+ * using the supplied mapper function. The row type `T` is constrained to match
+ * the mapper output rather than being positionally indexed.
+ *
+ * Usage:
+ * ```ts
+ * const pages = await tableQuery(
+ *   "SELECT * FROM page WHERE status = 'published'",
+ *   mapPage,
+ * );
+ * ```
+ */
+export async function tableQuery<T>(
+  sql: string,
+  mapper: (row: unknown[]) => T,
+): Promise<T[]> {
+  return sqlQuery(sql).then((rows) => rows.map(mapper));
+}
+
+/**
+ * Execute a SQL query returning a single row (or null if empty).
+ * Maps the first row via the supplied mapper.
+ */
+export async function tableQueryOne<T>(
+  sql: string,
+  mapper: (row: unknown[]) => T,
+): Promise<T | null> {
+  const rows = await sqlQuery(sql);
+  return rows.length > 0 ? mapper(rows[0]) : null;
+}
+
+/**
+ * Typed SQL query — uses an auto-generated module_binding row schema
+ * to map positional STDB rows into typed objects (camelCase fields).
+ *
+ * Usage:
+ * ```ts
+ * import { typedQuery } from "./client";
+ * import PageRowSchema from "../../module_bindings/page_table";
+ * const pages = await typedQuery("SELECT * FROM page", PageRowSchema);
+ * ```
+ */
+export async function typedQuery<T>(
+  sql: string,
+  schema: object & Record<string, unknown>,
+): Promise<T[]> {
+  const { fromStdbRow } = await import("./typed-sql");
+  const mapper = fromStdbRow<T>(schema);
+  return sqlQuery(sql).then((rows) => rows.map(mapper));
+}
+
+/**
+ * Typed SQL query returning a single row (or null).
+ */
+export async function typedQueryOne<T>(
+  sql: string,
+  schema: object & Record<string, unknown>,
+): Promise<T | null> {
+  const rows = await typedQuery<T>(sql, schema);
+  return rows.length > 0 ? rows[0] : null;
+}
+
+/**
+ * Extract a single scalar value from the first column of the first row.
+ * Returns `undefined` if no rows.
+ */
+export async function sqlScalar<T = string>(sql: string): Promise<T | undefined> {
+  const rows = await sqlQuery(sql);
+  if (rows.length === 0) return undefined;
+  return rows[0][0] as T;
+}
+
+/**
+ * Generate a unique ID string with the given prefix.
+ * Based on current timestamp + pseudo-random bits.
+ */
+export function genId(prefix: string): string {
+  const ts = Date.now();
+  const rand = ((ts * 1103515245 + 12345) >>> 0).toString(16);
+  return `${prefix}_${rand}`;
 }
 
 export async function callReducer(reducer: string, args: unknown[]): Promise<void> {
@@ -117,7 +202,7 @@ export async function resolveContentAttachments(
       try {
         const rows = await sqlQuery(`SELECT * FROM attachment WHERE id = '${id}'`);
         if (rows.length > 0) {
-          const row = rows[0] as any as unknown[];
+          const row = rows[0];
           const storageKey = String(row[5] ?? "");
           const mimeType = String(row[3] ?? "image/png");
           const blobUrl = base64ToBlobUrl(storageKey, mimeType);

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: ISC
 
 import type { Attachment } from "./types";
-import { sqlQuery, callReducer, genId } from "./client";
+import { tableQuery, callReducer, genId } from "./client";
 import { mapAttachment } from "./mappers";
 
 export async function getAttachments(pageId: string): Promise<Attachment[]> {
-  return sqlQuery(`SELECT * FROM attachment WHERE page_id = '${pageId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapAttachment));
+  return tableQuery(`SELECT * FROM attachment WHERE page_id = '${pageId}'`, mapAttachment);
 }
 
 export async function addAttachment(

@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: ISC
 
 import type { Group, GroupMember } from "./types";
-import { sqlQuery, callReducer, genId } from "./client";
+import { tableQuery, tableQueryOne, callReducer, genId } from "./client";
 import { mapGroup, mapGroupMember } from "./mappers";
 
 export async function listGroups(): Promise<Group[]> {
-  return sqlQuery("SELECT * FROM `group`").then((rows) => (rows as any as unknown[][]).map(mapGroup));
+  return tableQuery("SELECT * FROM `group`", mapGroup);
 }
 
 export async function getGroup(id: string): Promise<Group | null> {
-  return sqlQuery(`SELECT * FROM \`group\` WHERE id = '${id}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapGroup((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM \`group\` WHERE id = '${id}'`, mapGroup);
 }
 
 export async function createGroup(name: string, description: string, createdBy: string): Promise<string> {
@@ -28,8 +26,7 @@ export async function deleteGroup(id: string): Promise<void> {
 }
 
 export async function getGroupMembers(groupId: string): Promise<GroupMember[]> {
-  return sqlQuery(`SELECT * FROM group_member WHERE group_id = '${groupId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapGroupMember));
+  return tableQuery(`SELECT * FROM group_member WHERE group_id = '${groupId}'`, mapGroupMember);
 }
 
 export async function addGroupMember(groupId: string, userId: string, role: string, addedBy: string): Promise<void> {

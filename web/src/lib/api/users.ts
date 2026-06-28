@@ -1,23 +1,19 @@
 // SPDX-License-Identifier: ISC
 
 import type { User } from "./types";
-import { sqlQuery, callReducer, genId } from "./client";
+import { tableQuery, tableQueryOne, callReducer, genId } from "./client";
 import { mapUser } from "./mappers";
 
 export async function listUsers(): Promise<User[]> {
-  return sqlQuery("SELECT * FROM user").then((rows) => (rows as any as unknown[][]).map(mapUser));
+  return tableQuery("SELECT * FROM user", mapUser);
 }
 
 export async function getUser(id: string): Promise<User | null> {
-  return sqlQuery(`SELECT * FROM user WHERE id = '${id}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapUser((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM user WHERE id = '${id}'`, mapUser);
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  return sqlQuery(`SELECT * FROM user WHERE email = '${email}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapUser((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM user WHERE email = '${email}'`, mapUser);
 }
 
 export async function registerUser(name: string, email: string, password: string, role: string): Promise<void> {
@@ -27,8 +23,7 @@ export async function registerUser(name: string, email: string, password: string
 
 export async function loginUser(email: string, password: string): Promise<User | null> {
   await callReducer("login_user", [email, password]);
-  const rows = await sqlQuery(`SELECT * FROM user WHERE email = '${email}'`);
-  return (rows as any as unknown[][])[0] ? mapUser((rows as any as unknown[][])[0]) : null;
+  return tableQueryOne(`SELECT * FROM user WHERE email = '${email}'`, mapUser);
 }
 
 export async function updateUserRole(userId: string, newRole: string, updatedBy: string): Promise<void> {

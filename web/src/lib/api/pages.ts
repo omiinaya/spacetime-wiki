@@ -1,8 +1,19 @@
 // SPDX-License-Identifier: ISC
 
 import type { Page, PageRevision } from "./types";
-import { sqlQuery, callReducer, genId } from "./client";
-import { mapPage, mapRevision } from "./mappers";
+import { tableQuery, tableQueryOne, callReducer, genId } from "./client";
+
+// ─── Schema-based typed query helpers ──────────────────────────────────────
+// These use auto-generated module_bindings schemas instead of manual mappers.
+// The `fromStdbRow` utility resolves DB column names from schema metadata,
+// producing snake_case keys matching the existing types.ts interfaces.
+
+import PageRowSchema from "../../module_bindings/page_table";
+import PageRevisionRowSchema from "../../module_bindings/page_revision_table";
+import { fromStdbRow } from "./typed-sql";
+
+const mapPageAuto = fromStdbRow<Page>(PageRowSchema);
+const mapRevisionAuto = fromStdbRow<PageRevision>(PageRevisionRowSchema);
 
 // ─── Page cache ────────────────────────────────────────────────────────────────
 
@@ -29,27 +40,24 @@ export async function listPages(collectionId?: string, status?: string): Promise
   if (status) conditions.push(`status = '${status}'`);
   else conditions.push("status != 'deleted'");
   if (conditions.length) sql += " WHERE " + conditions.join(" AND ");
-  return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapPage));
+  return tableQuery(sql, mapPageAuto);
 }
 
 export async function listDeletedPages(): Promise<Page[]> {
-  return sqlQuery("SELECT * FROM page WHERE status = 'deleted'").then((rows) => (rows as any as unknown[][]).map(mapPage));
+  return tableQuery("SELECT * FROM page WHERE status = 'deleted'", mapPageAuto);
 }
 
 export async function getPage(id: string): Promise<Page | null> {
   // Try as ID first, then as slug
-  let rows = await sqlQuery(`SELECT * FROM page WHERE id = '${id}'`);
-  if ((rows as any as unknown[][]).length === 0) {
-    rows = await sqlQuery(`SELECT * FROM page WHERE slug = '${id}'`);
+  let page = await tableQueryOne(`SELECT * FROM page WHERE id = '${id}'`, mapPageAuto);
+  if (!page) {
+    page = await tableQueryOne(`SELECT * FROM page WHERE slug = '${id}'`, mapPageAuto);
   }
-  const row = (rows as any as unknown[][])[0];
-  return row ? mapPage(row) : null;
+  return page;
 }
 
 export async function getPageBySlug(slug: string): Promise<Page | null> {
-  return sqlQuery(`SELECT * FROM page WHERE slug = '${slug}'`).then(
-    (rows) => ((rows as any as unknown[][])[0] ? mapPage((rows as any as unknown[][])[0]) : null),
-  );
+  return tableQueryOne(`SELECT * FROM page WHERE slug = '${slug}'`, mapPageAuto);
 }
 
 export async function createPage(
@@ -136,8 +144,7 @@ export async function createFromTemplate(templateId: string, title: string, coll
 }
 
 export async function listTemplates(): Promise<Page[]> {
-  return sqlQuery("SELECT * FROM page WHERE is_template = true")
-    .then((rows) => (rows as any as unknown[][]).map(mapPage));
+  return tableQuery("SELECT * FROM page WHERE is_template = true", mapPageAuto);
 }
 
 // ── Batch operations (for sidebar multi-select) ──
@@ -161,8 +168,7 @@ export async function batchAddTag(pageIds: string[], name: string, value: string
 // ── Revisions ──
 
 export async function getPageRevisions(pageId: string): Promise<PageRevision[]> {
-  return sqlQuery(`SELECT * FROM page_revision WHERE page_id = '${pageId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapRevision));
+  return tableQuery(`SELECT * FROM page_revision WHERE page_id = '${pageId}'`, mapRevisionAuto);
 }
 
 // ── API section for the `api` object ──
