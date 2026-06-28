@@ -10,7 +10,7 @@ import {
   Sun, Moon, Keyboard, Eye, CheckSquare, Square, Tags, MessageSquare, Package,
   Mail, Share2, Code,
 } from "lucide-react";
-import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, PasskeyCredential, usePagesSubscription, useCollectionsSubscription, useNotificationsSubscription, useWatchSubscription, Notification as NotifType } from "./lib/api";
+import { api, Page, Collection, ApiKey, OidcProvider, SamlProvider, LdapProvider, OauthProvider, ScimProvider, ScimEvent, PasskeyCredential, usePagesSubscription, useCollectionsSubscription, useNotificationsSubscription, useWatchSubscription, Notification as NotifType } from "./lib/api";
 import { cn, timeAgo } from "./lib/utils";
 import { connectSubscriptions, disconnectSubscriptions, defaultSubscriptionManager } from "./lib/subscriptions";
 import { SearchFilters, EMPTY_FILTERS, type SearchFilterState } from "./components/SearchFilters";
@@ -22,13 +22,21 @@ import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { AiAssistant } from "./components/AiAssistant";
 import { ActivityFeed } from "./components/ActivityFeed";
 import { NotificationBell } from "./components/NotificationBell";
-import { AccessRequestPanel } from "./components/AccessRequestPanel";
+import AccessRequestPanel from "./components/AccessRequestPanel";
 import React from "react";
 
-// Inline components: HomeView, ActivityView, FavoritesView, PageViewWrapper, SlugView,
-// PermalinkRedirect, LoginView, GoogleCallback, OidcCallback, OAuthCallback, SamlCallback
-// are defined inline below — no lazy import needed for route-level components already
-// in the main bundle.
+// Route-level page components
+import HomeView from "./pages/HomeView";
+import ActivityView from "./pages/ActivityView";
+import FavoritesView from "./pages/FavoritesView";
+import PageViewWrapper from "./pages/PageViewWrapper";
+import SlugView from "./pages/SlugView";
+import PermalinkRedirect from "./pages/PermalinkRedirect";
+import LoginView from "./pages/LoginView";
+import GoogleCallback from "./pages/GoogleCallback";
+import OAuthCallback from "./pages/OAuthCallback";
+import OidcCallback from "./pages/OidcCallback";
+import SamlCallback from "./pages/SamlCallback";
 
 // Lazy-loaded route-level components
 const PageEditor = React.lazy(() => import("./pages/PageEditor").then(m => ({ default: m.PageEditor })));

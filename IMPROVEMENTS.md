@@ -6,11 +6,10 @@ and works the top pending item each tick.
 
 ---
 
-## Status: P5 CI/CD done — GitHub Actions workflow created. 89 tests pass, TypeScript + Rust both build clean. Next: P4 E2E test infra (Playwright).
+## Status: P5 CI/CD done — GitHub Actions workflow created. 24 Playwright E2E tests pass (critical paths). 89 vitest tests pass. TypeScript + Rust both build clean. Next: Docker Compose for local dev.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | E2E test infra (Playwright) | Integration tests for critical paths: auth flow, page CRUD, search, sharing. |
 | P5 | Docker Compose for local dev | Dockerfile + docker-compose.yml for one-command `docker compose up` with STDB + frontend + Rust module. |
 | P5 | Dependabot config | Automated dependency update PRs for npm + Cargo. |
 | P5 | Pre-commit hooks (Husky + lint-staged) | Run tsc check, lint, and tests before every commit. |
@@ -22,7 +21,8 @@ and works the top pending item each tick.
 
 ||| Date | Item | Commit |
 |||------|------|--------|
-||| 2026-06-28 | **P5 — CI/CD pipeline!** GitHub Actions workflow with TypeScript check + 89 tests + Rust build. Triggered on push/PR to master. | Inline |
+|||| 2026-06-28 | **P4 — Playwright E2E test infra!** 24 E2E tests across 4 suites (home, navigation, pages, creation). Mock STDB HTTP + WebSocket, test against built app. Fixed missing page component imports in App.tsx (build-blocker). | Inline |
+|||| 2026-06-28 | **P5 — CI/CD pipeline!** GitHub Actions workflow with TypeScript check + 89 tests + Rust build. Triggered on push/PR to master. | Inline |
 ||| 2026-06-28 | **P5 — Accessibility (a11y) pass!** Installed vitest-axe, added axe-core scanning to all 5 test suites. ImageLightbox, AdminDashboard, AccessRequestPanel, PageTags, Toast — all pass with 0 violations. | 1a333816 |
 ||| 2026-06-28 | **P5 — Fix Rust compiler warnings!** Removed dead TOTP/MFA functions + unused imports + unused params + unused `now`. Clean Rust build — 0 warnings, 0 errors. | c5897ebd |
 ||| 2026-06-28 | **P5 — Comprehensive test coverage!** 4 new suites: ImageLightbox (25), AdminDashboard (8), AccessRequestPanel (12), PageTags (12). Total: 84 tests across 7 suites. | 3187a3bb |

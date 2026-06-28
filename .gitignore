@@ -4,6 +4,8 @@ dist/
 .env
 *.local
 .DS_Store
+test-results/
+playwright-report/
 target/
 server/spacetimedb/target/
 __pycache__/
