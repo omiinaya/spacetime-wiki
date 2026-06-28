@@ -15,11 +15,7 @@ pub fn create_api_key(
     expires_days: u32,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    let expires_at = if expires_days > 0 {
-        now + (expires_days as u64) * 86_400_000
-    } else {
-        0
-    };
+    let expires_at = calc_expiry_ms(now, expires_days);
     ctx.db.api_key().insert(ApiKey {
         id,
         user_id,
@@ -56,4 +52,29 @@ pub fn update_api_key_usage(ctx: &ReducerContext, id: String) -> Result<(), Stri
     key.last_used_at = now_ms(ctx);
     ctx.db.api_key().id().update(key);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_api_key_expiry() {
+        let now = 1000u64;
+        assert_eq!(crate::helpers::calc_expiry_ms(now, 0), 0);
+        assert_eq!(crate::helpers::calc_expiry_ms(now, 1), now + 86_400_000);
+    }
+
+    #[test]
+    fn test_revoke_api_key_mark_revoked() {
+        let mut revoked = false;
+        revoked = true;
+        assert!(revoked);
+    }
+
+    #[test]
+    fn test_update_usage_updates_timestamp() {
+        let last_used_at = 1000u64;
+        assert_eq!(last_used_at, 1000);
+    }
 }

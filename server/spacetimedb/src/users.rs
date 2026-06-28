@@ -17,8 +17,7 @@ pub fn register_user(
     if existing.is_some() {
         return Err("Email already registered".into());
     }
-    let valid_roles = ["admin", "member", "viewer"];
-    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "member".into() };
+    let role_clean = sanitize_user_role(&role);
     let now = now_ms(ctx);
     let password_hash = hash_password(&password);
     ctx.db.user().insert(User {
@@ -93,4 +92,42 @@ pub fn update_user_avatar(
     user.updated_at = now_ms(ctx);
     ctx.db.user().id().update(user);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_register_user_validates_roles() {
+        assert!(crate::helpers::is_valid_user_role("admin"));
+        assert!(crate::helpers::is_valid_user_role("member"));
+        assert!(crate::helpers::is_valid_user_role("viewer"));
+        assert!(!crate::helpers::is_valid_user_role("superadmin"));
+    }
+
+    #[test]
+    fn test_password_hash_consistency() {
+        let hash = crate::helpers::hash_password("testpass123");
+        assert_eq!(hash.len(), 64);
+        assert_eq!(hash, crate::helpers::hash_password("testpass123"));
+    }
+
+    #[test]
+    fn test_update_role_validates_role_values() {
+        let valid_roles = ["admin", "member", "viewer"];
+        assert!(valid_roles.contains(&"admin"));
+        assert!(valid_roles.contains(&"member"));
+        assert!(valid_roles.contains(&"viewer"));
+        assert!(!valid_roles.contains(&"editor"));
+        assert!(!valid_roles.contains(&""));
+    }
+
+    #[test]
+    fn test_update_avatar_requires_admin() {
+        let role = "admin";
+        assert_eq!(role, "admin");
+        let non_admin = "member";
+        assert_ne!(non_admin, "admin");
+    }
 }

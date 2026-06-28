@@ -162,6 +162,60 @@ pub(crate) fn notify_page_watchers(
     }
 }
 
+// ─── Pure helper: slug generation ────────────────────────────────────────────
+
+pub(crate) fn make_slug(title: &str) -> String {
+    title.to_lowercase()
+        .replace(' ', "-")
+        .chars().filter(|c| c.is_alphanumeric() || *c == '-').collect()
+}
+
+// ─── Pure helper: extract text content (strip JSON tokens) ──────────────────
+
+pub(crate) fn extract_text_content(content: &str) -> String {
+    content.chars()
+        .filter(|c| !r#""{}[],:"#.contains(*c)).take(2000).collect()
+}
+
+// ─── Pure helper: role validation ────────────────────────────────────────────
+
+pub(crate) fn is_valid_user_role(role: &str) -> bool {
+    ["admin", "member", "viewer"].contains(&role)
+}
+
+pub(crate) fn sanitize_user_role(role: &str) -> String {
+    if is_valid_user_role(role) { role.to_string() } else { "member".to_string() }
+}
+
+pub(crate) fn is_valid_collection_role(role: &str) -> bool {
+    ["admin", "editor", "viewer"].contains(&role)
+}
+
+pub(crate) fn sanitize_collection_role(role: &str) -> String {
+    if is_valid_collection_role(role) { role.to_string() } else { "viewer".to_string() }
+}
+
+// ─── Pure helper: expiry calculation ─────────────────────────────────────────
+
+pub(crate) fn calc_expiry_ms(now: u64, expires_days: u32) -> u64 {
+    if expires_days > 0 {
+        now + (expires_days as u64) * 86_400_000
+    } else {
+        0
+    }
+}
+
+// ─── Pure helper: comment body excerpt ───────────────────────────────────────
+
+pub(crate) fn make_comment_excerpt(user_id: &str, page_title: &str, body: &str) -> String {
+    let excerpt: String = body.chars().take(80).collect();
+    if excerpt.len() < body.len() {
+        format!("{} commented on \"{}\": \"{}...\"", user_id, page_title, excerpt)
+    } else {
+        format!("{} commented on \"{}\": \"{}\"", user_id, page_title, excerpt)
+    }
+}
+
 /// Notify collection watchers when a new page is created in that collection.
 /// Skips the creator.
 pub(crate) fn notify_collection_watchers_new_page(
@@ -261,5 +315,171 @@ mod tests {
     #[test]
     fn test_verify_totp_clock_drift() {
         assert!(verify_totp_code(b"12345678901234567890", 287082, 30000));
+    }
+
+    // ── make_slug tests ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_make_slug_basic() {
+        assert_eq!(make_slug("Hello World"), "hello-world");
+    }
+
+    #[test]
+    fn test_make_slug_special_chars() {
+        assert_eq!(make_slug("Hello, World! #2024"), "hello-world-2024");
+    }
+
+    #[test]
+    fn test_make_slug_multi_spaces() {
+        assert_eq!(make_slug("a   b   c"), "a---b---c");
+    }
+
+    #[test]
+    fn test_make_slug_alphanum_only() {
+        assert_eq!(make_slug("Test123"), "test123");
+    }
+
+    #[test]
+    fn test_make_slug_unicode_stripped() {
+        // Rust's is_alphanumeric() includes unicode letters
+        assert_eq!(make_slug("Café Münster"), "café-münster");
+    }
+
+    // ── extract_text_content tests ───────────────────────────────────────────
+
+    #[test]
+    fn test_extract_text_content_strips_json_tokens() {
+        let input = r#"{"hello":"world"}"#;
+        let result = extract_text_content(input);
+        assert!(!result.contains('{'));
+        assert!(!result.contains('"'));
+    }
+
+    #[test]
+    fn test_extract_text_content_truncates() {
+        let long = "a".repeat(3000);
+        let result = extract_text_content(&long);
+        assert_eq!(result.len(), 2000);
+    }
+
+    #[test]
+    fn test_extract_text_content_short() {
+        let result = extract_text_content("hello");
+        assert_eq!(result, "hello");
+    }
+
+    // ── role validation tests ─────────────────────────────────────────────────
+
+    #[test]
+    fn test_is_valid_user_role_admin() {
+        assert!(is_valid_user_role("admin"));
+    }
+
+    #[test]
+    fn test_is_valid_user_role_member() {
+        assert!(is_valid_user_role("member"));
+    }
+
+    #[test]
+    fn test_is_valid_user_role_viewer() {
+        assert!(is_valid_user_role("viewer"));
+    }
+
+    #[test]
+    fn test_is_valid_user_role_invalid() {
+        assert!(!is_valid_user_role("editor"));
+        assert!(!is_valid_user_role(""));
+        assert!(!is_valid_user_role("superadmin"));
+    }
+
+    #[test]
+    fn test_sanitize_user_role_valid() {
+        assert_eq!(sanitize_user_role("admin"), "admin");
+        assert_eq!(sanitize_user_role("member"), "member");
+        assert_eq!(sanitize_user_role("viewer"), "viewer");
+    }
+
+    #[test]
+    fn test_sanitize_user_role_invalid_defaults_to_member() {
+        assert_eq!(sanitize_user_role("superadmin"), "member");
+        assert_eq!(sanitize_user_role("editor"), "member");
+        assert_eq!(sanitize_user_role(""), "member");
+    }
+
+    #[test]
+    fn test_is_valid_collection_role_admin() {
+        assert!(is_valid_collection_role("admin"));
+    }
+
+    #[test]
+    fn test_is_valid_collection_role_editor() {
+        assert!(is_valid_collection_role("editor"));
+    }
+
+    #[test]
+    fn test_is_valid_collection_role_viewer() {
+        assert!(is_valid_collection_role("viewer"));
+    }
+
+    #[test]
+    fn test_is_valid_collection_role_invalid() {
+        assert!(!is_valid_collection_role("member"));
+        assert!(!is_valid_collection_role(""));
+        assert!(!is_valid_collection_role("owner"));
+    }
+
+    #[test]
+    fn test_sanitize_collection_role_valid() {
+        assert_eq!(sanitize_collection_role("admin"), "admin");
+        assert_eq!(sanitize_collection_role("editor"), "editor");
+        assert_eq!(sanitize_collection_role("viewer"), "viewer");
+    }
+
+    #[test]
+    fn test_sanitize_collection_role_invalid_defaults_to_viewer() {
+        assert_eq!(sanitize_collection_role("member"), "viewer");
+        assert_eq!(sanitize_collection_role("owner"), "viewer");
+        assert_eq!(sanitize_collection_role(""), "viewer");
+    }
+
+    // ── calc_expiry_ms tests ──────────────────────────────────────────────────
+
+    #[test]
+    fn test_calc_expiry_zero_days() {
+        assert_eq!(calc_expiry_ms(1000, 0), 0);
+    }
+
+    #[test]
+    fn test_calc_expiry_positive_days() {
+        assert_eq!(calc_expiry_ms(1000, 1), 1000 + 86_400_000);
+    }
+
+    #[test]
+    fn test_calc_expiry_30_days() {
+        assert_eq!(calc_expiry_ms(0, 30), 30 * 86_400_000);
+    }
+
+    // ── make_comment_excerpt tests ────────────────────────────────────────────
+
+    #[test]
+    fn test_comment_excerpt_short_body() {
+        let result = make_comment_excerpt("user1", "My Page", "Hi");
+        assert_eq!(result, "user1 commented on \"My Page\": \"Hi\"");
+    }
+
+    #[test]
+    fn test_comment_excerpt_long_body_truncated() {
+        let long = "a".repeat(100);
+        let result = make_comment_excerpt("user1", "My Page", &long);
+        assert!(result.ends_with("...\""));
+        assert_eq!(result.chars().count(), "user1 commented on \"My Page\": \"".len() + 80 + "...\"".len());
+    }
+
+    #[test]
+    fn test_comment_excerpt_exactly_80() {
+        let body = "x".repeat(80);
+        let result = make_comment_excerpt("user1", "My Page", &body);
+        assert_eq!(result.len(), "user1 commented on \"My Page\": \"".len() + 80 + "\"".len());
+        assert!(!result.ends_with("...\""));
     }
 }

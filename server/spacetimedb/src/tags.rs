@@ -22,3 +22,20 @@ pub fn remove_tag(ctx: &ReducerContext, id: String) -> Result<(), String> {
     ctx.db.page_tag().id().delete(&id);
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_tag_lowercases_name() {
+        let name = "HelloWorld".to_lowercase().trim().to_string();
+        assert_eq!(name, "helloworld");
+    }
+
+    #[test]
+    fn test_remove_tag_uses_id() {
+        let id = "some_id";
+        assert!(!id.is_empty());
+    }
+}

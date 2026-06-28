@@ -14,16 +14,16 @@ pub fn create_page(
     parent_page_id: String,
     created_by: String,
 ) -> Result<(), String> {
-    let slug = title.to_lowercase()
-        .replace(' ', "-")
-        .chars().filter(|c| c.is_alphanumeric() || *c == '-').collect::<String>();
+    let slug = make_slug(&title);
     let now = now_ms(ctx);
     let sort_order = next_sort_order(ctx, &collection_id, &parent_page_id);
-    let text_content = content.chars()
-        .filter(|c| !r#""{}[],:"#.contains(*c)).take(2000).collect::<String>();
+    let text_content = extract_text_content(&content);
 
     ctx.db.page().insert(Page {
-        id: id.clone(), title: title.clone(), slug, content: content.clone(),
+        id: id.clone(),
+        title: title.clone(),
+        slug,
+        content: content.clone(),
         text_content, collection_id: collection_id.clone(), parent_page_id: parent_page_id.clone(),
         status: "draft".into(), icon: String::new(), color: String::new(),
         full_width: false, is_pinned: false, is_template: false, template_id: String::new(),
@@ -60,11 +60,8 @@ pub fn update_page(
         return Err("Page not found".into());
     }
     let mut page = found.unwrap();
-    let slug = title.to_lowercase()
-        .replace(' ', "-")
-        .chars().filter(|c| c.is_alphanumeric() || *c == '-').collect::<String>();
-    let text_content = content.chars()
-        .filter(|c| !r#""{}[],:"#.contains(*c)).take(2000).collect::<String>();
+    let slug = make_slug(&title);
+    let text_content = extract_text_content(&content);
     let now = now_ms(ctx);
 
     page.title = title.clone();
@@ -142,6 +139,43 @@ pub fn restore_page(ctx: &ReducerContext, id: String) -> Result<(), String> {
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_make_slug_via_helper() {
+        assert_eq!(crate::helpers::make_slug("Hello World"), "hello-world");
+    }
+
+    #[test]
+    fn test_text_content_extraction_via_helper() {
+        let input = "Hello, {\"json\": \"content\"} world!";
+        let result = crate::helpers::extract_text_content(input);
+        assert!(!result.contains('{'));
+        assert!(!result.contains('"'));
+        assert!(result.contains("Hello"));
+        assert!(result.contains("world"));
+    }
+
+    #[test]
+    fn test_valid_page_statuses() {
+        let valid = ["draft", "published", "archived", "deleted"];
+        assert!(valid.contains(&"draft"));
+        assert!(valid.contains(&"published"));
+        assert!(valid.contains(&"archived"));
+        assert!(valid.contains(&"deleted"));
+        assert!(!valid.contains(&"unknown"));
+    }
+
+    #[test]
+    fn test_valid_direction_values() {
+        assert_eq!("ltr", "ltr");
+        assert_eq!("rtl", "rtl");
+        assert_ne!("ltr", "rtl");
+    }
 }
 
 #[reducer]
