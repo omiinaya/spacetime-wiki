@@ -98,10 +98,11 @@ export function SearchFilters({ filters, onChange }: Props) {
 
           {/* Collection filter */}
           <div>
-            <label className="flex items-center gap-1 text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-1.5">
+            <label htmlFor="filter-collection" className="flex items-center gap-1 text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-1.5">
               <Folder className="h-3 w-3" /> Collection
             </label>
             <select
+              id="filter-collection"
               value={filters.collectionId}
               onChange={(e) => update("collectionId", e.target.value)}
               className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
@@ -117,10 +118,11 @@ export function SearchFilters({ filters, onChange }: Props) {
 
           {/* Author filter */}
           <div>
-            <label className="flex items-center gap-1 text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-1.5">
+            <label htmlFor="filter-author" className="flex items-center gap-1 text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-1.5">
               <User className="h-3 w-3" /> Author
             </label>
             <select
+              id="filter-author"
               value={filters.authorId}
               onChange={(e) => update("authorId", e.target.value)}
               className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
@@ -179,7 +181,7 @@ export function SearchFilters({ filters, onChange }: Props) {
               {filters.collectionId && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-[10px] text-primary">
                   {collections.find((c) => c.id === filters.collectionId)?.name || "Collection"}
-                  <button onClick={() => update("collectionId", "")} className="hover:text-primary/80">
+                  <button onClick={() => update("collectionId", "")} aria-label="Remove collection filter" className="hover:text-primary/80">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
@@ -187,7 +189,7 @@ export function SearchFilters({ filters, onChange }: Props) {
               {filters.authorId && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-[10px] text-primary">
                   {users.find((u) => u.id === filters.authorId)?.name || "Author"}
-                  <button onClick={() => update("authorId", "")} className="hover:text-primary/80">
+                  <button onClick={() => update("authorId", "")} aria-label="Remove author filter" className="hover:text-primary/80">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
@@ -199,6 +201,7 @@ export function SearchFilters({ filters, onChange }: Props) {
                     onClick={() => {
                       onChange({ ...filters, dateFrom: "", dateTo: "" });
                     }}
+                    aria-label="Remove date filter"
                     className="hover:text-primary/80"
                   >
                     <X className="h-2.5 w-2.5" />
@@ -208,7 +211,7 @@ export function SearchFilters({ filters, onChange }: Props) {
               {filters.tags && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-[10px] text-primary">
                   <TagsIcon className="h-2.5 w-2.5" /> {filters.tags}
-                  <button onClick={() => update("tags", "")} className="hover:text-primary/80">
+                  <button onClick={() => update("tags", "")} aria-label="Remove tags filter" className="hover:text-primary/80">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
