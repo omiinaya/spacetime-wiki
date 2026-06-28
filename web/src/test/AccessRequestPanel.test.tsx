@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { axe } from "vitest-axe";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 
@@ -180,5 +181,13 @@ describe("AccessRequestPanel", () => {
     });
     fireEvent.click(screen.getByText("Refresh"));
     await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
+  });
+
+  it("has no accessibility violations", async () => {
+    mockAccessRequestApi.listPending.mockResolvedValue([]);
+    const { container } = render(<AccessRequestPanel userId="admin1" />);
+    await waitFor(() => expect(screen.getByText("No pending access requests")).toBeInTheDocument());
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

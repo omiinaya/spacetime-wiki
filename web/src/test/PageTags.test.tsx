@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { axe } from "vitest-axe";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 
@@ -138,5 +139,12 @@ describe("PageTags", () => {
     fireEvent.change(input, { target: { value: "important" } });
     fireEvent.keyDown(input, { key: "Enter" });
     expect(mockApi.tags.add).not.toHaveBeenCalled();
+  });
+
+  it("has no accessibility violations", async () => {
+    mockApi.tags.list.mockResolvedValue([]);
+    const { container } = render(<PageTags pageId="page1" />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

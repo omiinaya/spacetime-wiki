@@ -6,11 +6,10 @@ and works the top pending item each tick.
 
 ---
 
-## Status: P5 Rust compiler warnings fixed (4 errors + 1 warning eliminated). Build clean. Next: P5 Accessibility (a11y) pass.
+## Status: P5 a11y pass done — vitest-axe integrated, 5 component suites tested (0 violations). 89 tests total. Next: P5 GitHub Actions CI/CD.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | Accessibility (a11y) pass | Add aria labels, keyboard nav improvements, focus management, screen reader support across all components. |
 | P5 | GitHub Actions CI/CD | Automated test run, TypeScript check, Rust build on push/PR. |
 | P4 | E2E test infra (Playwright) | Integration tests for critical paths: auth flow, page CRUD, search, sharing. |
 
@@ -18,8 +17,9 @@ and works the top pending item each tick.
 
 ## Recently Completed
 
-| Date | Item | Commit |
-|------|------|--------|
+|| Date | Item | Commit |
+||------|------|--------|
+|| 2026-06-28 | **P5 — Accessibility (a11y) pass!** Installed vitest-axe, added axe-core scanning to all 5 test suites. ImageLightbox, AdminDashboard, AccessRequestPanel, PageTags, Toast — all pass with 0 violations. | Inline |
 || 2026-06-28 | **P5 — Fix Rust compiler warnings!** Removed dead TOTP/MFA functions + unused imports + unused params + unused `now`. Clean Rust build — 0 warnings, 0 errors. | c5897ebd |
 || 2026-06-28 | **P5 — Comprehensive test coverage!** 4 new suites: ImageLightbox (25), AdminDashboard (8), AccessRequestPanel (12), PageTags (12). Total: 84 tests across 7 suites. | 3187a3bb |
 | 2026-06-28 | **P5 — Admin avatar management!** `update_user_avatar` reducer, TypeScript binding, API call, admin panel UI with avatar preview and URL input per user. | 20c96f4e |
