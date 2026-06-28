@@ -10,9 +10,14 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | **Add TypeScript tests for frontend components** | Only 7 test files exist in web/src/test/. Could add tests for PageEditor, Sidebar, Search, Auth components. |
-| P5 | **Add STDB table indexes for query performance** | Hot paths query by collection_id, page_id, user_id, page_tag.name — linear scan currently. Use `#[index(name, fields = [...])]` on CollectionMember, Page, PageTag, Watch, Notification tables for sub-ms lookups. |
+| P5 | **Add TypeScript tests — SearchFilters component** | SearchFilters.tsx (222 lines) interacts with api.collections.list and api.users.list. Test: renders, fetches collections/users, filter state, clear, accessibility. |
+| P5 | **Add TypeScript tests — KeyboardShortcuts component** | KeyboardShortcuts.tsx (118 lines) — purely presentational modal with 5 shortcut groups. No API mocks needed. Test: renders groups, close button, accessibility. |
+| P5 | **Add TypeScript tests — NotificationBell component** | NotificationBell.tsx renders bell icon + unread count. Test: shows count, empty state, refresh click. |
+| P5 | **Add TypeScript tests — TemplatePicker component** | TemplatePicker.tsx lists templates from props. Test: renders templates, selects one, cancel. |
+| P5 | **Add STDB table indexes for query performance** | Hot paths query by collection_id, page_id, user_id, page_tag.name — linear scan currently. Add `#[index(btree)]` on applicable fields in tables.rs for sub-ms lookups. |
 | P5 | **Audit unused frontend CSS + bundle size** | Tailwind generates all utilities. Could add `content: [...]` purge paths and run `tailwindcss -o output.css --minify` to measure. Also audit unused npm deps. |
+| P5 | **Add French (fr) and German (de) i18n locale files** | Currently only en.json and es.json exist with 315 keys each. Translate for fr and de to expand language coverage. |
+| P5 | **Add Rust doc comments to public types and reducers** | tables.rs has 50+ table structs without doc comments. Adding `///` would improve DX for module maintainers. |
 
 ---
 
