@@ -46,9 +46,18 @@ const GraphView = React.lazy(() => import("./components/GraphView"));
 
 const RouteFallback = () => <div className="flex items-center justify-center h-full"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>;
 
-// ─── Layout ──────────────────────────────────────────────────────────────────
+import { ApiKeySection } from "./components/admin/ApiKeySettings";
+import { TrashSettings } from "./components/admin/TrashSettings";
+import { FeatureFlags } from "./components/admin/FeatureFlags";
+import { BulkExport } from "./components/admin/BulkExport";
+import { ScimSettings } from "./components/admin/ScimSettings";
+import { PasskeySettings } from "./components/admin/PasskeySettings";
+import { MfaSettings } from "./components/admin/MfaSettings";
+import { LdapSettings } from "./components/admin/LdapSettings";
+import { OAuthSettings } from "./components/admin/OAuthSettings";
+import { InvitationSettings } from "./components/admin/InvitationSettings";
 
-function AppLayout() {
+// ─── Layout ──────────────────────────────────────────────────────────────────
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -3227,20 +3236,30 @@ function AppLayout() {
     </div>
   );
 }
-
+}
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 import { ApiKeySection } from "./components/admin/ApiKeySettings";
 import { TrashSettings } from "./components/admin/TrashSettings";
 import { FeatureFlags } from "./components/admin/FeatureFlags";
 import { BulkExport } from "./components/admin/BulkExport";
-import { ScimSettings } from "./components/admin/ScimSettings";
-import { PasskeySettings } from "./components/admin/PasskeySettings";
-import { MfaSettings } from "./components/admin/MfaSettings";
-import { LdapSettings } from "./components/admin/LdapSettings";
-import { OAuthSettings } from "./components/admin/OAuthSettings";
-import { InvitationSettings } from "./components/admin/InvitationSettings";
-// (Add other admin component imports as they are created)
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <ToastProvider>
+        <Routes>
+          <Route path="/shared/:token" element={
+            <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+              <SharedPageView userId={null} />
+            </React.Suspense>
+          } />
+          <Route path="/*" element={<AppLayout />} />
+        </Routes>
+      </ToastProvider>
+    </BrowserRouter>
+  );
+}
 
 
 
