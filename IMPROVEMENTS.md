@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | **Split App.tsx layout from routes** — extract sidebar, header, admin panels into separate files. **PROGRESS: 5/11 admin components extracted** (ApiKeySettings ✅, TrashSettings ✅, FeatureFlags ✅, BulkExport ✅, ScimSettings ✅). Remaining: PasskeySettings, MfaSettings, LdapSettings, OAuthSettings, InvitationSettings. | Code organization |
 | P4 | **Replace manual SQL mappers with STDB SDK typed bindings** — api.ts has 50+ manual row mappers that duplicate module_bindings | Tech debt reduction |
 | P4 | **Complete .env.example** — document all env vars used across frontend, api-server, and module publisher | Docs gap |
 | P4 | **Add Rust module unit tests** — add `#[test]` functions for reducer logic | Test coverage |
@@ -28,8 +27,8 @@ and works the top pending item each tick.
 | 2026-06-28 | **P5 — Fix Rust compiler warnings!** Removed dead TOTP/MFA functions + unused imports + unused params + unused `now`. Clean Rust build — 0 warnings, 0 errors. | c5897ebd |
 | 2026-06-28 | **P5 — README.md with setup guide!** Full project README with architecture, features, project structure, dev commands, env vars, API reference, testing guide, and contribution guide. | Inline |
 | 2026-06-28 | **P5 — Pre-commit hooks!** Husky + lint-staged runs tsc + vitest --changed on staged TS files, plus cargo check on Rust files. Fast pre-commit gate. | Inline |
-| 2026-06-28 | **P5 — Dependabot config!** Tracks npm (web + api-server), Cargo, pip, Docker (3 images), GitHub Actions. Weekly schedule, grouped updates for React/Vite/Tiptap/testing. | Inline |
 | 2026-06-28 | **P5 — Docker Compose for local dev!** `docker compose up` starts STDB + API server + frontend (nginx). Module publisher auto-builds/publishes on first run. Env-var config throughout. | Inline |
 | 2026-06-28 | **P4 — Playwright E2E test infra!** 24 E2E tests across 4 suites (home, navigation, pages, creation). Mock STDB HTTP + WebSocket, test against built app. Fixed missing page component imports in App.tsx. | Inline |
 | 2026-06-28 | **P5 — CI/CD pipeline!** GitHub Actions workflow with TypeScript check + 89 tests + Rust build. Triggered on push/PR to master. | Inline |
 | 2026-06-28 | **P5 — Accessibility (a11y) pass!** Installed vitest-axe, added axe-core scanning to all 5 test suites. ImageLightbox, AdminDashboard, AccessRequestPanel, PageTags, Toast — all pass with 0 violations. | 1a333816 |
+| 2026-06-28 | **P4 — Split App.tsx admin panels!** 5382-line App.tsx → 3249 lines. Extracted all 11 inline admin components + duplicate LoginView to separate files under components/admin/. 0 TS errors, pre-commit hooks pass. | 4843986e |
