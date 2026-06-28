@@ -2,6 +2,8 @@ use spacetimedb::*;
 
 // ─── Audit Event Log ─────────────────────────────────────────────────────────
 
+/// Records administrative and security events in the wiki.
+/// Used for audit trails — tracks who did what and when.
 #[table(accessor = audit_event, public)]
 #[derive(Debug, Clone)]
 pub struct AuditEvent {
@@ -20,6 +22,8 @@ pub struct AuditEvent {
 
 // ─── Groups ──────────────────────────────────────────────────────────────────
 
+/// A user group for organizing permissions and access control.
+/// Groups can be granted collection-level roles and shared across the wiki.
 #[table(accessor = group, public)]
 #[derive(Debug, Clone)]
 pub struct Group {
@@ -32,6 +36,7 @@ pub struct Group {
     pub updated_at: u64,
 }
 
+/// Membership linking a user to a group with a specific role.
 #[table(accessor = group_member, public)]
 #[derive(Debug, Clone)]
 pub struct GroupMember {
@@ -48,6 +53,7 @@ pub struct GroupMember {
 
 #[table(accessor = collection_group_permission, public)]
 #[derive(Debug, Clone)]
+/// Permissions granted to a group for a specific collection.
 pub struct CollectionGroupPermission {
     #[primary_key]
     pub id: String,
@@ -58,8 +64,9 @@ pub struct CollectionGroupPermission {
     pub created_at: u64,
 }
 
-// ─── Users ─────────────────��─────────────────────────────────────────────────
+// ─── Users ───────────────────────────────────────────────────────────────────
 
+/// A registered wiki user with authentication credentials and profile.
 #[table(accessor = user, public)]
 #[derive(Debug, Clone)]
 pub struct User {
@@ -77,6 +84,8 @@ pub struct User {
 
 // ─── Collections ─────────────────────────────────────────────────────────────
 
+/// A named folder/grouping for wiki pages, with optional parent hierarchy.
+/// Collections can have custom sorting, icons, colours, and access permissions.
 #[table(accessor = collection, public)]
 #[derive(Debug, Clone)]
 pub struct Collection {
@@ -96,6 +105,7 @@ pub struct Collection {
     pub updated_at: u64,
 }
 
+/// Membership linking a user to a collection with a specific role.
 #[table(accessor = collection_member, public)]
 #[derive(Debug, Clone)]
 pub struct CollectionMember {
@@ -112,6 +122,9 @@ pub struct CollectionMember {
 
 // ─── Pages ───────────────────────────────────────────────────────────────────
 
+/// A wiki page — the core content entity. Pages can have rich text (via blocks),
+/// be organized under collections, nested as children of other pages, and
+/// support templates, pinning, archiving, and soft-delete.
 #[table(accessor = page, public)]
 #[derive(Debug, Clone)]
 pub struct Page {
@@ -143,6 +156,7 @@ pub struct Page {
     pub direction: String,
 }
 
+/// A snapshot of a page at a specific point in time for version history.
 #[table(accessor = page_revision, public)]
 #[derive(Debug, Clone)]
 pub struct PageRevision {
@@ -161,6 +175,7 @@ pub struct PageRevision {
 
 #[table(accessor = comment, public)]
 #[derive(Debug, Clone)]
+/// A threaded comment on a wiki page with optional text anchor.
 pub struct Comment {
     #[primary_key]
     pub id: String,
@@ -179,6 +194,7 @@ pub struct Comment {
 
 #[table(accessor = attachment, public)]
 #[derive(Debug, Clone)]
+/// A file attached to a wiki page.
 pub struct Attachment {
     #[primary_key]
     pub id: String,
@@ -196,6 +212,7 @@ pub struct Attachment {
 
 #[table(accessor = page_tag, public)]
 #[derive(Debug, Clone)]
+/// A key-value tag for labelling and filtering a page.
 pub struct PageTag {
     #[primary_key]
     pub id: String,
@@ -210,6 +227,7 @@ pub struct PageTag {
 
 #[table(accessor = favorite, public)]
 #[derive(Debug, Clone)]
+/// A bookmarked/favorited page for a user.
 pub struct Favorite {
     #[primary_key]
     pub id: String,
@@ -224,6 +242,7 @@ pub struct Favorite {
 
 #[table(accessor = comment_reaction, public)]
 #[derive(Debug, Clone)]
+/// An emoji reaction on a comment.
 pub struct CommentReaction {
     #[primary_key]
     pub id: String,
@@ -238,6 +257,7 @@ pub struct CommentReaction {
 
 #[table(accessor = share_link, public)]
 #[derive(Debug, Clone)]
+/// A shareable link to a page, optionally password-protected.
 pub struct ShareLink {
     #[primary_key]
     pub id: String,
@@ -258,6 +278,7 @@ pub struct ShareLink {
 
 #[table(accessor = page_permission, public)]
 #[derive(Debug, Clone)]
+/// Explicit page-level permission for a user or group.
 pub struct PagePermission {
     #[primary_key]
     pub id: String,
@@ -273,6 +294,7 @@ pub struct PagePermission {
 
 #[table(accessor = api_key, public)]
 #[derive(Debug, Clone)]
+/// An API key for programmatic access, scoped to a user.
 pub struct ApiKey {
     #[primary_key]
     pub id: String,
@@ -291,6 +313,7 @@ pub struct ApiKey {
 
 #[table(accessor = webhook, public)]
 #[derive(Debug, Clone)]
+/// A configured webhook that fires on wiki events.
 pub struct Webhook {
     #[primary_key]
     pub id: String,
@@ -306,6 +329,7 @@ pub struct Webhook {
 
 #[table(accessor = webhook_event, public)]
 #[derive(Debug, Clone)]
+/// A single webhook delivery attempt.
 pub struct WebhookEvent {
     #[primary_key]
     pub id: String,
@@ -650,6 +674,7 @@ pub struct DbCell {
 
 #[table(accessor = invitation, public)]
 #[derive(Debug, Clone)]
+/// An email invitation to join the wiki.
 pub struct Invitation {
     #[primary_key]
     pub id: String,
@@ -729,6 +754,7 @@ pub struct MfaBackupCode {
 
 #[table(accessor = watch, public)]
 #[derive(Debug, Clone)]
+/// A user subscription to notifications for a page or collection.
 pub struct Watch {
     #[primary_key]
     pub id: String,
@@ -742,6 +768,7 @@ pub struct Watch {
 
 #[table(accessor = notification, public)]
 #[derive(Debug, Clone)]
+/// A notification event sent to a user.
 pub struct Notification {
     #[primary_key]
     pub id: String,
@@ -762,6 +789,7 @@ pub struct Notification {
 
 #[table(accessor = access_request, public)]
 #[derive(Debug, Clone)]
+/// A user request to access a restricted page.
 pub struct AccessRequest {
     #[primary_key]
     pub id: String,
