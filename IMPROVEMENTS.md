@@ -13,6 +13,8 @@ and works the top pending item each tick.
 | P4 | **Extract remaining lib.rs sections into domain modules** | ✅ API Keys + App Settings done (5 reducers extracted). Next targets: Collection Members (50L), Share Links (108L). 9 modules extracted, 2911 lines remain in lib.rs. |
 | P5 | **Add Rust tests for extracted modules** | 0 tests in comments/tags/favorites/attachments/pages/users/templates modules. Only helpers.rs has 12 tests. Add basic unit tests for each module's reducer logic. |
 | P5 | **Add TypeScript tests for frontend components** | Only 7 test files exist in web/src/test/. Could add tests for PageEditor, Sidebar, Search, Auth components. |
+| P5 | **Add STDB table indexes for query performance** | Hot paths query by collection_id, page_id, user_id, page_tag.name — linear scan currently. Use `#[index(name, fields = [...])]` on CollectionMember, Page, PageTag, Watch, Notification tables for sub-ms lookups. |
+| P5 | **Audit unused frontend CSS + bundle size** | Tailwind generates all utilities. Could add `content: [...]` purge paths and run `tailwindcss -o output.css --minify` to measure. Also audit unused npm deps. |
 
 ---
 
