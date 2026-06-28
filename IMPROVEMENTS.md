@@ -6,11 +6,10 @@ and works the top pending item each tick.
 
 ---
 
-## Status: All ROADMAP features implemented. 3 P5 items pending (Docker Compose done).
+## Status: All ROADMAP features implemented. 2 P5 items pending (Dependabot done).
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | Dependabot config | Automated dependency update PRs for npm + Cargo. |
 | P5 | Pre-commit hooks (Husky + lint-staged) | Run tsc check, lint, and tests before every commit. |
 | P5 | README.md with setup guide | Currently empty — missing getting-started docs, architecture overview, contribution guide. |
 
@@ -20,7 +19,8 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-|| 2026-06-28 | **P5 — Docker Compose for local dev!** `docker compose up` starts STDB + API server + frontend (nginx). Module publisher auto-builds/publishes on first run. Env-var config throughout. | Inline |
+|| 2026-06-28 | **P5 — Dependabot config!** Tracks npm (web + api-server), Cargo, pip, Docker (3 images), GitHub Actions. Weekly schedule, grouped updates for React/Vite/Tiptap/testing. | Inline |
+| 2026-06-28 | **P5 — Docker Compose for local dev!** `docker compose up` starts STDB + API server + frontend (nginx). Module publisher auto-builds/publishes on first run. Env-var config throughout. | Inline |
 || 2026-06-28 | **P4 — Playwright E2E test infra!** 24 E2E tests across 4 suites (home, navigation, pages, creation). Mock STDB HTTP + WebSocket, test against built app. Fixed missing page component imports in App.tsx (build-blocker). | Inline |
 | 2026-06-28 | **P5 — CI/CD pipeline!** GitHub Actions workflow with TypeScript check + 89 tests + Rust build. Triggered on push/PR to master. | Inline |
 | 2026-06-28 | **P5 — Accessibility (a11y) pass!** Installed vitest-axe, added axe-core scanning to all 5 test suites. ImageLightbox, AdminDashboard, AccessRequestPanel, PageTags, Toast — all pass with 0 violations. | 1a333816 |
