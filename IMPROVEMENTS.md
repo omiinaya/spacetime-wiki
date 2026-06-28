@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | **Extract remaining lib.rs sections into domain modules** | ✅ API Keys + App Settings done (5 reducers extracted). Next targets: Collection Members (50L), Share Links (108L). 9 modules extracted, 2911 lines remain in lib.rs. |
 | P5 | **Add Rust tests for extracted modules** | 0 tests in comments/tags/favorites/attachments/pages/users/templates modules. Only helpers.rs has 12 tests. Add basic unit tests for each module's reducer logic. |
 | P5 | **Add TypeScript tests for frontend components** | Only 7 test files exist in web/src/test/. Could add tests for PageEditor, Sidebar, Search, Auth components. |
 | P5 | **Add STDB table indexes for query performance** | Hot paths query by collection_id, page_id, user_id, page_tag.name — linear scan currently. Use `#[index(name, fields = [...])]` on CollectionMember, Page, PageTag, Watch, Notification tables for sub-ms lookups. |
@@ -22,6 +21,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | **P4 — Extract Collection Members + Share Links from lib.rs** — 2 new modules (collection_members.rs 3 reducers, share_links.rs 5 reducers). lib.rs 2911→2755 lines. 11 modules extracted. | 8e1e99e8 |
 | 2026-06-28 | **P4 — Extract Templates from lib.rs into `templates.rs`** — moved mark_as_template and create_from_template. lib.rs 3053→3014 lines. 7 modules extracted. | d6f350d5 |
 | 2026-06-28 | **P4 — Extract Comments, Tags, Favorites, Attachments from lib.rs** — 4 new modules, lib.rs 3195→3053 lines. | 23aa41d8 |
 | 2026-06-28 | **P4 — Extract Pages+RTL from lib.rs into `pages.rs`** — 17 page reducers. lib.rs 3508→3193. | ab180024 |
