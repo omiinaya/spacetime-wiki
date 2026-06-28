@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { axe } from "vitest-axe";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ToastProvider, useToast, ToastItem } from "../components/Toast";
 import React from "react";
@@ -139,5 +140,14 @@ describe("ToastProvider", () => {
     renderWithToast(<ToastTester />);
     fireEvent.click(screen.getByText("Add Success"));
     expect(screen.getByText("Page updated successfully")).toBeInTheDocument();
+  });
+
+  it("has no accessibility violations", async () => {
+    vi.useRealTimers();
+    const { container } = renderWithToast(<ToastTester />);
+    fireEvent.click(screen.getByText("Add Info"));
+    fireEvent.click(screen.getByText("Add Success"));
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

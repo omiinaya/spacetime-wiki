@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { axe } from "vitest-axe";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 
@@ -145,5 +146,13 @@ describe("AdminDashboard", () => {
     expect(screen.getByText("Page Status Breakdown")).toBeInTheDocument();
     expect(screen.getByText("Top Contributors")).toBeInTheDocument();
     expect(screen.getByText("Recent Activity")).toBeInTheDocument();
+  });
+
+  it("has no accessibility violations", async () => {
+    mockSqlQuery.mockResolvedValue([]);
+    const { container } = render(<AdminDashboard userId="admin1" />);
+    await waitFor(() => expect(screen.getByText("Total Pages")).toBeInTheDocument());
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

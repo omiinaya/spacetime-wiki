@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { axe } from "vitest-axe";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ImageLightbox } from "../components/ImageLightbox";
 import React from "react";
@@ -228,5 +229,13 @@ describe("ImageLightbox", () => {
     expect(screen.getByText("250%")).toBeInTheDocument();
     fireEvent.doubleClick(screen.getByRole("img"));
     expect(screen.getByText("100%")).toBeInTheDocument();
+  });
+
+  it("has no accessibility violations", async () => {
+    const { container } = render(
+      <ImageLightbox images={galleryImages} onClose={onClose} onAddComment={onAddComment} comments={sampleComments} />
+    );
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });
