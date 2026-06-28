@@ -10,11 +10,8 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | **Replace manual SQL mappers with STDB SDK typed bindings** — api.ts has 50+ manual row mappers that duplicate module_bindings | Tech debt reduction |
-| P4 | **Complete .env.example** — document all env vars used across frontend, api-server, and module publisher | Docs gap |
-| P4 | **Add Rust module unit tests** — add `#[test]` functions for reducer logic | Test coverage |
-| P5 | **Dependency audit** — check for major-version upgrades (Tailwind 4, TypeScript 6, ESLint 10, etc.) | Maintenance |
-| P4 | **Further extract lib.rs into domain modules** — 3508 lines remain in lib.rs across ~30 sections; extract collections, pages, comments, tags, favorites, shares, API keys, templates, groups, SSO, analytics, collab, batch, AI, SCIM, passkeys, DB bases, invitations, synced blocks, MFA, notifications, access requests each into their own module | Refactor for maintainability |
+| P4 | **Replace manual SQL mappers with STDB SDK typed bindings** — api mappers.ts has 33 manual row mappers that duplicate auto-generated `module_bindings/` | Tech debt reduction — would change data flow deeply |
+| P4 | **Further extract lib.rs into domain modules** — 3500 lines remain in lib.rs across ~28 sections | Refactor for maintainability |
 
 ---
 
@@ -22,14 +19,11 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-28 | **P5 — Add Rust unit tests!** 12 tests: hash_password, base32_decode, verify_totp_code, and more added to helpers.rs | efd60f8a |
+| 2026-06-28 | **P5 — Complete .env.example!** 88 lines documenting all env vars across all 4 services (STDB, API server, frontend, module publisher) | fe2ed807 |
 | 2026-06-28 | **P4 — Split App.tsx layout from routes!** 6232→3268 lines (48% reduction). 10 admin panels + tiptap helpers extracted. Duplicate login page components removed. | 1e360f28 |
 | 2026-06-28 | **P4 — Split lib.rs into Rust modules!** 4555-line lib.rs → tables.rs (50 structs) + helpers.rs (10 functions) + lib.rs (reducers). 0 errors, 0 warnings. | 718b231a |
 | 2026-06-28 | **P4 — Split api.ts into 21 domain modules!** 1874-line api.ts → types/mappers/client/pages/collections/users/auth/groups/comments/shares/tags/attachments/webhooks/search/subscriptions/transclusions/audit/access-requests/collaboration/settings/index. Barrel re-export preserves all imports. | 862bfe2d |
 | 2026-06-28 | **P5 — Fix Rust compiler warnings!** Removed dead TOTP/MFA functions + unused imports + unused params + unused `now`. Clean Rust build — 0 warnings, 0 errors. | c5897ebd |
-| 2026-06-28 | **P5 — README.md with setup guide!** Full project README with architecture, features, project structure, dev commands, env vars, API reference, testing guide, and contribution guide. | Inline |
-| 2026-06-28 | **P5 — Pre-commit hooks!** Husky + lint-staged runs tsc + vitest --changed on staged TS files, plus cargo check on Rust files. Fast pre-commit gate. | Inline |
-| 2026-06-28 | **P5 — Docker Compose for local dev!** `docker compose up` starts STDB + API server + frontend (nginx). Module publisher auto-builds/publishes on first run. Env-var config throughout. | Inline |
-| 2026-06-28 | **P4 — Playwright E2E test infra!** 24 E2E tests across 4 suites (home, navigation, pages, creation). Mock STDB HTTP + WebSocket, test against built app. Fixed missing page component imports in App.tsx. | Inline |
-| 2026-06-28 | **P5 — CI/CD pipeline!** GitHub Actions workflow with TypeScript check + 89 tests + Rust build. Triggered on push/PR to master. | Inline |
-| 2026-06-28 | **P5 — Accessibility (a11y) pass!** Installed vitest-axe, added axe-core scanning to all 5 test suites. ImageLightbox, AdminDashboard, AccessRequestPanel, PageTags, Toast — all pass with 0 violations. | 1a333816 |
+| 2026-06-28 | **P5 — Dependency audit!** Checked npm, Cargo, Python. TS 6.0 and Tailwind 4 are major upgrades available. Documented recommendations. | fe2ed807 |
 | 2026-06-28 | **P4 — Split App.tsx admin panels!** 5382-line App.tsx → 3249 lines. Extracted all 11 inline admin components + duplicate LoginView to separate files under components/admin/. 0 TS errors, pre-commit hooks pass. | 4843986e |
