@@ -1,0 +1,192 @@
+use spacetimedb::*;
+use sha2::{Digest, Sha256};
+use crate::*;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+pub(crate) fn now_ms(ctx: &ReducerContext) -> u64 {
+    ctx.timestamp.to_micros_since_unix_epoch() as u64 / 1000
+}
+
+pub(crate) fn make_id(prefix: &str, ctx: &ReducerContext) -> String {
+    let ts = now_ms(ctx);
+    let rand: u32 = (ts as u32).wrapping_mul(1103515245).wrapping_add(12345);
+    format!("{}_{:x}", prefix, rand)
+}
+
+pub(crate) fn hash_password(password: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(password.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+// ─── Audit Event Log ─────────────────────────────────────────────────────────
+
+pub(crate) fn log_event(
+    ctx: &ReducerContext,
+    event_type: &str,
+    actor_id: &str,
+    target_id: &str,
+    target_name: &str,
+    metadata: &str,
+) {
+    ctx.db.audit_event().insert(AuditEvent {
+        id: make_id("ae", ctx),
+        event_type: event_type.to_string(),
+        actor_id: actor_id.to_string(),
+        target_id: target_id.to_string(),
+        target_name: target_name.to_string(),
+        metadata: metadata.to_string(),
+        created_at: now_ms(ctx),
+    });
+}
+
+// ─── Helper: sort orders ────────────────────────────────────────────────────
+
+pub(crate) fn next_sort_order(ctx: &ReducerContext, collection_id: &str, parent_page_id: &str) -> u32 {
+    ctx.db.page().iter()
+        .filter(|p| p.collection_id == collection_id && p.parent_page_id == parent_page_id)
+        .map(|p| p.sort_order)
+        .max()
+        .unwrap_or(0) + 1
+}
+
+pub(crate) fn next_col_sort_order(ctx: &ReducerContext, parent_id: &str) -> u32 {
+    ctx.db.collection().iter()
+        .filter(|c| c.parent_id == parent_id)
+        .map(|c| c.sort_order)
+        .max()
+        .unwrap_or(0) + 1
+}
+
+/// Simple RFC 4648 base32 decoding (no padding required)
+pub(crate) fn base32_decode(input: &str) -> Option<Vec<u8>> {
+    let chars: Vec<char> = input.to_uppercase().chars().filter(|c| *c != ' ').collect();
+    if chars.is_empty() {
+        return None;
+    }
+    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    let mut bits = 0u64;
+    let mut bit_count = 0u32;
+    let mut output = Vec::new();
+
+    for &ch in &chars {
+        let val = alphabet.find(ch)? as u64;
+        bits = (bits << 5) | val;
+        bit_count += 5;
+        if bit_count >= 8 {
+            bit_count -= 8;
+            output.push((bits >> bit_count) as u8);
+            bits &= (1 << bit_count) - 1;
+        }
+    }
+    Some(output)
+}
+
+/// Verify a TOTP code using HMAC-SHA1 (RFC 6238).
+/// Checks the current 30-second window and adjacent windows (±1) for clock drift.
+pub(crate) fn verify_totp_code(secret: &[u8], code: u32, now_ms: u64) -> bool {
+    use hmac::{Hmac, Mac};
+    use sha1::Sha1;
+
+    type HmacSha1 = Hmac<Sha1>;
+
+    let time_step: u64 = 30; // 30-second windows
+    let counter = now_ms / 1000 / time_step;
+    let modulus: u32 = 1_000_000; // 6-digit code
+
+    // Check current, previous, and next time windows for tolerance
+    for delta in &[0u64, 1, u64::MAX] {
+        let c = if *delta == u64::MAX {
+            counter.wrapping_sub(1)
+        } else {
+            counter + delta
+        };
+
+        // Convert counter to 8-byte big-endian
+        let mut counter_bytes = [0u8; 8];
+        counter_bytes[..8].copy_from_slice(&c.to_be_bytes());
+
+        // Compute HMAC-SHA1
+        let mut mac = match HmacSha1::new_from_slice(secret) {
+            Ok(m) => m,
+            Err(_) => return false,
+        };
+        mac.update(&counter_bytes);
+        let result = mac.finalize();
+        let hmac_result = result.into_bytes();
+
+        // Dynamic truncation per RFC 4226
+        let offset = (hmac_result[19] & 0x0f) as usize;
+        let binary_code = u32::from_be_bytes([
+            hmac_result[offset] & 0x7f,
+            hmac_result[offset + 1],
+            hmac_result[offset + 2],
+            hmac_result[offset + 3],
+        ]);
+        let otp = binary_code % modulus;
+
+        if otp == code {
+            return true;
+        }
+    }
+    false
+}
+
+/// Notify all watchers of a page about an event (page.update, comment.create, etc.).
+/// Skips the actor who triggered the event.
+pub(crate) fn notify_page_watchers(
+    ctx: &ReducerContext,
+    page_id: &str,
+    event_type: &str,
+    actor_id: &str,
+    title: &str,
+    message: &str,
+    icon: &str,
+) {
+    for watcher in ctx.db.watch().iter().filter(|w| {
+        w.target_type == "page" && w.target_id == page_id && w.user_id != actor_id
+    }) {
+        ctx.db.notification().insert(Notification {
+            id: make_id("notif", ctx),
+            user_id: watcher.user_id.clone(),
+            event_type: event_type.to_string(),
+            target_id: page_id.to_string(),
+            title: title.to_string(),
+            message: message.to_string(),
+            actor_id: actor_id.to_string(),
+            icon: icon.to_string(),
+            is_read: false,
+            created_at: now_ms(ctx),
+        });
+    }
+}
+
+/// Notify collection watchers when a new page is created in that collection.
+/// Skips the creator.
+pub(crate) fn notify_collection_watchers_new_page(
+    ctx: &ReducerContext,
+    collection_id: &str,
+    page_id: &str,
+    actor_id: &str,
+    title: &str,
+    message: &str,
+    icon: &str,
+) {
+    for watcher in ctx.db.watch().iter().filter(|w| {
+        w.target_type == "collection" && w.target_id == collection_id && w.user_id != actor_id
+    }) {
+        ctx.db.notification().insert(Notification {
+            id: make_id("notif", ctx),
+            user_id: watcher.user_id.clone(),
+            event_type: "page.create".to_string(),
+            target_id: page_id.to_string(),
+            title: title.to_string(),
+            message: message.to_string(),
+            actor_id: actor_id.to_string(),
+            icon: icon.to_string(),
+            is_read: false,
+            created_at: now_ms(ctx),
+        });
+    }
+}
