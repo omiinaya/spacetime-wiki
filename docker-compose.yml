@@ -1,0 +1,89 @@
+services:
+  # ─── SpacetimeDB Server ──────────────────────────────────────────────────────
+  spacetimedb:
+    image: spacetimeos/spacetimedb:latest
+    container_name: st-wiki-stdb
+    ports:
+      - "3000:3000"   # WebSocket
+      - "3001:3001"   # HTTP API
+    volumes:
+      - stdb-data:/var/lib/spacetimedb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - wiki-net
+
+  # ─── Module Publisher (one-shot) ─────────────────────────────────────────────
+  # Publishes the Rust module to STDB on first run. Idempotent — skips if DB exists.
+  module-publisher:
+    build:
+      context: ./server/spacetimedb
+    container_name: st-wiki-publisher
+    environment:
+      STDB_HOST: spacetimedb:3001
+      DB_NAME: spacetime_wiki
+    depends_on:
+      spacetimedb:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - wiki-net
+
+  # ─── Python API Server ───────────────────────────────────────────────────────
+  api-server:
+    build:
+      context: ./server/api-server
+    container_name: st-wiki-api
+    ports:
+      - "8711:8711"
+    environment:
+      STDB_HOST: spacetimedb:3001
+      STDB_DATABASE: ${STDB_DATABASE:-spacetime_wiki}
+      API_PORT: 8711
+      RATE_LIMIT: ${RATE_LIMIT:-100/minute}
+    depends_on:
+      spacetimedb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - wiki-net
+
+  # ─── Frontend (React SPA via nginx) ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./web
+      args:
+        VITE_STDB_HOST: ${VITE_STDB_HOST:-spacetimedb:3001}
+        VITE_STDB_DB: ${VITE_STDB_DB:-spacetime_wiki}
+        VITE_API_BASE: ${VITE_API_BASE:-http://api-server:8711}
+    container_name: st-wiki-frontend
+    ports:
+      - "5184:5184"
+    depends_on:
+      - api-server
+    restart: unless-stopped
+    networks:
+      - wiki-net
+
+  # ─── Spacetime CLI Utility ───────────────────────────────────────────────────
+  # Run: docker compose run --rm spacetime-cli <cmd>
+  spacetime-cli:
+    image: spacetimeos/spacetimedb:latest
+    container_name: st-wiki-cli
+    entrypoint: ["spacetime"]
+    profiles:
+      - cli
+    networks:
+      - wiki-net
+
+volumes:
+  stdb-data:
+
+networks:
+  wiki-net:
+    driver: bridge
