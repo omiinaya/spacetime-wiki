@@ -23,13 +23,9 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-28 | **P5 — Add TypeScript tests — KeyboardShortcuts component** — 18 tests covering rendering, portal behavior, all 5 shortcut groups, close button click overlay/modal, footer info, and 2 accessibility scenarios. Also fixed a11y: added aria-label on close button, role="dialog" + aria-modal + aria-label on modal container. | _(current)_ |
-| 2026-06-28 | **P5 — Add TypeScript tests for SearchFilters component** — 22 tests covering rendering, dropdown open/close, data fetching, filter state changes, clear all, filter chips, and 4 accessibility scenarios. Also fixed a11y: added htmlFor/id on `<select>` elements and aria-label on all filter chip close buttons. | fe31c9cc |
-| 2026-06-28 | **P5 — Add Rust tests for extracted modules** — 70 total tests (58 new). All 11 extracted modules now have unit test coverage. | _(current)_ |
-| 2026-06-28 | **P4 — Extract Collection Members + Share Links from lib.rs** — 2 new modules (collection_members.rs 3 reducers, share_links.rs 5 reducers). lib.rs 2911→2755 lines. 11 modules extracted. | 8e1e99e8 |
-| 2026-06-28 | **P4 — Extract Templates from lib.rs into `templates.rs`** — moved mark_as_template and create_from_template. lib.rs 3053→3014 lines. 7 modules extracted. | d6f350d5 |
-| 2026-06-28 | **P4 — Extract Comments, Tags, Favorites, Attachments from lib.rs** — 4 new modules, lib.rs 3195→3053 lines. | 23aa41d8 |
-| 2026-06-28 | **P4 — Extract Pages+RTL from lib.rs into `pages.rs`** — 17 page reducers. lib.rs 3508→3193. | ab180024 |
-| 2026-06-28 | **P4 — Auto-generated schema-based row mappers** — `fromStdbRow()` + `typedQuery`/`typedQueryOne`. | _(current)_ |
-| 2026-06-28 | **P5 — Add Rust unit tests** — 12 tests in helpers.rs | efd60f8a |
-| 2026-06-28 | **P5 — Complete .env.example** — 88 lines documenting all env vars. | fe2ed807 |
+| 2026-06-28 | **P5 — Add TypeScript tests — NotificationBell component** — 35 tests covering rendering, dropdown, actions, navigation, and accessibility. | f0b63577 |
+| 2026-06-28 | **P5 — Add TypeScript tests — TemplatePicker component** — 27 tests covering rendering, template list, creation flow, modal interaction, and accessibility. | 6f390e7b |
+| 2026-06-28 | **P5 — Add STDB btree indexes for query performance** — 50+ `#[index(btree)]` annotations across all 30+ tables on hot path fields (page_id, user_id, collection_id, email, slug, token, session_id). | 1e33b435 |
+| 2026-06-28 | **P5 — Audit unused frontend CSS + bundle size** — 2.8MB bundle (good for Tailwind+purge). Removed 8 unused npm deps (tippy.js, y-prosemirror, @playwright/test, @testing-library/user-event, @tiptap/extension-bubble-menu, @tiptap/extension-mention, @tiptap/extension-underline, @tiptap/suggestion, @tiptap/y-tiptap). | 5de7a82c |
+| 2026-06-28 | **P5 — Add French (fr) and German (de) i18n locale files** — 283 keys each across all 11 sections. Updated config.ts to register both. | 4a7ee8ec |
+| 2026-06-28 | **P5 — Add Rust doc comments to public types and reducers** — All 50+ table structs now have `///` doc comments describing purpose and usage. | f605e09d |
