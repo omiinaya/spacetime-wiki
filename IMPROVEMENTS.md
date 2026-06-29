@@ -8,7 +8,14 @@ and works the top pending item each tick.
 
 ## PENDING
 
-*No items — backlog is clear.*
+| Priority | Item | Notes |
+|----------|------|-------|
+| P3 | **Code-split large chunks** — ImageLightbox (987K), cytoscape (225K), katex (129K) are all loaded on every page. Convert to `React.lazy` or `vite.config.ts` manualChunks for faster initial loads. | |
+| P4 | **Add TypeScript tests for 6 uncovered components** — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings — 32% of components still untested. | |
+| P4 | **Write Playwright E2E tests for critical flows** — attachments, permissions, search, collections, user management. Only 3 E2E specs exist. | |
+| P4 | **Extract lib.rs further** — 68 pub fn still in lib.rs (1945 lines). Targets: table create/seed logic, search reducers. AGENTS.md claims 4500 lines — needs updating. | |
+| P5 | **Fix 6 clippy warnings** — unwrap, sort_by_key, doc comment issues in Rust module. | |
+| P5 | **Update AGENTS.md** — fix lib.rs line count (1945 not 4500), add collaboration.rs to module list, verify port numbers. | |
 
 ---
 

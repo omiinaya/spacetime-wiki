@@ -56,7 +56,7 @@ stdb: true
 43|│   │   ├── auth.py               # Bearer + API key auth
 44|│   │   └── config.py             # Env-based config
 45|│   ├── spacetimedb/              # Rust module — tables + reducers
-46|│   │   ├── src/lib.rs            # ~4500 lines: all tables, reducers, logic
+46|│   │   ├── src/lib.rs            # ~1950 lines: tables, reducers, logic
 47|│   │   ├── src/tables.rs         # Table schemas (pages, collections, users...)
 48|│   │   ├── src/pages.rs          # Page CRUD reducers
 49|│   │   ├── src/users.rs          # User management reducers
@@ -89,7 +89,7 @@ stdb: true
 76|## 3. Task-to-File Mapping
 77|
 78|### STDB Reducers (SpacetimeDB Rust module)
-79|All reducers live in `server/spacetimedb/src/lib.rs` (~4500 lines). Additional
+79|All reducers live in `server/spacetimedb/src/lib.rs` (~1950 lines). Additional
 80|logic is split across topic modules:
 81|
 82|| File | Responsibility |
@@ -107,11 +107,12 @@ stdb: true
 94|| `comments.rs` | Comment CRUD on pages |
 95|| `favorites.rs` | Favorite/unfavorite toggle |
 96|| `api_keys.rs` | API key generate, revoke, hash validation |
-97|| `sso.rs` | OAuth/OIDC/SAML/LDAP identity linking |
+97|| `sso.rs` | SSO/OAuth/OIDC/SAML/LDAP identity linking |
 98|| `app_settings.rs` | Global app configuration |
 99|| `collection_members.rs` | Collection user/group membership |
-100|
-101|### Tiptap Editor (Frontend)
+100|| `collaboration.rs` | Real-time Yjs collab: broadcast/join/leave/cursor, stale session & old update cleanup |
+101|
+102|### Tiptap Editor (Frontend)
 102|| File | Responsibility |
 103||------|---------------|
 104|| `web/src/pages/PageEditor.tsx` | Main editor wrapper component |
