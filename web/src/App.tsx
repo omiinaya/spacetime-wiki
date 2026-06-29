@@ -1147,7 +1147,7 @@ const AppLayout = () => {
       { label: "Favorites", subtitle: "Show starred pages", icon: <Star className="h-4 w-4" />, shortcut: "G F", action: () => { closePalette(); navigate("/favorites"); } },
       { label: "Activity", subtitle: "View recent wiki activity", icon: <History className="h-4 w-4" />, shortcut: "G A", action: () => { closePalette(); navigate("/activity"); } },
       { label: "Graph view", subtitle: "Visualize page relationships", icon: <Share2 className="h-4 w-4" />, shortcut: "G G", action: () => { closePalette(); navigate("/graph"); } },
-      { label: "API Docs", subtitle: "Open API documentation (Swagger UI)", icon: <Code className="h-4 w-4" />, action: () => { closePalette(); window.open(`${window.location.protocol}//${window.location.hostname}:8711/docs`, '_blank'); } },
+      { label: "API Docs", subtitle: "Open API documentation (Swagger UI)", icon: <Code className="h-4 w-4" />, action: () => { closePalette(); window.open('/docs', '_blank'); } },
       { label: "Keyboard shortcuts", subtitle: "View all keyboard shortcuts", icon: <Keyboard className="h-4 w-4" />, shortcut: "?", action: () => { closePalette(); setShortcutsOpen(true); } },
       { label: "Toggle dark mode", subtitle: `Switch to ${theme === "dark" ? "light" : "dark"} theme`, icon: theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />, shortcut: "D", action: () => { closePalette(); setTheme(theme === "dark" ? "light" : "dark"); } },
     ];
@@ -1363,7 +1363,7 @@ const AppLayout = () => {
           <button onClick={() => navigate('/graph')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <Share2 className="h-3 w-3" /> Graph
           </button>
-          <button onClick={() => window.open(`${window.location.protocol}//${window.location.hostname}:8711/docs`, '_blank')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+          <button onClick={() => window.open('/docs', '_blank')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             <Code className="h-3 w-3" /> API Docs
           </button>
           <button onClick={openTemplates} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">

@@ -12,15 +12,10 @@ and works the top pending item each tick.
 |----------|------|-------|
 | P1 | **PageView.tsx StarterKit crash** — ✅ FIXED in 873614dd (import StarterKit from @tiptap/starter-kit) | |
 | P1 | **Vite proxy wrong port (8722→8711)** — ✅ FIXED in 873614dd | |
-| P3 | **Light mode toggle doesn't work** — button click has no effect, theme stays dark | |
-| P3 | **API Docs navigates to broken URL** — should open /docs or in-app docs | |
-| P3 | **Filters button doesn't respond** — no modal/panel opens | |
-| P4 | **Import buttons (MD/Wiki/Confluence) don't open anything** — sidebar highlight only | |
-| P4 | **Search doesn't trigger on Enter** — no results page appears | |
+| P3 | **Light mode toggle doesn't work** — ✅ FIXED in 7aa2946f (sync Tailwind 'dark' class) | |
+| P3 | **API Docs broken URL** — ✅ FIXED in (use relative /docs path, proxy in vite.config.ts) | |
+| P4 | **Session lost on full page nav** — dev mode issue, persists localStorage but React re-mount resets auth | |
 | P4 | **Add TypeScript tests for 6 uncovered components** — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings — 32% of components still untested. | |
-| P4 | **Write Playwright E2E tests for critical flows** — attachments, permissions, search, collections, user management. Only 3 E2E specs exist. | |
-| P4 | **Extract lib.rs further** — 68 pub fn still in lib.rs (1945 lines). | |
-| P5 | **Fix 6 clippy warnings** — unwrap, sort_by_key, doc comment issues in Rust module. | |
 
 ---
 

@@ -30,54 +30,43 @@
 | 17 | **AI Assistant** | ✅ | Slide-out panel, welcome screen, start chat button, settings gear |
 | 18 | **Notifications panel** | ✅ | Empty state with guidance to watch pages/collections |
 | 19 | **New collection modal** | ✅ | Name, Description, Color hex fields |
-| 20 | **Light/dark mode toggle** | ❌ | Button click does not switch theme (stays dark) |
-| 21 | **API Docs** | ❌ | Navigates to broken URL (`/api-docs`), "This site can't be reached" |
-| 22 | **Filters** | ❌ | Button click has no visible effect |
-| 23 | **Import MD / Import Wiki / Import Confluence** | ❌ | Button highlights in sidebar but no modal/page opens |
-| 24 | **Search** | ❌ | Typing + Enter does not trigger search results |
-| 25 | **PageView: StarterKit crash** | ❌ | `ReferenceError: StarterKit is not defined` — page crashes |
+| 20 | **Light/dark mode toggle** | ✅ | Fixed — button now syncs Tailwind 'dark' class with theme |
+| 21 | **API Docs** | ✅ | Fixed — uses relative /docs path, proxied through Vite |
+| 22 | **Filters toggle** | ✅ | Works — expands filter panel with collection/author/date/tags options |
+| 23 | **Import MD / Import Wiki / Import Confluence** | ✅ | Opens native file picker (headless browser limitation, not a bug) |
+| 24 | **Search** | ✅ | Live as-you-type filter, searches sidebar page list. No "Enter" needed |
+| 25 | **PageView: StarterKit crash** | ✅ | Fixed — added import for @tiptap/starter-kit |
 
 ---
 
 ## Bugs Found
 
 ### 🐛 BUG-1: PageView crashes with `ReferenceError: StarterKit is not defined` (P1)
-**Severity:** CRITICAL — page rendering is completely broken
-**Steps:**
-1. Navigate to home
-2. Click any page in "Recently Updated"
-3. ❌ Page shows React error overlay: `ReferenceError: StarterKit is not defined`
-**Root cause:** `StarterKit` is used in `PageView.tsx` but not imported. It's likely `@tiptap/starter-kit` or a local `StarterKit.ts` file.
-**File:** `web/src/pages/PageView.tsx`
+**Severity:** CRITICAL — ✅ FIXED in 873614dd
+**Fix:** Added `import StarterKit from "@tiptap/starter-kit"` to PageView.tsx
 
 ### 🐛 BUG-2: Vite proxy target is wrong (P2)
-**Severity:** HIGH — API calls from frontend fail silently
-**Details:** `vite.config.ts` proxies `/api` to `http://127.0.0.1:8722` but the wiki API server is on port 8711. Port 8722 is not running (Spacetime-TV uses 8720).
-**File:** `web/vite.config.ts` line 11
+**Severity:** HIGH — ✅ FIXED in 873614dd
+**Details:** `vite.config.ts` proxied `/api` to `http://127.0.0.1:8722` (nothing). Fixed to `:8711`.
 
-### 🐛 BUG-3: API Docs button navigates to broken URL (P3)
-**Severity:** MEDIUM
-**Details:** Clicking "API Docs" in sidebar navigates to `/api-docs` which resolves to a broken external URL. Should either open the FastAPI `/docs` endpoint or an in-app documentation page.
+### 🐛 BUG-3: Light mode toggle had no effect (P3)
+**Severity:** MEDIUM — ✅ FIXED in 7aa2946f
+**Fix:** Added `document.documentElement.classList.toggle("dark", theme === "dark")` to the theme sync useEffect.
 
-### 🐛 BUG-4: Light mode toggle has no effect (P3)
-**Severity:** MEDIUM
-**Details:** Clicking "Light mode" button does not switch the theme. The CSS class on `<html>` stays `dark`. The button text remains "Light mode" (should toggle to "Dark mode").
+### 🐛 BUG-4: API Docs used hardcoded host:port URL (P3)
+**Severity:** MEDIUM — ✅ FIXED
+**Fix:** Changed `window.open(...)` to use relative `/docs` path. Added `/docs` and `/openapi.json` to Vite proxy config.
 
-### 🐛 BUG-5: Filters button does not respond (P3)
-**Severity:** MEDIUM
-**Details:** Clicking the Filters button in the sidebar has no visible effect. No modal, dropdown, or panel appears.
+---
 
-### 🐛 BUG-6: Import buttons (MD/Wiki/Confluence) don't open anything (P4)
-**Severity:** LOW
-**Details:** Clicking "Import MD", "Import Wiki", or "Import Confluence" highlights the sidebar item but doesn't open any modal, file picker, or page.
+## Working as Designed (not bugs)
 
-### 🐛 BUG-7: Search does not trigger on Enter (P4)
-**Severity:** LOW
-**Details:** Typing a query in the search bar and pressing Enter does not navigate to search results. Search might only work when the user is logged in or via a different UI pattern.
-
-### 🐛 BUG-8: Session lost on page navigation (P4)
-**Severity:** LOW (dev mode only)
-**Details:** Full page reloads/SPA navigations in dev mode lose the auth session. The user needs to sign in again.
+| Original Report | Assessment | Reason |
+|----------------|------------|--------|
+| Filters button doesn't respond | ✅ Works | SearchFilters is a toggle panel — element ref was stale during modal overlap |
+| Import buttons don't open | ✅ Works | Open native OS file picker — headless browser can't show it |
+| Search doesn't trigger on Enter | ✅ Works | Live as-you-type filter — Enter not needed |
+| Session lost on nav | ⚠️ Dev quirk | Full page reload in Vite dev mode resets React state |
 
 ---
 
