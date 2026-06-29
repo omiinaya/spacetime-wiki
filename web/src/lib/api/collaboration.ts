@@ -26,7 +26,7 @@ export async function getCollabSessions(pageId: string): Promise<CollabSession[]
 }
 
 export async function getCollabUpdates(pageId: string): Promise<CollabUpdate[]> {
-  return tableQuery(`SELECT * FROM collab_update WHERE page_id = '${pageId}' ORDER BY created_at ASC`, mapCollabUpdate);
+  return tableQuery(`SELECT * FROM collab_update WHERE page_id = '${pageId}'`, mapCollabUpdate);
 }
 
 export async function cleanupCollabSessions(): Promise<void> {

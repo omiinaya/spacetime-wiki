@@ -33,7 +33,7 @@ export async function setAiConfig(key: string, value: string): Promise<void> {
 // ─── AI Chat Sessions ─────────────────────────────────────────────────────────
 
 export async function getAiChatSessions(userId: string): Promise<AiChatSession[]> {
-  return tableQuery(`SELECT * FROM ai_chat_session WHERE user_id = '${userId}' ORDER BY updated_at DESC`, mapAiChatSession);
+  return tableQuery(`SELECT * FROM ai_chat_session WHERE user_id = '${userId}'`, mapAiChatSession);
 }
 
 export async function getAiChatSession(id: string): Promise<AiChatSession | null> {
@@ -53,7 +53,7 @@ export async function deleteAiChatSession(id: string): Promise<void> {
 // ─── AI Chat Messages ─────────────────────────────────────────────────────────
 
 export async function getAiChatMessages(sessionId: string): Promise<AiChatMessage[]> {
-  return tableQuery(`SELECT * FROM ai_chat_message WHERE session_id = '${sessionId}' ORDER BY created_at ASC`, mapAiChatMessage);
+  return tableQuery(`SELECT * FROM ai_chat_message WHERE session_id = '${sessionId}'`, mapAiChatMessage);
 }
 
 export async function addAiChatMessage(sessionId: string, role: string, content: string): Promise<string> {
@@ -71,7 +71,7 @@ export async function deleteAiChatMessage(id: string): Promise<void> {
 export async function getDbBases(pageId?: string): Promise<DbBase[]> {
   let sql = "SELECT * FROM db_base";
   if (pageId) sql += ` WHERE page_id = '${pageId}'`;
-  sql += " ORDER BY created_at ASC";
+  sql += "";
   return tableQuery(sql, mapDbBase);
 }
 
@@ -91,7 +91,7 @@ export async function deleteDbBase(id: string): Promise<void> {
 // ─── Database Columns ─────────────────────────────────────────────────────────
 
 export async function getDbColumns(baseId: string): Promise<DbColumn[]> {
-  return tableQuery(`SELECT * FROM db_column WHERE base_id = '${baseId}' ORDER BY sort_order ASC`, mapDbColumn);
+  return tableQuery(`SELECT * FROM db_column WHERE base_id = '${baseId}'`, mapDbColumn);
 }
 
 export async function createDbColumn(baseId: string, name: string, fieldType: string, options: string = "{}", sortOrder: number = 0): Promise<string> {
@@ -102,7 +102,7 @@ export async function createDbColumn(baseId: string, name: string, fieldType: st
 // ─── Database Rows ────────────────────────────────────────────────────────────
 
 export async function getDbRows(baseId: string): Promise<DbRow[]> {
-  return tableQuery(`SELECT * FROM db_row WHERE base_id = '${baseId}' ORDER BY sort_order ASC`, mapDbRow);
+  return tableQuery(`SELECT * FROM db_row WHERE base_id = '${baseId}'`, mapDbRow);
 }
 
 export async function getDbRow(id: string): Promise<DbRow | null> {
@@ -147,7 +147,7 @@ export async function updateDbCell(rowId: string, columnId: string, value: strin
 // ─── Synced Blocks ─────────────────────────────────────���──────────────────────
 
 export async function getSyncedBlocks(): Promise<SyncedBlock[]> {
-  return tableQuery("SELECT * FROM synced_block ORDER BY updated_at DESC", mapSyncedBlock);
+  return tableQuery("SELECT * FROM synced_block", mapSyncedBlock);
 }
 
 export async function getSyncedBlock(id: string): Promise<SyncedBlock | null> {
@@ -215,7 +215,7 @@ export async function recordInvitationView(token: string): Promise<void> {
 }
 
 export async function getInvitations(): Promise<Invitation[]> {
-  return tableQuery("SELECT * FROM invitation ORDER BY created_at DESC", mapInvitation);
+  return tableQuery("SELECT * FROM invitation", mapInvitation);
 }
 
 export async function getInvitation(id: string): Promise<Invitation | null> {
@@ -251,11 +251,11 @@ export async function isWatching(userId: string, targetType: string, targetId: s
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export async function getNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
-  return tableQuery(`SELECT * FROM notification WHERE user_id = '${userId}' ORDER BY created_at DESC LIMIT ${limit}`, mapNotification);
+  return tableQuery(`SELECT * FROM notification WHERE user_id = '${userId}' LIMIT ${limit}`, mapNotification);
 }
 
 export async function getUnreadNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
-  return tableQuery(`SELECT * FROM notification WHERE user_id = '${userId}' AND is_read = false ORDER BY created_at DESC LIMIT ${limit}`, mapNotification);
+  return tableQuery(`SELECT * FROM notification WHERE user_id = '${userId}' AND is_read = false LIMIT ${limit}`, mapNotification);
 }
 
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
@@ -315,7 +315,7 @@ export async function deleteScimProvider(id: string): Promise<void> {
 export async function getScimEvents(providerId?: string): Promise<ScimEvent[]> {
   let sql = "SELECT * FROM scim_event";
   if (providerId) sql += ` WHERE provider_id = '${providerId}'`;
-  sql += " ORDER BY created_at DESC LIMIT 100";
+  sql += " LIMIT 100";
   return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapScimEvent));
 }
 

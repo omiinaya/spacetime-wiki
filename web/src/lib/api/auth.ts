@@ -156,7 +156,7 @@ export async function revokeApiKey(id: string): Promise<void> {
 // ─── Passkeys / WebAuthn ───────────────────────────────────────────────────────
 
 export async function getPasskeyCredentials(userId: string): Promise<PasskeyCredential[]> {
-  return tableQuery(`SELECT * FROM passkey_credential WHERE user_id = '${userId}' ORDER BY created_at DESC`, mapPasskeyCredential);
+  return tableQuery(`SELECT * FROM passkey_credential WHERE user_id = '${userId}' `, mapPasskeyCredential);
 }
 
 export async function storePasskeyCredential(

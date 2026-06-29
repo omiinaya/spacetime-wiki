@@ -546,6 +546,8 @@ export function PageView({ pageId, userId }: Props) {
     finally { setLoading(false); }
   };
 
+  const [editorMounted, setEditorMounted] = useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: false, codeBlock: false, link: false }), HeadingWithId.configure({ levels: [1, 2, 3] }), Placeholder,
@@ -607,6 +609,7 @@ export function PageView({ pageId, userId }: Props) {
         return false;
       },
     },
+    onCreate: () => { setEditorMounted(true); },
     onSelectionUpdate: ({ editor: ed }) => {
       const { from, to } = ed.state.selection;
       if (from !== to) {
@@ -621,7 +624,7 @@ export function PageView({ pageId, userId }: Props) {
   });
 
   useEffect(() => {
-    if (editor && page) {
+    if (editor && page && editorMounted) {
       try {
         const parsed = JSON.parse(page.content || "{}");
         if (parsed && parsed.type === "doc") {
@@ -645,12 +648,12 @@ export function PageView({ pageId, userId }: Props) {
         }
       });
     }
-  }, [editor, page]);
+  }, [editor, page, editorMounted]);
 
   // ─── Link preview on hover ───────────────────────────────────────────────
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || !editorMounted) return;
     const el = editor.view.dom;
     const mouseover = (e: MouseEvent) => {
       const target = e.target as HTMLElement;

@@ -182,7 +182,7 @@ const analyticsApi = {
   getTrending: (limit: number = 8) =>
     sqlQuery(
       "SELECT page_id, COUNT(*) FROM page_view " +
-      "GROUP BY page_id ORDER BY COUNT(*) DESC",
+      "GROUP BY page_id",
     ).then((rows) => rows.slice(0, limit).map(r => ({
       page_id: String(r[0] ?? ""),
       views: Number(r[1] ?? 0),

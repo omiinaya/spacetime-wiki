@@ -26,7 +26,7 @@ export async function deleteWebhook(id: string): Promise<void> {
 }
 
 export async function getWebhookEvents(webhookId: string): Promise<WebhookEvent[]> {
-  return tableQuery(`SELECT * FROM webhook_event WHERE webhook_id = '${webhookId}' ORDER BY created_at DESC`, mapWebhookEvent);
+  return tableQuery(`SELECT * FROM webhook_event WHERE webhook_id = '${webhookId}'`, mapWebhookEvent);
 }
 
 export async function fireWebhookEvent(webhookId: string, eventType: string, pageId: string, payload: string): Promise<void> {
