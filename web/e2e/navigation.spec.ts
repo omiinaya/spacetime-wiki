@@ -28,6 +28,31 @@ test.describe("Sidebar navigation", () => {
     await page.getByRole("button", { name: "Graph" }).click();
     await expect(page).toHaveURL(/\/graph/);
   });
+
+  test("clicking Admin navigates to /admin", async ({ page }) => {
+    const adminButton = page.getByRole("button", { name: "Admin" });
+    await expect(adminButton).toBeVisible();
+    await adminButton.click();
+    await expect(page).toHaveURL(/\/admin/);
+  });
+
+  test("clicking AI Assistant opens the assistant panel", async ({ page }) => {
+    const aiButton = page.getByRole("button", { name: "AI Assistant" });
+    await expect(aiButton).toBeVisible();
+    await aiButton.click();
+    // Should open AI assistant panel
+    await expect(page.getByText("AI Assistant").first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test("theme toggle button exists", async ({ page }) => {
+    const themeButton = page.locator("button[title*='theme' i], button[title*='light' i], button[title*='dark' i]").first();
+    await expect(themeButton).toBeVisible();
+  });
+
+  test("keyboard shortcuts button exists", async ({ page }) => {
+    const shortcutsButton = page.getByText("Keyboard shortcuts");
+    await expect(shortcutsButton).toBeVisible();
+  });
 });
 
 test.describe("Activity page", () => {

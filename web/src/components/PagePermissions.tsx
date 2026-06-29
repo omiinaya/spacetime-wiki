@@ -102,7 +102,7 @@ export function PagePermissions({ pageId, userId, onClose }: Props) {
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" /> Page Permissions
           </h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-muted">
+          <button onClick={onClose} className="p-1 rounded hover:bg-muted" aria-label="Close permissions">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -151,6 +151,7 @@ export function PagePermissions({ pageId, userId, onClose }: Props) {
                   <select
                     value={selectedUserId}
                     onChange={(e) => setSelectedUserId(e.target.value)}
+                    aria-label="Select user"
                     className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
                   >
                     <option value="">Select user...</option>
@@ -161,6 +162,7 @@ export function PagePermissions({ pageId, userId, onClose }: Props) {
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
+                    aria-label="Select role"
                     className="h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none"
                   >
                     <option value="viewer">Viewer</option>
@@ -199,6 +201,7 @@ export function PagePermissions({ pageId, userId, onClose }: Props) {
                   <select
                     value={selectedGroupId}
                     onChange={(e) => setSelectedGroupId(e.target.value)}
+                    aria-label="Select group"
                     className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
                   >
                     <option value="">Select group...</option>
@@ -209,6 +212,7 @@ export function PagePermissions({ pageId, userId, onClose }: Props) {
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
+                    aria-label="Select role"
                     className="h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none"
                   >
                     <option value="viewer">Viewer</option>

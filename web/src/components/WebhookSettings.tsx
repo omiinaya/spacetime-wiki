@@ -352,7 +352,7 @@ export function WebhookSettings({ userId }: Props) {
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary" /> Webhook Events
               </h3>
-              <button onClick={() => { setShowEvents(false); setEventsWebhookId(null); }} className="p-1 rounded hover:bg-muted">
+              <button onClick={() => { setShowEvents(false); setEventsWebhookId(null); }} className="p-1 rounded hover:bg-muted" aria-label="Close events panel">
                 <X className="h-4 w-4" />
               </button>
             </div>
