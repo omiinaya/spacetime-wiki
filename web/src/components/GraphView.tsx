@@ -39,6 +39,7 @@ export default function GraphView() {
   const navigate = useNavigate();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const simulationRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);

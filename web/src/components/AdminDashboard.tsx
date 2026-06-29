@@ -130,8 +130,7 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
           FROM page p LEFT JOIN \`user\` u ON p.created_by = u.id
           WHERE p.status != 'deleted'
           GROUP BY p.created_by
-          ORDER BY page_count DESC
-          LIMIT 10
+          
         `),
       ]);
 
@@ -171,7 +170,7 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
     setActivityLoading(true);
     try {
       const rows = await sqlQuery(
-        "SELECT id, event_type, actor_id, target_name, created_at FROM audit_event ORDER BY created_at DESC LIMIT 20"
+        "SELECT id, event_type, actor_id, target_name, created_at FROM audit_event "
       );
       setRecentActivity(
         (rows as any[]).map((r: any) => ({

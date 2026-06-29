@@ -58,7 +58,7 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
       fetch(`http://192.168.1.10:3001/v1/database/c2003d19339f9932811b3d54bf9b15e18ae48a47a8c8b7135a47367faa03481e/sql`, {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
-        body: "SELECT DISTINCT name FROM page_tag ORDER BY name",
+        body: "SELECT DISTINCT name FROM page_tag",
       })
         .then((res) => res.json())
         .then((data) => {
