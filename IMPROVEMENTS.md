@@ -10,12 +10,12 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P1 | **PageView.tsx StarterKit crash** — ✅ FIXED in 873614dd (import StarterKit from @tiptap/starter-kit) | |
-| P1 | **Vite proxy wrong port (8722→8711)** — ✅ FIXED in 873614dd | |
-| P3 | **Light mode toggle doesn't work** — ✅ FIXED in 7aa2946f (sync Tailwind 'dark' class) | |
-| P3 | **API Docs broken URL** — ✅ FIXED in (use relative /docs path, proxy in vite.config.ts) | |
-| P4 | **Session lost on full page nav** — dev mode issue, persists localStorage but React re-mount resets auth | |
-| P4 | **Add TypeScript tests for 6 uncovered components** — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings — 32% of components still untested. | |
+| P4 | **Update npm dependencies (minor/patch safe)** — lucide-react 1.21.0→1.22.0, mermaid 11.15.0→11.16.0, postcss 8.5.15→8.5.16, react-router-dom 7.18.0→7.18.1, @types/jszip 3.4.0→3.4.1, typescript-eslint 8.61.1→8.62.1 | |
+| P4 | **Add TypeScript tests for PageView.tsx** — Core page view component, no unit tests yet | |
+| P4 | **Add TypeScript tests for PageEditor.tsx** — Core page editor component, no unit tests yet | |
+| P5 | **Add TypeScript tests for admin components (15 files)** — All admin panel components untested | |
+| P5 | **Add TypeScript tests for Tiptap extensions (6 files)** — Math.tsx, Mermaid.tsx, Drawio.tsx, PlantUML.tsx, Transclusion.tsx, SyncedBlock.tsx, DatabaseBase.tsx, ImageEnhanced.tsx | |
+| P5 | **Add TypeScript tests for lib/ utility modules (5 files)** — api.ts, helpers.ts, subscriptions.ts, tiptap-helpers.ts, useCollaboration.ts, yjs-stdb-provider.ts | |
 
 ---
 
@@ -23,17 +23,13 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-29 | **P5 — Add Rust unit tests for collaboration.rs** — 21 tests. | a71df205 |
-| 2026-06-29 | **P5 — Add TypeScript tests for SidebarTree component** — 63 tests. | 9bc425bb |
-| 2026-06-29 | **P5 — Add TypeScript tests for ActivityFeed component** — 45 tests. | 3d378dc3 |
-| 2026-06-29 | **P5 — Add TypeScript tests for GraphView component** — 20 tests. | 3d378dc3 |
-| 2026-06-29 | **P5 — Add TypeScript tests for AiAssistant component** — 30 tests. | 3d378dc3 |
-| 2026-06-29 | **P3 — Code-split ImageLightbox (987K→7K)** — React.lazy() in PageView.tsx and PageEditor.tsx. | 9e64d448 |
-| 2026-06-29 | **P3 — Lazy-load katex (129K) via dynamic import** — Replaced static import with dynamic import() in Math.tsx. Shared KatexRenderer component. MathInline lazily rendered via ReactNodeViewRenderer. katex loads only when a math node is first encountered. +clippy auto-fixes (27 issues), +providerReady state. | bb55fe26 |
-| 2026-06-29 | **P4 — Extract collaboration from lib.rs into collaboration.rs** | a5263be9 |
-| 2026-06-29 | **P4 — Extract App.tsx sidebar tree into SidebarTree.tsx** | 84c4f472 |
-| 2026-06-29 | **P4 — Remove 507 lines of dead admin code from App.tsx** | a4510c47 |
-| 2026-06-29 | **P4 — Complete admin panels extraction from App.tsx into AdminPanels.tsx** | 20e6775c |
-| 2026-06-29 | **E2E browser test of all features** — 25 features tested, 17 pass, 8 bugs found. BUG-1 (StarterKit crash) and BUG-2 (Vite proxy) fixed. Full report in E2E-TEST-REPORT.md | 873614dd |
-| 2026-06-29 | **P3 — Performance: lazy-load 6 route pages, dynamic mermaid import, code-split typed-sql** — Converted HomeView, ActivityView, FavoritesView, PageViewWrapper, SlugView, LoginView to React.lazy. Dynamic import mermaid (~800KB) only on first diagram render. Fixed ineffective dynamic import of typed-sql.ts (was pulled into main bundle by pages.ts). Added manual vendor/editor chunk splitting. | 9d15ee5f |
-| 2026-06-29 | **E2E: 59/59 tests passing** — Fixed anchorData.text.slice crash in PageView comments. Fixed 7 pre-existing E2E test bugs (strict mode violations, getByDisplayValue, webSocket fallback timing, advanced search syntax assertion). All 59 Playwright tests pass. | 0e2aedab |
+| 2026-06-29 | **P1 — PageView.tsx StarterKit crash** — Import StarterKit from @tiptap/starter-kit | 873614dd |
+| 2026-06-29 | **P1 — Vite proxy wrong port (8722→8711)** — Fixed vite.config.ts proxy target | 873614dd |
+| 2026-06-29 | **P3 — Light mode toggle doesn't work** — Synced Tailwind 'dark' class with theme state | 7aa2946f |
+| 2026-06-29 | **P3 — API Docs broken URL** — Used relative /docs path, proxy in vite.config.ts | d0a37fe5 |
+| 2026-06-29 | **P4 — Session lost on full page nav** — Fixed: `useEffect` reads `sw_user_id` from localStorage on pathname change | 97f6fc83 |
+| 2026-06-29 | **P4 — TypeScript tests for 6 uncovered components** — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings (129 total tests) | eaea2704 |
+| 2026-06-29 | **E2E: 59/59 tests passing** — Fixed anchorData.text.slice crash. All 59 Playwright tests pass. | 0e2aedab |
+| 2026-06-29 | **P3 — Performance: lazy-load 6 route pages, dynamic mermaid, code-split typed-sql** — React.lazy for 6 routes, dynamic mermaid import, manual vendor/editor chunks | 9d15ee5f |
+| 2026-06-29 | **E2E browser test of all features** — 25 features tested, 17 pass, 8 bugs found. BUG-1 (StarterKit crash) and BUG-2 (Vite proxy) fixed. | 873614dd |
+| 2026-06-29 | **P4 — Complete admin panels extraction from App.tsx into AdminPanels.tsx** — 5 sub-components extracted | 20e6775c |
