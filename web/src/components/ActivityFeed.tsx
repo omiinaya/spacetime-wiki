@@ -44,15 +44,15 @@ const EVENT_LABELS: Record<string, string> = {
   "user.role_change": "changed user role",
 };
 
-function getEventIcon(eventType: string): React.ElementType {
+export function getEventIcon(eventType: string): React.ElementType {
   return EVENT_ICONS[eventType] || Activity;
 }
 
-function getEventLabel(eventType: string): string {
+export function getEventLabel(eventType: string): string {
   return EVENT_LABELS[eventType] || eventType;
 }
 
-function getEventColor(eventType: string): string {
+export function getEventColor(eventType: string): string {
   if (eventType.includes("delete")) return "text-red-500";
   if (eventType.includes("create") || eventType.includes("restore")) return "text-green-500";
   if (eventType.includes("update") || eventType.includes("publish")) return "text-blue-500";
@@ -60,7 +60,7 @@ function getEventColor(eventType: string): string {
   return "text-gray-400";
 }
 
-function getActorName(usernameMap: Record<string, string>, actorId: string): string {
+export function getActorName(usernameMap: Record<string, string>, actorId: string): string {
   return usernameMap[actorId] || actorId.slice(0, 12) + "...";
 }
 

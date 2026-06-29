@@ -393,6 +393,7 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
           <button
             onClick={handleSend}
             disabled={!input.trim() || !activeSessionId || loading}
+            aria-label="Send message"
             className="p-2 bg-[#6c5ce7] hover:bg-[#5a4bd1] disabled:bg-[#2a2a4a] disabled:text-gray-500 rounded-lg text-white transition-colors self-end"
           >
             <Send size={16} />
