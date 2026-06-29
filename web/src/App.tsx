@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  BrowserRouter, Routes, Route, useNavigate, useParams, useLocation,
+  BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLocation,
 } from "react-router-dom";
 import JSZip from "jszip";
 import {
@@ -2835,6 +2835,7 @@ const AppLayout = () => {
           <Route path="/oauth/callback" element={<React.Suspense fallback={<RouteFallback />}><OAuthCallback /></React.Suspense>} />
           <Route path="/oauth/oidc/callback" element={<React.Suspense fallback={<RouteFallback />}><OidcCallback /></React.Suspense>} />
           <Route path="/auth/saml/callback" element={<React.Suspense fallback={<RouteFallback />}><SamlCallback /></React.Suspense>} />
+          <Route path="/templates" element={<Navigate to="/" replace />} />
           <Route path="/login" element={<React.Suspense fallback={<RouteFallback />}><LoginView /></React.Suspense>} />
         </Routes>
       </main>
