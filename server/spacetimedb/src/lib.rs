@@ -178,21 +178,21 @@ pub fn apply_collection_auto_sort(ctx: &ReducerContext, collection_id: String) -
     match rule.sort_field.as_str() {
         "title" => {
             if rule.sort_direction == "desc" {
-                pages.sort_by(|a, b| b.title.to_lowercase().cmp(&a.title.to_lowercase()));
+                pages.sort_by_key(|b| std::cmp::Reverse(b.title.to_lowercase()));
             } else {
                 pages.sort_by_key(|a| a.title.to_lowercase());
             }
         }
         "created_at" => {
             if rule.sort_direction == "desc" {
-                pages.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+                pages.sort_by_key(|b| std::cmp::Reverse(b.created_at));
             } else {
                 pages.sort_by_key(|a| a.created_at);
             }
         }
         "updated_at" => {
             if rule.sort_direction == "desc" {
-                pages.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+                pages.sort_by_key(|b| std::cmp::Reverse(b.updated_at));
             } else {
                 pages.sort_by_key(|a| a.updated_at);
             }
@@ -936,9 +936,8 @@ pub fn store_passkey_credential(
     // Check for duplicate credential_id
     let existing = ctx.db.passkey_credential().iter()
         .find(|c| c.credential_id == credential_id);
-    if existing.is_some() {
+    if let Some(mut cred) = existing {
         // Update counter and last_used (re-registration of same credential)
-        let mut cred = existing.unwrap();
         cred.counter = counter;
         cred.last_used_at = now;
         ctx.db.passkey_credential().id().update(cred);
@@ -1601,7 +1600,7 @@ pub fn verify_totp(
 
 /// Verify a TOTP code using HMAC-SHA1 (RFC 6238).
 /// Checks the current 30-second window and adjacent windows (±1) for clock drift.
-
+///
 /// Simple RFC 4648 base32 decoding (no padding required)
 #[reducer]
 pub fn verify_mfa_backup_code(
