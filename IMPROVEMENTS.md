@@ -35,3 +35,5 @@ and works the top pending item each tick.
 | 2026-06-29 | **P4 — Remove 507 lines of dead admin code from App.tsx** | a4510c47 |
 | 2026-06-29 | **P4 — Complete admin panels extraction from App.tsx into AdminPanels.tsx** | 20e6775c |
 | 2026-06-29 | **E2E browser test of all features** — 25 features tested, 17 pass, 8 bugs found. BUG-1 (StarterKit crash) and BUG-2 (Vite proxy) fixed. Full report in E2E-TEST-REPORT.md | 873614dd |
+| 2026-06-29 | **P3 — Performance: lazy-load 6 route pages, dynamic mermaid import, code-split typed-sql** — Converted HomeView, ActivityView, FavoritesView, PageViewWrapper, SlugView, LoginView to React.lazy. Dynamic import mermaid (~800KB) only on first diagram render. Fixed ineffective dynamic import of typed-sql.ts (was pulled into main bundle by pages.ts). Added manual vendor/editor chunk splitting. | 9d15ee5f |
+| 2026-06-29 | **E2E: 59/59 tests passing** — Fixed anchorData.text.slice crash in PageView comments. Fixed 7 pre-existing E2E test bugs (strict mode violations, getByDisplayValue, webSocket fallback timing, advanced search syntax assertion). All 59 Playwright tests pass. | 0e2aedab |
