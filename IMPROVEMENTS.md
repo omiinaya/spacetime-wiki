@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | **Add TypeScript tests for SidebarTree component** | The new SidebarTree component (331 lines) has 0 tests. Covers tree rendering, favorites, drag/drop, batch ops, uncategorized section, empty state. |
 | P5 | **Add TypeScript tests for ActivityFeed component** | ActivityFeed.tsx renders activity log entries. Required: rendering, pagination, empty state. |
 | P5 | **Add TypeScript tests for GraphView component** | GraphView.tsx renders force-directed collection graph. Required: rendering, interaction, empty state. |
 | P5 | **Add TypeScript tests for AiAssistant component** | AiAssistant.tsx renders AI chat widget. Required: rendering, send message, loading state, error state. |
@@ -22,6 +21,7 @@ and works the top pending item each tick.
 | Date | Item | Commit |
 |------|------|--------|
 | 2026-06-29 | **P5 — Add Rust unit tests for collaboration.rs** — 21 tests covering session_id format, empty update validation, stale session TTL (5min), old update TTL (1hr), and integration flow patterns. 4 pure helpers extracted for testability. 0 cargo errors. | a71df205 |
+| 2026-06-29 | **P5 — Add TypeScript tests for SidebarTree component** — 63 tests covering rendering (favorites, collections, uncategorized, loading, empty), interactions (click, drag, context menu, selection, page limits), batch ops bar & dialogs (move, tag), status badges (draft/archived/template), search highlighting, and a11y (5 axe checks, 0 violations). | 9bc425bb |
 | 2026-06-29 | **P4 — Extract collaboration from lib.rs into collaboration.rs** — 6 collaboration reducers (broadcast_yjs_update, join/leave_collab_session, update_cursor_position, cleanup_stale_collab_sessions, cleanup_old_collab_updates) extracted. lib.rs: 2081→1959 lines (-122). 0 cargo errors. | a5263be9 |
 | 2026-06-29 | **P4 — Extract App.tsx sidebar tree into SidebarTree.tsx** — SidebarTree component (331 lines) extracted from App.tsx's renderColTree, favorites, batch ops, uncategorized, and empty state. App.tsx ~2340→1973 lines (net -28 lines including component). 0 TS errors. | 84c4f472 |
 | 2026-06-29 | **P4 — Remove 507 lines of dead admin code from App.tsx** — Deleted orphaned inline admin panel (365 lines), dead OIDC/SAML dialogs (142 lines), and dead group dialog (42 lines) that were left behind after AdminPanels extraction. App.tsx: 2824→2275 lines. Fixes Vite build failure, zero JS errors. | a4510c47 |
