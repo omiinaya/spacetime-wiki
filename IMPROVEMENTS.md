@@ -10,11 +10,17 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
+| P1 | **PageView.tsx StarterKit crash** — ✅ FIXED in 873614dd (import StarterKit from @tiptap/starter-kit) | |
+| P1 | **Vite proxy wrong port (8722→8711)** — ✅ FIXED in 873614dd | |
+| P3 | **Light mode toggle doesn't work** — button click has no effect, theme stays dark | |
+| P3 | **API Docs navigates to broken URL** — should open /docs or in-app docs | |
+| P3 | **Filters button doesn't respond** — no modal/panel opens | |
+| P4 | **Import buttons (MD/Wiki/Confluence) don't open anything** — sidebar highlight only | |
+| P4 | **Search doesn't trigger on Enter** — no results page appears | |
 | P4 | **Add TypeScript tests for 6 uncovered components** — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings — 32% of components still untested. | |
 | P4 | **Write Playwright E2E tests for critical flows** — attachments, permissions, search, collections, user management. Only 3 E2E specs exist. | |
-| P4 | **Extract lib.rs further** — 68 pub fn still in lib.rs (1945 lines). Targets: table create/seed logic, search reducers. AGENTS.md claims 4500 lines — needs updating. | |
+| P4 | **Extract lib.rs further** — 68 pub fn still in lib.rs (1945 lines). | |
 | P5 | **Fix 6 clippy warnings** — unwrap, sort_by_key, doc comment issues in Rust module. | |
-| P5 | **Update AGENTS.md** — fix lib.rs line count (1945 not 4500), add collaboration.rs to module list, verify port numbers. | |
 
 ---
 
@@ -33,3 +39,4 @@ and works the top pending item each tick.
 | 2026-06-29 | **P4 — Extract App.tsx sidebar tree into SidebarTree.tsx** | 84c4f472 |
 | 2026-06-29 | **P4 — Remove 507 lines of dead admin code from App.tsx** | a4510c47 |
 | 2026-06-29 | **P4 — Complete admin panels extraction from App.tsx into AdminPanels.tsx** | 20e6775c |
+| 2026-06-29 | **E2E browser test of all features** — 25 features tested, 17 pass, 8 bugs found. BUG-1 (StarterKit crash) and BUG-2 (Vite proxy) fixed. Full report in E2E-TEST-REPORT.md | 873614dd |
