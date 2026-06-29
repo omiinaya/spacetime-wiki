@@ -45,6 +45,8 @@ test.describe("Page editor — edit existing page", () => {
   });
 
   test("shows page title in editor", async ({ page }) => {
-    await expect(page.getByDisplayValue("Getting Started").or(page.getByText("Getting Started"))).toBeVisible({ timeout: 10000 });
+    // The page title input should contain "Getting Started"
+    const titleInput = page.locator('input[placeholder="Untitled"]');
+    await expect(titleInput).toHaveValue("Getting Started", { timeout: 10000 });
   });
 });

@@ -50,7 +50,7 @@ test.describe("Sidebar navigation", () => {
   });
 
   test("keyboard shortcuts button exists", async ({ page }) => {
-    const shortcutsButton = page.getByText("Keyboard shortcuts");
+    const shortcutsButton = page.getByText("Keyboard shortcuts").first();
     await expect(shortcutsButton).toBeVisible();
   });
 });

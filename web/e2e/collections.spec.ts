@@ -9,8 +9,9 @@ test.describe("Collections — sidebar", () => {
 
   test("shows collections in the sidebar", async ({ page }) => {
     // Collections should appear in the sidebar — check for their names
-    await expect(page.getByText("Engineering").first()).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("Design").first()).toBeVisible({ timeout: 5000 });
+    // Note: subscription WebSocket is mocked-closed, so data loads via HTTP fallback (5s delay)
+    await expect(page.getByText("Engineering").first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("Design").first()).toBeVisible({ timeout: 15000 });
   });
 
   test("shows new collection button in sidebar", async ({ page }) => {
@@ -19,9 +20,9 @@ test.describe("Collections — sidebar", () => {
   });
 
   test("clicking New collection opens dialog", async ({ page }) => {
-    await page.getByText("New collection").click();
+    await page.getByText("New collection").first().click();
     // The dialog should show
-    await expect(page.getByText("New collection").or(page.getByText("Collection name"))).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: "New collection" })).toBeVisible({ timeout: 5000 });
   });
 });
 

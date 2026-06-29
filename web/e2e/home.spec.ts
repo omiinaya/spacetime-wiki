@@ -55,7 +55,7 @@ test.describe("Home page — with pages", () => {
   });
 
   test("shows page titles from API", async ({ page }) => {
-    await expect(page.getByText("Getting Started")).toBeVisible();
+    await expect(page.getByText("Getting Started").first()).toBeVisible();
     await expect(page.getByText("Architecture Overview")).toBeVisible();
     await expect(page.getByText("Draft Notes")).toBeVisible();
   });

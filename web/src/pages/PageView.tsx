@@ -1598,7 +1598,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                           {isResolved && <span className="text-[10px] px-1 py-0.5 rounded bg-green-500/10 text-green-500">Resolved</span>}
                           {anchorData && (
                             <span className="text-[10px] px-1 py-0.5 rounded bg-blue-500/10 text-blue-500 truncate max-w-[120px]" title={anchorData.text}>
-                              &ldquo;{anchorData.text.slice(0, 30)}{anchorData.text.length > 30 ? "…" : ""}&rdquo;
+                              &ldquo;{anchorData.text?.slice(0, 30) || ""}{(anchorData.text?.length || 0) > 30 ? "…" : ""}&rdquo;
                             </span>
                           )}
                         </div>
