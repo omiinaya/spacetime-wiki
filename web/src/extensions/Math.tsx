@@ -2,30 +2,52 @@ import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import React, { useState, useEffect, useRef } from "react";
-import katex from "katex";
+
+// ─── Lazy katex loader ───────────────────────────────────────────────────────
+// Dynamically import katex (129K) only when a math node is rendered for the
+// first time. This avoids adding katex to the initial bundle.
+let _katex: any = null;
+let _katexPromise: Promise<void> | null = null;
+
+function ensureKatex(): Promise<void> {
+  if (_katex) return Promise.resolve();
+  if (!_katexPromise) {
+    _katexPromise = import("katex").then((mod) => {
+      _katex = mod.default || mod;
+    });
+  }
+  return _katexPromise;
+}
 
 // ─── KaTeX render helpers ────────────────────────────────────────────────────
 
 function renderInlineMath(tex: string): string {
-  try {
-    return katex.renderToString(tex, {
-      throwOnError: false,
-      displayMode: false,
-    });
-  } catch {
-    return `<span class="math-error text-red-400">${escapeHtml(tex)}</span>`;
+  if (_katex) {
+    try {
+      return _katex.renderToString(tex, {
+        throwOnError: false,
+        displayMode: false,
+      });
+    } catch {
+      return `<span class="math-error text-red-400">${escapeHtml(tex)}</span>`;
+    }
   }
+  // katex not loaded yet — return raw tex; the React NodeView will re-render
+  return `<span class="math-loading">${escapeHtml(tex)}</span>`;
 }
 
 function renderBlockMath(tex: string): string {
-  try {
-    return katex.renderToString(tex, {
-      throwOnError: false,
-      displayMode: true,
-    });
-  } catch {
-    return `<div class="math-error text-red-400">${escapeHtml(tex)}</div>`;
+  if (_katex) {
+    try {
+      return _katex.renderToString(tex, {
+        throwOnError: false,
+        displayMode: true,
+      });
+    } catch {
+      return `<div class="math-error text-red-400">${escapeHtml(tex)}</div>`;
+    }
   }
+  return `<div class="math-loading">${escapeHtml(tex)}</div>`;
 }
 
 function escapeHtml(text: string): string {
@@ -35,6 +57,67 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+// ─── Shared KaTeX render React component ─────────────────────────────────────
+// Used by both MathInlineNodeView and MathBlockNodeView
+
+function KatexRenderer({
+  tex,
+  displayMode,
+}: {
+  tex: string;
+  displayMode: boolean;
+}) {
+  const containerRef = useRef<HTMLSpanElement | HTMLDivElement>(null);
+  const [loading, setLoading] = useState(!_katex);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    ensureKatex().then(() => {
+      if (!containerRef.current) return;
+      try {
+        const html = _katex.renderToString(tex || "", {
+          throwOnError: false,
+          displayMode,
+        });
+        containerRef.current.innerHTML = html;
+        setLoading(false);
+        setError(false);
+      } catch {
+        setError(true);
+        setLoading(false);
+      }
+    });
+  }, [tex, displayMode]);
+
+  if (loading) {
+    return React.createElement(displayMode ? "div" : "span", {
+      ref: containerRef,
+      className: "math-loading text-muted-foreground text-sm",
+    });
+  }
+
+  return React.createElement(displayMode ? "div" : "span", {
+    ref: containerRef,
+    "data-error": error ? "true" : undefined,
+    className: error
+      ? "math-error text-red-400"
+      : displayMode
+        ? "math-render max-w-full"
+        : "math-render inline",
+  });
+}
+
+// ─── MathInline React Node View ──────────────────────────────────────────────
+
+const MathInlineNodeView: React.FC<NodeViewProps> = ({ node }) => {
+  const tex = node.attrs.tex || "";
+  return (
+    <span className="math-inline" contentEditable={false}>
+      <KatexRenderer tex={tex} displayMode={false} />
+    </span>
+  );
+};
 
 // ─── Inline Math Node ($...$) ─────────────────────────────────────────────────
 
@@ -95,6 +178,13 @@ export const MathInline = Node.create<MathInlineOptions>({
     return `$${node.attrs.tex}$`;
   },
 
+  addNodeView() {
+    return ReactNodeViewRenderer(MathInlineNodeView, {
+      // Inline node views need to be rendered inline
+      as: "span",
+    });
+  },
+
   addCommands() {
     return {
       setMathInline:
@@ -120,21 +210,25 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
   const [showEditor, setShowEditor] = useState(false);
   const [editTex, setEditTex] = useState(tex || "");
   const [renderError, setRenderError] = useState(false);
+  const [katexLoading, setKatexLoading] = useState(!_katex);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Render KaTeX when tex changes
+  // Load katex if not already loaded, then render
   useEffect(() => {
-    if (!previewRef.current) return;
-    try {
-      const html = katex.renderToString(editTex || "", {
-        throwOnError: false,
-        displayMode: true,
-      });
-      previewRef.current.innerHTML = html;
-      setRenderError(false);
-    } catch {
-      setRenderError(true);
-    }
+    ensureKatex().then(() => {
+      setKatexLoading(false);
+      if (!previewRef.current) return;
+      try {
+        const html = _katex.renderToString(editTex || "", {
+          throwOnError: false,
+          displayMode: true,
+        });
+        previewRef.current.innerHTML = html;
+        setRenderError(false);
+      } catch {
+        setRenderError(true);
+      }
+    });
   }, [tex, editTex]);
 
   const handleDoubleClick = () => {
@@ -193,11 +287,17 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
 
       {/* Rendered math area */}
       <div className="p-5 flex justify-center overflow-x-auto min-h-[48px] items-center">
-        <div
-          ref={previewRef}
-          className="math-render max-w-full"
-          data-tex={tex}
-        />
+        {katexLoading ? (
+          <div className="text-muted-foreground text-sm animate-pulse">
+            Loading KaTeX...
+          </div>
+        ) : (
+          <div
+            ref={previewRef}
+            className="math-render max-w-full"
+            data-tex={tex}
+          />
+        )}
       </div>
 
       {/* Inline editor */}

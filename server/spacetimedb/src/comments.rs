@@ -34,7 +34,7 @@ pub fn add_comment(
     let comment_message = make_comment_excerpt(&user_id, &page_title, &body);
     notify_page_watchers(
         ctx, &page_id, "comment.create", &user_id,
-        &page_title, &comment_message, &String::new(),
+        &page_title, &comment_message, "",
     );
     Ok(())
 }
