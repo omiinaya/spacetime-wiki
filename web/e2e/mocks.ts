@@ -20,9 +20,9 @@ export function stdbRow(row: unknown[]) {
 // ─── Sample data ─────────────────────────────────────────────────────────────
 
 export const samplePages = [
-  ["page_1", "Getting Started", "getting-started", '{"type":"doc","content":[]}', "Welcome to the wiki", "", "", "published", "", "", false, false, false, "", 0, "user_1", "user_1", 1719000000000, 1719100000000, 0, "ltr"],
-  ["page_2", "Architecture Overview", "architecture", '{"type":"doc","content":[]}', "System architecture docs", "col_1", "", "published", "", "", false, true, false, "", 1, "user_1", "user_2", 1718900000000, 1719050000000, 0, "ltr"],
-  ["page_3", "Draft Notes", "draft-notes", '{"type":"doc","content":[]}', "Some draft content", "", "", "draft", "", "", false, false, false, "", 2, "user_2", "user_2", 1718800000000, 1719000000000, 0, "ltr"],
+  ["page_1", "Getting Started", "getting-started", '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Welcome to the wiki. This is the getting started guide."}]}]}', "Welcome to the wiki. This is the getting started guide.", "", "", "published", "", "", false, false, false, "", 0, "user_1", "user_1", 1719000000000, 1719100000000, 0, "ltr"],
+  ["page_2", "Architecture Overview", "architecture", '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"System architecture documentation."}]}]}', "System architecture documentation.", "col_1", "", "published", "", "", false, true, false, "", 1, "user_1", "user_2", 1718900000000, 1719050000000, 0, "ltr"],
+  ["page_3", "Draft Notes", "draft-notes", '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Some draft content."}]}]}', "Some draft content.", "", "", "draft", "", "", false, false, false, "", 2, "user_2", "user_2", 1718800000000, 1719000000000, 0, "ltr"],
 ];
 
 export const sampleCollections = [
@@ -51,6 +51,39 @@ export const sampleActivity = [
 
 export const sampleFavorites = [
   { id: "fav_1", page_id: "page_2", user_id: "user_1", created_at: 1719000000000 },
+];
+
+export const sampleRevisions = [
+  ["rev_1", "page_1", "Getting Started", '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Initial version."}]}]}', "user_1", 1719000000000],
+  ["rev_2", "page_1", "Getting Started", '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Updated welcome text."}]}]}', "user_2", 1719050000000],
+];
+
+export const sampleComments = [
+  ["com_1", "page_1", "", "user_2", "Great page! Very helpful.", '{"from":0,"to":10}', false, 1719030000000],
+  ["com_2", "page_1", "com_1", "user_1", "Thanks Bob!", "", false, 1719040000000],
+];
+
+export const sampleCommentReactions = [
+  ["cr_1", "com_1", "user_1", "👍"],
+  ["cr_2", "com_1", "user_2", "❤️"],
+];
+
+export const sampleAttachments = [
+  ["att_1", "page_1", "diagram.png", "image/png", 102400, "user_1", 1719050000000],
+];
+
+export const sampleTags = [
+  ["tag_1", "page_1", "documentation"],
+  ["tag_2", "page_1", "guide"],
+  ["tag_3", "page_2", "architecture"],
+];
+
+export const sampleShareLinks = [
+  ["sl_1", "page_1", "abc123token", "user_1", "", 0, 0, null, null],
+];
+
+export const samplePagePermissions = [
+  ["pp_1", "page_1", "user", "user_2", "viewer"],
 ];
 
 // ─── Request URL matchers ────────────────────────────────────────────────────
@@ -86,6 +119,16 @@ type MockConfig = {
   trending?: { page_id: string; views: number }[];
   /** Override default users */
   users?: unknown[][];
+  /** Override default revisions */
+  revisions?: unknown[][];
+  /** Override default comments */
+  comments?: unknown[][];
+  /** Override default comment reactions */
+  commentReactions?: unknown[][];
+  /** Override default tags */
+  tags?: unknown[][];
+  /** Override default activity */
+  activity?: { id: string; event_type: string; target_id: string; actor_id: string; created_at: number; metadata: string }[];
   /** Enable auth endpoints (default: mock as anonymous) */
   authAs?: "anonymous" | "admin" | "editor";
 };
@@ -95,6 +138,11 @@ export async function setupMocks(page: Page, config: MockConfig = {}) {
   const collections = config.collections ?? sampleCollections;
   const trending = config.trending ?? sampleTrending;
   const users = config.users ?? sampleUsers;
+  const revisions = config.revisions ?? sampleRevisions;
+  const comments = config.comments ?? sampleComments;
+  const commentReactions = config.commentReactions ?? sampleCommentReactions;
+  const tags = config.tags ?? sampleTags;
+  const activity = config.activity ?? sampleActivity;
 
   // Intercept STDB WebSocket connections — prevent hanging
   await page.routeWebSocket("**/*", (ws) => {
@@ -110,16 +158,30 @@ export async function setupMocks(page: Page, config: MockConfig = {}) {
     const method = route.request().method();
 
     if (method === "POST" && url.includes("/sql")) {
-      const body = route.request().postData() || "";
-      const rows = body.includes("FROM page")
-        ? pages
-        : body.includes("FROM collection")
-          ? collections
-          : body.includes("FROM `user`") || body.includes("FROM user")
-            ? users
-            : body.includes("FROM notification")
-              ? [sampleNotifications[0]]
-              : [];
+      const body = (route.request().postData() || "").toLowerCase();
+      const rows = body.includes("from page_revision")
+        ? revisions
+        : body.includes("from comment_reaction")
+          ? commentReactions
+          : body.includes("from comment")
+            ? comments
+            : body.includes("from collection")
+              ? collections
+              : body.includes("from `user`") || body.includes("from user")
+                ? users
+                : body.includes("from notification")
+                  ? [sampleNotifications[0]]
+                  : body.includes("from tag")
+                    ? tags
+                    : body.includes("from attachment")
+                      ? sampleAttachments
+                      : body.includes("from share_link")
+                        ? sampleShareLinks
+                        : body.includes("from page_permission")
+                          ? samplePagePermissions
+                          : body.includes("from page")
+                            ? pages
+                            : [];
       await route.fulfill({ json: stdbJson(rows) });
     } else if (method === "POST" && url.includes("/call/")) {
       await route.fulfill({ status: 200, json: {} });
@@ -131,6 +193,21 @@ export async function setupMocks(page: Page, config: MockConfig = {}) {
   // Mock Python API search endpoint
   await page.route("**/api/v1/search*", async (route) => {
     await route.fulfill({ json: { results: [], total: 0 } });
+  });
+
+  // Mock activity/analytics endpoint
+  await page.route("**/api/v1/activity*", async (route) => {
+    await route.fulfill({ json: activity });
+  });
+
+  // Mock view count analytics
+  await page.route("**/api/v1/analytics/**", async (route) => {
+    await route.fulfill({ json: { views: 42 } });
+  });
+
+  // Mock record view
+  await page.route("**/api/v1/analytics/view*", async (route) => {
+    await route.fulfill({ status: 200, json: {} });
   });
 
   // Mock auth endpoints
@@ -152,4 +229,9 @@ export async function setupMocks(page: Page, config: MockConfig = {}) {
       }
     });
   }
+
+  // Mock template list
+  await page.route("**/api/v1/templates*", async (route) => {
+    await route.fulfill({ json: [] });
+  });
 }

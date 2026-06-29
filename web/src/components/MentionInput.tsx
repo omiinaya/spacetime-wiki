@@ -185,6 +185,7 @@ export function MentionInput({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
+        aria-label={placeholder || "Text input"}
         className={className}
         rows={minRows}
       />

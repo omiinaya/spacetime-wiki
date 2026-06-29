@@ -179,6 +179,7 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
                   ref={fileInputRef}
                   type="file"
                   onChange={handleFileInput}
+                  aria-label="Upload file"
                   className="hidden"
                 />
                 <button
@@ -195,7 +196,7 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
                 </button>
               </>
             )}
-            <button onClick={onClose} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
+            <button onClick={onClose} aria-label="Close media browser" className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -211,6 +212,7 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Filter by filename or type..."
+                aria-label="Search files"
                 className="w-full h-8 pl-8 pr-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
               />
             </div>
