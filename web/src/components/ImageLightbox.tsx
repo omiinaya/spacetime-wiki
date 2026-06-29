@@ -358,3 +358,4 @@ export function ImageLightbox({ images, initialIndex = 0, onClose, pageId, onAdd
     </div>
   );
 }
+export default ImageLightbox;

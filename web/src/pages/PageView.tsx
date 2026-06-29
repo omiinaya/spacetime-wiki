@@ -1,8 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import ImageExtension from "@tiptap/extension-image";
 import { HeadingWithId } from "../extensions/HeadingWithId";
@@ -36,7 +34,7 @@ import { cn, formatDate, timeAgo } from "../lib/utils";
 import { diffArrays } from "diff";
 import { PagePermissions } from "../components/PagePermissions";
 import { RevisionDiff } from "../components/RevisionDiff";
-import { ImageLightbox } from "../components/ImageLightbox";
+const ImageLightbox = React.lazy(() => import("../components/ImageLightbox"));
 import { PageTags } from "../components/PageTags";
 import { showToast } from "../components/Toast";
 import { MentionInput } from "../components/MentionInput";
@@ -2168,32 +2166,33 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
 
       {/* Image Lightbox */}
       {lightboxImages && (
-        <ImageLightbox
-          images={lightboxImages}
-          initialIndex={lightboxIndex}
-          onClose={() => setLightboxImages(null)}
-          pageId={page?.id}
-          comments={comments}
-          onAddComment={async (imageId, body) => {
-            if (!userId) return;
-            await api.comments.add(pageId, "", userId, body, `image:${imageId}`);
-            const coms = await api.comments.list(pageId);
-            setComments(coms);
-            // Reload reactions for all comments
-            const reactionPromises = coms.map(c => api.comments.listReactions(c.id));
-            const reactionResults = await Promise.all(reactionPromises);
-            const reactionMap: Record<string, Record<string, string[]>> = {};
-            for (let i = 0; i < coms.length; i++) {
-              const emojiGroups: Record<string, string[]> = {};
-              for (const r of reactionResults[i]) {
-                if (!emojiGroups[r.emoji]) emojiGroups[r.emoji] = [];
-                emojiGroups[r.emoji].push(r.user_id);
-              }
-              reactionMap[coms[i].id] = emojiGroups;
-            }
-            setReactions(reactionMap);
-          }}
-        />
+          <React.Suspense fallback={null}>
+            <ImageLightbox
+              images={lightboxImages}
+              initialIndex={lightboxIndex}
+              onClose={() => setLightboxImages(null)}
+              pageId={page?.id}
+              comments={comments}
+              onAddComment={async (imageId, body) => {
+                if (!userId) return;
+                await api.comments.add(pageId, "", userId, body, `image:${imageId}`);
+                const coms = await api.comments.list(pageId);
+                setComments(coms);
+                const reactionPromises = coms.map(c => api.comments.listReactions(c.id));
+                const reactionResults = await Promise.all(reactionPromises);
+                const reactionMap: Record<string, Record<string, string[]>> = {};
+                for (let i = 0; i < coms.length; i++) {
+                  const emojiGroups: Record<string, string[]> = {};
+                  for (const r of reactionResults[i]) {
+                    if (!emojiGroups[r.emoji]) emojiGroups[r.emoji] = [];
+                    emojiGroups[r.emoji].push(r.user_id);
+                  }
+                  reactionMap[coms[i].id] = emojiGroups;
+                }
+                setReactions(reactionMap);
+              }}
+            />
+          </React.Suspense>
       )}
     </div>
   );
