@@ -80,7 +80,7 @@ pub fn add_group_member(
         .any(|m| m.group_id == group_id && m.user_id == user_id);
     is_valid_group_member_add(user_exists, already_member)
         .map_err(|e| e.to_string())?;
-    let role_clean = normalize_group_role(&role).to_string();
+    let role_clean = normalize_group_role(&role);
     ctx.db.group_member().insert(GroupMember {
         id, group_id, user_id, role: role_clean, added_by,
         created_at: now_ms(ctx),
@@ -131,7 +131,7 @@ pub fn set_collection_group_permission(
         ctx.db.collection_group_permission().id().update(p);
         return Ok(());
     }
-    let role_clean = normalize_collection_permission_role(&role).to_string();
+    let role_clean = normalize_collection_permission_role(&role);
     ctx.db.collection_group_permission().insert(CollectionGroupPermission {
         id, collection_id, group_id, role: role_clean,
         created_at: now_ms(ctx),
@@ -160,9 +160,8 @@ pub fn set_page_permission(
     if !page_exists {
         return Err("Page not found".into());
     }
-    let role_clean = normalize_page_permission_role(&role).to_string();
+    let role_clean = normalize_page_permission_role(&role);
 
-    let existing = ctx.db.page_permission().iter().find(|p| {
     let existing = ctx.db.page_permission().iter().find(|p| {
         p.page_id == page_id &&
         (if !user_id.is_empty() { p.user_id == user_id } else { false }) &&
@@ -207,16 +206,16 @@ pub fn valid_page_permission_role(role: &str) -> bool {
     matches!(role, "admin" | "editor" | "viewer")
 }
 
-pub fn normalize_group_role(role: &str) -> &'static str {
-    if valid_group_role(role) { role } else { "member" }
+pub fn normalize_group_role(role: &str) -> String {
+    if valid_group_role(role) { role.to_string() } else { "member".to_string() }
 }
 
-pub fn normalize_collection_permission_role(role: &str) -> &'static str {
-    if valid_collection_permission_role(role) { role } else { "viewer" }
+pub fn normalize_collection_permission_role(role: &str) -> String {
+    if valid_collection_permission_role(role) { role.to_string() } else { "viewer".to_string() }
 }
 
-pub fn normalize_page_permission_role(role: &str) -> &'static str {
-    if valid_page_permission_role(role) { role } else { "viewer" }
+pub fn normalize_page_permission_role(role: &str) -> String {
+    if valid_page_permission_role(role) { role.to_string() } else { "viewer".to_string() }
 }
 
 pub fn is_valid_group_member_add(user_exists: bool, already_member: bool) -> Result<(), &'static str> {
