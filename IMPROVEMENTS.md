@@ -11,7 +11,6 @@ and works the top pending item each tick.
 | Priority | Item | Notes |
 |----------|------|-------|
 | P5 | **Add Rust unit tests for permissions reducers** | create_group, update_group, set_collection_group_permission, set_page_permission all have business logic (role validation, duplicate checks) that should be tested. |
-| P4 | **Extract App.tsx sidebar tree into SidebarTree.tsx** | The recursive collection tree renderer + drag/drop + context menu + batch selection logic occupies ~500+ lines in App.tsx. Extract to separate component. |
 | P4 | **Extract collaboration from lib.rs into collaboration.rs** | broadcast_yjs_update, join_collab_session, leave_collab_session, update_cursor_position, cleanup_stale_collab_sessions, cleanup_old_collab_updates. ~80 lines. |
 
 ---
@@ -20,7 +19,8 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-28 | **P4 — Remove 507 lines of dead admin code from App.tsx** — Deleted orphaned inline admin panel (365 lines), dead OIDC/SAML dialogs (142 lines), and dead group dialog (42 lines) that were left behind after AdminPanels extraction. App.tsx: 2824→2275 lines. Fixes Vite build failure, zero JS errors. | $(cd /home/user/spacetime-wiki && git rev-parse --short HEAD 2>/dev/null || echo "pending") |
+| 2026-06-29 | **P4 — Extract App.tsx sidebar tree into SidebarTree.tsx** — SidebarTree component (331 lines) extracted from App.tsx's renderColTree, favorites, batch ops, uncategorized, and empty state. App.tsx ~2340→1973 lines (net -28 lines including component). 0 TS errors. | pending |
+| 2026-06-29 | **P4 — Remove 507 lines of dead admin code from App.tsx** — Deleted orphaned inline admin panel (365 lines), dead OIDC/SAML dialogs (142 lines), and dead group dialog (42 lines) that were left behind after AdminPanels extraction. App.tsx: 2824→2275 lines. Fixes Vite build failure, zero JS errors. | a4510c47 |
 | 2026-06-29 | **P4 — Complete admin panels extraction from App.tsx into AdminPanels.tsx** — 5 sub-components (UsersPanel, GroupsPanel, SettingsPanel, SsoPanel). App.tsx 2941→2317 lines (624 removed). 0 TS errors. | 20e6775c |
 | 2026-06-28 | **P4 — Extract SSO providers from lib.rs into sso.rs** — 15 reducers (SAML/OIDC/LDAP/OAuth) extracted. lib.rs: 2556→2079 lines. 0 cargo errors, 0 TS errors. | e4a401f6 |
 | 2026-06-28 | **P4 — Extract LoginView + SSO handlers from App.tsx into LoginView.tsx** — Removed 327 lines of inline login form + SSO handlers (OIDC/SAML/Google/OAuth/Passkey/LDAP). App.tsx 3268→2941 lines. 0 TS errors. | 6da0679b |
