@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
 
@@ -29,7 +29,7 @@ import { Drawio } from "../extensions/Drawio";
 import { PlantUML } from "../extensions/PlantUML";
 import { DatabaseBase } from "../extensions/DatabaseBase";
 import { SyncedBlockExtension } from "../extensions/SyncedBlock";
-import { ImageLightbox } from "../components/ImageLightbox";
+const ImageLightbox = React.lazy(() => import("../components/ImageLightbox"));
 import { common, createLowlight } from "lowlight";
 import {
   Bold,
@@ -2143,12 +2143,14 @@ export function PageEditor({ userId }: Props) {
 
       {/* Image Lightbox */}
       {lightboxImages && (
-        <ImageLightbox
-          images={lightboxImages}
-          initialIndex={lightboxIndex}
-          onClose={() => setLightboxImages(null)}
-          pageId={page?.id}
-        />
+        <React.Suspense fallback={null}>
+          <ImageLightbox
+            images={lightboxImages}
+            initialIndex={lightboxIndex}
+            onClose={() => setLightboxImages(null)}
+            pageId={page?.id}
+          />
+        </React.Suspense>
       )}
     </div>
   );

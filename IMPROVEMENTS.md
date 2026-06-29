@@ -10,7 +10,7 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P3 | **Code-split large chunks** — ImageLightbox (987K), cytoscape (225K), katex (129K) are all loaded on every page. Convert to `React.lazy` or `vite.config.ts` manualChunks for faster initial loads. | |
+| P3 | **Code-split large chunks** — ImageLightbox (987K→7K ✅) — Now lazy-loaded via React.lazy. cytoscape (225K) and katex (129K) are still eager-loaded. | |
 | P4 | **Add TypeScript tests for 6 uncovered components** — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings — 32% of components still untested. | |
 | P4 | **Write Playwright E2E tests for critical flows** — attachments, permissions, search, collections, user management. Only 3 E2E specs exist. | |
 | P4 | **Extract lib.rs further** — 68 pub fn still in lib.rs (1945 lines). Targets: table create/seed logic, search reducers. AGENTS.md claims 4500 lines — needs updating. | |
@@ -28,6 +28,7 @@ and works the top pending item each tick.
 | 2026-06-29 | **P5 — Add TypeScript tests for ActivityFeed component** — 45 tests covering 4 states (loading/error/empty/list), helper functions (getEventIcon/Label/Color/ActorName), auto-refresh toggle, click navigation, compact mode, a11y. | 3d378dc3 |
 | 2026-06-29 | **P5 — Add TypeScript tests for GraphView component** — 20 tests covering loading/error states, D3 rendering, info panel (page + collection), node double-click navigation, filter checkboxes, zoom controls, legend, a11y. | 3d378dc3 |
 | 2026-06-29 | **P5 — Add TypeScript tests for AiAssistant component** — 30 tests covering welcome screen, session management, message display/sending, error handling (AI error + session creation + config save), loading states, config panel, panel close, a11y. Also fixed missing aria-label on send button. | 3d378dc3 |
+| 2026-06-29 | **P3 — Code-split ImageLightbox (987K→7K)** — Converted static import to React.lazy() in both PageView.tsx and PageEditor.tsx. ImageLightbox now lazy-loaded only when lightbox opens. Added default export. | 9e64d448 |
 | 2026-06-29 | **P4 — Extract collaboration from lib.rs into collaboration.rs** — 6 collaboration reducers (broadcast_yjs_update, join/leave_collab_session, update_cursor_position, cleanup_stale_collab_sessions, cleanup_old_collab_updates) extracted. lib.rs: 2081→1959 lines (-122). 0 cargo errors. | a5263be9 |
 | 2026-06-29 | **P4 — Extract App.tsx sidebar tree into SidebarTree.tsx** — SidebarTree component (331 lines) extracted from App.tsx's renderColTree, favorites, batch ops, uncategorized, and empty state. App.tsx ~2340→1973 lines (net -28 lines including component). 0 TS errors. | 84c4f472 |
 | 2026-06-29 | **P4 — Remove 507 lines of dead admin code from App.tsx** — Deleted orphaned inline admin panel (365 lines), dead OIDC/SAML dialogs (142 lines), and dead group dialog (42 lines) that were left behind after AdminPanels extraction. App.tsx: 2824→2275 lines. Fixes Vite build failure, zero JS errors. | a4510c47 |
