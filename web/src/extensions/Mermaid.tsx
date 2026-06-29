@@ -2,25 +2,38 @@ import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import mermaid from "mermaid";
 
-// ─── Mermaid setup ─────────────────────────────────────────────────────────────
+// ─── Lazy mermaid loader ───────────────────────────────────────────────────────
+// Dynamically import mermaid (~800KB with all diagram types) only when the first
+// mermaid node is rendered. This avoids adding it to the initial bundle.
 
-mermaid.initialize({
-  theme: "dark",
-  startOnLoad: false,
-  themeVariables: {
-    background: "#1a1a2e",
-    primaryColor: "#3b82f6",
-    secondaryColor: "#8b5cf6",
-    tertiaryColor: "#1e293b",
-    primaryTextColor: "#e2e8f0",
-    secondaryTextColor: "#94a3b8",
-    lineColor: "#475569",
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    fontSize: "14px",
-  },
-});
+let _mermaid: any = null;
+let _mermaidPromise: Promise<void> | null = null;
+
+async function ensureMermaid(): Promise<void> {
+  if (_mermaid) return;
+  if (!_mermaidPromise) {
+    _mermaidPromise = import("mermaid").then(async (mod) => {
+      _mermaid = mod.default || mod;
+      _mermaid.initialize({
+        theme: "dark",
+        startOnLoad: false,
+        themeVariables: {
+          background: "#1a1a2e",
+          primaryColor: "#3b82f6",
+          secondaryColor: "#8b5cf6",
+          tertiaryColor: "#1e293b",
+          primaryTextColor: "#e2e8f0",
+          secondaryTextColor: "#94a3b8",
+          lineColor: "#475569",
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          fontSize: "14px",
+        },
+      });
+    });
+  }
+  await _mermaidPromise;
+}
 
 // ─── Options ───────────────────────────────────────────────────────────────────
 
@@ -36,31 +49,17 @@ declare module "@tiptap/core" {
   }
 }
 
-// ─── Mermaid Node View ─────────────────────────────────────────────────────────
-
-function renderMermaidSvg(element: HTMLElement, definition: string): Promise<void> {
-  return mermaid
-    .run({
-      nodes: [element],
-      suppressErrors: true,
-    })
-    .catch(() => {
-      // Render error inline
-      element.innerHTML =
-        `<div class="mermaid-error p-4 text-red-400 text-sm border border-red-500/30 rounded-lg bg-red-500/5">
-          <span class="font-semibold">⚠ Mermaid syntax error</span>
-          <pre class="mt-2 text-xs text-red-300/70 whitespace-pre-wrap font-mono">${escapeHtml(definition.substring(0, 500))}</pre>
-        </div>`;
-    });
-}
+// ─── Helpers ────────────────────────────────────────────────────────────────────
 
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/\"/g, "&quot;");
 }
+
+// ─── Mermaid Node View ─────────────────────────────────────────────────────────
 
 const MermaidNodeView: React.FC<NodeViewProps> = ({
   node,
@@ -74,6 +73,7 @@ const MermaidNodeView: React.FC<NodeViewProps> = ({
   const [showEditor, setShowEditor] = useState(false);
   const [editSrc, setEditSrc] = useState(src || "");
   const [renderError, setRenderError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Render the diagram when src changes
   useEffect(() => {
@@ -82,8 +82,25 @@ const MermaidNodeView: React.FC<NodeViewProps> = ({
     container.setAttribute("data-mermaid-src", src);
     container.textContent = src;
     setRenderError(false);
+    setLoading(true);
 
-    renderMermaidSvg(container, src).catch(() => setRenderError(true));
+    ensureMermaid()
+      .then(() => {
+        if (!svgContainerRef.current) return;
+        return _mermaid
+          .run({
+            nodes: [svgContainerRef.current],
+            suppressErrors: true,
+          })
+          .catch(() => {
+            svgContainerRef.current!.innerHTML =
+              `<div class="mermaid-error p-4 text-red-400 text-sm border border-red-500/30 rounded-lg bg-red-500/5">
+                <span class="font-semibold">⚠ Mermaid syntax error</span>
+                <pre class="mt-2 text-xs text-red-300/70 whitespace-pre-wrap font-mono">${escapeHtml(src.substring(0, 500))}</pre>
+              </div>`;
+          });
+      })
+      .finally(() => setLoading(false));
   }, [src]);
 
   const handleDoubleClick = () => {
@@ -130,6 +147,9 @@ const MermaidNodeView: React.FC<NodeViewProps> = ({
           Diagram
         </span>
         <div className="flex items-center gap-1">
+          {loading && (
+            <span className="text-[10px] text-muted-foreground/50">Rendering...</span>
+          )}
           <button
             onClick={handleDoubleClick}
             className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-[11px]"
@@ -147,7 +167,7 @@ const MermaidNodeView: React.FC<NodeViewProps> = ({
           className="mermaid max-w-full"
           data-mermaid-src={src}
         >
-          {src || "<!-- empty diagram -->"}
+          {loading ? "Loading diagram engine..." : src || "<!-- empty diagram -->"}
         </div>
       </div>
 
