@@ -93,8 +93,8 @@ pub fn add_comment_reaction(ctx: &ReducerContext, id: String, comment_id: String
     // Check if reaction already exists (toggle off)
     let existing = ctx.db.comment_reaction().iter()
         .find(|r| r.comment_id == comment_id && r.user_id == user_id && r.emoji == emoji);
-    if existing.is_some() {
-        ctx.db.comment_reaction().id().delete(&existing.unwrap().id);
+    if let Some(existing) = existing {
+        ctx.db.comment_reaction().id().delete(&existing.id);
         return Ok(());
     }
     ctx.db.comment_reaction().insert(CommentReaction {
