@@ -115,3 +115,67 @@ pre-commit: ## Run pre-commit checks: tsc + tests + cargo check
 	cd $(WEB_DIR) && npm test
 	cd $(SPACETIMEDB_DIR) && cargo check
 	@echo "pre-commit checks passed."
+
+# ── Agent-Friendly Targets ────────────────────────────────────────────────
+.PHONY: test-unit test-integration test-quick coverage check-ports deps-check health setup-git-hooks
+
+test-unit:  ## Run unit tests (frontend)
+	cd $(WEB_DIR) && npm test
+
+test-integration:  ## Run integration tests (requires running backend)
+	@echo "=== Integration Tests ==="
+	@echo "Make sure these services are running:"
+	@echo "  - SpacetimeDB on :3001"
+	@echo "  - API server on :8711"
+	@echo "Then run: cd $(WEB_DIR) && npm run test:e2e"
+
+test-quick:  ## Quick vitest run
+	cd $(WEB_DIR) && npx vitest run --reporter=verbose 2>/dev/null || echo "Run 'npm install' in $(WEB_DIR)/ first"
+
+coverage:  ## Vitest coverage report
+	@echo "=== Coverage ==="
+	@cd $(WEB_DIR) && npx vitest run --coverage 2>/dev/null || echo "Run 'npm install' in $(WEB_DIR)/ first"
+	@echo "Coverage report: $(WEB_DIR)/coverage/index.html"
+
+check-ports:  ## Verify required ports are free
+	@echo "Checking ports 5184 (vite), 8711 (API), 3001 (STDB), 3000 (WS)..."
+	@for port in 5184 8711 3001 3000; do \
+		if ss -tlnp "sport = :$$port" 2>/dev/null | grep -q .; then \
+			echo "  Port $$port: IN USE"; \
+		else \
+			echo "  Port $$port: free"; \
+		fi; \
+	done
+
+deps-check:  ## Verify required tools are installed
+	@echo "=== Dependency Check ==="
+	@for cmd in node npm cargo rustup spacetime; do \
+		if command -v $$cmd >/dev/null 2>&1; then \
+			echo "  $$cmd: found"; \
+		else \
+			echo "  $$cmd: MISSING"; \
+		fi; \
+	done
+	@echo "Checking wasm32 target..."
+	@rustup target list --installed 2>/dev/null | grep -q wasm32-unknown-unknown && \
+		echo "  wasm32 target: found" || echo "  wasm32 target: MISSING (run: rustup target add wasm32-unknown-unknown)"
+
+health:  ## Check if services are running
+	@echo "=== Health Checks ==="
+	@for url in http://localhost:5184 http://localhost:8711 http://localhost:3001; do \
+		if curl -sf "$$url" >/dev/null 2>&1; then \
+			echo "  $$url — OK"; \
+		else \
+			echo "  $$url — not reachable"; \
+		fi; \
+	done
+
+setup-git-hooks:  ## Configure git hooks from .githooks/
+	@if [ -d .githooks ]; then \
+		git config core.hooksPath .githooks; \
+		echo "Git hooks configured to use .githooks/"; \
+	else \
+		mkdir -p .githooks; \
+		git config core.hooksPath .githooks; \
+		echo "Created .githooks/ and configured git to use it"; \
+	fi

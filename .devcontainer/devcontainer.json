@@ -1,0 +1,30 @@
+{
+  "name": "SpacetimeWiki",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml"
+      ]
+    }
+  },
+  "postCreateCommand": "rustup target add wasm32-unknown-unknown && cd web && npm install",
+  "forwardPorts": [
+    5184,
+    8711,
+    3001,
+    3000
+  ],
+  "remoteUser": "vscode"
+}
