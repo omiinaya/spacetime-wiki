@@ -9,7 +9,7 @@ on:
 jobs:
   frontend:
     name: Frontend (TypeScript + Tests)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ubuntu-latest]
 
     defaults:
       run:
@@ -35,7 +35,7 @@ jobs:
 
   rust:
     name: Rust (SpacetimeDB module)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ubuntu-latest]
 
     defaults:
       run:
