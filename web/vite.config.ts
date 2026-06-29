@@ -26,6 +26,21 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/react-router")) {
+            return "vendor";
+          }
+          if (id.includes("@tiptap") || id.includes("prosemirror")) {
+            return "editor";
+          }
+        },
+      },
+    },
+  },
   optimizeDeps: {
     include: ["highlight.js", "lowlight", "@tiptap/extension-code-block-lowlight"],
   },

@@ -1,19 +1,16 @@
 // SPDX-License-Identifier: ISC
 
 import type { Page, PageRevision } from "./types";
-import { tableQuery, tableQueryOne, callReducer, genId } from "./client";
+import { typedQuery, typedQueryOne, callReducer, genId } from "./client";
 
 // ─── Schema-based typed query helpers ──────────────────────────────────────
-// These use auto-generated module_bindings schemas instead of manual mappers.
-// The `fromStdbRow` utility resolves DB column names from schema metadata,
-// producing snake_case keys matching the existing types.ts interfaces.
+// These use auto-generated module_bindings schemas via client.ts's lazy-loaded
+// `typedQuery`/`typedQueryOne`, which dynamically import typed-sql.ts only
+// when first used. This avoids pulling all 40+ module_bindings schemas into
+// the main bundle.
 
 import PageRowSchema from "../../module_bindings/page_table";
 import PageRevisionRowSchema from "../../module_bindings/page_revision_table";
-import { fromStdbRow } from "./typed-sql";
-
-const mapPageAuto = fromStdbRow<Page>(PageRowSchema);
-const mapRevisionAuto = fromStdbRow<PageRevision>(PageRevisionRowSchema);
 
 // ─── Page cache ────────────────────────────────────────────────────────────────
 
@@ -40,24 +37,24 @@ export async function listPages(collectionId?: string, status?: string): Promise
   if (status) conditions.push(`status = '${status}'`);
   else conditions.push("status != 'deleted'");
   if (conditions.length) sql += " WHERE " + conditions.join(" AND ");
-  return tableQuery(sql, mapPageAuto);
+  return typedQuery<Page>(sql, PageRowSchema);
 }
 
 export async function listDeletedPages(): Promise<Page[]> {
-  return tableQuery("SELECT * FROM page WHERE status = 'deleted'", mapPageAuto);
+  return typedQuery<Page>("SELECT * FROM page WHERE status = 'deleted'", PageRowSchema);
 }
 
 export async function getPage(id: string): Promise<Page | null> {
   // Try as ID first, then as slug
-  let page = await tableQueryOne(`SELECT * FROM page WHERE id = '${id}'`, mapPageAuto);
+  let page = await typedQueryOne<Page>(`SELECT * FROM page WHERE id = '${id}'`, PageRowSchema);
   if (!page) {
-    page = await tableQueryOne(`SELECT * FROM page WHERE slug = '${id}'`, mapPageAuto);
+    page = await typedQueryOne<Page>(`SELECT * FROM page WHERE slug = '${id}'`, PageRowSchema);
   }
   return page;
 }
 
 export async function getPageBySlug(slug: string): Promise<Page | null> {
-  return tableQueryOne(`SELECT * FROM page WHERE slug = '${slug}'`, mapPageAuto);
+  return typedQueryOne<Page>(`SELECT * FROM page WHERE slug = '${slug}'`, PageRowSchema);
 }
 
 export async function createPage(
@@ -144,7 +141,7 @@ export async function createFromTemplate(templateId: string, title: string, coll
 }
 
 export async function listTemplates(): Promise<Page[]> {
-  return tableQuery("SELECT * FROM page WHERE is_template = true", mapPageAuto);
+  return typedQuery<Page>("SELECT * FROM page WHERE is_template = true", PageRowSchema);
 }
 
 // ── Batch operations (for sidebar multi-select) ──
@@ -168,7 +165,7 @@ export async function batchAddTag(pageIds: string[], name: string, value: string
 // ── Revisions ──
 
 export async function getPageRevisions(pageId: string): Promise<PageRevision[]> {
-  return tableQuery(`SELECT * FROM page_revision WHERE page_id = '${pageId}'`, mapRevisionAuto);
+  return typedQuery<PageRevision>(`SELECT * FROM page_revision WHERE page_id = '${pageId}'`, PageRevisionRowSchema);
 }
 
 // ── API section for the `api` object ──

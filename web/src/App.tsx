@@ -27,21 +27,21 @@ import { SidebarTree } from "./components/SidebarTree";
 import { htmlToProseMirror, extractInlineContent, markdownToProseMirror, tiptapToMarkdown, tiptapToHTML, arrayBufferToBase64Url } from "./lib/tiptap-helpers";
 import React from "react";
 
-// Route-level page components
-import HomeView from "./pages/HomeView";
-import ActivityView from "./pages/ActivityView";
-import FavoritesView from "./pages/FavoritesView";
-import PageViewWrapper from "./pages/PageViewWrapper";
-import SlugView from "./pages/SlugView";
+// Route-level page components — eagerly loaded for instant navigation
 import PermalinkRedirect from "./pages/PermalinkRedirect";
-import LoginView from "./pages/LoginView";
 import SharedPageView from "./pages/SharedPageView";
 import GoogleCallback from "./pages/GoogleCallback";
 import OAuthCallback from "./pages/OAuthCallback";
 import OidcCallback from "./pages/OidcCallback";
 import SamlCallback from "./pages/SamlCallback";
 
-// Lazy-loaded route-level components
+// Lazy-loaded route-level components (code-split: loaded on demand)
+const HomeView = React.lazy(() => import("./pages/HomeView"));
+const ActivityView = React.lazy(() => import("./pages/ActivityView"));
+const FavoritesView = React.lazy(() => import("./pages/FavoritesView"));
+const PageViewWrapper = React.lazy(() => import("./pages/PageViewWrapper"));
+const SlugView = React.lazy(() => import("./pages/SlugView"));
+const LoginView = React.lazy(() => import("./pages/LoginView"));
 const PageEditor = React.lazy(() => import("./pages/PageEditor").then(m => ({ default: m.PageEditor })));
 const AdminDashboard = React.lazy(() => import("./components/AdminDashboard"));
 const GraphView = React.lazy(() => import("./components/GraphView"));
