@@ -2095,48 +2095,6 @@ const AppLayout = () => {
         </div>
       )}
 
-      {/* Group dialog */}
-      {groupDialogOpen && (
-        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setGroupDialogOpen(false)}>
-          <div className="dialog-container w-full max-w-sm p-5 rounded-xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-semibold mb-4">{editingGroup ? "Edit group" : "New group"}</h3>
-            <div className="space-y-3">
-              <input
-                type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)}
-                placeholder="Group name" autoFocus
-                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
-              />
-              <input
-                type="text" value={groupDesc} onChange={(e) => setGroupDesc(e.target.value)}
-                placeholder="Description (optional)"
-                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
-              />
-              <div className="flex gap-2 justify-end pt-2">
-                <button onClick={() => setGroupDialogOpen(false)} className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                  Cancel
-                </button>
-                <button onClick={async () => {
-                  if (!groupName.trim()) return;
-                  try {
-                    if (editingGroup) {
-                      await api.groups.update(editingGroup.id, groupName, groupDesc);
-                      setGroups(prev => prev.map(g => g.id === editingGroup.id ? { ...g, name: groupName, description: groupDesc } : g));
-                    } else {
-                      const id = await api.groups.create(groupName, groupDesc, userId || "anon");
-                      setGroups(prev => [...prev, { id, name: groupName, description: groupDesc, created_by: userId || "anon", created_at: Date.now(), updated_at: Date.now() }]);
-                    }
-                    setGroupDialogOpen(false);
-                  } catch (e) { alert(String(e)); }
-                }} disabled={!groupName.trim()}
-                  className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
-                  {editingGroup ? "Save" : "Create"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
 
       {/* Main content */}
       <main
