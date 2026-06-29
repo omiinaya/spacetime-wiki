@@ -65,7 +65,7 @@ pub fn join_collab_session(
     color: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    let session_id = format!("{}:{}", user_id, page_id);
+    let session_id = make_collab_session_id(&user_id, &page_id);
     let existing = ctx.db.collab_session().iter().find(|s| s.id == session_id);
     if let Some(mut session) = existing {
         session.user_name = user_name;
@@ -93,7 +93,7 @@ pub fn leave_collab_session(
     page_id: String,
     user_id: String,
 ) -> Result<(), String> {
-    let session_id = format!("{}:{}", user_id, page_id);
+    let session_id = make_collab_session_id(&user_id, &page_id);
     ctx.db.collab_session().id().delete(&session_id);
     Ok(())
 }
@@ -105,7 +105,7 @@ pub fn update_cursor_position(
     user_id: String,
     cursor_json: String,
 ) -> Result<(), String> {
-    let session_id = format!("{}:{}", user_id, page_id);
+    let session_id = make_collab_session_id(&user_id, &page_id);
     let found = ctx.db.collab_session().iter().find(|s| s.id == session_id);
     if let Some(mut session) = found {
         session.cursor_position = cursor_json;
@@ -145,8 +145,6 @@ pub fn cleanup_old_collab_updates(ctx: &ReducerContext) -> Result<(), String> {
     }
     Ok(())
 }
-
-// ─── Tests ────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
