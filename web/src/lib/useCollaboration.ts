@@ -40,6 +40,7 @@ export function useCollaboration(
   userName: string | undefined,
 ): UseCollabResult {
   const [remoteUsers, setRemoteUsers] = useState<RemoteUser[]>([]);
+  const [providerReady, setProviderReady] = useState(false);
   const providerRef = useRef<YjsStdbProvider | null>(null);
   const ydocRef = useRef<Y.Doc>(new Y.Doc());
   const initializedRef = useRef(false);
@@ -58,6 +59,7 @@ export function useCollaboration(
 
     const provider = new YjsStdbProvider(pageId, userId, userName);
     providerRef.current = provider;
+    setProviderReady(true);
     provider.initialize().catch((err) => {
       console.warn("useCollaboration: failed to initialize", err);
     });
@@ -66,6 +68,7 @@ export function useCollaboration(
       provider.destroy();
       providerRef.current = null;
       initializedRef.current = false;
+      setProviderReady(false);
     };
   }, [pageId, userId, userName]);
 
@@ -118,7 +121,8 @@ export function useCollaboration(
     collaborationExtension,
     collaborationCursorExtension,
     remoteUsers,
-    isActive: !!pageId && !!userId && !!userName,
+    // Only active once the async provider is initialized
+    isActive: providerReady && !!pageId && !!userId && !!userName,
   };
 }
 

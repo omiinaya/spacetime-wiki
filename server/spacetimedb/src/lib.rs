@@ -9,29 +9,17 @@ use crate::helpers::*;
 mod pages;
 pub(crate) use pages::*;
 mod comments;
-pub(crate) use comments::*;
 mod tags;
-pub(crate) use tags::*;
 mod favorites;
-pub(crate) use favorites::*;
 mod attachments;
-pub(crate) use attachments::*;
 mod templates;
-pub(crate) use templates::*;
 mod api_keys;
-pub(crate) use api_keys::*;
 mod app_settings;
-pub(crate) use app_settings::*;
 mod collection_members;
-pub(crate) use collection_members::*;
 mod share_links;
-pub(crate) use share_links::*;
 mod permissions;
-pub(crate) use permissions::*;
 mod sso;
-pub(crate) use sso::*;
 mod collaboration;
-pub(crate) use collaboration::*;
 
 // ─── Collections ─────────────────────────────────────────────────────────────
 
@@ -192,21 +180,21 @@ pub fn apply_collection_auto_sort(ctx: &ReducerContext, collection_id: String) -
             if rule.sort_direction == "desc" {
                 pages.sort_by(|a, b| b.title.to_lowercase().cmp(&a.title.to_lowercase()));
             } else {
-                pages.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+                pages.sort_by_key(|a| a.title.to_lowercase());
             }
         }
         "created_at" => {
             if rule.sort_direction == "desc" {
                 pages.sort_by(|a, b| b.created_at.cmp(&a.created_at));
             } else {
-                pages.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+                pages.sort_by_key(|a| a.created_at);
             }
         }
         "updated_at" => {
             if rule.sort_direction == "desc" {
                 pages.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
             } else {
-                pages.sort_by(|a, b| a.updated_at.cmp(&b.updated_at));
+                pages.sort_by_key(|a| a.updated_at);
             }
         }
         _ => {}
@@ -341,7 +329,7 @@ pub fn mark_webhook_event_sent(
         return Err("Webhook event not found".into());
     }
     let mut event = found.unwrap();
-    event.status = if response_code >= 200 && response_code < 300 { "sent".to_string() } else { "failed".to_string() };
+    event.status = if (200..300).contains(&response_code) { "sent".to_string() } else { "failed".to_string() };
     event.response_code = response_code;
     event.response_body = response_body;
     event.sent_at = now_ms(ctx);
@@ -441,7 +429,7 @@ pub fn search_pages(
         } else {
             // Try to find the match position and show surrounding text
             if let Some(pos) = content_lower.find(query_trimmed) {
-                let start = if pos > 80 { pos - 80 } else { 0 };
+                let start = pos.saturating_sub(80);
                 let end = std::cmp::min(start + 200, page.text_content.len());
                 let excerpt_raw = &page.text_content[start..end];
                 format!("...{}...", excerpt_raw.trim())
@@ -1282,16 +1270,14 @@ pub fn create_invitation(
     let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
 
     // Validate JSON arrays (must parse as Vec<String>)
-    if !page_ids.is_empty() {
-        if serde_json::from_str::<Vec<String>>(&page_ids).is_err() {
+    if !page_ids.is_empty()
+        && serde_json::from_str::<Vec<String>>(&page_ids).is_err() {
             return Err("page_ids must be a valid JSON array of strings or empty".into());
         }
-    }
-    if !collection_ids.is_empty() {
-        if serde_json::from_str::<Vec<String>>(&collection_ids).is_err() {
+    if !collection_ids.is_empty()
+        && serde_json::from_str::<Vec<String>>(&collection_ids).is_err() {
             return Err("collection_ids must be a valid JSON array of strings or empty".into());
         }
-    }
 
     let now = now_ms(ctx);
     let expires_at = if expires_days > 0 {

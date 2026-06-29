@@ -73,11 +73,10 @@ pub fn verify_share_password(
     if share.expires_at > 0 && now > share.expires_at {
         return Err("Share link has expired".into());
     }
-    if !share.password_hash.is_empty() {
-        if hash_password(&password) != share.password_hash {
+    if !share.password_hash.is_empty()
+        && hash_password(&password) != share.password_hash {
             return Err("Incorrect password".into());
         }
-    }
     // Increment visit count
     let mut share_mut = share;
     share_mut.visit_count += 1;

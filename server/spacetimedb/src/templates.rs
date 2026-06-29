@@ -1,7 +1,5 @@
 use spacetimedb::*;
 use crate::*;
-use crate::helpers::*;
-use crate::tables::*;
 
 // ─── Templates ──────────────────────────────────────────────────────────────
 

@@ -42,7 +42,7 @@ pub fn create_page(
     notify_collection_watchers_new_page(
         ctx, &collection_id, &id, &created_by, &title,
         &format!("New page \"{}\" was created", title),
-        &String::new(),
+        "",
     );
     Ok(())
 }
@@ -85,7 +85,7 @@ pub fn update_page(
     notify_page_watchers(
         ctx, &id, "page.update", &updated_by, &title,
         &format!("Page \"{}\" was updated", title),
-        &String::new(),
+        "",
     );
     Ok(())
 }
