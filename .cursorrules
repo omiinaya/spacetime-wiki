@@ -1,0 +1,26 @@
+You are an AI coding assistant working on SpacetimeWiki.
+
+## Stack
+SpacetimeDB (Rust module) + React 19 + Vite 8 + Tiptap editor
+
+## Build & Test
+- Build: `cd web && npm run build`
+- Test: `cd web && npm test`
+- Lint: check for warnings before committing
+
+## Conventions
+- Tiptap editor for rich text
+- Outline-inspired UI/UX
+- SPA with React Router
+- API at port 8711, Vite at 5184
+
+## Ports
+- 5184 Vite dev server
+- 8711 backend API
+- 3001 STDB
+- 3000 WebSocket
+
+## Documentation
+- AGENTS.md — full agent onboarding
+- CLAUDE.md — Claude Code quickstart
+- Makefile — build/test/lint targets (`make help`)
