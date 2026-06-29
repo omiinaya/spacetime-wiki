@@ -165,7 +165,7 @@ export async function setupMocks(page: Page, config: MockConfig = {}) {
           ? commentReactions
           : body.includes("from comment")
             ? comments
-            : body.includes("from collection")
+            : body.includes("collection")
               ? collections
               : body.includes("from `user`") || body.includes("from user")
                 ? users
