@@ -75,18 +75,12 @@ pub fn add_group_member(
     role: String,
     added_by: String,
 ) -> Result<(), String> {
-    // Check user exists
     let user_exists = ctx.db.user().iter().any(|u| u.id == user_id);
-    if !user_exists {
-        return Err("User not found".into());
-    }
-    let existing = ctx.db.group_member().iter()
-        .find(|m| m.group_id == group_id && m.user_id == user_id);
-    if existing.is_some() {
-        return Err("User is already a member of this group".into());
-    }
-    let valid_roles = ["admin", "member"];
-    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "member".into() };
+    let already_member = ctx.db.group_member().iter()
+        .any(|m| m.group_id == group_id && m.user_id == user_id);
+    is_valid_group_member_add(user_exists, already_member)
+        .map_err(|e| e.to_string())?;
+    let role_clean = normalize_group_role(&role).to_string();
     ctx.db.group_member().insert(GroupMember {
         id, group_id, user_id, role: role_clean, added_by,
         created_at: now_ms(ctx),
@@ -100,8 +94,7 @@ pub fn update_group_member_role(
     id: String,
     new_role: String,
 ) -> Result<(), String> {
-    let valid_roles = ["admin", "member"];
-    if !valid_roles.contains(&new_role.as_str()) {
+    if !valid_group_role(&new_role) {
         return Err("Invalid role. Must be admin or member".into());
     }
     let found = ctx.db.group_member().iter().find(|m| m.id == id);
@@ -130,18 +123,15 @@ pub fn set_collection_group_permission(
     group_id: String,
     role: String,
 ) -> Result<(), String> {
-    // Check if permission already exists for this collection+group
     let existing = ctx.db.collection_group_permission().iter()
         .find(|p| p.collection_id == collection_id && p.group_id == group_id);
     if let Some(perm) = existing {
-        // Update role
         let mut p = perm;
         p.role = role;
         ctx.db.collection_group_permission().id().update(p);
         return Ok(());
     }
-    let valid_roles = ["admin", "editor", "viewer"];
-    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
+    let role_clean = normalize_collection_permission_role(&role).to_string();
     ctx.db.collection_group_permission().insert(CollectionGroupPermission {
         id, collection_id, group_id, role: role_clean,
         created_at: now_ms(ctx),
@@ -170,10 +160,9 @@ pub fn set_page_permission(
     if !page_exists {
         return Err("Page not found".into());
     }
-    let valid_roles = ["admin", "editor", "viewer"];
-    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
+    let role_clean = normalize_page_permission_role(&role).to_string();
 
-    // Check if permission already exists for this page+user (if user_id) or page+group (if group_id)
+    let existing = ctx.db.page_permission().iter().find(|p| {
     let existing = ctx.db.page_permission().iter().find(|p| {
         p.page_id == page_id &&
         (if !user_id.is_empty() { p.user_id == user_id } else { false }) &&
@@ -204,73 +193,196 @@ pub fn remove_page_permission(ctx: &ReducerContext, id: String) -> Result<(), St
     Ok(())
 }
 
+// ─── Permission helpers (testable without STDB runtime) ──────────────────────
+
+pub fn valid_group_role(role: &str) -> bool {
+    matches!(role, "admin" | "member")
+}
+
+pub fn valid_collection_permission_role(role: &str) -> bool {
+    matches!(role, "admin" | "editor" | "viewer")
+}
+
+pub fn valid_page_permission_role(role: &str) -> bool {
+    matches!(role, "admin" | "editor" | "viewer")
+}
+
+pub fn normalize_group_role(role: &str) -> &'static str {
+    if valid_group_role(role) { role } else { "member" }
+}
+
+pub fn normalize_collection_permission_role(role: &str) -> &'static str {
+    if valid_collection_permission_role(role) { role } else { "viewer" }
+}
+
+pub fn normalize_page_permission_role(role: &str) -> &'static str {
+    if valid_page_permission_role(role) { role } else { "viewer" }
+}
+
+pub fn is_valid_group_member_add(user_exists: bool, already_member: bool) -> Result<(), &'static str> {
+    if !user_exists {
+        return Err("User not found");
+    }
+    if already_member {
+        return Err("User is already a member of this group");
+    }
+    Ok(())
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    // ─── Role validation ────────────────────────────────────────────────────────
+
     #[test]
-    fn test_valid_group_roles() {
-        let valid_roles = ["admin", "member"];
-        assert!(valid_roles.contains(&"admin"));
-        assert!(valid_roles.contains(&"member"));
-        assert!(!valid_roles.contains(&"editor"));
-        assert!(!valid_roles.contains(&"viewer"));
-        assert!(!valid_roles.contains(&""));
+    fn test_valid_group_role_allows_admin_and_member() {
+        assert!(valid_group_role("admin"));
+        assert!(valid_group_role("member"));
     }
 
     #[test]
-    fn test_valid_collection_permission_roles() {
-        let valid_roles = ["admin", "editor", "viewer"];
-        assert!(valid_roles.contains(&"admin"));
-        assert!(valid_roles.contains(&"editor"));
-        assert!(valid_roles.contains(&"viewer"));
-        assert!(!valid_roles.contains(&"member"));
-        assert!(!valid_roles.contains(&""));
+    fn test_valid_group_role_rejects_invalid_roles() {
+        assert!(!valid_group_role("editor"));
+        assert!(!valid_group_role("viewer"));
+        assert!(!valid_group_role("superadmin"));
+        assert!(!valid_group_role(""));
+        assert!(!valid_group_role("owner"));
     }
 
     #[test]
-    fn test_valid_page_permission_roles() {
-        let valid_roles = ["admin", "editor", "viewer"];
-        assert!(valid_roles.contains(&"admin"));
-        assert!(valid_roles.contains(&"editor"));
-        assert!(valid_roles.contains(&"viewer"));
-        assert!(!valid_roles.contains(&"member"));
+    fn test_valid_collection_permission_role_allows_valid() {
+        assert!(valid_collection_permission_role("admin"));
+        assert!(valid_collection_permission_role("editor"));
+        assert!(valid_collection_permission_role("viewer"));
     }
 
     #[test]
-    fn test_create_group_initializes_admin_member() {
-        let role = "admin";
-        assert_eq!(role, "admin");
-        let default_role = "member";
-        assert_eq!(default_role, "member");
+    fn test_valid_collection_permission_role_rejects_invalid() {
+        assert!(!valid_collection_permission_role("member"));
+        assert!(!valid_collection_permission_role("owner"));
+        assert!(!valid_collection_permission_role(""));
+        assert!(!valid_collection_permission_role("superadmin"));
     }
 
     #[test]
-    fn test_add_group_member_role_fallback() {
-        // Invalid roles fall back to "member"
-        let input = "superadmin";
-        let valid_roles = ["admin", "member"];
-        let result = if valid_roles.contains(&input) { input.to_string() } else { "member".into() };
-        assert_eq!(result, "member");
-
-        let input = "member";
-        let result = if valid_roles.contains(&input) { input.to_string() } else { "member".into() };
-        assert_eq!(result, "member");
+    fn test_valid_page_permission_role_allows_valid() {
+        assert!(valid_page_permission_role("admin"));
+        assert!(valid_page_permission_role("editor"));
+        assert!(valid_page_permission_role("viewer"));
     }
 
     #[test]
-    fn test_set_permission_role_fallback() {
-        let inputs = vec!["admin", "editor", "viewer", "superadmin", ""];
-        let valid_roles = ["admin", "editor", "viewer"];
-        for input in inputs {
-            let result = if valid_roles.contains(&input) { input.to_string() } else { "viewer".into() };
-            if input == "admin" || input == "editor" || input == "viewer" {
-                assert_eq!(result, input);
-            } else {
-                assert_eq!(result, "viewer", "Expected viewer fallback for '{}'", input);
-            }
-        }
+    fn test_valid_page_permission_role_rejects_invalid() {
+        assert!(!valid_page_permission_role("member"));
+        assert!(!valid_page_permission_role("owner"));
+        assert!(!valid_page_permission_role(""));
+        assert!(!valid_page_permission_role("superadmin"));
+    }
+
+    // ─── Role normalization ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_normalize_group_role_passes_valid_roles() {
+        assert_eq!(normalize_group_role("admin"), "admin");
+        assert_eq!(normalize_group_role("member"), "member");
+    }
+
+    #[test]
+    fn test_normalize_group_role_defaults_to_member() {
+        assert_eq!(normalize_group_role(""), "member");
+        assert_eq!(normalize_group_role("editor"), "member");
+        assert_eq!(normalize_group_role("viewer"), "member");
+        assert_eq!(normalize_group_role("owner"), "member");
+    }
+
+    #[test]
+    fn test_normalize_collection_permission_role_passes_valid() {
+        assert_eq!(normalize_collection_permission_role("admin"), "admin");
+        assert_eq!(normalize_collection_permission_role("editor"), "editor");
+        assert_eq!(normalize_collection_permission_role("viewer"), "viewer");
+    }
+
+    #[test]
+    fn test_normalize_collection_permission_role_defaults_to_viewer() {
+        assert_eq!(normalize_collection_permission_role(""), "viewer");
+        assert_eq!(normalize_collection_permission_role("member"), "viewer");
+        assert_eq!(normalize_collection_permission_role("owner"), "viewer");
+    }
+
+    #[test]
+    fn test_normalize_page_permission_role_passes_valid() {
+        assert_eq!(normalize_page_permission_role("admin"), "admin");
+        assert_eq!(normalize_page_permission_role("editor"), "editor");
+        assert_eq!(normalize_page_permission_role("viewer"), "viewer");
+    }
+
+    #[test]
+    fn test_normalize_page_permission_role_defaults_to_viewer() {
+        assert_eq!(normalize_page_permission_role(""), "viewer");
+        assert_eq!(normalize_page_permission_role("member"), "viewer");
+        assert_eq!(normalize_page_permission_role("owner"), "viewer");
+    }
+
+    // ─── Group member validation logic ──────────────────────────────────────────
+
+    #[test]
+    fn test_is_valid_group_member_add_accepts_valid() {
+        assert!(is_valid_group_member_add(true, false).is_ok());
+    }
+
+    #[test]
+    fn test_is_valid_group_member_add_rejects_nonexistent_user() {
+        let result = is_valid_group_member_add(false, false);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "User not found");
+    }
+
+    #[test]
+    fn test_is_valid_group_member_add_rejects_duplicate() {
+        let result = is_valid_group_member_add(true, true);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "User is already a member of this group");
+    }
+
+    #[test]
+    fn test_is_valid_group_member_add_rejects_missing_user_over_duplicate() {
+        // Missing user check comes before duplicate check
+        let result = is_valid_group_member_add(false, true);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "User not found");
+    }
+
+    // ─── Edge cases ─────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_normalize_group_role_case_sensitivity() {
+        // Roles should be case-sensitive; uppercase is not valid
+        assert_eq!(normalize_group_role("Admin"), "member");
+        assert_eq!(normalize_group_role("ADMIN"), "member");
+        assert_eq!(normalize_group_role("Member"), "member");
+    }
+
+    #[test]
+    fn test_roles_are_distinct_sets() {
+        // Admin is the only overlapping role across all three domains
+        assert!(valid_group_role("admin"));
+        assert!(valid_collection_permission_role("admin"));
+        assert!(valid_page_permission_role("admin"));
+
+        // Member is only valid for groups
+        assert!(valid_group_role("member"));
+        assert!(!valid_collection_permission_role("member"));
+        assert!(!valid_page_permission_role("member"));
+
+        // Editor and viewer are only valid for permissions (not groups)
+        assert!(!valid_group_role("editor"));
+        assert!(valid_collection_permission_role("editor"));
+        assert!(valid_page_permission_role("editor"));
+        assert!(!valid_group_role("viewer"));
+        assert!(valid_collection_permission_role("viewer"));
+        assert!(valid_page_permission_role("viewer"));
     }
 }
