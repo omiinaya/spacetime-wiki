@@ -277,6 +277,7 @@ const AppLayout = () => {
   // Apply theme class on mount and on change
   useEffect(() => {
     document.documentElement.classList.toggle("light-theme", theme === "light");
+    document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem("sw_theme", theme);
   }, [theme]);
 
