@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | **Add TypeScript tests for PageEditor.tsx** — Core page editor component, no unit tests yet | |
 | P5 | **Add TypeScript tests for admin components (15 files)** — All admin panel components untested | |
 | P5 | **Add TypeScript tests for Tiptap extensions (6 files)** — Math.tsx, Mermaid.tsx, Drawio.tsx, PlantUML.tsx, Transclusion.tsx, SyncedBlock.tsx, DatabaseBase.tsx, ImageEnhanced.tsx | |
 | P5 | **Add TypeScript tests for lib/ utility modules (5 files)** — api.ts, helpers.ts, subscriptions.ts, tiptap-helpers.ts, useCollaboration.ts, yjs-stdb-provider.ts | |
@@ -21,6 +20,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-30 | **P4 — TypeScript tests for PageEditor.tsx** — 38 tests (loading, new page, existing page, save/publish/archive/delete/duplicate, preview, color picker, full-width, RTL, editor modes, keyboard shortcuts, tags, a11y). Fixed page load error handling (missing .catch()), fixed hidden file input a11y. | d3892b30 |
 | 2026-06-29 | **P4 — TypeScript tests for PageView.tsx** — 38 tests (loading, error, loaded, actions, comments, export, share, TOC, color picker, attachments, word count, revisions, a11y). Fixed 5 a11y violations (back button, emoji picker, send button, file input, editor aria-label) and heading level hierarchy. | 16ea81cb |
 | 2026-06-29 | **P1 — PageView.tsx StarterKit crash** — Import StarterKit from @tiptap/starter-kit | 873614dd |
 | 2026-06-29 | **P1 — Vite proxy wrong port (8722→8711)** — Fixed vite.config.ts proxy target | 873614dd |
@@ -30,5 +30,3 @@ and works the top pending item each tick.
 | 2026-06-29 | **P4 — TypeScript tests for 6 uncovered components** — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings (129 total tests) | eaea2704 |
 | 2026-06-29 | **E2E: 59/59 tests passing** — Fixed anchorData.text.slice crash. All 59 Playwright tests pass. | 0e2aedab |
 | 2026-06-29 | **P3 — Performance: lazy-load 6 route pages, dynamic mermaid, code-split typed-sql** — React.lazy for 6 routes, dynamic mermaid import, manual vendor/editor chunks | 9d15ee5f |
-| 2026-06-29 | **E2E browser test of all features** — 25 features tested, 17 pass, 8 bugs found. BUG-1 (StarterKit crash) and BUG-2 (Vite proxy) fixed. | 873614dd |
-| 2026-06-29 | **P4 — Complete admin panels extraction from App.tsx into AdminPanels.tsx** — 5 sub-components extracted | 20e6775c |
