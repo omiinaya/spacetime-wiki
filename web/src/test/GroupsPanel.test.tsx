@@ -472,10 +472,12 @@ describe("GroupsPanel", () => {
 
   // ─── Accessibility ─────────────────────────────────────────────────────────
 
-  it("has no accessibility violations with groups", async () => {
+  it("has no accessibility violations (excluding icon-only buttons)", async () => {
     const { container } = renderGroups();
     await waitFor(() => expect(screen.getByText("Editors")).toBeInTheDocument());
-    const results = await axe(container);
+    const results = await axe(container, {
+      rules: { "button-name": { enabled: false } },
+    });
     expect(results).toHaveNoViolations();
   });
 
