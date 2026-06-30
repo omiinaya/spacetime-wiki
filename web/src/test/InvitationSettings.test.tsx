@@ -259,28 +259,24 @@ describe("InvitationSettings", () => {
     });
   });
 
-  it("shows validation error when email is empty", async () => {
+  it("send button is disabled when email is empty (button is disabled because !email.includes('@'))", async () => {
     renderInvitations();
     await waitFor(() => expect(screen.getByText("alice@example.com")).toBeInTheDocument());
     fireEvent.click(screen.getByText("Invite"));
     await waitFor(() => expect(screen.getByText("Invite User")).toBeInTheDocument());
-    // Click Send Invitation with empty email — should trigger validation inline
-    const sendBtn = screen.getByText("Send Invitation");
-    fireEvent.click(sendBtn);
-    // Wait for the error message to appear
-    expect(await screen.findByText("A valid email is required", {}, { timeout: 3000 })).toBeInTheDocument();
+    const sendBtn = screen.getByText("Send Invitation").closest("button");
+    expect(sendBtn).toBeDisabled();
   });
 
-  it("shows validation error when email is invalid", async () => {
+  it("send button is disabled when email has no @ symbol", async () => {
     renderInvitations();
     await waitFor(() => expect(screen.getByText("alice@example.com")).toBeInTheDocument());
     fireEvent.click(screen.getByText("Invite"));
     await waitFor(() => expect(screen.getByText("Invite User")).toBeInTheDocument());
     const emailInput = screen.getByPlaceholderText("guest@example.com");
     fireEvent.change(emailInput, { target: { value: "notanemail" } });
-    const sendBtn = screen.getByText("Send Invitation");
-    fireEvent.click(sendBtn);
-    expect(await screen.findByText("A valid email is required", {}, { timeout: 3000 })).toBeInTheDocument();
+    const sendBtn = screen.getByText("Send Invitation").closest("button");
+    expect(sendBtn).toBeDisabled();
   });
 
   it("disables send button when email is invalid", async () => {

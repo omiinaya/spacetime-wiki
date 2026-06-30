@@ -194,14 +194,16 @@ describe("BulkExport", () => {
     renderBulkExport();
     await waitFor(() => expect(screen.getByText("Getting Started")).toBeInTheDocument());
     expect(screen.getByText(/All collections/)).toBeInTheDocument();
-    expect(screen.getByText((content) => content.includes("Documentation"))).toBeInTheDocument();
-    expect(screen.getByText((content) => content.includes("Guides"))).toBeInTheDocument();
+    // Use icon + name to uniquely match option text vs page-list <span> elements
+    expect(screen.getByText(/📘 Documentation/)).toBeInTheDocument();
+    expect(screen.getByText(/📗 Guides/)).toBeInTheDocument();
   });
 
   it("shows export page count", async () => {
     renderBulkExport();
     await waitFor(() => {
-      expect(screen.getByText((content) => content.includes("Exporting") && content.includes("pages"))).toBeInTheDocument();
+      // The <strong> element contains "3 pages" text directly
+      expect(screen.getByText("3 pages")).toBeInTheDocument();
     });
   });
 
@@ -233,7 +235,8 @@ describe("BulkExport", () => {
     await waitFor(() => {
       expect(screen.getByText("Getting Started")).toBeInTheDocument();
       expect(screen.queryByText("Advanced Guide")).not.toBeInTheDocument();
-      expect(screen.getByText((content) => content.includes("Exporting") && content.includes("1"))).toBeInTheDocument();
+      // After filtering to col1, only 1 page remains — check the <strong> text
+      expect(screen.getByText("1 pages")).toBeInTheDocument();
     });
   });
 

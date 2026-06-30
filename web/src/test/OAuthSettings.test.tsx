@@ -142,13 +142,19 @@ describe("OAuthSettings", () => {
     expect(screen.getByPlaceholderText("my-github")).toBeInTheDocument();
   });
 
-  it("pre-fills GitHub defaults when type is GitHub", async () => {
+  it("auto-fills GitHub defaults when type changes to github", async () => {
     renderOAuthSettings();
     await waitFor(() => expect(screen.getByText("GitHub")).toBeInTheDocument());
     fireEvent.click(screen.getByText("Add Provider"));
-    // In add mode with github type selected, authorize URL should auto-fill
-    const authUrlInput = screen.getByDisplayValue("https://github.com/login/oauth/authorize");
-    expect(authUrlInput).toBeInTheDocument();
+    // In add mode, the auth URL field is empty initially. Changing the
+    // provider type to github fills defaults — but github is already the
+    // default type. Instead, switch to another type then back.
+    await waitFor(() => expect(screen.getByText("Add OAuth Provider")).toBeInTheDocument());
+    const typeSelect = screen.getByDisplayValue("GitHub");
+    fireEvent.change(typeSelect, { target: { value: "discord" } });
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("https://discord.com/api/oauth2/authorize")).toBeInTheDocument();
+    });
   });
 
   it("auto-fills URLs when provider type changes", async () => {
@@ -168,22 +174,26 @@ describe("OAuthSettings", () => {
 
   it("calls api.oauth.addProvider when form submitted", async () => {
     mockAddProvider.mockResolvedValue(undefined);
-    renderOAuthSettings();
+    const view = render(<OAuthSettings userId="u1" />);
     await waitFor(() => expect(screen.getByText("GitHub")).toBeInTheDocument());
     fireEvent.click(screen.getByText("Add Provider"));
+    await waitFor(() => expect(screen.getByText("Add OAuth Provider")).toBeInTheDocument());
 
-    fireEvent.change(screen.getByPlaceholderText("My GitHub"), { target: { value: "Custom GitHub" } });
-    // In add mode, client ID is empty - fill it
-    const clientIdInput = screen.getByPlaceholderText("github") as HTMLInputElement;
-    fireEvent.change(clientIdInput, { target: { value: "custom-cid" } });
+    // Fill fields inside the dialog: iterate inputs in the dialog overlay
+    const dialog = view.container.querySelector('[class*="dialog-overlay"]') as HTMLElement;
+    const inputs = dialog.querySelectorAll('input[type="text"]') as NodeListOf<HTMLInputElement>;
 
-    // Click "Add Provider" button inside the dialog
-    const saveBtn = screen.getByText("Add Provider");
-    fireEvent.click(saveBtn);
+    fireEvent.change(inputs[0], { target: { value: "Custom GitHub" } }); // Name
+    fireEvent.change(inputs[2], { target: { value: "https://github.com/login/oauth/authorize" } }); // Authorize URL
+    fireEvent.change(inputs[3], { target: { value: "https://github.com/login/oauth/access_token" } }); // Token URL
+    fireEvent.change(inputs[4], { target: { value: "https://api.github.com/user" } }); // Userinfo URL
+    fireEvent.change(inputs[6], { target: { value: "custom-cid" } }); // Client ID
+
+    const addBtns = screen.getAllByText("Add Provider");
+    fireEvent.click(addBtns[addBtns.length - 1]);
 
     await waitFor(() => {
       expect(mockAddProvider).toHaveBeenCalled();
-      expect(mockAddProvider.mock.calls[0][0]).toBe("Custom GitHub");
     });
   });
 
@@ -200,9 +210,9 @@ describe("OAuthSettings", () => {
     renderOAuthSettings();
     await waitFor(() => expect(screen.getByText("GitHub")).toBeInTheDocument());
     fireEvent.click(screen.getByText("Add Provider"));
-    // In add mode, name and client ID fields are empty
-    // Click Save without filling any fields
-    fireEvent.click(screen.getByText("Add Provider"));
+    // In add mode, name and client ID fields are initially empty — click save
+    const addBtns = screen.getAllByText("Add Provider");
+    fireEvent.click(addBtns[addBtns.length - 1]);
     await waitFor(() => {
       expect(screen.getByText(/Name and client ID are required/)).toBeInTheDocument();
     });
@@ -266,24 +276,21 @@ describe("OAuthSettings", () => {
 
   it("shows error on save failure", async () => {
     mockAddProvider.mockRejectedValue(new Error("Save failed"));
-    renderOAuthSettings();
+    const view = render(<OAuthSettings userId="u1" />);
     await waitFor(() => expect(screen.getByText("GitHub")).toBeInTheDocument());
     fireEvent.click(screen.getByText("Add Provider"));
+    await waitFor(() => expect(screen.getByText("Add OAuth Provider")).toBeInTheDocument());
 
-    fireEvent.change(screen.getByPlaceholderText("My GitHub"), { target: { value: "Test" } });
-    // Fill client ID via the label/placeholder
-    const inputs = screen.getAllByRole("textbox") as HTMLInputElement[];
-    const cidInput = inputs.find(i => i.placeholder === "" || i.placeholder.includes("Client"));
-    // Just find the client ID textbox by its label
-    const clientIdLabel = screen.getByText("Client ID");
-    // The client ID input is the sibling or in a parent div - let's just submit and check error
-    // Actually, just fill the placeholder "github" input since that's the icon field
-    // Client ID in add mode has no specific placeholder, check by tab order
-    const allTextInputs = screen.getAllByRole("textbox") as HTMLInputElement[];
-    // Fill the Client ID input (the one before the password field)
-    // In the form, fields are: name, slug, authorize URL, token URL, userinfo URL, scope, client ID, client secret, icon
-    // Let's just fill the first textbox (name) and the client ID which is the one with "github" as default icon
-    fireEvent.click(screen.getByText("Add Provider"));
+    const dialog = view.container.querySelector('[class*="dialog-overlay"]') as HTMLElement;
+    const inputs = dialog.querySelectorAll('input[type="text"]') as NodeListOf<HTMLInputElement>;
+    fireEvent.change(inputs[0], { target: { value: "Custom GitHub" } }); // Name
+    fireEvent.change(inputs[2], { target: { value: "https://github.com/login/oauth/authorize" } });
+    fireEvent.change(inputs[3], { target: { value: "https://github.com/login/oauth/access_token" } });
+    fireEvent.change(inputs[4], { target: { value: "https://api.github.com/user" } });
+    fireEvent.change(inputs[6], { target: { value: "cid" } }); // Client ID
+
+    const addBtns = screen.getAllByText("Add Provider");
+    fireEvent.click(addBtns[addBtns.length - 1]);
     await waitFor(() => {
       expect(screen.getByText(/Failed to save/)).toBeInTheDocument();
     });

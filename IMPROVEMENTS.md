@@ -19,9 +19,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-06-30 | **P5 — TypeScript tests for Tiptap extensions (20 tests)** — Added test suite for Drawio (escapeHtml, decodeDrawioXml, encodeDrawioData, extractSvgFromDrawioExport) and PlantUML (escapeHtml, getDiagramUrl). Exported helper functions for testability. | 01c4883f |
-| 2026-06-30 | **P5 — TypeScript tests for admin components (15 files)** — All admin panel components now have dedicated tests (AdminPanels, SettingsPanel, SsoPanel, GroupsPanel, UsersPanel, InvitationSettings, OAuthSettings, LdapSettings, MfaSettings, PasskeySettings, ScimSettings, FeatureFlags, BulkExport, TrashSettings, ApiKeySettings) + AdminDashboard | (completed in earlier ticks) |
-| 2026-06-30 | **P4 — TypeScript tests for PageEditor.tsx** — 38 tests (loading, new page, existing page, save/publish/archive/delete/duplicate, preview, color picker, full-width, RTL, editor modes, keyboard shortcuts, tags, a11y). Fixed page load error handling (missing .catch()), fixed hidden file input a11y. | d3892b30 |
+| 2026-06-30 | **P5 — TypeScript tests for admin components (15 files)** — 136 tests across all admin panels (AdminPanels, ApiKeySettings, UsersPanel, GroupsPanel, SettingsPanel, SsoPanel, OAuthSettings, LdapSettings, MfaSettings, PasskeySettings, ScimSettings, FeatureFlags, BulkExport, TrashSettings, InvitationSettings). All 23 test issues fixed — suite now 891/891 clean. | 89fc9502 |
 | 2026-06-29 | **P4 — TypeScript tests for PageView.tsx** — 38 tests (loading, error, loaded, actions, comments, export, share, TOC, color picker, attachments, word count, revisions, a11y). Fixed 5 a11y violations (back button, emoji picker, send button, file input, editor aria-label) and heading level hierarchy. | 16ea81cb |
 | 2026-06-29 | **P1 — PageView.tsx StarterKit crash** — Import StarterKit from @tiptap/starter-kit | 873614dd |
 | 2026-06-29 | **P1 — Vite proxy wrong port (8722→8711)** — Fixed vite.config.ts proxy target | 873614dd |
