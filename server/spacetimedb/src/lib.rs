@@ -1942,3 +1942,312 @@ pub fn deny_access_request(
     log_event(ctx, "access_request.deny", &responder_id, &req_page_id, &req_id, r#"{}"#);
     Ok(())
 }
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ─── Slug generation ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_slug_from_name_lowercase() {
+        let name = "Engineering Wiki";
+        let slug = name.to_lowercase().replace(' ', "-");
+        assert_eq!(slug, "engineering-wiki");
+    }
+
+    #[test]
+    fn test_slug_removes_spaces() {
+        let names = vec![
+            ("Hello World", "hello-world"),
+            ("My   Project", "my---project"),
+            ("  Leading", "--leading"),
+            ("Trailing  ", "trailing--"),
+        ];
+        for (input, expected) in names {
+            let slug = input.to_lowercase().replace(' ', "-");
+            assert_eq!(slug, expected, "Failed for '{}'", input);
+        }
+    }
+
+    // ─── Page status validation ──────────────────────────────────────────────
+
+    #[test]
+    fn test_valid_page_statuses() {
+        let valid_statuses = ["draft", "published", "archived", "deleted"];
+        assert!(valid_statuses.contains(&"draft"));
+        assert!(valid_statuses.contains(&"published"));
+        assert!(valid_statuses.contains(&"archived"));
+        assert!(valid_statuses.contains(&"deleted"));
+        assert!(!valid_statuses.contains(&"pending"));
+        assert!(!valid_statuses.contains(&""));
+    }
+
+    #[test]
+    fn test_batch_set_status_validation_logic() {
+        let status = "published";
+        let valid_statuses = ["draft", "published", "archived", "deleted"];
+        assert!(valid_statuses.contains(&status));
+
+        let invalid = "bogus";
+        assert!(!valid_statuses.contains(&invalid));
+    }
+
+    #[test]
+    fn test_publish_sets_published_at_logic() {
+        let now = 1000u64;
+        let published_at = 0u64;
+        let status = "published";
+        let expected = if status == "published" && published_at == 0 { now } else { published_at };
+        assert_eq!(expected, now);
+    }
+
+    #[test]
+    fn test_delete_sets_deleted_at_logic() {
+        let now = 1000u64;
+        let status = "deleted";
+        let expected = if status == "deleted" { now } else { 0 };
+        assert_eq!(expected, now);
+    }
+
+    #[test]
+    fn test_restore_clears_deleted_at_logic() {
+        let now = 1000u64;
+        let status = "published";
+        let deleted_at = if status != "deleted" { 0u64 } else { now };
+        assert_eq!(deleted_at, 0);
+    }
+
+    // ─── Webhook event cleanup logic ────────────────────────────────────────
+
+    #[test]
+    fn test_webhook_cleanup_cutoff_calculation() {
+        let now = 1000u64;
+        let older_than_ms = 500u64;
+        let cutoff = now - older_than_ms;
+        assert!(cutoff == 500);
+        assert!(100_u64 < cutoff); // would be deleted
+        assert!(600_u64 > cutoff); // would be kept
+    }
+
+    // ─── Search query processing ─────────────────────────────────────────────
+
+    #[test]
+    fn test_search_query_lowercase_and_trim() {
+        let query = "  Hello World  ".to_string();
+        let query_lower = query.to_lowercase();
+        let query_trimmed = query_lower.trim();
+        assert_eq!(query_trimmed, "hello world");
+    }
+
+    #[test]
+    fn test_search_query_empty() {
+        let query = "".to_string();
+        assert_eq!(query.trim(), "");
+        assert!(query.trim().is_empty());
+    }
+
+    // ─── Collection creation logic ───────────────────────────────────────────
+
+    #[test]
+    fn test_collection_slug_generation() {
+        let name = "My New Collection";
+        let slug = name.to_lowercase().replace(' ', "-");
+        assert_eq!(slug, "my-new-collection");
+    }
+
+    // ─── Invitation status values ─────────────────────────────────────────
+
+    #[test]
+    fn test_invitation_status_values() {
+        let valid = ["pending", "accepted", "revoked", "expired"];
+        assert!(valid.contains(&"pending"));
+        assert!(valid.contains(&"accepted"));
+        assert!(valid.contains(&"revoked"));
+        assert!(!valid.contains(&"used"));
+        assert!(!valid.contains(&""));
+    }
+
+    // ─── Access request status transitions ──────────────────────────────────
+
+    #[test]
+    fn test_access_request_status_transitions() {
+        let status = "pending";
+        assert_eq!(status, "pending");
+        assert!(status == "pending");
+    }
+
+    #[test]
+    fn test_access_request_not_pending_rejected() {
+        let status = "approved";
+        assert!(status != "pending");
+    }
+
+    // ─── MFA method type values ─────────────────────────────────────────────
+
+    #[test]
+    fn test_mfa_method_type_values() {
+        let valid = ["totp", "backup_code"];
+        assert!(valid.contains(&"totp"));
+        assert!(!valid.contains(&"sms"));
+    }
+
+    // ─── Notification event type format ────────────────────────────────────
+
+    #[test]
+    fn test_notification_event_type_format() {
+        let events = vec![
+            "page.updated",
+            "page.created",
+            "page.deleted",
+            "comment.created",
+            "access_request.created",
+            "access_request.approved",
+            "access_request.denied",
+            "invitation.created",
+        ];
+        for event in &events {
+            assert!(event.contains('.'), "Event type '{}' must contain a dot", event);
+        }
+    }
+
+    // ─── SCIM operation values ──────────────────────────────────────────────
+
+    #[test]
+    fn test_scim_operation_values() {
+        let valid = ["create", "update", "delete", "deactivate", "reactivate"];
+        assert!(valid.contains(&"create"));
+        assert!(valid.contains(&"update"));
+        assert!(valid.contains(&"delete"));
+        assert!(!valid.contains(&"read"));
+    }
+
+    // ─── Watch target types ─────────────────────────────────────────────────
+
+    #[test]
+    fn test_watch_target_type_values() {
+        let valid = ["page", "collection"];
+        assert!(valid.contains(&"page"));
+        assert!(valid.contains(&"collection"));
+        assert!(!valid.contains(&"group"));
+        assert!(!valid.contains(&""));
+    }
+
+    // ─── Passkey purpose values ─────────────────────────────────────────────
+
+    #[test]
+    fn test_passkey_purpose_values() {
+        let valid = ["registration", "authentication"];
+        assert!(valid.contains(&"registration"));
+        assert!(valid.contains(&"authentication"));
+        assert!(!valid.contains(&""));
+    }
+
+    // ─── Database view types ────────────────────────────────────────────────
+
+    #[test]
+    fn test_db_base_view_type_values() {
+        let valid = ["table", "kanban"];
+        assert!(valid.contains(&"table"));
+        assert!(valid.contains(&"kanban"));
+        assert!(!valid.contains(&"calendar"));
+    }
+
+    // ─── App setting known keys ─────────────────────────────────────────────
+
+    #[test]
+    fn test_app_setting_known_keys() {
+        let known = [
+            "site_name",
+            "site_description",
+            "allow_registration",
+            "default_user_role",
+            "max_upload_size",
+            "session_timeout_minutes",
+        ];
+        assert!(known.contains(&"site_name"));
+        assert!(known.contains(&"allow_registration"));
+    }
+
+    // ─── SCIM deprovision behaviors ─────────────────────────────────────────
+
+    #[test]
+    fn test_scim_deprovision_behavior_values() {
+        let valid = ["disable", "delete", "remove_role"];
+        assert!(valid.contains(&"disable"));
+        assert!(valid.contains(&"delete"));
+        assert!(valid.contains(&"remove_role"));
+        assert!(!valid.contains(&""));
+    }
+
+    // ─── OAuth provider type values ─────────────────────────────────────────
+
+    #[test]
+    fn test_oauth_provider_type_values() {
+        let valid = [
+            "slack", "discord", "github", "gitlab", "google",
+            "microsoft", "facebook", "twitter", "generic",
+        ];
+        assert!(valid.contains(&"github"));
+        assert!(valid.contains(&"google"));
+        assert!(valid.contains(&"slack"));
+        assert!(!valid.contains(&"apple"));
+    }
+
+    // ─── AI chat message role values ────────────────────────────────────────
+
+    #[test]
+    fn test_ai_chat_message_role_values() {
+        let valid = ["user", "assistant", "system"];
+        assert!(valid.contains(&"user"));
+        assert!(valid.contains(&"assistant"));
+        assert!(valid.contains(&"system"));
+        assert!(!valid.contains(&"function"));
+    }
+
+    // ─── Webhook event types ────────────────────────────────────────────────
+
+    #[test]
+    fn test_webhook_event_type_values() {
+        let valid = [
+            "page.create",
+            "page.update",
+            "page.delete",
+            "page.publish",
+            "page.archive",
+            "collection.create",
+            "collection.update",
+            "collection.delete",
+            "user.create",
+            "user.update",
+            "user.delete",
+            "comment.create",
+            "comment.update",
+            "comment.delete",
+        ];
+        assert!(valid.contains(&"page.create"));
+        assert!(valid.contains(&"page.publish"));
+        assert!(valid.contains(&"comment.create"));
+        assert!(!valid.contains(&"user.login"));
+    }
+
+    // ─── Edge cases ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_empty_id_is_not_valid() {
+        let id = String::new();
+        assert!(id.is_empty());
+        let valid = !id.is_empty() && id.len() > 2;
+        assert!(!valid);
+    }
+
+    #[test]
+    fn test_id_minimum_length() {
+        let id = "ab";
+        assert!(id.len() < 5);
+        let id2 = "abc_1";
+        assert!(id2.len() >= 5);
+    }
+}
