@@ -177,7 +177,8 @@ describe("GroupsPanel", () => {
     fireEvent.click(screen.getByText("Create"));
 
     await waitFor(() => {
-      expect(screen.queryByText("New Group")).not.toBeInTheDocument();
+      // The dialog's "New Group" title is gone (the header button persists)
+      expect(screen.queryByPlaceholderText("Group name")).not.toBeInTheDocument();
     });
   });
 
@@ -206,11 +207,11 @@ describe("GroupsPanel", () => {
     renderGroups();
     await waitFor(() => expect(screen.getByText("Editors")).toBeInTheDocument());
     const editBtns = document.querySelectorAll("button");
-    // Find the pencil edit button (the second button in the group row)
+    // Find the pencil edit button (first match)
     let editBtn: HTMLButtonElement | null = null;
-    editBtns.forEach((btn) => {
-      if (btn.querySelector("svg.lucide-pencil")) editBtn = btn;
-    });
+    for (const btn of editBtns) {
+      if (btn.querySelector("svg.lucide-pencil")) { editBtn = btn as HTMLButtonElement; break; }
+    }
     if (editBtn) fireEvent.click(editBtn);
 
     await waitFor(() => {
@@ -227,9 +228,9 @@ describe("GroupsPanel", () => {
     await waitFor(() => expect(screen.getByText("Editors")).toBeInTheDocument());
     const editBtns = document.querySelectorAll("button");
     let editBtn: HTMLButtonElement | null = null;
-    editBtns.forEach((btn) => {
-      if (btn.querySelector("svg.lucide-pencil")) editBtn = btn;
-    });
+    for (const btn of editBtns) {
+      if (btn.querySelector("svg.lucide-pencil")) { editBtn = btn as HTMLButtonElement; break; }
+    }
     if (editBtn) fireEvent.click(editBtn);
 
     await waitFor(() => {
@@ -252,12 +253,12 @@ describe("GroupsPanel", () => {
     renderGroups();
     await waitFor(() => expect(screen.getByText("Editors")).toBeInTheDocument());
 
-    // Find the delete button (Trash2 icon)
+    // Find the delete button (Trash2 icon) — first match
     const deleteBtns = document.querySelectorAll("button");
     let deleteBtn: HTMLButtonElement | null = null;
-    deleteBtns.forEach((btn) => {
-      if (btn.querySelector("svg.lucide-trash-2")) deleteBtn = btn;
-    });
+    for (const btn of deleteBtns) {
+      if (btn.querySelector("svg.lucide-trash-2")) { deleteBtn = btn as HTMLButtonElement; break; }
+    }
     if (deleteBtn) fireEvent.click(deleteBtn);
 
     await waitFor(() => {
@@ -375,8 +376,8 @@ describe("GroupsPanel", () => {
       expect(screen.getByText("Select user...")).toBeInTheDocument();
     });
 
-    // Select Charlie (u3) from the user dropdown
-    const userSelect = screen.getAllByRole("combobox")[0];
+    // Select Charlie (u3) from the user dropdown — find by its current placeholder value
+    const userSelect = screen.getByDisplayValue("Select user...");
     fireEvent.change(userSelect, { target: { value: "u3" } });
 
     fireEvent.click(screen.getByText("Add"));
@@ -397,7 +398,7 @@ describe("GroupsPanel", () => {
       expect(screen.getByText("Select user...")).toBeInTheDocument();
     });
 
-    const userSelect = screen.getAllByRole("combobox")[0];
+    const userSelect = screen.getByDisplayValue("Select user...");
     fireEvent.change(userSelect, { target: { value: "u3" } });
     fireEvent.click(screen.getByText("Add"));
 
