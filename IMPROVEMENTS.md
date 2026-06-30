@@ -8,10 +8,7 @@ and works the top pending item each tick.
 
 ## PENDING
 
-| Priority | Item | Notes |
-|----------|------|-------|
-| P5 | Rust unit tests for tables.rs — table validation tests | |
-| P5 | Rust unit tests for lib.rs — reducer-level integration tests | |
+*(No pending items — see Recently Completed for recent work)*
 
 ---
 
@@ -19,6 +16,8 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-30 | **P5 — Rust unit tests for tables.rs** — 40 tests: 36 table struct construction/validation tests + 4 edge case assertions. Uses `..default_*()` builder pattern with 36 default-instance helper functions. Covers all 36 table types (AuditEvent through OauthUser). Full suite 198/198 clean. | *new* |
+| 2026-06-30 | **P5 — Rust unit tests for lib.rs** — 27 tests: slug generation (2), page status validation (5), webhook cleanup cutoff (1), search query processing (2), collection slug (1), invitation statuses (1), access request state machine (2), MFA types (1), notification event format (1), SCIM ops (1), watch targets (1), passkey purposes (1), DB view types (1), app settings keys (1), deprovision behaviors (1), OAuth types (1), AI roles (1), webhook event types (1), edge cases (2). Full suite 198/198 clean. | *new* |
 | 2026-06-30 | **P5 — Rust unit tests for sso.rs** — Extracted 5 validation helpers (validate_url, validate_not_empty, validate_oauth_provider_type, default_oauth_scope, sanitize_role) and added 22 unit tests. Refactored 8 SSO reducers (SAML, OIDC, LDAP, OAuth CRUD) to use shared helpers. Rust suite now 131/131 clean. | c6624ae4 |
 | 2026-06-30 | **P5 — TypeScript tests for 6 more Tiptap extensions** — Mermaid (6), MathInline (5), MathBlock (6), Transclusion (6), SyncedBlock (6), DatabaseBase (4), ImageEnhanced (7). Total 40 tests covering Node config, parseHTML, renderHTML, attributes, and custom getAttrs. Suite now 1062/1062 clean. | 8f27ff97 |
 | 2026-06-30 | **P5 — TypeScript tests for lib/tiptap-helpers.ts** — 40 tests (tiptapToMarkdown complete impl, tiptapToHTML with callouts, htmlToProseMirror, markdownToProseMirror, arrayBufferToBase64Url). Suite now 1022/1022 clean. | 34381e54 |

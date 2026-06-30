@@ -1,5 +1,8 @@
 use spacetimedb::*;
 
+// Allow dead code in default test constructors (only used in #[cfg(test)])
+#[allow(dead_code)]
+
 // ─── Audit Event Log ─────────────────────────────────────────────────────────
 
 /// Records administrative and security events in the wiki.
@@ -846,4 +849,1164 @@ pub struct OauthUser {
     pub last_synced_at: u64,
     pub created_at: u64,
     pub updated_at: u64,
+}
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ─── AuditEvent ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_audit_event_construction() {
+        let event = AuditEvent {
+            id: "ae_1".into(),
+            event_type: "user.login".into(),
+            actor_id: "u_1".into(),
+            target_id: "u_1".into(),
+            target_name: "admin".into(),
+            metadata: "{}".into(),
+            created_at: 1000,
+        };
+        assert_eq!(event.id, "ae_1");
+        assert_eq!(event.event_type, "user.login");
+    }
+
+    // ─── Group ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_group_construction() {
+        let group = Group {
+            name: "Editors".into(),
+            description: "Can edit all pages".into(),
+            created_by: "u_1".into(),
+            created_at: 1000,
+            updated_at: 1000,
+            ..default_group()
+        };
+        assert_eq!(group.name, "Editors");
+    }
+
+    // ─── Collection ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_collection_slug_format() {
+        let col = Collection {
+            name: "Engineering Wiki".into(),
+            slug: "engineering-wiki".into(),
+            icon: "🚀".into(),
+            color: "#00ff00".into(),
+            created_by: "u_1".into(),
+            created_at: 1000,
+            updated_at: 1000,
+            ..default_collection()
+        };
+        assert_eq!(col.slug, "engineering-wiki");
+        assert!(!col.slug.contains(' '), "Slug must not contain spaces");
+    }
+
+    // ─── Page ────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_page_default_status_is_draft() {
+        let page = Page {
+            title: "Getting Started".into(),
+            slug: "getting-started".into(),
+            collection_id: "c_1".into(),
+            status: "draft".into(),
+            created_by: "u_1".into(),
+            updated_by: "u_1".into(),
+            created_at: 1000,
+            updated_at: 1000,
+            ..default_page()
+        };
+        assert_eq!(page.status, "draft");
+        assert!(!page.full_width);
+        assert!(!page.is_pinned);
+    }
+
+    #[test]
+    fn test_page_revision_numbering() {
+        let rev = PageRevision {
+            page_id: "p_1".into(),
+            title: "Old Title".into(),
+            content: "# Old Content".into(),
+            edited_by: "u_1".into(),
+            revision_number: 1,
+            ..default_page_revision()
+        };
+        assert_eq!(rev.revision_number, 1);
+    }
+
+    // ─── Comment ─────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_comment_default_resolved() {
+        let comment = Comment {
+            page_id: "p_1".into(),
+            user_id: "u_1".into(),
+            body: "Great point!".into(),
+            is_resolved: false,
+            ..default_comment()
+        };
+        assert!(!comment.is_resolved);
+    }
+
+    // ─── Attachment ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_attachment_file_extension() {
+        let att = Attachment {
+            filename: "report.pdf".into(),
+            mime_type: "application/pdf".into(),
+            size_bytes: 1024,
+            storage_key: "attachments/p_1/report.pdf".into(),
+            uploaded_by: "u_1".into(),
+            ..default_attachment()
+        };
+        assert!(att.filename.ends_with(".pdf"));
+        assert_eq!(att.mime_type, "application/pdf");
+    }
+
+    // ─── PageTag ─────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_page_tag_kv() {
+        let tag = PageTag {
+            page_id: "p_1".into(),
+            name: "status".into(),
+            value: "active".into(),
+            ..default_page_tag()
+        };
+        assert_eq!(tag.name, "status");
+        assert_eq!(tag.value, "active");
+    }
+
+    // ─── Favorite ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_favorite_links_user_to_page() {
+        let fav = Favorite {
+            user_id: "u_1".into(),
+            page_id: "p_1".into(),
+            ..default_favorite()
+        };
+        assert_eq!(fav.page_id, "p_1");
+        assert_eq!(fav.user_id, "u_1");
+    }
+
+    // ─── ShareLink ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_share_link_default_no_password() {
+        let link = ShareLink {
+            token: "abc123".into(),
+            created_by: "u_1".into(),
+            visit_count: 0,
+            brand_title: None,
+            brand_logo_url: None,
+            ..default_share_link()
+        };
+        assert_eq!(link.visit_count, 0);
+        assert!(link.brand_title.is_none());
+    }
+
+    // ─── PagePermission ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_page_permission_role() {
+        let perm = PagePermission {
+            page_id: "p_1".into(),
+            user_id: "u_1".into(),
+            role: "editor".into(),
+            ..default_page_permission()
+        };
+        assert_eq!(perm.role, "editor");
+    }
+
+    // ─── ApiKey ──────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_api_key_not_revoked_by_default() {
+        let key = ApiKey {
+            user_id: "u_1".into(),
+            name: "CI Token".into(),
+            key_hash: "sha256hash".into(),
+            key_prefix: "sw_".into(),
+            is_revoked: false,
+            ..default_api_key()
+        };
+        assert!(!key.is_revoked);
+    }
+
+    // ─── Webhook ─────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_webhook_https_url() {
+        let wh = Webhook {
+            name: "Slack".into(),
+            url: "https://hooks.slack.com/xxx".into(),
+            is_active: true,
+            ..default_webhook()
+        };
+        assert!(wh.is_active);
+        assert!(wh.url.starts_with("https://"));
+    }
+
+    #[test]
+    fn test_webhook_event_pending() {
+        let we = WebhookEvent {
+            webhook_id: "wh_1".into(),
+            event_type: "page.create".into(),
+            status: "pending".into(),
+            ..default_webhook_event()
+        };
+        assert_eq!(we.status, "pending");
+        assert_eq!(we.response_code, 0);
+    }
+
+    // ─── CollectionSortRule ──────────────────────────────────────────────────
+
+    #[test]
+    fn test_collection_sort_rule_asc() {
+        let rule = CollectionSortRule {
+            collection_id: "c_1".into(),
+            sort_field: "title".into(),
+            sort_direction: "asc".into(),
+            auto_apply: true,
+            ..default_collection_sort_rule()
+        };
+        assert!(rule.auto_apply);
+    }
+
+    // ─── SearchResult ────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_search_result_match_type() {
+        let sr = SearchResult {
+            search_token: "tok_1".into(),
+            page_id: "p_1".into(),
+            title: "Getting Started".into(),
+            slug: "getting-started".into(),
+            excerpt: "To get started...".into(),
+            match_type: "title".into(),
+            ..default_search_result()
+        };
+        assert_eq!(sr.match_type, "title");
+    }
+
+    // ─── SAML Provider ───────────────────────────────────────────────────────
+
+    #[test]
+    fn test_saml_provider_construction() {
+        let sp = SamlProvider {
+            name: "Azure AD".into(),
+            slug: "azure-ad".into(),
+            entity_id: "https://sts.windows.net/xxx".into(),
+            sso_url: "https://login.microsoftonline.com/xxx/saml2".into(),
+            certificate: "MIID...".into(),
+            auto_register: true,
+            is_active: true,
+            ..default_saml_provider()
+        };
+        assert!(sp.is_active);
+        assert!(sp.sso_url.contains("saml"));
+    }
+
+    // ─── OIDC Provider ───────────────────────────────────────────────────────
+
+    #[test]
+    fn test_oidc_provider_construction() {
+        let oidc = OidcProvider {
+            name: "Google".into(),
+            slug: "google".into(),
+            issuer_url: "https://accounts.google.com".into(),
+            scopes: "openid profile email".into(),
+            is_active: true,
+            ..default_oidc_provider()
+        };
+        assert!(oidc.is_active);
+        assert!(oidc.issuer_url.contains("google"));
+    }
+
+    // ─── LDAP Provider ───────────────────────────────────────────────────────
+
+    #[test]
+    fn test_ldap_provider_secure_port() {
+        let ldap = LdapProvider {
+            name: "Company LDAP".into(),
+            slug: "company-ldap".into(),
+            host: "ldap.company.com".into(),
+            port: 636,
+            is_secure: true,
+            ..default_ldap_provider()
+        };
+        assert_eq!(ldap.port, 636);
+        assert!(ldap.is_secure);
+    }
+
+    #[test]
+    fn test_ldap_user_dn_format() {
+        let lu = LdapUser {
+            user_id: "u_1".into(),
+            dn: "cn=Alice,ou=Users,dc=company,dc=com".into(),
+            ..default_ldap_user()
+        };
+        assert!(lu.dn.contains("cn="));
+    }
+
+    // ─── PageView ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_page_view_construction() {
+        let pv = PageView {
+            page_id: "p_1".into(),
+            user_id: "u_1".into(),
+            viewer: "Alice".into(),
+            ..default_page_view()
+        };
+        assert_eq!(pv.viewer, "Alice");
+    }
+
+    // ─── AppSetting ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_app_setting_kv() {
+        let setting = AppSetting {
+            key: "site_name".into(),
+            value: "My Wiki".into(),
+            ..default_app_setting()
+        };
+        assert_eq!(setting.value, "My Wiki");
+    }
+
+    // ─── Collab ──────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_collab_update_construction() {
+        let cu = CollabUpdate {
+            page_id: "p_1".into(),
+            update_data: "yjs-update-data".into(),
+            user_id: "u_1".into(),
+            ..default_collab_update()
+        };
+        assert_eq!(cu.page_id, "p_1");
+    }
+
+    #[test]
+    fn test_collab_session_color_format() {
+        let cs = CollabSession {
+            page_id: "p_1".into(),
+            user_id: "u_1".into(),
+            user_name: "Alice".into(),
+            color: "#ff6600".into(),
+            ..default_collab_session()
+        };
+        assert_eq!(cs.color, "#ff6600");
+        assert!(cs.last_seen_at >= cs.joined_at);
+    }
+
+    // ─── AI ──────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_ai_config_kv() {
+        let cfg = AiConfig {
+            key: "model".into(),
+            value: "gpt-4".into(),
+            ..default_ai_config()
+        };
+        assert_eq!(cfg.value, "gpt-4");
+    }
+
+    #[test]
+    fn test_ai_chat_message_role() {
+        let msg = AiChatMessage {
+            session_id: "ai_s_1".into(),
+            role: "assistant".into(),
+            content: "Here's how...".into(),
+            ..default_ai_chat_message()
+        };
+        assert_eq!(msg.role, "assistant");
+    }
+
+    // ─── SCIM ────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_scim_provider_construction() {
+        let sp = ScimProvider {
+            name: "Azure SCIM".into(),
+            slug: "azure-scim".into(),
+            is_active: true,
+            sync_groups: true,
+            deprovision_behavior: "disable".into(),
+            ..default_scim_provider()
+        };
+        assert!(sp.is_active);
+        assert!(sp.sync_groups);
+    }
+
+    // ─── Passkey ─────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_passkey_credential_construction() {
+        let pc = PasskeyCredential {
+            user_id: "u_1".into(),
+            credential_id: "cred_abc".into(),
+            counter: 0,
+            device_name: "YubiKey 5".into(),
+            ..default_passkey_credential()
+        };
+        assert_eq!(pc.counter, 0);
+    }
+
+    #[test]
+    fn test_passkey_challenge_expiry() {
+        let challenge = PasskeyChallenge {
+            challenge: "ch_abc".into(),
+            purpose: "registration".into(),
+            expires_at: 1000 + 300000,
+            ..default_passkey_challenge()
+        };
+        assert_eq!(challenge.purpose, "registration");
+        assert!(challenge.expires_at > challenge.created_at);
+    }
+
+    // ─── Database (inline tables) ────────────────────────────────────────────
+
+    #[test]
+    fn test_db_base_view_type() {
+        let base = DbBase {
+            page_id: "p_1".into(),
+            title: "Tasks".into(),
+            view_type: "table".into(),
+            created_by: "u_1".into(),
+            ..default_db_base()
+        };
+        assert_eq!(base.view_type, "table");
+    }
+
+    #[test]
+    fn test_db_column_field_type() {
+        let col = DbColumn {
+            base_id: "db_1".into(),
+            name: "Status".into(),
+            field_type: "text".into(),
+            ..default_db_column()
+        };
+        assert_eq!(col.field_type, "text");
+    }
+
+    #[test]
+    fn test_db_cell_value() {
+        let cell = DbCell {
+            row_id: "drow_1".into(),
+            column_id: "dcol_1".into(),
+            value: "Done".into(),
+            ..default_db_cell()
+        };
+        assert_eq!(cell.value, "Done");
+    }
+
+    // ─── Invitation ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_invitation_pending_status() {
+        let inv = Invitation {
+            email: "newuser@example.com".into(),
+            role: "member".into(),
+            token: "tok_abc".into(),
+            status: "pending".into(),
+            ..default_invitation()
+        };
+        assert_eq!(inv.status, "pending");
+        assert_eq!(inv.email, "newuser@example.com");
+    }
+
+    // ─── SyncedBlock ─────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_synced_block_construction() {
+        let sb = SyncedBlock {
+            title: "Footer Notice".into(),
+            content: "© 2026 Acme Corp".into(),
+            created_by: "u_1".into(),
+            updated_by: "u_1".into(),
+            ..default_synced_block()
+        };
+        assert_eq!(sb.title, "Footer Notice");
+    }
+
+    // ─── MFA ─────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_mfa_method_totp_type() {
+        let mfa = MfaMethod {
+            user_id: "u_1".into(),
+            method_type: "totp".into(),
+            is_enabled: false,
+            ..default_mfa_method()
+        };
+        assert!(!mfa.is_enabled);
+        assert_eq!(mfa.method_type, "totp");
+    }
+
+    // ─── Watch / Notifications ───────────────────────────────────────────────
+
+    #[test]
+    fn test_watch_target_type() {
+        let watch = Watch {
+            user_id: "u_1".into(),
+            target_type: "page".into(),
+            target_id: "p_1".into(),
+            ..default_watch()
+        };
+        assert_eq!(watch.target_type, "page");
+    }
+
+    #[test]
+    fn test_notification_unread() {
+        let notif = Notification {
+            user_id: "u_1".into(),
+            event_type: "page.updated".into(),
+            target_id: "p_1".into(),
+            title: "Page Updated".into(),
+            message: "Alice updated Getting Started".into(),
+            actor_id: "u_2".into(),
+            is_read: false,
+            ..default_notification()
+        };
+        assert!(!notif.is_read);
+    }
+
+    // ─── AccessRequest ───────────────────────────────────────────────────────
+
+    #[test]
+    fn test_access_request_pending() {
+        let req = AccessRequest {
+            page_id: "p_1".into(),
+            requester_id: "u_2".into(),
+            reason: "I need to edit this page".into(),
+            status: "pending".into(),
+            ..default_access_request()
+        };
+        assert_eq!(req.status, "pending");
+    }
+
+    // ─── OAuth ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_oauth_provider_construction() {
+        let oauth = OauthProvider {
+            name: "GitHub".into(),
+            slug: "github".into(),
+            provider_type: "github".into(),
+            authorize_url: "https://github.com/login/oauth/authorize".into(),
+            scope: "read:user".into(),
+            is_active: true,
+            auto_register: true,
+            ..default_oauth_provider()
+        };
+        assert!(oauth.is_active);
+        assert_eq!(oauth.provider_type, "github");
+    }
+
+    #[test]
+    fn test_oauth_user_linking() {
+        let ou = OauthUser {
+            user_id: "u_1".into(),
+            external_username: "alice".into(),
+            external_email: "alice@github.com".into(),
+            ..default_oauth_user()
+        };
+        assert_eq!(ou.external_username, "alice");
+    }
+}
+
+// ─── Default instances for testing ───────────────────────────────────────────
+
+fn default_group() -> Group {
+    Group {
+        id: "g_default".into(),
+        name: String::new(),
+        description: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_collection() -> Collection {
+    Collection {
+        id: "c_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        description: String::new(),
+        parent_id: String::new(),
+        icon: String::new(),
+        color: String::new(),
+        sort_order: 0,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_page() -> Page {
+    Page {
+        id: "p_default".into(),
+        title: String::new(),
+        slug: String::new(),
+        content: String::new(),
+        text_content: String::new(),
+        collection_id: String::new(),
+        parent_page_id: String::new(),
+        status: String::new(),
+        icon: String::new(),
+        color: String::new(),
+        full_width: false,
+        is_pinned: false,
+        is_template: false,
+        template_id: String::new(),
+        sort_order: 0,
+        created_by: String::new(),
+        updated_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+        published_at: 0,
+        deleted_at: 0,
+        direction: String::new(),
+    }
+}
+
+fn default_page_revision() -> PageRevision {
+    PageRevision {
+        id: "pr_default".into(),
+        page_id: String::new(),
+        title: String::new(),
+        content: String::new(),
+        edited_by: String::new(),
+        created_at: 0,
+        revision_number: 0,
+    }
+}
+
+fn default_comment() -> Comment {
+    Comment {
+        id: "cmt_default".into(),
+        page_id: String::new(),
+        parent_comment_id: String::new(),
+        user_id: String::new(),
+        body: String::new(),
+        text_anchor: String::new(),
+        is_resolved: false,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_attachment() -> Attachment {
+    Attachment {
+        id: "att_default".into(),
+        page_id: String::new(),
+        filename: String::new(),
+        mime_type: String::new(),
+        size_bytes: 0,
+        storage_key: String::new(),
+        uploaded_by: String::new(),
+        created_at: 0,
+    }
+}
+
+fn default_page_tag() -> PageTag {
+    PageTag {
+        id: "pt_default".into(),
+        page_id: String::new(),
+        name: String::new(),
+        value: String::new(),
+    }
+}
+
+fn default_favorite() -> Favorite {
+    Favorite {
+        id: "fav_default".into(),
+        user_id: String::new(),
+        page_id: String::new(),
+        created_at: 0,
+    }
+}
+
+fn default_share_link() -> ShareLink {
+    ShareLink {
+        id: "sl_default".into(),
+        page_id: String::new(),
+        token: String::new(),
+        password_hash: String::new(),
+        created_by: String::new(),
+        expires_at: 0,
+        created_at: 0,
+        visit_count: 0,
+        brand_title: None,
+        brand_logo_url: None,
+    }
+}
+
+fn default_page_permission() -> PagePermission {
+    PagePermission {
+        id: "pp_default".into(),
+        page_id: String::new(),
+        user_id: String::new(),
+        group_id: String::new(),
+        role: String::new(),
+        created_at: 0,
+    }
+}
+
+fn default_api_key() -> ApiKey {
+    ApiKey {
+        id: "ak_default".into(),
+        user_id: String::new(),
+        name: String::new(),
+        key_hash: String::new(),
+        key_prefix: String::new(),
+        last_used_at: 0,
+        created_at: 0,
+        expires_at: 0,
+        is_revoked: false,
+    }
+}
+
+fn default_webhook() -> Webhook {
+    Webhook {
+        id: "wh_default".into(),
+        name: String::new(),
+        url: String::new(),
+        events: String::new(),
+        is_active: false,
+        secret: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_webhook_event() -> WebhookEvent {
+    WebhookEvent {
+        id: "we_default".into(),
+        webhook_id: String::new(),
+        event_type: String::new(),
+        page_id: String::new(),
+        payload: String::new(),
+        status: String::new(),
+        response_code: 0,
+        response_body: String::new(),
+        created_at: 0,
+        sent_at: 0,
+    }
+}
+
+fn default_collection_sort_rule() -> CollectionSortRule {
+    CollectionSortRule {
+        collection_id: String::new(),
+        sort_field: String::new(),
+        sort_direction: String::new(),
+        auto_apply: false,
+        updated_by: String::new(),
+        updated_at: 0,
+    }
+}
+
+fn default_search_result() -> SearchResult {
+    SearchResult {
+        id: "sr_default".into(),
+        search_token: String::new(),
+        page_id: String::new(),
+        title: String::new(),
+        slug: String::new(),
+        excerpt: String::new(),
+        match_type: String::new(),
+        created_at: 0,
+    }
+}
+
+fn default_saml_provider() -> SamlProvider {
+    SamlProvider {
+        id: "saml_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        entity_id: String::new(),
+        sso_url: String::new(),
+        certificate: String::new(),
+        name_id_format: String::new(),
+        attribute_mapping: String::new(),
+        auto_register: false,
+        is_active: false,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_oidc_provider() -> OidcProvider {
+    OidcProvider {
+        id: "oidc_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        issuer_url: String::new(),
+        client_id: String::new(),
+        client_secret: String::new(),
+        scopes: String::new(),
+        is_active: false,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_ldap_provider() -> LdapProvider {
+    LdapProvider {
+        id: "ldap_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        host: String::new(),
+        port: 0,
+        is_secure: false,
+        bind_dn: String::new(),
+        bind_password: String::new(),
+        base_dn: String::new(),
+        user_filter: String::new(),
+        username_attribute: String::new(),
+        email_attribute: String::new(),
+        name_attribute: String::new(),
+        default_role: String::new(),
+        auto_register: false,
+        is_active: false,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_ldap_user() -> LdapUser {
+    LdapUser {
+        id: "lu_default".into(),
+        user_id: String::new(),
+        ldap_provider_id: String::new(),
+        dn: String::new(),
+        external_id: String::new(),
+        last_synced_at: 0,
+        created_at: 0,
+    }
+}
+
+fn default_page_view() -> PageView {
+    PageView {
+        id: "pv_default".into(),
+        page_id: String::new(),
+        user_id: String::new(),
+        viewer: String::new(),
+        viewed_at: 0,
+    }
+}
+
+fn default_app_setting() -> AppSetting {
+    AppSetting {
+        key: String::new(),
+        value: String::new(),
+        updated_at: 0,
+    }
+}
+
+fn default_collab_update() -> CollabUpdate {
+    CollabUpdate {
+        id: "cu_default".into(),
+        page_id: String::new(),
+        update_data: String::new(),
+        user_id: String::new(),
+        created_at: 0,
+    }
+}
+
+fn default_collab_session() -> CollabSession {
+    CollabSession {
+        id: "cs_default".into(),
+        page_id: String::new(),
+        user_id: String::new(),
+        user_name: String::new(),
+        color: String::new(),
+        cursor_position: String::new(),
+        last_seen_at: 0,
+        joined_at: 0,
+    }
+}
+
+fn default_ai_config() -> AiConfig {
+    AiConfig {
+        key: String::new(),
+        value: String::new(),
+        updated_at: 0,
+    }
+}
+
+fn default_ai_chat_session() -> AiChatSession {
+    AiChatSession {
+        id: "ais_default".into(),
+        user_id: String::new(),
+        title: String::new(),
+        page_context_id: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_ai_chat_message() -> AiChatMessage {
+    AiChatMessage {
+        id: "aim_default".into(),
+        session_id: String::new(),
+        role: String::new(),
+        content: String::new(),
+        created_at: 0,
+    }
+}
+
+fn default_scim_provider() -> ScimProvider {
+    ScimProvider {
+        id: "scim_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        api_token_hash: String::new(),
+        is_active: false,
+        default_role: String::new(),
+        auto_register: false,
+        deprovision_behavior: String::new(),
+        sync_groups: false,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_scim_event() -> ScimEvent {
+    ScimEvent {
+        id: "se_default".into(),
+        provider_id: String::new(),
+        resource_type: String::new(),
+        operation: String::new(),
+        external_id: String::new(),
+        local_id: String::new(),
+        status: String::new(),
+        detail: String::new(),
+        created_at: 0,
+    }
+}
+
+fn default_passkey_credential() -> PasskeyCredential {
+    PasskeyCredential {
+        id: "pk_default".into(),
+        user_id: String::new(),
+        credential_id: String::new(),
+        public_key: String::new(),
+        counter: 0,
+        transports: String::new(),
+        device_name: String::new(),
+        created_at: 0,
+        last_used_at: 0,
+    }
+}
+
+fn default_passkey_challenge() -> PasskeyChallenge {
+    PasskeyChallenge {
+        challenge: String::new(),
+        user_handle: String::new(),
+        purpose: String::new(),
+        created_at: 0,
+        expires_at: 0,
+    }
+}
+
+fn default_db_base() -> DbBase {
+    DbBase {
+        id: "db_default".into(),
+        page_id: String::new(),
+        title: String::new(),
+        view_type: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_db_column() -> DbColumn {
+    DbColumn {
+        id: "dcol_default".into(),
+        base_id: String::new(),
+        name: String::new(),
+        field_type: String::new(),
+        options: String::new(),
+        sort_order: 0,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_db_row() -> DbRow {
+    DbRow {
+        id: "drow_default".into(),
+        base_id: String::new(),
+        sort_order: 0,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_db_cell() -> DbCell {
+    DbCell {
+        id: "dcell_default".into(),
+        row_id: String::new(),
+        column_id: String::new(),
+        value: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_invitation() -> Invitation {
+    Invitation {
+        id: "inv_default".into(),
+        email: String::new(),
+        invited_by: String::new(),
+        role: String::new(),
+        page_ids: String::new(),
+        collection_ids: String::new(),
+        token: String::new(),
+        status: String::new(),
+        message: String::new(),
+        expires_at: 0,
+        view_count: 0,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_synced_block() -> SyncedBlock {
+    SyncedBlock {
+        id: "sb_default".into(),
+        title: String::new(),
+        content: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+        updated_by: String::new(),
+    }
+}
+
+fn default_synced_block_ref() -> SyncedBlockRef {
+    SyncedBlockRef {
+        id: "sbr_default".into(),
+        block_id: String::new(),
+        page_id: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+    }
+}
+
+fn default_mfa_method() -> MfaMethod {
+    MfaMethod {
+        id: "mfa_default".into(),
+        user_id: String::new(),
+        method_type: String::new(),
+        totp_secret: String::new(),
+        is_enabled: false,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_mfa_backup_code() -> MfaBackupCode {
+    MfaBackupCode {
+        id: "mbc_default".into(),
+        user_id: String::new(),
+        code_hash: String::new(),
+        is_used: false,
+        created_at: 0,
+    }
+}
+
+fn default_watch() -> Watch {
+    Watch {
+        id: "w_default".into(),
+        user_id: String::new(),
+        target_type: String::new(),
+        target_id: String::new(),
+        created_at: 0,
+    }
+}
+
+fn default_notification() -> Notification {
+    Notification {
+        id: "n_default".into(),
+        user_id: String::new(),
+        event_type: String::new(),
+        target_id: String::new(),
+        title: String::new(),
+        message: String::new(),
+        actor_id: String::new(),
+        icon: String::new(),
+        is_read: false,
+        created_at: 0,
+    }
+}
+
+fn default_access_request() -> AccessRequest {
+    AccessRequest {
+        id: "ar_default".into(),
+        page_id: String::new(),
+        requester_id: String::new(),
+        reason: String::new(),
+        status: String::new(),
+        responded_by: String::new(),
+        responded_at: 0,
+        created_at: 0,
+    }
+}
+
+fn default_oauth_provider() -> OauthProvider {
+    OauthProvider {
+        id: "oa_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        provider_type: String::new(),
+        authorize_url: String::new(),
+        token_url: String::new(),
+        userinfo_url: String::new(),
+        scope: String::new(),
+        client_id: String::new(),
+        client_secret: String::new(),
+        icon: String::new(),
+        is_active: false,
+        auto_register: false,
+        default_role: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+fn default_oauth_user() -> OauthUser {
+    OauthUser {
+        id: "ou_default".into(),
+        user_id: String::new(),
+        provider_id: String::new(),
+        external_id: String::new(),
+        external_username: String::new(),
+        external_email: String::new(),
+        access_token: String::new(),
+        refresh_token: String::new(),
+        token_expires_at: 0,
+        last_synced_at: 0,
+        created_at: 0,
+        updated_at: 0,
+    }
 }
