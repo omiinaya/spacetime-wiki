@@ -8,7 +8,6 @@ and works the top pending item each tick.
 
 ## PENDING
 
-|| 2026-06-30 | **P4 — Unit tests for SharedPageView.tsx** — Public share link viewer (236 lines). Test error, expiry, password prompt, page view, branding header. |
 || 2026-06-30 | **P4 — Unit tests for LoginView.tsx** — Auth page with email/password, MFA, SSO buttons, OAuth/SAML callbacks. |
 || 2026-06-30 | **P4 — Unit tests for ActivityView.tsx** — Activity feed page. |
 || 2026-06-30 | **P4 — npm audit fix — `npm audit fix` to address reported vulnerabilities** |
@@ -20,6 +19,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-30 | **P4 — TypeScript tests for SharedPageView** — 13 tests: loading, not found, expired, password prompt, branding, error handling, a11y. Suite now 1111/1111. | 44c79a0e |
 | 2026-06-30 | **P4 — TypeScript tests for SlugView, FavoritesView, HomeView** — 29 tests. Suite now 1098/1098. | 5b26585c |
 | 2026-06-30 | **P4 — TypeScript tests for PermalinkRedirect.tsx** — 7 tests covering loading, redirect, error, hash anchor, missing param, and a11y. Suite now 1069/1069. | e249b90d |
 | 2026-06-30 | **P5 — Rust unit tests for tables.rs** — 40 tests: 36 table struct construction/validation tests + 4 edge case assertions. Full suite 198/198 clean. | *new* |
