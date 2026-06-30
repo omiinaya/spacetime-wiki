@@ -865,6 +865,9 @@ export function PageEditor({ userId }: Props) {
           setTitle(p.title);
         }
         setLoading(false);
+      }).catch((err) => {
+        setError(String(err));
+        setLoading(false);
       });
     }
   }, [id]);
@@ -1571,7 +1574,7 @@ export function PageEditor({ userId }: Props) {
   return (
     <div className={cn(page?.full_width ? "mx-auto px-4 md:px-8" : "max-w-4xl mx-auto")}>
       {/* Hidden file input for image upload */}
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
 
       {/* Top toolbar */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
