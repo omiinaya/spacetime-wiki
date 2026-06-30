@@ -370,12 +370,21 @@ const AppLayout = () => {
     setUserId(localStorage.getItem("sw_user_id"));
   }, [location.pathname]);
 
-  // Stop loading once we have data from either source
+  // Stop loading once we have data from either source (WS subscription or HTTP fallback)
   useEffect(() => {
     if ((pagesConnected || colsConnected) && (subPages.length > 0 || subCollections.length > 0)) {
       setLoading(false);
     }
   }, [pagesConnected, colsConnected, subPages.length, subCollections.length]);
+
+  // Also stop loading if the subscription manager entered a fatal state (WS endpoint unavailable)
+  // and HTTP fallback data has already loaded. This prevents the 5-second fallback timer delay
+  // since the HTTP fetch in useSubscription runs immediately on mount.
+  useEffect(() => {
+    if (subPages.length > 0 || subCollections.length > 0) {
+      setLoading(false);
+    }
+  }, [subPages.length, subCollections.length]);
 
   // Load all tags for sidebar filtering
   useEffect(() => {
