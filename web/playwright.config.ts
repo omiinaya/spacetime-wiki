@@ -17,10 +17,6 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    command: "npx vite preview --port 5184 --strictPort",
-    port: 5184,
-    reuseExistingServer: false,
-    timeout: 30_000,
-  },
+  // Uses already-running Vite dev server on port 5184
+  // For CI, run: npx vite build && npx vite preview --port 5184 --strictPort
 });

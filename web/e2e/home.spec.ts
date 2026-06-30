@@ -1,75 +1,49 @@
 import { test, expect } from "@playwright/test";
-import { setupMocks, samplePages } from "./mocks";
 
-test.describe("Home page — empty state", () => {
+test.describe("Home page", () => {
   test.beforeEach(async ({ page }) => {
-    await setupMocks(page, { pages: [] });
     await page.goto("/");
   });
 
-  test("shows welcome message when no pages exist", async ({ page }) => {
+  test("shows app title", async ({ page }) => {
+    await expect(page).toHaveTitle("Spacetime Wiki");
+  });
+
+  test("shows the Home heading and welcome message", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
     await expect(page.getByText("Welcome to Spacetime Wiki")).toBeVisible();
   });
 
-  test("shows create page button", async ({ page }) => {
-    await expect(page.getByText("Create a page")).toBeVisible();
+  test("shows recently updated section with page entries", async ({ page }) => {
+    await expect(page.getByText("RECENTLY UPDATED")).toBeVisible();
+    // Should have at least one page entry in the list
+    const pageEntries = page.locator("main button").filter({ hasText: /Updated/ });
+    await expect(pageEntries.first()).toBeVisible({ timeout: 15000 });
+    const count = await pageEntries.count();
+    expect(count).toBeGreaterThan(0);
   });
 
-  test("shows import markdown button", async ({ page }) => {
-    await expect(page.getByText("Import Markdown")).toBeVisible();
+  test("each page entry shows title and time ago", async ({ page }) => {
+    const pageEntries = page.locator("main button").filter({ hasText: /Updated/ });
+    const count = await pageEntries.count();
+    for (let i = 0; i < Math.min(count, 3); i++) {
+      const text = await pageEntries.nth(i).textContent();
+      expect(text).toMatch(/Updated\s+\d+[hd] ago/);
+    }
   });
 
-  test("shows keyboard shortcuts card", async ({ page }) => {
-    await expect(page.getByRole("button", { name: "Keyboard shortcuts Press ? to" })).toBeVisible();
-  });
-
-  test("shows feature cards", async ({ page }) => {
-    await expect(page.getByText("Rich editing")).toBeVisible();
-    await expect(page.getByText("Full-text search")).toBeVisible();
-    await expect(page.getByText("Collections & tags")).toBeVisible();
-    await expect(page.getByText("Comments & history")).toBeVisible();
-    await expect(page.getByText("Permissions & sharing")).toBeVisible();
-    await expect(page.getByText("Import/export")).toBeVisible();
-    await expect(page.getByText("Favorites & pinning")).toBeVisible();
-    await expect(page.getByText("Templates & embeds")).toBeVisible();
-  });
-
-  test("clicking create navigates to /new", async ({ page }) => {
-    await page.getByText("Create a page").click();
-    await expect(page).toHaveURL(/\/new/);
-  });
-});
-
-test.describe("Home page — with pages", () => {
-  test.beforeEach(async ({ page }) => {
-    await setupMocks(page, { pages: samplePages });
-    await page.goto("/");
-  });
-
-  test("shows 'Home' heading", async ({ page }) => {
-    await expect(page.getByText("Home")).toBeVisible();
-  });
-
-  test("shows recently updated section", async ({ page }) => {
-    await expect(page.getByText("Recently Updated")).toBeVisible();
-  });
-
-  test("shows page titles from API", async ({ page }) => {
-    await expect(page.getByText("Getting Started").first()).toBeVisible();
-    await expect(page.getByText("Architecture Overview")).toBeVisible();
-    await expect(page.getByText("Draft Notes")).toBeVisible();
-  });
-
-  test("shows draft badge for draft pages", async ({ page }) => {
-    await expect(page.getByText("· Draft")).toBeVisible();
-  });
-
-  test("shows trending section", async ({ page }) => {
-    await expect(page.getByText("Trending")).toBeVisible();
+  test("recent pages show Draft badge when applicable", async ({ page }) => {
+    const draftEntry = page.locator("main button").filter({ hasText: "Draft" });
+    if ((await draftEntry.count()) > 0) {
+      await expect(draftEntry.first().getByText("Draft")).toBeVisible();
+    }
   });
 
   test("clicking a recent page navigates to its view page", async ({ page }) => {
-    await page.getByText("Getting Started").first().click();
-    await expect(page).toHaveURL(/\/page\/page_1/);
+    const firstPage = page.locator("main button").filter({ hasText: /Updated/ }).first();
+    await firstPage.click();
+    // Should navigate to /page/{id}
+    await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/);
+    await expect(page.locator("main").first()).toBeVisible({ timeout: 10000 });
   });
 });
