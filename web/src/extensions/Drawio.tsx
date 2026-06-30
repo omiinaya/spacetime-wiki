@@ -23,7 +23,7 @@ declare module "@tiptap/core" {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -31,7 +31,7 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function decodeDrawioXml(data: string): string {
+export function decodeDrawioXml(data: string): string {
   // draw.io data can be plain XML or base64-encoded XML with ?xml prefix check
   if (data.startsWith("<?xml") || data.startsWith("<mx")) return data;
   try {
@@ -43,12 +43,12 @@ function decodeDrawioXml(data: string): string {
   return data;
 }
 
-function encodeDrawioData(xml: string): string {
+export function encodeDrawioData(xml: string): string {
   // Encode XML for draw.io embed URL fragment
   return btoa(unescape(encodeURIComponent(xml)));
 }
 
-function extractSvgFromDrawioExport(data: string): string | null {
+export function extractSvgFromDrawioExport(data: string): string | null {
   // When draw.io exports via postMessage, it may include svg in the response
   try {
     const parsed = JSON.parse(data);
