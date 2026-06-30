@@ -10,8 +10,7 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P5 | **Add TypeScript tests for admin components (15 files)** — All admin panel components untested | |
-| P5 | **Add TypeScript tests for Tiptap extensions (6 files)** — Math.tsx, Mermaid.tsx, Drawio.tsx, PlantUML.tsx, Transclusion.tsx, SyncedBlock.tsx, DatabaseBase.tsx, ImageEnhanced.tsx | |
+| P5 | **Add TypeScript tests for Tiptap extensions (8 files)** — Math.tsx, Mermaid.tsx, Drawio.tsx, PlantUML.tsx, Transclusion.tsx, SyncedBlock.tsx, DatabaseBase.tsx, ImageEnhanced.tsx | |
 | P5 | **Add TypeScript tests for lib/ utility modules (5 files)** — api.ts, helpers.ts, subscriptions.ts, tiptap-helpers.ts, useCollaboration.ts, yjs-stdb-provider.ts | |
 
 ---
@@ -20,6 +19,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-30 | **P5 — TypeScript tests for admin components (15 files)** — All admin panel components now have dedicated tests (AdminPanels, SettingsPanel, SsoPanel, GroupsPanel, UsersPanel, InvitationSettings, OAuthSettings, LdapSettings, MfaSettings, PasskeySettings, ScimSettings, FeatureFlags, BulkExport, TrashSettings, ApiKeySettings) + AdminDashboard | (completed in earlier ticks) |
 | 2026-06-30 | **P4 — TypeScript tests for PageEditor.tsx** — 38 tests (loading, new page, existing page, save/publish/archive/delete/duplicate, preview, color picker, full-width, RTL, editor modes, keyboard shortcuts, tags, a11y). Fixed page load error handling (missing .catch()), fixed hidden file input a11y. | d3892b30 |
 | 2026-06-29 | **P4 — TypeScript tests for PageView.tsx** — 38 tests (loading, error, loaded, actions, comments, export, share, TOC, color picker, attachments, word count, revisions, a11y). Fixed 5 a11y violations (back button, emoji picker, send button, file input, editor aria-label) and heading level hierarchy. | 16ea81cb |
 | 2026-06-29 | **P1 — PageView.tsx StarterKit crash** — Import StarterKit from @tiptap/starter-kit | 873614dd |
@@ -29,4 +29,3 @@ and works the top pending item each tick.
 | 2026-06-29 | **P4 — Session lost on full page nav** — Fixed: `useEffect` reads `sw_user_id` from localStorage on pathname change | 97f6fc83 |
 | 2026-06-29 | **P4 — TypeScript tests for 6 uncovered components** — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings (129 total tests) | eaea2704 |
 | 2026-06-29 | **E2E: 59/59 tests passing** — Fixed anchorData.text.slice crash. All 59 Playwright tests pass. | 0e2aedab |
-| 2026-06-29 | **P3 — Performance: lazy-load 6 route pages, dynamic mermaid, code-split typed-sql** — React.lazy for 6 routes, dynamic mermaid import, manual vendor/editor chunks | 9d15ee5f |

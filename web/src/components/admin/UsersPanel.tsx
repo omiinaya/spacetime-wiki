@@ -79,6 +79,7 @@ export function UsersPanel({ allUsers, setAllUsers, userId, addToast }: UsersPan
               <select
                 value={u.role}
                 onChange={(e) => updateUserRole(u.id, e.target.value)}
+                aria-label={`Role for ${u.name}`}
                 className="h-7 pl-2 pr-6 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
               >
                 <option value="admin">Admin</option>

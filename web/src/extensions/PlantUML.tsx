@@ -26,7 +26,7 @@ declare module "@tiptap/core" {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -34,7 +34,7 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function getDiagramUrl(
+export function getDiagramUrl(
   src: string,
   serverUrl: string = DEFAULT_PLANTUML_SERVER,
 ): string {
