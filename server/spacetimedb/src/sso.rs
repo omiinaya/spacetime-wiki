@@ -2,6 +2,52 @@ use spacetimedb::*;
 use crate::tables::*;
 use crate::helpers::*;
 
+// ─── Validation helpers (testable) ─────────────────────────────────────────
+
+/// Checks that a URL starts with http:// or https://
+pub(crate) fn validate_url(url: &str, field_name: &str) -> Result<(), String> {
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+        Err(format!("{} must start with http:// or https://", field_name))
+    } else {
+        Ok(())
+    }
+}
+
+/// Checks that a required string field is not empty
+pub(crate) fn validate_not_empty(value: &str, field_name: &str) -> Result<(), String> {
+    if value.is_empty() {
+        Err(format!("{} is required", field_name))
+    } else {
+        Ok(())
+    }
+}
+
+/// Validates that provider_type is one of the known OAuth types
+pub(crate) fn validate_oauth_provider_type(provider_type: &str) -> Result<(), String> {
+    let valid = ["slack", "discord", "github", "gitlab", "generic"];
+    if valid.contains(&provider_type) {
+        Ok(())
+    } else {
+        Err("Invalid provider type. Must be one of: slack, discord, github, gitlab, generic".into())
+    }
+}
+
+/// Returns provider-appropriate default scope for OAuth provider types
+pub(crate) fn default_oauth_scope(provider_type: &str) -> &'static str {
+    match provider_type {
+        "slack" => "openid email profile",
+        "discord" => "identify email",
+        "github" => "read:user user:email",
+        "gitlab" => "read_user",
+        _ => "openid email profile",
+    }
+}
+
+/// Default role if the provided role isn't valid, otherwise return it as-is
+pub(crate) fn sanitize_role(role: &str, valid_roles: &[&str], default: &str) -> String {
+    if valid_roles.contains(&role) { role.to_string() } else { default.to_string() }
+}
+
 // ─── SAML 2.0 SSO ─────────────────────────────────────────────────────────────
 
 #[reducer]
@@ -18,12 +64,8 @@ pub fn add_saml_provider(
     auto_register: bool,
     created_by: String,
 ) -> Result<(), String> {
-    if entity_id.is_empty() {
-        return Err("Entity ID is required".into());
-    }
-    if !sso_url.starts_with("http://") && !sso_url.starts_with("https://") {
-        return Err("SSO URL must start with http:// or https://".into());
-    }
+    validate_not_empty(&entity_id, "Entity ID")?;
+    validate_url(&sso_url, "SSO URL")?;
     let now = now_ms(ctx);
     ctx.db.saml_provider().insert(SamlProvider {
         id, name, slug, entity_id, sso_url,
@@ -53,12 +95,8 @@ pub fn update_saml_provider(
     auto_register: bool,
     is_active: bool,
 ) -> Result<(), String> {
-    if entity_id.is_empty() {
-        return Err("Entity ID is required".into());
-    }
-    if !sso_url.starts_with("http://") && !sso_url.starts_with("https://") {
-        return Err("SSO URL must start with http:// or https://".into());
-    }
+    validate_not_empty(&entity_id, "Entity ID")?;
+    validate_url(&sso_url, "SSO URL")?;
     let found = ctx.db.saml_provider().iter().find(|p| p.id == id);
     if found.is_none() {
         return Err("SAML provider not found".into());
@@ -104,12 +142,8 @@ pub fn add_oidc_provider(
     scopes: String,
     created_by: String,
 ) -> Result<(), String> {
-    if !issuer_url.starts_with("http://") && !issuer_url.starts_with("https://") {
-        return Err("Issuer URL must start with http:// or https://".into());
-    }
-    if client_id.is_empty() {
-        return Err("Client ID is required".into());
-    }
+    validate_url(&issuer_url, "Issuer URL")?;
+    validate_not_empty(&client_id, "Client ID")?;
     let now = now_ms(ctx);
     ctx.db.oidc_provider().insert(OidcProvider {
         id, name, slug, issuer_url, client_id,
@@ -135,12 +169,8 @@ pub fn update_oidc_provider(
     scopes: String,
     is_active: bool,
 ) -> Result<(), String> {
-    if !issuer_url.starts_with("http://") && !issuer_url.starts_with("https://") {
-        return Err("Issuer URL must start with http:// or https://".into());
-    }
-    if client_id.is_empty() {
-        return Err("Client ID is required".into());
-    }
+    validate_url(&issuer_url, "Issuer URL")?;
+    validate_not_empty(&client_id, "Client ID")?;
     let found = ctx.db.oidc_provider().iter().find(|p| p.id == id);
     if found.is_none() {
         return Err("OIDC provider not found".into());
@@ -192,17 +222,10 @@ pub fn add_ldap_provider(
     auto_register: bool,
     created_by: String,
 ) -> Result<(), String> {
-    if host.is_empty() {
-        return Err("LDAP host is required".into());
-    }
-    if base_dn.is_empty() {
-        return Err("Base DN is required".into());
-    }
-    if user_filter.is_empty() {
-        return Err("User filter is required".into());
-    }
-    let valid_roles = ["admin", "member", "viewer"];
-    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role.clone() } else { "member".into() };
+    validate_not_empty(&host, "LDAP host")?;
+    validate_not_empty(&base_dn, "Base DN")?;
+    validate_not_empty(&user_filter, "User filter")?;
+    let role_clean = sanitize_role(&default_role, &["admin", "member", "viewer"], "member");
     let now = now_ms(ctx);
     ctx.db.ldap_provider().insert(LdapProvider {
         id, name, slug, host, port, is_secure,
@@ -235,12 +258,8 @@ pub fn update_ldap_provider(
     auto_register: bool,
     is_active: bool,
 ) -> Result<(), String> {
-    if host.is_empty() {
-        return Err("LDAP host is required".into());
-    }
-    if base_dn.is_empty() {
-        return Err("Base DN is required".into());
-    }
+    validate_not_empty(&host, "LDAP host")?;
+    validate_not_empty(&base_dn, "Base DN")?;
     let found = ctx.db.ldap_provider().iter().find(|p| p.id == id);
     if found.is_none() {
         return Err("LDAP provider not found".into());
@@ -260,8 +279,7 @@ pub fn update_ldap_provider(
     provider.username_attribute = if username_attribute.is_empty() { "uid".into() } else { username_attribute };
     provider.email_attribute = if email_attribute.is_empty() { "mail".into() } else { email_attribute };
     provider.name_attribute = if name_attribute.is_empty() { "cn".into() } else { name_attribute };
-    let valid_roles = ["admin", "member", "viewer"];
-    provider.default_role = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    provider.default_role = sanitize_role(&default_role, &["admin", "member", "viewer"], "member");
     provider.auto_register = auto_register;
     provider.is_active = is_active;
     provider.updated_at = now_ms(ctx);
@@ -320,33 +338,15 @@ pub fn add_oauth_provider(
     default_role: String,
     created_by: String,
 ) -> Result<(), String> {
-    let valid_types = ["slack", "discord", "github", "gitlab", "generic"];
-    if !valid_types.contains(&provider_type.as_str()) {
-        return Err("Invalid provider type. Must be one of: slack, discord, github, gitlab, generic".into());
-    }
-    if name.is_empty() {
-        return Err("Provider name is required".into());
-    }
-    if client_id.is_empty() {
-        return Err("Client ID is required".into());
-    }
-    if client_secret.is_empty() {
-        return Err("Client secret is required".into());
-    }
+    validate_oauth_provider_type(&provider_type)?;
+    validate_not_empty(&name, "Provider name")?;
+    validate_not_empty(&client_id, "Client ID")?;
+    validate_not_empty(&client_secret, "Client secret")?;
     if authorize_url.is_empty() || token_url.is_empty() || userinfo_url.is_empty() {
         return Err("authorize_url, token_url, and userinfo_url are required".into());
     }
-    let valid_roles = ["admin", "member", "viewer"];
-    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role.clone() } else { "member".into() };
-    let scopes_clean = if scope.is_empty() {
-        match provider_type.as_str() {
-            "slack" => "openid email profile".into(),
-            "discord" => "identify email".into(),
-            "github" => "read:user user:email".into(),
-            "gitlab" => "read_user".into(),
-            _ => "openid email profile".into(),
-        }
-    } else { scope };
+    let role_clean = sanitize_role(&default_role, &["admin", "member", "viewer"], "member");
+    let scopes_clean = if scope.is_empty() { default_oauth_scope(&provider_type).into() } else { scope };
     let now = now_ms(ctx);
     let provider_type_clone = provider_type.clone();
     ctx.db.oauth_provider().insert(OauthProvider {
@@ -383,16 +383,9 @@ pub fn update_oauth_provider(
     if found.is_none() {
         return Err("OAuth provider not found".into());
     }
-    let valid_types = ["slack", "discord", "github", "gitlab", "generic"];
-    if !valid_types.contains(&provider_type.as_str()) {
-        return Err("Invalid provider type".into());
-    }
-    if name.is_empty() {
-        return Err("Provider name is required".into());
-    }
-    if client_id.is_empty() {
-        return Err("Client ID is required".into());
-    }
+    validate_oauth_provider_type(&provider_type)?;
+    validate_not_empty(&name, "Provider name")?;
+    validate_not_empty(&client_id, "Client ID")?;
     let mut provider = found.unwrap();
     provider.name = name;
     provider.slug = slug;
@@ -409,8 +402,7 @@ pub fn update_oauth_provider(
     }
     provider.icon = if icon.is_empty() { provider.provider_type.clone() } else { icon };
     provider.auto_register = auto_register;
-    let valid_roles = ["admin", "member", "viewer"];
-    provider.default_role = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    provider.default_role = sanitize_role(&default_role, &["admin", "member", "viewer"], "member");
     provider.is_active = is_active;
     provider.updated_at = now_ms(ctx);
     ctx.db.oauth_provider().id().update(provider);
@@ -471,4 +463,146 @@ pub fn unlink_oauth_user(ctx: &ReducerContext, id: String) -> Result<(), String>
     }
     ctx.db.oauth_user().id().delete(&id);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ─── validate_url ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_validate_url_accepts_https() {
+        assert!(validate_url("https://example.com", "URL").is_ok());
+    }
+
+    #[test]
+    fn test_validate_url_accepts_http() {
+        assert!(validate_url("http://example.com", "URL").is_ok());
+    }
+
+    #[test]
+    fn test_validate_url_rejects_no_scheme() {
+        let err = validate_url("example.com", "URL").unwrap_err();
+        assert!(err.contains("must start with http:// or https://"));
+    }
+
+    #[test]
+    fn test_validate_url_rejects_ftp() {
+        let err = validate_url("ftp://example.com", "URL").unwrap_err();
+        assert!(err.contains("must start with http:// or https://"));
+    }
+
+    #[test]
+    fn test_validate_url_rejects_empty() {
+        let err = validate_url("", "URL").unwrap_err();
+        assert!(err.contains("must start with http:// or https://"));
+    }
+
+    #[test]
+    fn test_validate_url_uses_field_name_in_error() {
+        let err = validate_url("bad", "Issuer URL").unwrap_err();
+        assert!(err.contains("Issuer URL"));
+    }
+
+    // ─── validate_not_empty ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_validate_not_empty_accepts_non_empty() {
+        assert!(validate_not_empty("hello", "Field").is_ok());
+    }
+
+    #[test]
+    fn test_validate_not_empty_rejects_empty() {
+        let err = validate_not_empty("", "Field").unwrap_err();
+        assert!(err.contains("required"));
+    }
+
+    #[test]
+    fn test_validate_not_empty_uses_field_name() {
+        let err = validate_not_empty("", "Client ID").unwrap_err();
+        assert!(err.contains("Client ID"));
+    }
+
+    #[test]
+    fn test_validate_not_empty_accepts_whitespace() {
+        // Whitespace is still non-empty
+        assert!(validate_not_empty(" ", "Field").is_ok());
+    }
+
+    // ─── validate_oauth_provider_type ───────────────────────────────────────────
+
+    #[test]
+    fn test_validate_oauth_provider_type_accepts_known_types() {
+        assert!(validate_oauth_provider_type("slack").is_ok());
+        assert!(validate_oauth_provider_type("discord").is_ok());
+        assert!(validate_oauth_provider_type("github").is_ok());
+        assert!(validate_oauth_provider_type("gitlab").is_ok());
+        assert!(validate_oauth_provider_type("generic").is_ok());
+    }
+
+    #[test]
+    fn test_validate_oauth_provider_type_rejects_unknown() {
+        let err = validate_oauth_provider_type("microsoft").unwrap_err();
+        assert!(err.contains("Invalid provider type"));
+    }
+
+    #[test]
+    fn test_validate_oauth_provider_type_rejects_empty() {
+        let err = validate_oauth_provider_type("").unwrap_err();
+        assert!(err.contains("Invalid provider type"));
+    }
+
+    // ─── default_oauth_scope ────────────────────────────────────────────────────
+
+    #[test]
+    fn test_default_oauth_scope_slack() {
+        assert_eq!(default_oauth_scope("slack"), "openid email profile");
+    }
+
+    #[test]
+    fn test_default_oauth_scope_discord() {
+        assert_eq!(default_oauth_scope("discord"), "identify email");
+    }
+
+    #[test]
+    fn test_default_oauth_scope_github() {
+        assert_eq!(default_oauth_scope("github"), "read:user user:email");
+    }
+
+    #[test]
+    fn test_default_oauth_scope_gitlab() {
+        assert_eq!(default_oauth_scope("gitlab"), "read_user");
+    }
+
+    #[test]
+    fn test_default_oauth_scope_generic() {
+        assert_eq!(default_oauth_scope("generic"), "openid email profile");
+    }
+
+    #[test]
+    fn test_default_oauth_scope_unknown_falls_back() {
+        assert_eq!(default_oauth_scope("unknown"), "openid email profile");
+    }
+
+    // ─── sanitize_role ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_sanitize_role_passes_valid() {
+        assert_eq!(sanitize_role("admin", &["admin", "member", "viewer"], "member"), "admin");
+        assert_eq!(sanitize_role("member", &["admin", "member", "viewer"], "member"), "member");
+        assert_eq!(sanitize_role("viewer", &["admin", "member", "viewer"], "member"), "viewer");
+    }
+
+    #[test]
+    fn test_sanitize_role_defaults_on_invalid() {
+        assert_eq!(sanitize_role("editor", &["admin", "member", "viewer"], "member"), "member");
+        assert_eq!(sanitize_role("owner", &["admin", "member", "viewer"], "viewer"), "viewer");
+        assert_eq!(sanitize_role("superadmin", &["admin", "member", "viewer"], "viewer"), "viewer");
+    }
+
+    #[test]
+    fn test_sanitize_role_uses_custom_default() {
+        assert_eq!(sanitize_role("", &["admin", "member", "viewer"], "viewer"), "viewer");
+    }
 }

@@ -10,7 +10,9 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| | | |
+| P5 | Rust unit tests for sso.rs (SAML/OIDC/LDAP/OAuth CRUD reducers) — 474 lines, zero tests, | |
+| P5 | Rust unit tests for tables.rs — table validation tests | |
+| P5 | Rust unit tests for lib.rs — reducer-level integration tests | |
 
 ---
 
@@ -25,8 +27,3 @@ and works the top pending item each tick.
 | 2026-06-29 | **P4 — TypeScript tests for PageView.tsx** — 38 tests (loading, error, loaded, actions, comments, export, share, TOC, color picker, attachments, word count, revisions, a11y). Fixed 5 a11y violations (back button, emoji picker, send button, file input, editor aria-label) and heading level hierarchy. | 16ea81cb |
 | 2026-06-29 | **P1 — PageView.tsx StarterKit crash** — Import StarterKit from @tiptap/starter-kit | 873614dd |
 | 2026-06-29 | **P1 — Vite proxy wrong port (8722→8711)** — Fixed vite.config.ts proxy target | 873614dd |
-| 2026-06-29 | **P3 — Light mode toggle doesn't work** — Synced Tailwind 'dark' class with theme state | 7aa2946f |
-| 2026-06-29 | **P3 — API Docs broken URL** — Used relative /docs path, proxy in vite.config.ts | d0a37fe5 |
-| 2026-06-29 | **P4 — Session lost on full page nav** — Fixed: `useEffect` reads `sw_user_id` from localStorage on pathname change | 97f6fc83 |
-| 2026-06-29 | **P4 — TypeScript tests for 6 uncovered components** — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings (129 total tests) | eaea2704 |
-| 2026-06-29 | **E2E: 59/59 tests passing** — Fixed anchorData.text.slice crash. All 59 Playwright tests pass. | 0e2aedab |
