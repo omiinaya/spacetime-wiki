@@ -577,6 +577,10 @@ export function PageView({ pageId, userId }: Props) {
     })(),
     editable: false,
     editorProps: {
+      attributes: {
+        "aria-label": "Page content",
+        role: "textbox",
+      },
       handleClick: (_view, _pos, event) => {
         const target = event.target as HTMLElement;
         if (target.tagName === "IMG" && target.getAttribute("src")) {
@@ -1166,7 +1170,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 h-12">
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
+            <button onClick={() => navigate(-1)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Go back" aria-label="Go back">
               <ArrowLeft className="h-4 w-4" />
             </button>
             {page.status === "draft" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-500">Draft</span>}
@@ -1396,7 +1400,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           </div>
         )}
         <h1 className="text-3xl font-bold flex items-center gap-2 min-w-0">
-          <button onClick={() => setShowEmoji(!showEmoji)} className="text-2xl hover:scale-110 transition-transform shrink-0">
+          <button onClick={() => setShowEmoji(!showEmoji)} className="text-2xl hover:scale-110 transition-transform shrink-0" aria-label={page.icon ? `Page icon: ${page.icon}` : "Set page icon"}>
             {page.icon || "📄"}
           </button>
           {editingTitle ? (
@@ -1536,7 +1540,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
         <div className="pt-6 space-y-4">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Comments ({comments.length})</h3>
+            <h2 className="text-sm font-semibold">Comments ({comments.length})</h2>
             {anchorComment && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                 Text selected
@@ -1555,7 +1559,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                 minRows={1}
               />
               <button onClick={handleAddComment} disabled={!newComment.trim()}
-                className="h-9 px-3 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 self-start">
+                className="h-9 px-3 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 self-start" aria-label="Send comment">
                 <Send className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -1707,7 +1711,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
         <div className="pt-6 space-y-4">
           <div className="flex items-center gap-2">
             <Paperclip className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Attachments ({attachments.length})</h3>
+            <h2 className="text-sm font-semibold">Attachments ({attachments.length})</h2>
           </div>
 
           {userId && (
@@ -1717,6 +1721,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                 type="file"
                 onChange={handleFileUpload}
                 className="hidden"
+                aria-label="Upload file attachment"
               />
               <button
                 onClick={() => attachInputRef.current?.click()}
@@ -1828,7 +1833,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
         <div className="side-panel fixed inset-y-0 right-0 w-64 bg-sidebar border-l border-border z-20 overflow-y-auto">
           <div className="sticky top-0 bg-sidebar z-10">
             <div className="flex items-center justify-between px-4 h-12 border-b border-border">
-              <h3 className="text-sm font-semibold">Table of Contents</h3>
+              <h2 className="text-sm font-semibold">Table of Contents</h2>
               <button onClick={() => setShowToc(false)} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
                 <X className="h-4 w-4" />
               </button>
@@ -1869,7 +1874,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
         <div className="side-panel fixed inset-y-0 right-0 w-72 bg-sidebar border-l border-border z-20 overflow-y-auto">
           <div className="sticky top-0 bg-sidebar z-10">
             <div className="flex items-center justify-between px-4 h-12 border-b border-border">
-              <h3 className="text-sm font-semibold flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Relationships</h3>
+              <h2 className="text-sm font-semibold flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Relationships</h2>
               <button onClick={() => setShowRelationships(false)} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
                 <X className="h-4 w-4" />
               </button>
@@ -1962,7 +1967,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
         <div className="side-panel fixed inset-y-0 right-0 w-80 bg-sidebar border-l border-border z-20 overflow-y-auto">
           <div className="sticky top-0 bg-sidebar z-10">
             <div className="flex items-center justify-between px-4 h-12 border-b border-border">
-              <h3 className="text-sm font-semibold">History ({revisions.length})</h3>
+              <h2 className="text-sm font-semibold">History ({revisions.length})</h2>
               <button onClick={() => setShowRevisions(false)} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
                 <X className="h-4 w-4" />
               </button>
