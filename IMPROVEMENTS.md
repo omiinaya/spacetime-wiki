@@ -10,8 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| P4 | **Update npm dependencies (minor/patch safe)** — lucide-react 1.21.0→1.22.0, mermaid 11.15.0→11.16.0, postcss 8.5.15→8.5.16, react-router-dom 7.18.0→7.18.1, @types/jszip 3.4.0→3.4.1, typescript-eslint 8.61.1→8.62.1 | |
-| P4 | **Add TypeScript tests for PageView.tsx** — Core page view component, no unit tests yet | |
 | P4 | **Add TypeScript tests for PageEditor.tsx** — Core page editor component, no unit tests yet | |
 | P5 | **Add TypeScript tests for admin components (15 files)** — All admin panel components untested | |
 | P5 | **Add TypeScript tests for Tiptap extensions (6 files)** — Math.tsx, Mermaid.tsx, Drawio.tsx, PlantUML.tsx, Transclusion.tsx, SyncedBlock.tsx, DatabaseBase.tsx, ImageEnhanced.tsx | |
@@ -23,6 +21,7 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
+| 2026-06-29 | **P4 — TypeScript tests for PageView.tsx** — 38 tests (loading, error, loaded, actions, comments, export, share, TOC, color picker, attachments, word count, revisions, a11y). Fixed 5 a11y violations (back button, emoji picker, send button, file input, editor aria-label) and heading level hierarchy. | 16ea81cb |
 | 2026-06-29 | **P1 — PageView.tsx StarterKit crash** — Import StarterKit from @tiptap/starter-kit | 873614dd |
 | 2026-06-29 | **P1 — Vite proxy wrong port (8722→8711)** — Fixed vite.config.ts proxy target | 873614dd |
 | 2026-06-29 | **P3 — Light mode toggle doesn't work** — Synced Tailwind 'dark' class with theme state | 7aa2946f |
