@@ -7,7 +7,7 @@
 >
 > ## Honest Assessment — July 2026
 >
-> **Overall grade: 88/100** — Up from 83/100. WebAuthn cryptographic verification implemented.
+> **Overall grade: 90/100** — Up from 88/100. Python error handling with structured logging added, WebAuthn fully implemented.
 >
 > | Dimension | Score | Key Finding |
 > |-----------|:-----:|-------------|
@@ -16,7 +16,7 @@
 > | **Test coverage (STDB Rust)** | **70%** | 3,512 test lines (48.5% of total), but ~2,000 are repetitive struct-construction tests. Real reducer logic has <20% coverage. No integration tests that call reducers against a live STDB |
 > | **Code quality (frontend)** | **70%** | tsc --noEmit clean. 150+ `any` type usages remain. **tiptap-helpers.ts consolidated into helpers.ts** — no more duplicated helper files. **60 lines of dead code removed from PageView.tsx** |
 > | **Code quality (Rust)** | **75%** | **All 33 guarded `unwrap()` calls converted to `.ok_or_else()`** — 3 test-only unwraps remain. 15 non-idempotent reducers still. SHA-256 for password hashing still |
-> | **Code quality (Python API)** | **60%** | **Write-path SQL injection eliminated** — 6 UPDATE/DELETE queries in auth.py, collections.py, pages.py converted to call_reducer(). 50+ read-only SELECT queries with f-strings remain (lower risk) |
+> | **Code quality (Python API)** | **65%** | **Write-path SQL injection eliminated** — 6 UPDATE/DELETE queries in auth.py, collections.py, pages.py converted to call_reducer(). **Error handling added** — global exception handler with structured logging in main.py and stdb_client.py. 50+ read-only SELECT queries with f-strings remain (lower risk) |
 > | **STDB best practices** | **70%** | **`#[init]` reducer added** with defaults. **~40 full table scans eliminated via `.id().find()`**. 15 non-idempotent reducers remain. No integration tests |
 > | **Security** | **80%** | **Write-path SQL injection fixed** (was critical). **WebAuthn signature verification implemented** — attestation + assertion verified via `webauthn` package. Read-path SELECT queries with f-strings still present. No timing-safe comparison for API keys. SHA-256 passwords |
 > | **Runtime health** | **90%** | TypeScript compiles clean (tsc 0 errors). Rust compiles clean (cargo check 0 errors, 44 dead_code warnings). 198 Rust tests pass. 1191 frontend tests pass (3 pre-existing flakes). Python imports clean |
@@ -31,8 +31,7 @@
 > | Area | Detail |
 > |------|--------|
 > | **Attachments** | Metadata CRUD works, but file/blob storage and preview rendering are minimal. Storage key pattern implies external blob integration |
-> | **WebAuthn** | Credential storage works, but **signature verification is not implemented** (code comments confirm this) |
-> | **Python error handling** | `pages.py`, `collections.py`, `auth.py` (routers) have zero try/except — any STDB connection failure returns a generic 500 with no logging |
+> | **WebAuthn** | ~~Signature verification not implemented~~ — now fully verified via `webauthn` package with COSE key parsing, attestation, and assertion verification |
 > | **Rust tests** | 3,512 LOC of tests but ~2,000 are repetitive struct default tests. Reducer logic is poorly tested |
 > | **API key prefix** | 8-char prefix used for lookup (32 bits of entropy) — unnecessarily weak |
 >

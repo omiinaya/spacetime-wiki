@@ -1,7 +1,15 @@
 """SpacetimeWiki REST API — FastAPI application."""
 
 import json
+import logging
 import os
+import traceback
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
 
 import uvicorn
 from fastapi import FastAPI
@@ -41,6 +49,20 @@ app = FastAPI(
 # Rate-limit handler
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Global exception handler — logs and returns clean 500 for unhandled errors
+logger = logging.getLogger("spacetime-wiki-api")
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc)
+    logger.debug("Traceback:\n%s", traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "type": type(exc).__name__},
+    )
+
 
 # CORS
 app.add_middleware(
@@ -92,7 +114,7 @@ async def download_openapi_spec():
 
 # ─── Auto-star GitHub repo on startup ─────────────────────────────────────────
 
-import threading, urllib.request, json, os, logging
+import threading, urllib.request, json, os
 
 logger = logging.getLogger(__name__)
 
