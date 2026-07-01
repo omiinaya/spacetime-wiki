@@ -142,7 +142,7 @@ export function SidebarTree({
                           const start = Math.max(0, idx - 30);
                           const end = Math.min(text.length, idx + q.length + 50);
                           const snippet = text.slice(start, end);
-                          const parts: JSX.Element[] = [];
+                          const parts: React.ReactNode[] = [];
                           const lowerSnippet = snippet.toLowerCase();
                           let cursor = 0;
                           let matchIdx = lowerSnippet.indexOf(q, cursor);

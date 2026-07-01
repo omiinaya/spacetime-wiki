@@ -1604,7 +1604,7 @@ const AppLayout = () => {
       )}
 
       {/* Admin panel */}
-      <AdminPanels userId={userId} allUsers={allUsers} setAllUsers={setAllUsers} />
+      <AdminPanels userId={userId ?? ''} allUsers={allUsers} setAllUsers={setAllUsers} />
 
 
       {/* Share dialog */}
