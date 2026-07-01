@@ -5,11 +5,7 @@ use crate::*;
 
 #[reducer]
 pub fn mark_as_template(ctx: &ReducerContext, id: String, is_template: bool) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().id().find(id).ok_or_else(|| "Page not found".to_string())?;
     page.is_template = is_template;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -35,7 +31,7 @@ pub fn create_from_template(
         collection_id, String::new(), created_by,
     )?;
     // Mark which template was used
-    if let Some(mut new_page) = ctx.db.page().iter().find(|p| p.id == new_id) {
+    if let Some(mut new_page) = ctx.db.page().id().find(new_id) {
         new_page.template_id = template_id;
         ctx.db.page().id().update(new_page);
     }

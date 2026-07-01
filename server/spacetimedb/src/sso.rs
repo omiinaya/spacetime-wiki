@@ -97,11 +97,7 @@ pub fn update_saml_provider(
 ) -> Result<(), String> {
     validate_not_empty(&entity_id, "Entity ID")?;
     validate_url(&sso_url, "SSO URL")?;
-    let found = ctx.db.saml_provider().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("SAML provider not found".into());
-    }
-    let mut provider = found.unwrap();
+    let mut provider = ctx.db.saml_provider().id().find(id).ok_or_else(|| "SAML provider not found".to_string())?;
     provider.name = name;
     provider.slug = slug;
     provider.entity_id = entity_id;
@@ -120,8 +116,7 @@ pub fn update_saml_provider(
 
 #[reducer]
 pub fn delete_saml_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.saml_provider().iter().find(|p| p.id == id);
-    if found.is_none() {
+    if ctx.db.saml_provider().id().find(&id).is_none() {
         return Err("SAML provider not found".into());
     }
     ctx.db.saml_provider().id().delete(&id);
@@ -171,11 +166,7 @@ pub fn update_oidc_provider(
 ) -> Result<(), String> {
     validate_url(&issuer_url, "Issuer URL")?;
     validate_not_empty(&client_id, "Client ID")?;
-    let found = ctx.db.oidc_provider().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("OIDC provider not found".into());
-    }
-    let mut provider = found.unwrap();
+    let mut provider = ctx.db.oidc_provider().id().find(id).ok_or_else(|| "OIDC provider not found".to_string())?;
     provider.name = name;
     provider.slug = slug;
     provider.issuer_url = issuer_url;
@@ -192,7 +183,7 @@ pub fn update_oidc_provider(
 
 #[reducer]
 pub fn delete_oidc_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.oidc_provider().iter().find(|p| p.id == id);
+    let found = ctx.db.oidc_provider().id().find(id.clone());
     if found.is_none() {
         return Err("OIDC provider not found".into());
     }
@@ -260,7 +251,7 @@ pub fn update_ldap_provider(
 ) -> Result<(), String> {
     validate_not_empty(&host, "LDAP host")?;
     validate_not_empty(&base_dn, "Base DN")?;
-    let found = ctx.db.ldap_provider().iter().find(|p| p.id == id);
+    let found = ctx.db.ldap_provider().id().find(id.clone());
     if found.is_none() {
         return Err("LDAP provider not found".into());
     }
@@ -289,7 +280,7 @@ pub fn update_ldap_provider(
 
 #[reducer]
 pub fn delete_ldap_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.ldap_provider().iter().find(|p| p.id == id);
+    let found = ctx.db.ldap_provider().id().find(id.clone());
     if found.is_none() {
         return Err("LDAP provider not found".into());
     }
@@ -379,7 +370,7 @@ pub fn update_oauth_provider(
     default_role: String,
     is_active: bool,
 ) -> Result<(), String> {
-    let found = ctx.db.oauth_provider().iter().find(|p| p.id == id);
+    let found = ctx.db.oauth_provider().id().find(id.clone());
     if found.is_none() {
         return Err("OAuth provider not found".into());
     }
@@ -411,7 +402,7 @@ pub fn update_oauth_provider(
 
 #[reducer]
 pub fn delete_oauth_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.oauth_provider().iter().find(|p| p.id == id);
+    let found = ctx.db.oauth_provider().id().find(id.clone());
     if found.is_none() {
         return Err("OAuth provider not found".into());
     }

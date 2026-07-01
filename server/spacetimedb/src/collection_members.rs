@@ -36,11 +36,7 @@ pub fn update_collection_member_role(
     if !valid_roles.contains(&new_role.as_str()) {
         return Err("Invalid role. Must be admin, editor, or viewer".into());
     }
-    let found = ctx.db.collection_member().iter().find(|m| m.id == id);
-    if found.is_none() {
-        return Err("Member not found".into());
-    }
-    let mut member = found.unwrap();
+    let mut member = ctx.db.collection_member().id().find(id).ok_or_else(|| "Member not found".to_string())?;
     member.role = new_role;
     ctx.db.collection_member().id().update(member);
     Ok(())

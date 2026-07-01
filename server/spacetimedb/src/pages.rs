@@ -55,11 +55,7 @@ pub fn update_page(
     content: String,
     updated_by: String,
 ) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
     let slug = make_slug(&title);
     let text_content = extract_text_content(&content);
     let now = now_ms(ctx);
@@ -92,11 +88,7 @@ pub fn update_page(
 
 #[reducer]
 pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
     let now = now_ms(ctx);
     let valid_statuses = ["draft", "published", "archived", "deleted"];
     if !valid_statuses.contains(&status.as_str()) {
@@ -236,11 +228,7 @@ pub fn duplicate_page(
     id: String,
     created_by: String,
 ) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let page = found.unwrap();
+    let page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
     create_page(
         ctx, new_id,
         format!("{} (copy)", page.title),
@@ -256,11 +244,7 @@ pub fn move_page(
     new_collection_id: String,
     new_parent_page_id: String,
 ) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
     page.collection_id = new_collection_id;
     page.parent_page_id = new_parent_page_id;
     page.updated_at = now_ms(ctx);
@@ -272,7 +256,7 @@ pub fn move_page(
 pub fn reorder_pages(ctx: &ReducerContext, ordered_ids: Vec<String>) -> Result<(), String> {
     let now = now_ms(ctx);
     for (i, id) in ordered_ids.iter().enumerate() {
-        if let Some(mut page) = ctx.db.page().iter().find(|p| &p.id == id) {
+        if let Some(mut page) = ctx.db.page().id().find(id) {
             page.sort_order = i as u32;
             page.updated_at = now;
             ctx.db.page().id().update(page);
@@ -283,11 +267,7 @@ pub fn reorder_pages(ctx: &ReducerContext, ordered_ids: Vec<String>) -> Result<(
 
 #[reducer]
 pub fn set_page_icon(ctx: &ReducerContext, id: String, icon: String) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
     page.icon = icon;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -296,11 +276,7 @@ pub fn set_page_icon(ctx: &ReducerContext, id: String, icon: String) -> Result<(
 
 #[reducer]
 pub fn set_page_full_width(ctx: &ReducerContext, id: String, full_width: bool) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
     page.full_width = full_width;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -309,11 +285,7 @@ pub fn set_page_full_width(ctx: &ReducerContext, id: String, full_width: bool) -
 
 #[reducer]
 pub fn set_page_color(ctx: &ReducerContext, id: String, color: String) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
     page.color = color;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -322,11 +294,7 @@ pub fn set_page_color(ctx: &ReducerContext, id: String, color: String) -> Result
 
 #[reducer]
 pub fn set_page_pinned(ctx: &ReducerContext, id: String, is_pinned: bool) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
     page.is_pinned = is_pinned;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -340,11 +308,7 @@ pub fn set_page_direction(ctx: &ReducerContext, id: String, direction: String) -
     if direction != "ltr" && direction != "rtl" {
         return Err("Direction must be 'ltr' or 'rtl'".into());
     }
-    let found = ctx.db.page().iter().find(|p| p.id == id);
-    if found.is_none() {
-        return Err("Page not found".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
     page.direction = direction;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);

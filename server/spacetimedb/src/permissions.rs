@@ -40,11 +40,7 @@ pub fn update_group(
     name: String,
     description: String,
 ) -> Result<(), String> {
-    let found = ctx.db.group().iter().find(|g| g.id == id);
-    if found.is_none() {
-        return Err("Group not found".into());
-    }
-    let mut group = found.unwrap();
+    let mut group = ctx.db.group().id().find(id).ok_or_else(|| "Group not found".to_string())?;
     group.name = name;
     group.description = description;
     group.updated_at = now_ms(ctx);
@@ -97,11 +93,7 @@ pub fn update_group_member_role(
     if !valid_group_role(&new_role) {
         return Err("Invalid role. Must be admin or member".into());
     }
-    let found = ctx.db.group_member().iter().find(|m| m.id == id);
-    if found.is_none() {
-        return Err("Group member not found".into());
-    }
-    let mut member = found.unwrap();
+    let mut member = ctx.db.group_member().id().find(id).ok_or_else(|| "Group member not found".to_string())?;
     member.role = new_role;
     ctx.db.group_member().id().update(member);
     Ok(())
