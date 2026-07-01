@@ -929,17 +929,7 @@ export function PageEditor({ userId }: Props) {
         codeBlock: false, // replaced by CodeBlockLowlight
         link: false,     // use explicit Link.configure below
       }),
-      Typography.configure({
-        emDash: true,
-        ellipsis: true,
-        openCloseQuote: true,
-        leftArrow: true,
-        rightArrow: true,
-        trademark: true,
-        copyright: true,
-        serviceMark: true,
-        registeredTrademark: true,
-      }),
+      Typography,
       HeadingWithId.configure({ levels: [1, 2, 3] }),
       DragHandle,
       Placeholder.configure({ placeholder: "Start writing... or type / for commands" }),

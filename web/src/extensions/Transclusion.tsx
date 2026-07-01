@@ -247,8 +247,8 @@ function TransclusionContentRenderer({ content }: { content: any }) {
 
   if (content.type === "heading") {
     const level = content.attrs?.level || 1;
-    const Tag = `h${level}` as keyof JSX.IntrinsicElements;
     const sizeClass = ["", "text-xl", "text-lg", "text-base"][level] || "text-base";
+    const Tag = `h${level}` as React.ElementType;
     return (
       <Tag className={`${sizeClass} font-semibold mt-2 mb-1`}>
         {content.content?.map((c: any, i: number) => <TransclusionContentRenderer key={i} content={c} />)}

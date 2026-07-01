@@ -210,12 +210,13 @@ async def list_users(
         raise HTTPException(status_code=401, detail="Invalid or missing SCIM token")
 
     sql = "SELECT * FROM user"
+    bind_args = []
     if filter and "userName eq" in filter:
         email = filter.split("eq")[-1].strip().strip('"').strip("'")
-        safe = email.replace("'", "''")
-        sql += f" WHERE email = '{safe}'"
+        sql += " WHERE email = ?"
+        bind_args.append(email)
 
-    rows = await sql_query(sql)
+    rows = await sql_query(sql, *bind_args)
     all_users = rows if isinstance(rows, list) else []
     scim_users = [_wiki_user_to_scim([u]) for u in all_users]
     scim_users = [u for u in scim_users if u is not None]
@@ -239,8 +240,7 @@ async def get_user(request: Request, user_id: str):
     pid = await _get_provider(request)
     if not pid:
         raise HTTPException(status_code=401, detail="Invalid or missing SCIM token")
-    safe_id = user_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM user WHERE id = '{safe_id}'")
+    rows = await sql_query("SELECT * FROM user WHERE id = ?", user_id)
     scim_user = _wiki_user_to_scim(rows)
     if not scim_user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -254,8 +254,7 @@ async def create_user(request: Request):
         raise HTTPException(status_code=401, detail="Invalid or missing SCIM token")
 
     body = await request.json()
-    safe_pid = pid.replace("'", "''")
-    pr_rows = await sql_query(f"SELECT * FROM scim_provider WHERE id = '{safe_pid}'")
+    pr_rows = await sql_query("SELECT * FROM scim_provider WHERE id = ?", pid)
     if not pr_rows:
         raise HTTPException(status_code=500, detail="Provider config not found")
 
@@ -279,11 +278,10 @@ async def create_user(request: Request):
     if not email:
         raise HTTPException(status_code=400, detail="User must have an email")
 
-    safe_email = email.replace("'", "''")
-    existing = await sql_query(f"SELECT id FROM user WHERE email = '{safe_email}'")
+    existing = await sql_query("SELECT id FROM user WHERE email = ?", email)
     if existing:
         uid = str(existing[0][0]) if isinstance(existing[0], list) else str(existing[0].get("id", ""))
-        scim_user = _wiki_user_to_scim(await sql_query(f"SELECT * FROM user WHERE id = '{uid}'"))
+        scim_user = _wiki_user_to_scim(await sql_query("SELECT * FROM user WHERE id = ?", uid))
         if scim_user:
             scim_user["meta"]["location"] = f"/scim/v2/Users/{uid}"
             return JSONResponse(status_code=200, content=scim_user)
@@ -296,7 +294,7 @@ async def create_user(request: Request):
         await _record_event(pid, "User", "POST", external_id, "", "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to create user: {e}")
 
-    rows = await sql_query(f"SELECT * FROM user WHERE email = '{safe_email}'")
+    rows = await sql_query("SELECT * FROM user WHERE email = ?", email)
     scim_user = _wiki_user_to_scim(rows)
     if scim_user:
         uid = scim_user["id"]
@@ -320,7 +318,6 @@ async def update_user(request: Request, user_id: str):
     display_name = body.get("displayName", name_obj.get("formatted", email))
     active = body.get("active", True)
     external_id = body.get("externalId", "")
-    safe_pid = pid.replace("'", "''")
 
     if not email:
         raise HTTPException(status_code=400, detail="User must have an email")
@@ -333,11 +330,9 @@ async def update_user(request: Request, user_id: str):
         await _record_event(pid, "User", "PUT", external_id, user_id, "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to update user: {e}")
 
-    safe_email = email.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM user WHERE email = '{safe_email}'")
+    rows = await sql_query("SELECT * FROM user WHERE email = ?", email)
     if not rows:
-        safe_id = user_id.replace("'", "''")
-        rows = await sql_query(f"SELECT * FROM user WHERE id = '{safe_id}'")
+        rows = await sql_query("SELECT * FROM user WHERE id = ?", user_id)
 
     scim_user = _wiki_user_to_scim(rows)
     if not scim_user:
@@ -347,7 +342,7 @@ async def update_user(request: Request, user_id: str):
     scim_user["meta"]["location"] = f"/scim/v2/Users/{uid}"
 
     if not active:
-        pr2 = await sql_query(f"SELECT deprovision_behavior FROM scim_provider WHERE id = '{safe_pid}'")
+        pr2 = await sql_query("SELECT deprovision_behavior FROM scim_provider WHERE id = ?", pid)
         behavior = "deactivate"
         if pr2:
             r = pr2[0]
@@ -367,8 +362,7 @@ async def delete_user(request: Request, user_id: str):
     if not pid:
         raise HTTPException(status_code=401, detail="Invalid or missing SCIM token")
 
-    safe_id = user_id.replace("'", "''")
-    rows = await sql_query(f"SELECT email FROM user WHERE id = '{safe_id}'")
+    rows = await sql_query("SELECT email FROM user WHERE id = ?", user_id)
     if not rows:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -399,20 +393,20 @@ async def list_groups(
         raise HTTPException(status_code=401, detail="Invalid or missing SCIM token")
 
     sql = "SELECT * FROM \"group\""
+    bind_args = []
     if filter and "displayName eq" in filter:
         name = filter.split("eq")[-1].strip().strip('"').strip("'")
-        safe = name.replace("'", "''")
-        sql += f" WHERE name = '{safe}'"
+        sql += " WHERE name = ?"
+        bind_args.append(name)
 
-    rows = await sql_query(sql)
+    rows = await sql_query(sql, *bind_args)
     all_groups = rows if isinstance(rows, list) else []
     scim_groups = []
     for g in all_groups:
         sg = _wiki_group_to_scim([g])
         if sg:
             gid = sg["id"]
-            safe_gid = gid.replace("'", "''")
-            members = await sql_query(f"SELECT user_id FROM group_member WHERE group_id = '{safe_gid}'")
+            members = await sql_query("SELECT user_id FROM group_member WHERE group_id = ?", gid)
             if members:
                 for m in members:
                     uid = str(m[0]) if isinstance(m, list) else str(m.get("user_id", ""))
@@ -439,13 +433,12 @@ async def get_group(request: Request, group_id: str):
     if not pid:
         raise HTTPException(status_code=401, detail="Invalid or missing SCIM token")
 
-    safe_id = group_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM \"group\" WHERE id = '{safe_id}'")
+    rows = await sql_query("SELECT * FROM \"group\" WHERE id = ?", group_id)
     sg = _wiki_group_to_scim(rows)
     if not sg:
         raise HTTPException(status_code=404, detail="Group not found")
 
-    members = await sql_query(f"SELECT user_id FROM group_member WHERE group_id = '{safe_id}'")
+    members = await sql_query("SELECT user_id FROM group_member WHERE group_id = ?", group_id)
     if members:
         for m in members:
             uid = str(m[0]) if isinstance(m, list) else str(m.get("user_id", ""))
@@ -466,11 +459,10 @@ async def create_group(request: Request):
     if not display_name:
         raise HTTPException(status_code=400, detail="displayName is required")
 
-    safe_name = display_name.replace("'", "''")
-    existing = await sql_query(f"SELECT id FROM \"group\" WHERE name = '{safe_name}'")
+    existing = await sql_query("SELECT id FROM \"group\" WHERE name = ?", display_name)
     if existing:
         gid = str(existing[0][0]) if isinstance(existing[0], list) else str(existing[0].get("id", ""))
-        sg = _wiki_group_to_scim(await sql_query(f"SELECT * FROM \"group\" WHERE id = '{gid}'"))
+        sg = _wiki_group_to_scim(await sql_query("SELECT * FROM \"group\" WHERE id = ?", gid))
         if sg:
             sg["meta"]["location"] = f"/scim/v2/Groups/{gid}"
             return JSONResponse(status_code=200, content=sg)
@@ -482,7 +474,7 @@ async def create_group(request: Request):
         await _record_event(pid, "Group", "POST", external_id, "", "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to create group: {e}")
 
-    sg = _wiki_group_to_scim(await sql_query(f"SELECT * FROM \"group\" WHERE id = '{gid}'"))
+    sg = _wiki_group_to_scim(await sql_query("SELECT * FROM \"group\" WHERE id = ?", gid))
     if sg:
         sg["meta"]["location"] = f"/scim/v2/Groups/{gid}"
         await _record_event(pid, "Group", "POST", external_id, gid, "success",
@@ -504,8 +496,7 @@ async def update_group(request: Request, group_id: str):
     if not display_name:
         raise HTTPException(status_code=400, detail="displayName is required")
 
-    safe_id = group_id.replace("'", "''")
-    existing = await sql_query(f"SELECT * FROM \"group\" WHERE id = '{safe_id}'")
+    existing = await sql_query("SELECT * FROM \"group\" WHERE id = ?", group_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Group not found")
 
@@ -515,10 +506,10 @@ async def update_group(request: Request, group_id: str):
         await _record_event(pid, "Group", "PUT", external_id, group_id, "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to update group: {e}")
 
-    sg = _wiki_group_to_scim(await sql_query(f"SELECT * FROM \"group\" WHERE id = '{safe_id}'"))
+    sg = _wiki_group_to_scim(await sql_query("SELECT * FROM \"group\" WHERE id = ?", group_id))
     if sg:
-        sg["meta"]["location"] = f"/scim/v2/Groups/{safe_id}"
-        await _record_event(pid, "Group", "PUT", external_id, safe_id, "success",
+        sg["meta"]["location"] = f"/scim/v2/Groups/{group_id}"
+        await _record_event(pid, "Group", "PUT", external_id, group_id, "success",
                             f"Updated group '{display_name}'")
         return sg
     raise HTTPException(status_code=500, detail="Group updated but not found")
@@ -530,8 +521,7 @@ async def delete_group(request: Request, group_id: str):
     if not pid:
         raise HTTPException(status_code=401, detail="Invalid or missing SCIM token")
 
-    safe_id = group_id.replace("'", "''")
-    rows = await sql_query(f"SELECT name FROM \"group\" WHERE id = '{safe_id}'")
+    rows = await sql_query("SELECT name FROM \"group\" WHERE id = ?", group_id)
     if not rows:
         raise HTTPException(status_code=404, detail="Group not found")
 

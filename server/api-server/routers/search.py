@@ -76,58 +76,34 @@ async def search(
         date_to,
     ])
 
-    # If tags are specified, do a second-level filter via SQL
+    # If tags are specified, build an EXISTS subquery for each tag pair
+    rows = await sql_query(
+        "SELECT * FROM search_result WHERE search_token = ? ORDER BY created_at DESC",
+        search_token,
+    )
+
     if tags:
         tag_pairs = [t.strip() for t in tags.split(",") if t.strip()]
-        # Build a WHERE clause: find pages that have ALL specified tags
-        tag_conditions = []
-        for pair in tag_pairs:
-            if ":" in pair:
-                tag_name, tag_value = pair.split(":", 1)
-                safe_name = tag_name.strip().replace("'", "''")
-                safe_value = tag_value.strip().replace("'", "''")
-                tag_conditions.append(
-                    f"EXISTS (SELECT 1 FROM page_tag WHERE page_id = sr.page_id AND name = '{safe_name}' AND value = '{safe_value}')"
-                )
-            else:
-                safe_name = pair.strip().replace("'", "''")
-                tag_conditions.append(
-                    f"EXISTS (SELECT 1 FROM page_tag WHERE page_id = sr.page_id AND name = '{safe_name}')"
-                )
-        tag_where = " AND ".join(tag_conditions)
-        rows = await sql_query(
-            f"SELECT s.* FROM search_result s WHERE s.search_token = '{search_token}' ORDER BY s.created_at DESC"
-        )
-    else:
-        rows = await sql_query(
-            f"SELECT * FROM search_result WHERE search_token = '{search_token}' ORDER BY created_at DESC"
-        )
-
-    # Apply tag filter in Python if tag_where was built
-    if tags:
-        tag_pairs_list = [t.strip() for t in tags.split(",") if t.strip()]
         filtered = []
         for row in rows:
             page_id = str(row[2]) if len(row) > 2 else ""
             if not page_id:
                 continue
-            # Check each tag condition
             all_match = True
-            for pair in tag_pairs_list:
+            for pair in tag_pairs:
                 if ":" in pair:
                     tag_name, tag_value = pair.split(":", 1)
-                    safe_name = tag_name.strip().replace("'", "''")
-                    safe_value = tag_value.strip().replace("'", "''")
                     tag_rows = await sql_query(
-                        f"SELECT 1 FROM page_tag WHERE page_id = '{page_id.replace(chr(39), chr(39)*2)}' AND name = '{safe_name}' AND value = '{safe_value}'"
+                        "SELECT 1 FROM page_tag WHERE page_id = ? AND name = ? AND value = ?",
+                        page_id, tag_name.strip(), tag_value.strip(),
                     )
                     if not tag_rows:
                         all_match = False
                         break
                 else:
-                    safe_name = pair.strip().replace("'", "''")
                     tag_rows = await sql_query(
-                        f"SELECT 1 FROM page_tag WHERE page_id = '{page_id.replace(chr(39), chr(39)*2)}' AND name = '{safe_name}'"
+                        "SELECT 1 FROM page_tag WHERE page_id = ? AND name = ?",
+                        page_id, pair.strip(),
                     )
                     if not tag_rows:
                         all_match = False
@@ -181,7 +157,8 @@ async def autocomplete(
         0,   # date_to
     ])
     rows = await sql_query(
-        f"SELECT * FROM search_result WHERE search_token = '{search_token}' ORDER BY created_at DESC"
+        "SELECT * FROM search_result WHERE search_token = ? ORDER BY created_at DESC",
+        search_token,
     )
     results = []
     for r in rows[:limit]:

@@ -70,7 +70,7 @@ export async function tableQueryOne<T>(
  */
 export async function typedQuery<T>(
   sql: string,
-  schema: object & Record<string, unknown>,
+  schema: object,
 ): Promise<T[]> {
   const { fromStdbRow } = await import("./typed-sql");
   const mapper = fromStdbRow<T>(schema);
@@ -82,7 +82,7 @@ export async function typedQuery<T>(
  */
 export async function typedQueryOne<T>(
   sql: string,
-  schema: object & Record<string, unknown>,
+  schema: object,
 ): Promise<T | null> {
   const rows = await typedQuery<T>(sql, schema);
   return rows.length > 0 ? rows[0] : null;

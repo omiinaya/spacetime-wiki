@@ -22,8 +22,7 @@ async def list_collections():
 @router.get("/{collection_id}", response_model=CollectionResponse)
 async def get_collection(collection_id: str):
     """Get a single collection by ID."""
-    safe = collection_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM collection WHERE id = '{safe}'")
+    rows = await sql_query("SELECT * FROM collection WHERE id = ?", collection_id)
     if not rows:
         raise HTTPException(404, "Collection not found")
     return map_collection(rows[0])
