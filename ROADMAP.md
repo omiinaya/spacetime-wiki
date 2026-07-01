@@ -7,7 +7,7 @@
 >
 > ## Honest Assessment — July 2026
 >
-> **Overall grade: 81/100** — Up from 78/100. Three major issues resolved this session.
+> **Overall grade: 83/100** — Up from 81/100. Three more issues resolved this session.
 >
 > | Dimension | Score | Key Finding |
 > |-----------|:-----:|-------------|
@@ -15,9 +15,9 @@
 > | **Test coverage (frontend)** | **85%** | 56 files, 1194 tests. All pages tested, all components tested, all helpers tested. Integration tests are thin — no Playwright E2E suite running |
 > | **Test coverage (STDB Rust)** | **70%** | 3,512 test lines (48.5% of total), but ~2,000 are repetitive struct-construction tests. Real reducer logic has <20% coverage. No integration tests that call reducers against a live STDB |
 > | **Code quality (frontend)** | **70%** | tsc --noEmit clean. 150+ `any` type usages remain. **tiptap-helpers.ts consolidated into helpers.ts** — no more duplicated helper files. **60 lines of dead code removed from PageView.tsx** |
-> | **Code quality (Rust)** | **70%** | 51 guarded `unwrap()` calls remain. **~40 id-based `.iter().find()` converted to `.id().find()` index lookups** (from ~80 total). 15 non-idempotent reducers still. SHA-256 for password hashing still |
+> | **Code quality (Rust)** | **75%** | **All 33 guarded `unwrap()` calls converted to `.ok_or_else()`** — 3 test-only unwraps remain. 15 non-idempotent reducers still. SHA-256 for password hashing still |
 > | **Code quality (Python API)** | **60%** | **Write-path SQL injection eliminated** — 6 UPDATE/DELETE queries in auth.py, collections.py, pages.py converted to call_reducer(). 50+ read-only SELECT queries with f-strings remain (lower risk) |
-> | **STDB best practices** | **65%** | No `#[init]` reducer. **~40 full table scans eliminated via `.id().find()`**. 15 non-idempotent reducers remain. No integration tests |
+> | **STDB best practices** | **70%** | **`#[init]` reducer added** with defaults. **~40 full table scans eliminated via `.id().find()`**. 15 non-idempotent reducers remain. No integration tests |
 > | **Security** | **55%** | **Write-path SQL injection fixed** (was critical). Read-path SELECT queries with f-strings still present. No timing-safe comparison for API keys. WebAuthn signatures NOT verified. SHA-256 passwords |
 > | **Runtime health** | **90%** | TypeScript compiles clean (tsc 0 errors). Rust compiles clean (cargo check 0 errors, 44 dead_code warnings). 198 Rust tests pass. 1191 frontend tests pass (3 pre-existing flakes). Python imports clean |
 > | **Documentation** | **85%** | AGENTS.md comprehensive. ROADMAP.md accurate. Missing: CHANGELOG.md, API reference docs, architecture diagrams |
@@ -45,7 +45,7 @@
 > | 🟠 **High** | **Full table scans in reducers** — ~~~80~~ ~40 `.iter().find()` calls should be `.id().find(&id)` | O(n) per reducer call on a database with 1000+ rows degrades linearly | ~~4-6 hours~~ Done | ✅ **~40 fixed** |
 > | 🟠 **High** | **Duplicated helper code** — ~~`helpers.ts` and `tiptap-helpers.ts`~~ consolidated | ~~Bug risk if only one file gets fixed~~ | ~~1 hour~~ Done | ✅ **Fixed** |
 > | 🟠 **Medium** | **Non-idempotent reducers** — ~15 reducers (`create_page`, `add_attachment`, `add_tag`, etc.) panic on duplicate primary key | Failed retries can crash the reducer | 2-3 hours | ❌ |
-> | 🟡 **Medium** | **51 guarded `unwrap()` calls** — safe now but fragile under refactoring | Future code motion introduces panic risk | 2-3 hours | ❌ |
+> | 🟡 **Medium** | ~~51 guarded `unwrap()` calls~~ — all converted to `.ok_or_else()` | No more `found.unwrap()` in production code | Done | ✅ **Fixed** |
 > | 🟡 **Medium** | **150+ `any` types in Tiptap code** — `helpers.ts`, `PageEditor.tsx`, `PageView.tsx`, `Transclusion.tsx` all use `any` for ProseMirror document nodes | Hides structural type errors | 8-16 hours (large refactor) | ❌ |
 | 🟡 **Medium** | **No `#[init]` reducer** — database bootstrap added | First-run creates default settings | Done | ✅ **Fixed** |
 | 🟡 **Medium** | **SHA-256 for password hashing** instead of Argon2/bcrypt/scrypt | Weak against offline cracking if DB compromised | 2 hours | ❌ |
