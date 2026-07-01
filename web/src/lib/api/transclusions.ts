@@ -10,7 +10,7 @@ import { getPage } from "./pages";
  */
 async function resolvePageRef(ref: string): Promise<Page | null> {
   // Try as ID first
-  let page = await getPage(ref);
+  const page = await getPage(ref);
   if (page) return page;
   // Try as slug
   try {

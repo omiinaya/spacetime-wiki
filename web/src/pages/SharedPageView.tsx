@@ -55,7 +55,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
       return;
     }
     loadShare(token);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [token]);
 
   const loadShare = async (tok: string) => {
