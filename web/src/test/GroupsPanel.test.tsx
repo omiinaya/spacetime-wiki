@@ -159,7 +159,6 @@ describe("GroupsPanel", () => {
 
     await waitFor(() => {
       expect(mockGroupsCreate).toHaveBeenCalledWith(
-        "grp-new-uuid-12345",
         "Test Group",
         "A test group",
         "admin1",

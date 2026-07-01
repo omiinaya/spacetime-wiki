@@ -212,9 +212,9 @@ describe("SsoPanel", () => {
     fireEvent.click(screen.getByText("Create"));
     await waitFor(() => {
       expect(mockOidcCreate).toHaveBeenCalledWith(
-        "mock-uuid-123", "My OIDC", "my-oidc",
+        "My OIDC", "my-oidc",
         "https://issuer.example.com", "my-client-id", "my-secret",
-        "openid email profile",
+        "openid email profile", "admin",
       );
     });
   });
@@ -288,9 +288,6 @@ describe("SsoPanel", () => {
     await waitFor(() => {
       expect(mockOidcDelete).toHaveBeenCalledWith("oidc_1");
     });
-    vi.unstubAllGlobals();
-    // re-stub crypto since unstubAllGlobals cleared it
-    vi.stubGlobal("crypto", { ...crypto, randomUUID: () => "mock-uuid-123" });
   });
 
   // ─── SAML Add dialog ─────────────────────────────────────────────────────
@@ -321,10 +318,10 @@ describe("SsoPanel", () => {
     fireEvent.click(createBtn[createBtn.length - 1]);
     await waitFor(() => {
       expect(mockSamlCreate).toHaveBeenCalledWith(
-        "mock-uuid-123", "My SAML", "my-saml",
+        "My SAML", "my-saml",
         "https://saml.example.com/entity", "https://saml.example.com/sso",
         "", "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
-        '{"email":"email","name":"name"}', true,
+        '{"email":"email","name":"name"}', true, "admin",
       );
     });
   });

@@ -11,6 +11,10 @@ and works the top pending item each tick.
 | Priority | Item |
 |----------|------|
 | P4 | **Backup code placeholder "XXXX XXXX" → proper MFA backup code label** — Replace placeholder text in `LoginView.tsx` (line 194) and test files with appropriate label (e.g. "Backup code" or "XXXX-XXXX"). |
+| P3 | **Make ~15 non-idempotent reducers safe on retry** — `create_page`, `add_attachment`, `add_tag`, `add_comment`, `add_reaction`, `create_collection`, `create_group`, `create_from_template`, `create_share_link`, `create_webhook`, `create_api_key`, `add_collection_member`, `add_group_member`, `invite_user`, `add_page_permission` — use `if !exists(...) { insert(...) }` pattern to avoid panicking on duplicate primary key from retries. |
+| P3 | **Replace SHA-256 password hashing with Argon2** — Migrate from `sha2::Sha256` to `argon2` crate in `helpers.rs`. Requires schema migration: convert stored `password_hash` format, add version tag for forward compatibility. |
+| P3 | **Playwright E2E test suite** — Add `web/e2e/` test files: page CRUD flow, sidebar navigation, search, login/register, public sharing, collection management. Use existing Playwright config. |
+| P3 | **Replace read-path SQL f-strings with parameterized queries in Python API** — ~50+ `SELECT` queries across `auth.py`, `collections.py`, `pages.py`, `search.py` use f-strings. Switch to parameterized queries with `cursor.execute(sql, params)` to eliminate remaining SQL injection surface. |
 
 ---
 
