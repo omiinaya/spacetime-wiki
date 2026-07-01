@@ -1,22 +1,43 @@
-"""WebAuthn (Passkeys) API endpoints.
+"""WebAuthn (Passkeys) API endpoints with full cryptographic verification.
 
-Handles WebAuthn registration and authentication flows:
-- Generates challenges for registration and authentication
-- Verifies attestation objects and assertions
-- Stores and retrieves credentials from STDB
+Handles WebAuthn registration and authentication flows using the `webauthn`
+package for proper COSE key parsing, attestation verification, and
+assertion signature verification.
 
-This is a simplified implementation that works with the WebAuthn browser API.
-Full attestation verification requires the `cryptography` package for COSE key parsing.
+Usage:
+    1. GET /register/begin?email=x&display_name=y
+       → Returns PublicKeyCredentialCreationOptions
+    2. POST /register/complete with browser response
+       → Verifies attestation + stores credential
+    3. GET /auth/begin?email=x
+       → Returns PublicKeyCredentialRequestOptions
+    4. POST /auth/complete with browser response
+       → Verifies assertion signature → returns user
 """
 
 import base64
-import hashlib
 import json
 import os
 import time
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from webauthn import (
+    generate_registration_options,
+    verify_registration_response,
+    generate_authentication_options,
+    verify_authentication_response,
+    options_to_json,
+)
+from webauthn.helpers.structs import (
+    AuthenticatorSelectionCriteria,
+    PublicKeyCredentialDescriptor,
+    RegistrationCredential,
+    AuthenticationCredential,
+    UserVerificationRequirement,
+    ResidentKeyRequirement,
+)
+from webauthn.helpers import generate_challenge as wa_generate_challenge
 
 from stdb_client import sql_query, call_reducer
 from models import (
@@ -29,27 +50,25 @@ from models import (
 router = APIRouter(prefix="/api/v1/webauthn", tags=["webauthn"])
 
 RP_NAME = "SpacetimeWiki"
-RP_ID = None  # Will be set from Origin header
 
 
-def get_rp_id(origin: str) -> str:
-    """Extract RP ID from the request origin."""
+def get_rp_id(request: Request) -> str:
+    """Extract RP ID from the request."""
+    origin = request.headers.get("origin", "")
     if origin:
-        # Parse host from origin
         host = origin.replace("http://", "").replace("https://", "").split(":")[0]
         return host
     return "localhost"
 
 
-def generate_challenge() -> str:
-    """Generate a cryptographically random challenge (base64url)."""
-    return base64.urlsafe_b64encode(os.urandom(32)).decode().rstrip("=")
+def get_rp_origin(request: Request) -> str:
+    """Get the origin from the request."""
+    return request.headers.get("origin", "http://localhost")
 
 
 def base64url_decode(s: str) -> bytes:
     """Decode base64url string to bytes."""
     s = s.replace("-", "+").replace("_", "/")
-    # Add padding
     padding = 4 - len(s) % 4
     if padding != 4:
         s += "=" * padding
@@ -61,77 +80,116 @@ def base64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode().rstrip("=")
 
 
+async def get_user_by_email(email: str) -> Optional[dict]:
+    """Look up a user by email with SQL injection protection."""
+    safe = email.replace("'", "''")
+    rows = await sql_query(f"SELECT * FROM user WHERE email = '{safe}'")
+    if not rows:
+        return None
+    row = rows[0]
+    return {
+        "id": str(row[0]),
+        "name": str(row[1]),
+        "email": str(row[2]),
+    }
+
+
+async def get_credentials_for_user(user_id: str) -> list[dict]:
+    """Get all WebAuthn credentials for a user."""
+    safe = user_id.replace("'", "''")
+    rows = await sql_query(f"SELECT * FROM passkey_credential WHERE user_id = '{safe}'")
+    credentials = []
+    for row in rows:
+        credentials.append({
+            "id": str(row[0]),
+            "user_id": str(row[1]),
+            "credential_id": str(row[2]),
+            "public_key": str(row[3]),
+            "counter": int(row[4]) if row[4] else 0,
+            "transports": str(row[5]) if row[5] else '["internal"]',
+            "device_name": str(row[6]) if row[6] else "Unknown",
+        })
+    return credentials
+
+
+async def get_credential_by_credential_id(credential_id: str) -> Optional[dict]:
+    """Look up a credential by credential_id."""
+    safe = credential_id.replace("'", "''")
+    rows = await sql_query(f"SELECT * FROM passkey_credential WHERE credential_id = '{safe}'")
+    if not rows:
+        return None
+    row = rows[0]
+    return {
+        "id": str(row[0]),
+        "user_id": str(row[1]),
+        "credential_id": str(row[2]),
+        "public_key": str(row[3]),
+        "counter": int(row[4]) if row[4] else 0,
+        "transports": str(row[5]) if row[5] else '["internal"]',
+        "device_name": str(row[6]) if str(row[6]) else "Unknown",
+    }
+
+
+def parse_transports(transports_str: str) -> list[str]:
+    """Parse transports JSON string to list."""
+    try:
+        t = json.loads(transports_str)
+        if isinstance(t, list):
+            return t
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return []
+
+
 # ─── Registration ──────────────────────────────────────────────────────────────
 
 
 @router.get("/register/begin", response_model=WebAuthnBeginRegisterResponse)
-async def register_begin(email: str, display_name: str = ""):
-    """Generate WebAuthn registration options for a new credential.
+async def register_begin(request: Request, email: str, display_name: str = ""):
+    """Generate WebAuthn registration options.
 
-    Returns PublicKeyCredentialCreationOptions as JSON that the browser
-    should pass to navigator.credentials.create().
+    Returns options that the browser passes to navigator.credentials.create().
+    The challenge is stored in STDB for later verification.
     """
-    # Check user existence
-    rows = await sql_query(f"SELECT * FROM user WHERE email = '{email.replace(chr(39), chr(39)+chr(39))}'")
-    if not rows:
+    user = await get_user_by_email(email)
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_row = rows[0]
-    user_id = str(user_row[0])
+    rp_id = get_rp_id(request)
+    rp_origin = get_rp_origin(request)
 
-    challenge = generate_challenge()
+    # Generate challenge using the webauthn library
+    challenge = wa_generate_challenge()
+    challenge_b64 = base64url_encode(challenge)
 
     # Store challenge in STDB
-    await call_reducer("create_passkey_challenge", [challenge, user_id, "registration"])
+    await call_reducer("create_passkey_challenge", [
+        challenge_b64, user["id"], "registration",
+    ])
 
-    # Generate user handle as base64url-encoded user ID
-    user_handle = base64url_encode(user_id.encode())
+    # Generate registration options using webauthn library
+    options = generate_registration_options(
+        rp_id=rp_id,
+        rp_name=RP_NAME,
+        user_id=user["id"].encode("utf-8"),
+        user_name=user["email"],
+        user_display_name=display_name or user["name"] or user["email"],
+        challenge=challenge,
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            resident_key=ResidentKeyRequirement.PREFERRED,
+            user_verification=UserVerificationRequirement.PREFERRED,
+        ),
+    )
 
-    # Build registration options
-    options = {
-        "challenge": challenge,
-        "rp": {
-            "name": RP_NAME,
-            "id": RP_ID or "localhost",
-        },
-        "user": {
-            "id": user_handle,
-            "name": email,
-            "displayName": display_name or email,
-        },
-        "pubKeyCredParams": [
-            {"alg": -7, "type": "public-key"},   # ES256 (ECDSA P-256)
-            {"alg": -257, "type": "public-key"},  # RS256 (RSA)
-        ],
-        "timeout": 300000,  # 5 minutes
-        "attestation": "none",
-        "excludeCredentials": [],
-        "authenticatorSelection": {
-            "residentKey": "preferred",
-            "userVerification": "preferred",
-        },
-    }
-
-    return options
+    return json.loads(options_to_json(options))
 
 
 @router.post("/register/complete", response_model=WebAuthnRegisterCompleteResponse)
-async def register_complete(body: dict):
+async def register_complete(request: Request, body: dict):
     """Verify and store a WebAuthn registration credential.
 
-    Expects the CredentialCreationResponse from the browser:
-    {
-        id: string,
-        rawId: string (base64url),
-        type: "public-key",
-        response: {
-            clientDataJSON: string (base64url),
-            attestationObject: string (base64url),
-            transports: string[],
-        },
-        user_id: string,   // wiki user ID (passed through by the client)
-        email: string,      // for challenge lookup
-    }
+    Verifies the attestation object using the webauthn library,
+    extracts and stores the COSE public key for future assertion verification.
     """
     try:
         credential_id = body.get("id", "")
@@ -142,50 +200,56 @@ async def register_complete(body: dict):
         user_id = body.get("user_id", "")
         device_name = body.get("device_name", "")
 
-        if not all([credential_id, raw_id, client_data_json_b64, attestation_object_b64, user_id]):
+        if not all([credential_id, client_data_json_b64, attestation_object_b64, user_id]):
             raise HTTPException(status_code=400, detail="Missing required fields")
 
-        # Decode clientDataJSON to extract challenge
-        client_data_json_str = base64url_decode(client_data_json_b64).decode("utf-8", errors="replace")
-        client_data = json.loads(client_data_json_str)
+        # Extract origin and challenge from clientDataJSON
+        client_data_json_bytes = base64url_decode(client_data_json_b64)
+        client_data = json.loads(client_data_json_bytes.decode("utf-8", errors="replace"))
+        challenge_b64 = client_data.get("challenge", "")
 
-        challenge = client_data.get("challenge", "")
-        if not challenge:
-            raise HTTPException(status_code=400, detail="No challenge in clientDataJSON")
-
-        # Verify the challenge exists and is not expired
+        # Verify the challenge exists and consume it
         try:
-            await call_reducer("consume_passkey_challenge", [challenge])
+            await call_reducer("consume_passkey_challenge", [challenge_b64])
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Challenge verification failed: {e}")
 
-        # Verify the origin matches
-        expected_origin = body.get("origin", "")
-        actual_origin = client_data.get("origin", "")
-        if expected_origin and actual_origin and expected_origin != actual_origin:
-            # Non-fatal: log but allow for local dev
-            pass
+        rp_id = get_rp_id(request)
+        rp_origin = get_rp_origin(request)
 
-        # Extract the public key from the attestation object
-        # For attestation=none, the authData contains the credential public key
-        attestation_bytes = base64url_decode(attestation_object_b64)
+        # Verify the registration response using webauthn library
+        # This validates:
+        #   1. The attestation signature
+        #   2. The challenge matches
+        #   3. The origin matches
+        #   4. The RP ID hash matches
+        #   5. Extracts and returns the COSE public key
+        verification = verify_registration_response(
+            credential=RegistrationCredential(
+                id=credential_id,
+                raw_id=base64url_decode(raw_id),
+                response={
+                    "client_data_json": base64url_decode(client_data_json_b64),
+                    "attestation_object": base64url_decode(attestation_object_b64),
+                },
+                transports=transports or ["internal"],
+                type="public-key",
+            ),
+            expected_challenge=base64url_decode(challenge_b64),
+            expected_origin=rp_origin,
+            expected_rp_id=rp_id,
+        )
 
-        # Parse CBOR-like attestation structure
-        # Simplified: store the raw credential public key for later verification
-        # In production, you'd use the `cryptography` or `webauthn` package
-        # to properly parse COSE keys
+        # Store the credential's public key (from verification result)
+        credential_public_key_b64 = base64url_encode(verification.credential_public_key)
 
-        credential_public_key = attestation_object_b64  # Store raw for now
-
-        # For transport types, default to ["internal"] if empty
         transports_str = json.dumps(transports) if transports else '["internal"]'
 
-        # Store the credential
         await call_reducer("store_passkey_credential", [
-            credential_id,  # Re-use credential ID as our primary key
+            credential_id,
             user_id,
             credential_id,
-            credential_public_key,
+            credential_public_key_b64,
             0,  # initial counter
             transports_str,
             device_name or "Unknown device",
@@ -203,68 +267,53 @@ async def register_complete(body: dict):
 
 
 @router.get("/auth/begin", response_model=WebAuthnBeginAuthResponse)
-async def auth_begin(email: Optional[str] = None):
+async def auth_begin(request: Request, email: Optional[str] = None):
     """Generate WebAuthn authentication options.
 
-    Returns PublicKeyCredentialRequestOptions as JSON that the browser
-    should pass to navigator.credentials.get().
-
+    Returns options that the browser passes to navigator.credentials.get().
     If email is provided, only allow credentials for that user.
     """
-    challenge = generate_challenge()
+    challenge = wa_generate_challenge()
+    challenge_b64 = base64url_encode(challenge)
+
+    rp_id = get_rp_id(request)
 
     allowed_credentials = []
-    safe_email = ""
+    user_handle = ""
     if email:
-        # Get user's credentials
-        safe_email = email.replace(chr(39), chr(39) + chr(39))
-        user_rows = await sql_query(f"SELECT * FROM user WHERE email = '{safe_email}'")
-        if user_rows:
-            user_id = str(user_rows[0][0])
-            cred_rows = await sql_query(f"SELECT * FROM passkey_credential WHERE user_id = '{user_id}'")
-            for row in cred_rows:
-                cred_id = str(row[2])  # credential_id
-                allowed_credentials.append({
-                    "id": cred_id,
-                    "type": "public-key",
-                    # transports included if stored
-                })
+        user = await get_user_by_email(email)
+        if user:
+            user_handle = user["id"]
+            credentials = await get_credentials_for_user(user["id"])
+            for cred in credentials:
+                allowed_credentials.append(PublicKeyCredentialDescriptor(
+                    id=base64url_decode(cred["credential_id"]),
+                    type="public-key",
+                    transports=parse_transports(cred["transports"]),
+                ))
 
     # Store challenge
-    user_handle = ""
-    if email and safe_email:
-        user_rows = await sql_query(f"SELECT * FROM user WHERE email = '{safe_email}'")
-        if user_rows:
-            user_handle = str(user_rows[0][0])
-    await call_reducer("create_passkey_challenge", [challenge, user_handle, "authentication"])
+    await call_reducer("create_passkey_challenge", [
+        challenge_b64, user_handle, "authentication",
+    ])
 
-    options = {
-        "challenge": challenge,
-        "timeout": 300000,
-        "rpId": RP_ID or "localhost",
-        "allowCredentials": allowed_credentials,
-        "userVerification": "preferred",
-    }
+    options = generate_authentication_options(
+        rp_id=rp_id,
+        challenge=challenge,
+        allow_credentials=allowed_credentials if allowed_credentials else None,
+        user_verification=UserVerificationRequirement.PREFERRED,
+    )
 
-    return options
+    return json.loads(options_to_json(options))
 
 
 @router.post("/auth/complete", response_model=WebAuthnAuthCompleteResponse)
-async def auth_complete(body: dict):
+async def auth_complete(request: Request, body: dict):
     """Verify a WebAuthn authentication assertion.
 
-    Expects the CredentialAssertionResponse from the browser:
-    {
-        id: string,
-        rawId: string (base64url),
-        type: "public-key",
-        response: {
-            clientDataJSON: string (base64url),
-            authenticatorData: string (base64url),
-            signature: string (base64url),
-            userHandle: string (base64url, optional),
-        },
-    }
+    Verifies the assertion signature over authenticatorData + SHA256(clientDataJSON)
+    using the stored COSE public key. This is the critical security check that
+    proves the user possesses the private key associated with their credential.
     """
     try:
         credential_id = body.get("id", "")
@@ -277,42 +326,66 @@ async def auth_complete(body: dict):
         if not all([credential_id, client_data_json_b64, authenticator_data_b64, signature_b64]):
             raise HTTPException(status_code=400, detail="Missing required fields")
 
-        # Decode clientDataJSON to extract challenge
-        client_data_json_str = base64url_decode(client_data_json_b64).decode("utf-8", errors="replace")
-        client_data = json.loads(client_data_json_str)
+        # Extract challenge from clientDataJSON
+        client_data_json_bytes = base64url_decode(client_data_json_b64)
+        client_data = json.loads(client_data_json_bytes.decode("utf-8", errors="replace"))
+        challenge_b64 = client_data.get("challenge", "")
 
-        challenge = client_data.get("challenge", "")
-        if not challenge:
+        if not challenge_b64:
             raise HTTPException(status_code=400, detail="No challenge in clientDataJSON")
 
         # Consume the challenge
         try:
-            await call_reducer("consume_passkey_challenge", [challenge])
+            await call_reducer("consume_passkey_challenge", [challenge_b64])
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Challenge verification failed: {e}")
 
-        # Look up the credential
-        safe_cred_id = credential_id.replace(chr(39), chr(39) + chr(39))
-        cred_rows = await sql_query(f"SELECT * FROM passkey_credential WHERE credential_id = '{safe_cred_id}'")
-        if not cred_rows:
+        # Look up the credential to get stored public key
+        cred = await get_credential_by_credential_id(credential_id)
+        if not cred:
             raise HTTPException(status_code=404, detail="Credential not found")
 
-        cred = cred_rows[0]
-        stored_user_id = str(cred[1])
+        stored_user_id = cred["user_id"]
+        public_key_bytes = base64url_decode(cred["public_key"])
 
-        # Verify signature
-        # In production, parse the COSE public key and verify the signature over
-        # authenticatorData + SHA256(clientDataJSON)
-        # For this implementation, we trust the credential since we stored it
+        rp_id = get_rp_id(request)
+        rp_origin = get_rp_origin(request)
 
-        # Update the counter
+        # Verify the assertion signature using webauthn library
+        # This validates:
+        #   1. The signature over authenticatorData + SHA256(clientDataJSON)
+        #   2. The challenge matches
+        #   3. The origin matches
+        #   4. The RP ID hash matches
+        verification = verify_authentication_response(
+            credential=AuthenticationCredential(
+                id=credential_id,
+                raw_id=base64url_decode(raw_id),
+                response={
+                    "client_data_json": base64url_decode(client_data_json_b64),
+                    "authenticator_data": base64url_decode(authenticator_data_b64),
+                    "signature": base64url_decode(signature_b64),
+                },
+                type="public-key",
+            ),
+            expected_challenge=base64url_decode(challenge_b64),
+            expected_origin=rp_origin,
+            expected_rp_id=rp_id,
+            credential_public_key=public_key_bytes,
+            credential_current_sign_count=cred["counter"],
+            require_user_verification=False,
+        )
+
+        # Update counter with the new value from the authenticator
+        new_counter = verification.new_sign_count or (cred["counter"] + 1)
         try:
-            await call_reducer("update_passkey_counter", [credential_id, 1])
+            await call_reducer("update_passkey_counter", [credential_id, new_counter])
         except Exception:
             pass  # Non-fatal
 
         # Look up the user
-        user_rows = await sql_query(f"SELECT * FROM user WHERE id = '{stored_user_id.replace(chr(39), chr(39)+chr(39))}'")
+        safe_user_id = stored_user_id.replace("'", "''")
+        user_rows = await sql_query(f"SELECT * FROM user WHERE id = '{safe_user_id}'")
         if not user_rows:
             raise HTTPException(status_code=404, detail="User not found")
 
