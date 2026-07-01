@@ -31,27 +31,22 @@ async def get_collection(collection_id: str):
 
 @router.post("", response_model=CollectionCreateResponse)
 async def create_collection(name: str, description: str = "", icon: str = "", color: str = ""):
-    """Create a new collection."""
+    """Create a new collection via reducer."""
     result = await call_reducer("create_collection", [name, description, icon, color])
     return result or {"status": "created"}
 
 
 @router.put("/{collection_id}", response_model=CollectionUpdateResponse)
 async def update_collection(collection_id: str, name: str | None = None, description: str | None = None):
-    """Update a collection."""
-    safe_id = collection_id.replace("'", "''")
-    if name is not None:
-        safe_name = name.replace("'", "''")
-        await sql_query(f"UPDATE collection SET name = '{safe_name}' WHERE id = '{safe_id}'")
-    if description is not None:
-        safe_desc = description.replace("'", "''")
-        await sql_query(f"UPDATE collection SET description = '{safe_desc}' WHERE id = '{safe_id}'")
+    """Update a collection via reducer."""
+    current_name = name or ""
+    current_desc = description or ""
+    await call_reducer("update_collection", [collection_id, current_name, current_desc, "", ""])
     return {"status": "updated"}
 
 
 @router.delete("/{collection_id}", response_model=CollectionDeleteResponse)
 async def delete_collection(collection_id: str):
-    """Delete a collection."""
-    safe = collection_id.replace("'", "''")
-    await sql_query(f"DELETE FROM collection WHERE id = '{safe}'")
+    """Delete a collection via reducer."""
+    await call_reducer("delete_collection", [collection_id])
     return {"status": "deleted"}

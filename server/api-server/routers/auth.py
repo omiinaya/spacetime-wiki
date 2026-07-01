@@ -42,7 +42,6 @@ async def register_key(body: dict):
 
 @router.delete("/keys/{key_id}", response_model=ApiKeyRevokeResponse)
 async def revoke_api_key(key_id: str):
-    """Revoke an API key."""
-    safe = key_id.replace("'", "''")
-    await sql_query(f"UPDATE api_key SET is_revoked = true WHERE id = '{safe}'")
+    """Revoke an API key via reducer."""
+    await call_reducer("revoke_api_key", [key_id])
     return {"status": "revoked"}
