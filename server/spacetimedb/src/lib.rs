@@ -1614,9 +1614,8 @@ pub fn verify_mfa_backup_code(
     user_id: String,
     code: String,
 ) -> Result<(), String> {
-    let code_hash = hash_password(&code);
     let found = ctx.db.mfa_backup_code().iter()
-        .find(|c| c.user_id == user_id && c.code_hash == code_hash && !c.is_used);
+        .find(|c| c.user_id == user_id && verify_password(&code, &c.code_hash) && !c.is_used);
     match found {
         None => Err("Invalid or already used backup code".into()),
         Some(c) => {

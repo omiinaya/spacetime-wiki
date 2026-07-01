@@ -68,7 +68,7 @@ pub fn verify_share_password(
         return Err("Share link has expired".into());
     }
     if !share.password_hash.is_empty()
-        && hash_password(&password) != share.password_hash {
+        && !verify_password(&password, &share.password_hash) {
             return Err("Incorrect password".into());
         }
     // Increment visit count
@@ -109,7 +109,7 @@ mod tests {
     fn test_create_share_link_password_hashing() {
         let password = "secret123";
         let hash = crate::helpers::hash_password(password);
-        assert_eq!(hash.len(), 64);
+        assert!(hash.starts_with("$argon2id$"), "Hash should be Argon2 PHC format");
         let empty_password = "";
         assert!(empty_password.is_empty());
     }

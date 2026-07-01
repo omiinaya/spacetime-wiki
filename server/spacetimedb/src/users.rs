@@ -35,9 +35,8 @@ pub fn login_user(
     email: String,
     password: String,
 ) -> Result<(), String> {
-    let password_hash = hash_password(&password);
     let found = ctx.db.user().iter()
-        .find(|u| u.email == email && u.password_hash == password_hash);
+        .find(|u| u.email == email && verify_password(&password, &u.password_hash));
     if found.is_none() {
         return Err("Invalid email or password".into());
     }
@@ -101,8 +100,8 @@ mod tests {
     #[test]
     fn test_password_hash_consistency() {
         let hash = crate::helpers::hash_password("testpass123");
-        assert_eq!(hash.len(), 64);
-        assert_eq!(hash, crate::helpers::hash_password("testpass123"));
+        assert!(hash.starts_with("$argon2id$"), "Hash should be Argon2 PHC format");
+        assert!(crate::helpers::verify_password("testpass123", &hash), "Should verify against own hash");
     }
 
     #[test]
