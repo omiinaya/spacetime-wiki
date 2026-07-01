@@ -227,7 +227,7 @@ function TransclusionContentRenderer({ content }: { content: any }) {
   }
 
   if (content.type === "text") {
-    let text = content.text || "";
+    const text = content.text || "";
     if (content.marks) {
       let hasLink = false;
       let href = "";

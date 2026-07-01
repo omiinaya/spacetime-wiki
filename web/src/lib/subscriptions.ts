@@ -218,7 +218,7 @@ export function useSubscription<T>(
       unsubState();
     };
     // key allows hook to reconnect when the identity changes (e.g., different page ID)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [key]);
 
   useEffect(() => {

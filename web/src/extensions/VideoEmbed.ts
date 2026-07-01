@@ -259,7 +259,7 @@ export const VideoEmbed = Node.create<VideoEmbedOptions>({
         (options) =>
         ({ commands }) => {
           // Auto-detect provider if not specified
-          let attrs: Record<string, any> = { ...options };
+          const attrs: Record<string, any> = { ...options };
           if (!options.provider && options.src) {
             const info = buildEmbedUrl(options.src);
             if (info) {

@@ -137,7 +137,7 @@ type FieldDescriptor = {
 const elementCache = new WeakMap<object, FieldDescriptor[]>();
 
 function getElements(schema: object): FieldDescriptor[] {
-  let cached = elementCache.get(schema);
+  const cached = elementCache.get(schema);
   if (cached) return cached;
   const s = schema as Record<string, unknown>;
   const elements = ((s.algebraicType as Record<string, unknown>)?.value as Record<string, unknown>)?.elements as Array<Record<string, unknown>> | undefined;
