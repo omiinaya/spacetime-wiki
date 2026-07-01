@@ -8,7 +8,6 @@ and works the top pending item each tick.
 
 ## PENDING
 
-|| 2026-06-30 | **P4 — npm audit fix — `npm audit fix` to address reported vulnerabilities** |
 || 2026-06-30 | **P5 — npm dependency updates — update outdated deps (eslint, vite, tailwindcss, i18next, etc.)** |
 
 ---
@@ -17,6 +16,7 @@ and works the top pending item each tick.
 
 || Date | Item | Commit |
 ||------|------|--------|
+|| 2026-06-30 | **P4 — npm audit fix — `npm audit fix` → 0 vulnerabilities** — Verified: all packages clean, no vulnerabilities. | — |
 || 2026-06-30 | **P4 — Unit tests for ActivityView.tsx** — 16 tests: page structure, ActivityFeed integration (limit 200, events, loading/empty/error), navigation (Back to home, page click, collection click), a11y in 4 states. All 16 pass. Suite now 1147/1147. | ab46dd35 |
 || 2026-06-30 | **P4 — Unit tests for LoginView.tsx** — 20 tests: login/register forms, SSO buttons (OIDC/SAML/OAuth/LDAP/Google/Passkey), login flow, MFA code + backup codes, error handling, loading states. All 20 pass. | 13e3e6c9 |
 || 2026-06-30 | **P4 — TypeScript tests for SharedPageView** — 13 tests: loading, not found, expired, password prompt, branding, error handling, a11y. Suite now 1111/1111. | 44c79a0e |
