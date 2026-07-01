@@ -1,4 +1,5 @@
 use spacetimedb::*;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::SaltString};
 use sha2::{Digest, Sha256};
 use crate::*;
 
@@ -14,10 +15,36 @@ pub(crate) fn make_id(prefix: &str, ctx: &ReducerContext) -> String {
     format!("{}_{:x}", prefix, rand)
 }
 
+/// Hash a password using Argon2id (PHC string format).
+/// Produces a string like `$argon2id$v=19$m=19456,t=2,p=1$<salt>$<hash>`.
+/// Automatically used for all new registrations and password changes.
 pub(crate) fn hash_password(password: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(password.as_bytes());
-    format!("{:x}", hasher.finalize())
+    let salt = SaltString::generate(&mut rand::rngs::OsRng);
+    let argon2 = Argon2::default();
+    argon2
+        .hash_password(password.as_bytes(), &salt)
+        .expect("Argon2 hashing should not fail")
+        .to_string()
+}
+
+/// Verify a password against a stored hash (supports both Argon2 PHC strings
+/// and legacy SHA-256 hex strings for backward compatibility).
+pub(crate) fn verify_password(password: &str, stored_hash: &str) -> bool {
+    // Argon2 PHC strings start with $argon2 — detect format
+    if stored_hash.starts_with("$argon2") {
+        match PasswordHash::new(stored_hash) {
+            Ok(parsed_hash) => Argon2::default()
+                .verify_password(password.as_bytes(), &parsed_hash)
+                .is_ok(),
+            Err(_) => false,
+        }
+    } else {
+        // Legacy SHA-256 fallback
+        let mut hasher = Sha256::new();
+        hasher.update(password.as_bytes());
+        let computed = format!("{:x}", hasher.finalize());
+        computed == stored_hash
+    }
 }
 
 // ─── Audit Event Log ─────────────────────────────────────────────────────────
@@ -250,22 +277,52 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_hash_password_sha256() {
+    fn test_hash_password_argon2_format() {
         let hash = hash_password("hello");
-        assert_eq!(hash.len(), 64);
-        assert_eq!(hash, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
+        // Argon2 PHC strings start with $argon2id$v=19$m=...
+        assert!(hash.starts_with("$argon2id$"), "Hash should be Argon2 PHC format, got: {}", hash);
+        // PHC string has 5 segments: $argon2id$v=19$m=...,t=...,p=...$<salt>$<hash>
+        let parts: Vec<&str> = hash.split('$').collect();
+        assert_eq!(parts.len(), 6, "PHC string should have 5 $ segments");
+        assert!(parts[3].starts_with("m="), "Should contain memory cost param");
     }
 
     #[test]
     fn test_hash_password_empty() {
         let hash = hash_password("");
-        assert_eq!(hash.len(), 64);
-        assert_eq!(hash, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+        assert!(hash.starts_with("$argon2id$"), "Empty password should also produce Argon2 PHC");
     }
 
     #[test]
     fn test_hash_password_different() {
         assert_ne!(hash_password("a"), hash_password("b"));
+    }
+
+    #[test]
+    fn test_verify_password_argon2_roundtrip() {
+        let password = "test-password-123!@#";
+        let hash = hash_password(password);
+        assert!(verify_password(password, &hash), "Should verify correct password against Argon2 hash");
+        assert!(!verify_password("wrong-password", &hash), "Should reject wrong password against Argon2 hash");
+    }
+
+    #[test]
+    fn test_verify_password_sha256_backward_compat() {
+        // Legacy SHA-256 hash format — must still work
+        let legacy_hash = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+        assert!(verify_password("hello", legacy_hash), "Should verify correct password against legacy SHA-256");
+        assert!(!verify_password("wrong", legacy_hash), "Should reject wrong password against legacy SHA-256");
+    }
+
+    #[test]
+    fn test_hash_produces_unique_per_call() {
+        // Argon2 uses random salts, so two hashes of the same password differ
+        let h1 = hash_password("same_password");
+        let h2 = hash_password("same_password");
+        assert_ne!(h1, h2, "Argon2 hashes should be unique due to random salt");
+        // But both should verify against the password
+        assert!(verify_password("same_password", &h1));
+        assert!(verify_password("same_password", &h2));
     }
 
     #[test]
