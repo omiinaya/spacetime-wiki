@@ -66,7 +66,7 @@ pub fn join_collab_session(
 ) -> Result<(), String> {
     let now = now_ms(ctx);
     let session_id = make_collab_session_id(&user_id, &page_id);
-    let existing = ctx.db.collab_session().iter().find(|s| s.id == session_id);
+    let existing = ctx.db.collab_session().id().find(&session_id);
     if let Some(mut session) = existing {
         session.user_name = user_name;
         session.color = color;
@@ -106,7 +106,7 @@ pub fn update_cursor_position(
     cursor_json: String,
 ) -> Result<(), String> {
     let session_id = make_collab_session_id(&user_id, &page_id);
-    let found = ctx.db.collab_session().iter().find(|s| s.id == session_id);
+    let found = ctx.db.collab_session().id().find(session_id);
     if let Some(mut session) = found {
         session.cursor_position = cursor_json;
         session.last_seen_at = now_ms(ctx);

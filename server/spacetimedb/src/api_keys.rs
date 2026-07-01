@@ -32,11 +32,7 @@ pub fn create_api_key(
 
 #[reducer]
 pub fn revoke_api_key(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.api_key().iter().find(|k| k.id == id);
-    if found.is_none() {
-        return Err("API key not found".into());
-    }
-    let mut key = found.unwrap();
+    let mut key = ctx.db.api_key().id().find(id).ok_or_else(|| "API key not found".to_string())?;
     key.is_revoked = true;
     ctx.db.api_key().id().update(key);
     Ok(())
@@ -44,11 +40,7 @@ pub fn revoke_api_key(ctx: &ReducerContext, id: String) -> Result<(), String> {
 
 #[reducer]
 pub fn update_api_key_usage(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.api_key().iter().find(|k| k.id == id);
-    if found.is_none() {
-        return Err("API key not found".into());
-    }
-    let mut key = found.unwrap();
+    let mut key = ctx.db.api_key().id().find(id).ok_or_else(|| "API key not found".to_string())?;
     key.last_used_at = now_ms(ctx);
     ctx.db.api_key().id().update(key);
     Ok(())

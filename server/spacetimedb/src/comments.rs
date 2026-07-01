@@ -41,11 +41,7 @@ pub fn add_comment(
 
 #[reducer]
 pub fn resolve_comment(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.comment().iter().find(|c| c.id == id);
-    if found.is_none() {
-        return Err("Comment not found".into());
-    }
-    let mut com = found.unwrap();
+    let mut com = ctx.db.comment().id().find(id).ok_or_else(|| "Comment not found".to_string())?;
     com.is_resolved = true;
     com.updated_at = now_ms(ctx);
     ctx.db.comment().id().update(com);

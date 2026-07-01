@@ -65,7 +65,7 @@ pub fn update_collection(
     icon: String,
     color: String,
 ) -> Result<(), String> {
-    let found = ctx.db.collection().iter().find(|c| c.id == id);
+    let found = ctx.db.collection().id().find(id);
     if found.is_none() {
         return Err("Collection not found".into());
     }
@@ -96,7 +96,7 @@ pub fn delete_collection(ctx: &ReducerContext, id: String) -> Result<(), String>
 pub fn reorder_collections(ctx: &ReducerContext, ordered_ids: Vec<String>) -> Result<(), String> {
     let now = now_ms(ctx);
     for (i, id) in ordered_ids.iter().enumerate() {
-        if let Some(mut col) = ctx.db.collection().iter().find(|c| &c.id == id) {
+        if let Some(mut col) = ctx.db.collection().id().find(id) {
             col.sort_order = i as u32;
             col.updated_at = now;
             ctx.db.collection().id().update(col);
@@ -207,7 +207,7 @@ pub fn apply_collection_auto_sort(ctx: &ReducerContext, collection_id: String) -
         if page.is_pinned {
             continue;
         }
-        if let Some(mut p) = ctx.db.page().iter().find(|p| p.id == page.id) {
+        if let Some(mut p) = ctx.db.page().id().find(page.id.clone()) {
             p.sort_order = sort_idx;
             p.updated_at = now;
             ctx.db.page().id().update(p);
@@ -267,7 +267,7 @@ pub fn update_webhook(
     if serde_json::from_str::<Vec<String>>(&events).is_err() {
         return Err("Events must be a JSON array of strings".into());
     }
-    let found = ctx.db.webhook().iter().find(|w| w.id == id);
+    let found = ctx.db.webhook().id().find(&id);
     if found.is_none() {
         return Err("Webhook not found".into());
     }
@@ -324,7 +324,7 @@ pub fn mark_webhook_event_sent(
     response_code: u32,
     response_body: String,
 ) -> Result<(), String> {
-    let found = ctx.db.webhook_event().iter().find(|e| e.id == id);
+    let found = ctx.db.webhook_event().id().find(&id);
     if found.is_none() {
         return Err("Webhook event not found".into());
     }
@@ -508,7 +508,7 @@ pub fn batch_set_page_status(ctx: &ReducerContext, page_ids: Vec<String>, status
     }
     let now = now_ms(ctx);
     for id in &page_ids {
-        if let Some(mut page) = ctx.db.page().iter().find(|p| &p.id == id) {
+        if let Some(mut page) = ctx.db.page().id().find(id) {
             page.status = status.clone();
             page.updated_at = now;
             if status == "published" && page.published_at == 0 {
@@ -534,7 +534,7 @@ pub fn batch_move_pages(
 ) -> Result<(), String> {
     let now = now_ms(ctx);
     for id in &page_ids {
-        if let Some(mut page) = ctx.db.page().iter().find(|p| &p.id == id) {
+        if let Some(mut page) = ctx.db.page().id().find(id) {
             page.collection_id = new_collection_id.clone();
             page.updated_at = now;
             ctx.db.page().id().update(page);
@@ -638,7 +638,7 @@ pub fn add_ai_chat_message(
         created_at: now,
     });
     // Update session's updated_at
-    if let Some(mut session) = ctx.db.ai_chat_session().iter().find(|s| s.id == session_id) {
+    if let Some(mut session) = ctx.db.ai_chat_session().id().find(&session_id) {
         session.updated_at = now;
         ctx.db.ai_chat_session().id().update(session);
     }
@@ -734,7 +734,7 @@ pub fn update_scim_provider(
     if !valid_behaviors.contains(&deprovision_behavior.as_str()) {
         return Err("Deprovision behavior must be 'deactivate' or 'delete'".into());
     }
-    let found = ctx.db.scim_provider().iter().find(|p| p.id == id);
+    let found = ctx.db.scim_provider().id().find(&id);
     if found.is_none() {
         return Err("SCIM provider not found".into());
     }
@@ -758,7 +758,7 @@ pub fn update_scim_provider(
 
 #[reducer]
 pub fn delete_scim_provider(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.scim_provider().iter().find(|p| p.id == id);
+    let found = ctx.db.scim_provider().id().find(&id);
     if found.is_none() {
         return Err("SCIM provider not found".into());
     }
@@ -1035,7 +1035,7 @@ pub fn delete_passkey_credential(
     ctx: &ReducerContext,
     id: String,
 ) -> Result<(), String> {
-    let found = ctx.db.passkey_credential().iter().find(|c| c.id == id);
+    let found = ctx.db.passkey_credential().id().find(&id);
     if found.is_none() {
         return Err("Credential not found".into());
     }
@@ -1146,7 +1146,7 @@ pub fn update_db_cell(
         });
     }
     // Also update the parent row's updated_at
-    if let Some(mut row) = ctx.db.db_row().iter().find(|r| r.id == row_id) {
+    if let Some(mut row) = ctx.db.db_row().id().find(row_id.clone()) {
         row.updated_at = now;
         ctx.db.db_row().id().update(row);
     }
@@ -1176,7 +1176,7 @@ pub fn set_db_cell(
             updated_at: now,
         });
     }
-    if let Some(mut row) = ctx.db.db_row().iter().find(|r| r.id == row_id) {
+    if let Some(mut row) = ctx.db.db_row().id().find(row_id.clone()) {
         row.updated_at = now;
         ctx.db.db_row().id().update(row);
     }
@@ -1220,7 +1220,7 @@ pub fn reorder_db_rows(
     }
     let now = now_ms(ctx);
     for (i, row_id) in row_ids.iter().enumerate() {
-        if let Some(mut row) = ctx.db.db_row().iter().find(|r| &r.id == row_id) {
+        if let Some(mut row) = ctx.db.db_row().id().find(row_id.clone()) {
             row.sort_order = new_sort_order[i];
             row.updated_at = now;
             ctx.db.db_row().id().update(row);
@@ -1252,7 +1252,7 @@ pub fn create_invitation(
         return Err("A valid email address is required".into());
     }
     // Only admins can invite
-    let inviter = ctx.db.user().iter().find(|u| u.id == invited_by);
+    let inviter = ctx.db.user().id().find(invited_by.clone());
     if inviter.is_none() || inviter.unwrap().role != "admin" {
         return Err("Only admins can create invitations".into());
     }
@@ -1324,7 +1324,7 @@ pub fn accept_invitation(
         return Err("Invitation has expired".into());
     }
     // Verify the email matches
-    let user = ctx.db.user().iter().find(|u| u.id == user_id);
+    let user = ctx.db.user().id().find(user_id.clone());
     if user.is_none() {
         return Err("User not found".into());
     }
@@ -1374,11 +1374,11 @@ pub fn accept_invitation(
 
 #[reducer]
 pub fn revoke_invitation(ctx: &ReducerContext, id: String, revoked_by: String) -> Result<(), String> {
-    let inviter = ctx.db.user().iter().find(|u| u.id == revoked_by);
+    let inviter = ctx.db.user().id().find(revoked_by.clone());
     if inviter.is_none() || inviter.unwrap().role != "admin" {
         return Err("Only admins can revoke invitations".into());
     }
-    let found = ctx.db.invitation().iter().find(|i| i.id == id);
+    let found = ctx.db.invitation().id().find(&id);
     if found.is_none() {
         return Err("Invitation not found".into());
     }
@@ -1696,7 +1696,7 @@ pub fn create_notification(
 
 #[reducer]
 pub fn mark_notification_read(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.notification().iter().find(|n| n.id == id);
+    let found = ctx.db.notification().id().find(id);
     if found.is_none() {
         return Err("Notification not found".into());
     }
@@ -1713,7 +1713,7 @@ pub fn mark_all_notifications_read(ctx: &ReducerContext, user_id: String) -> Res
         .map(|n| n.id.clone())
         .collect();
     for id in &to_update {
-        if let Some(mut n) = ctx.db.notification().iter().find(|n| &n.id == id) {
+        if let Some(mut n) = ctx.db.notification().id().find(id) {
             n.is_read = true;
             ctx.db.notification().id().update(n);
         }

@@ -52,7 +52,7 @@ pub fn update_user_role(
     updated_by: String,
 ) -> Result<(), String> {
     // Only admins can change roles
-    let updater = ctx.db.user().iter().find(|u| u.id == updated_by);
+    let updater = ctx.db.user().id().find(updated_by);
     if updater.is_none() || updater.unwrap().role != "admin" {
         return Err("Only admins can change roles".into());
     }
@@ -60,7 +60,7 @@ pub fn update_user_role(
     if !valid_roles.contains(&new_role.as_str()) {
         return Err("Invalid role. Must be admin, member, or viewer".into());
     }
-    let found = ctx.db.user().iter().find(|u| u.id == user_id);
+    let found = ctx.db.user().id().find(user_id);
     if found.is_none() {
         return Err("User not found".into());
     }
@@ -79,11 +79,11 @@ pub fn update_user_avatar(
     updated_by: String,
 ) -> Result<(), String> {
     // Only admins can change avatars
-    let updater = ctx.db.user().iter().find(|u| u.id == updated_by);
+    let updater = ctx.db.user().id().find(updated_by);
     if updater.is_none() || updater.unwrap().role != "admin" {
         return Err("Only admins can change user avatars".into());
     }
-    let found = ctx.db.user().iter().find(|u| u.id == user_id);
+    let found = ctx.db.user().id().find(user_id);
     if found.is_none() {
         return Err("User not found".into());
     }
