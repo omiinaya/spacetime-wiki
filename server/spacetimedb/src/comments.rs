@@ -15,6 +15,9 @@ pub fn add_comment(
     text_anchor: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
+    if ctx.db.comment().id().find(&id).is_some() {
+        return Ok(());
+    }
     ctx.db.comment().insert(Comment {
         id,
         page_id: page_id.clone(),

@@ -19,10 +19,12 @@ pub fn add_collection_member(
         return Err("User is already a member of this collection".into());
     }
     let role_clean = sanitize_collection_role(&role);
-    ctx.db.collection_member().insert(CollectionMember {
-        id, collection_id, user_id, role: role_clean, added_by,
-        created_at: now_ms(ctx),
-    });
+    if ctx.db.collection_member().id().find(&id).is_none() {
+        ctx.db.collection_member().insert(CollectionMember {
+            id, collection_id, user_id, role: role_clean, added_by,
+            created_at: now_ms(ctx),
+        });
+    }
     Ok(())
 }
 

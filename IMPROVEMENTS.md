@@ -21,6 +21,6 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-07-01 | **P4 — Fix MFA backup code placeholder** — Changed `"XXXX XXXX"` to `"XXXX-XXXX"` in LoginView.tsx and 2 test references. 28/28 tests pass. | (pending commit) |
+| 2026-07-01 | **P4 — Fix MFA backup code placeholder** — Changed `"XXXX XXXX"` to `"XXXX-XXXX"` in LoginView.tsx and 2 test references. 28/28 tests pass. | 5b6bbcb6 |
 | 2026-07-01 | **P4 — Fix 3 flaky tests (SsoPanel + GroupsPanel)** — Fixed 3 pre-existing flakes: SsoPanel OIDC create, SsoPanel SAML create, and GroupsPanel create tests expected a generated `crypto.randomUUID()` ID as first API arg, but the components only use the ID locally and don't pass it to the API calls. Removed rogue `vi.unstubAllGlobals()` in OIDC delete test that was corrupting the crypto mock for subsequent tests. Full suite: 56 files, 1194 tests, 0 failures. | 9e14458c |
 | 2026-07-01 | **P4 — Fix `tsc -b` build errors (18 total)** — Fixed all `tsc -b` errors: (1) `client.ts` schema param widened from `object & Record<string, unknown>` to `object` (RowBuilder from module_bindings doesn't satisfy `Record<string, unknown>`) — 7 errors. (2) `Transclusion.tsx` JSX namespace → `React.ElementType` — 3 errors. (3) `PageEditor.tsx` removed Typography.configure({...true}) — Tiptap v3.27 deprecated boolean config — 7 errors. (4) `PageView.tsx` removed unused `@ts-expect-error` — 1 error. `tsc --noEmit` and `tsc -b` both clean. All 1191 tests pass. Rust `cargo check` clean. | 35ea2855 |

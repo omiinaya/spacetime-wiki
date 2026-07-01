@@ -25,12 +25,14 @@ pub fn create_share_link(
     } else {
         hash_password(&password)
     };
-    ctx.db.share_link().insert(ShareLink {
-        id, page_id, token, password_hash, created_by,
-        expires_at, created_at: now, visit_count: 0,
-        brand_title: None,
-        brand_logo_url: None,
-    });
+    if ctx.db.share_link().id().find(&id).is_none() {
+        ctx.db.share_link().insert(ShareLink {
+            id, page_id, token, password_hash, created_by,
+            expires_at, created_at: now, visit_count: 0,
+            brand_title: None,
+            brand_logo_url: None,
+        });
+    }
     Ok(())
 }
 

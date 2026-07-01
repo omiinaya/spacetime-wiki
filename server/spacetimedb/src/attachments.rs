@@ -15,10 +15,12 @@ pub fn add_attachment(
     storage_key: String,
     uploaded_by: String,
 ) -> Result<(), String> {
-    ctx.db.attachment().insert(Attachment {
-        id, page_id, filename, mime_type, size_bytes, storage_key, uploaded_by,
-        created_at: now_ms(ctx),
-    });
+    if ctx.db.attachment().id().find(&id).is_none() {
+        ctx.db.attachment().insert(Attachment {
+            id, page_id, filename, mime_type, size_bytes, storage_key, uploaded_by,
+            created_at: now_ms(ctx),
+        });
+    }
     Ok(())
 }
 

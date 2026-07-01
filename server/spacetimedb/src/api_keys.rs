@@ -16,17 +16,19 @@ pub fn create_api_key(
 ) -> Result<(), String> {
     let now = now_ms(ctx);
     let expires_at = calc_expiry_ms(now, expires_days);
-    ctx.db.api_key().insert(ApiKey {
-        id,
-        user_id,
-        name,
-        key_hash,
-        key_prefix,
-        last_used_at: 0,
-        created_at: now,
-        expires_at,
-        is_revoked: false,
-    });
+    if ctx.db.api_key().id().find(&id).is_none() {
+        ctx.db.api_key().insert(ApiKey {
+            id,
+            user_id,
+            name,
+            key_hash,
+            key_prefix,
+            last_used_at: 0,
+            created_at: now,
+            expires_at,
+            is_revoked: false,
+        });
+    }
     Ok(())
 }
 

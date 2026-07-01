@@ -13,14 +13,16 @@ pub fn create_group(
     created_by: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    ctx.db.group().insert(Group {
-        id: id.clone(),
-        name,
-        description,
-        created_by: created_by.clone(),
-        created_at: now,
-        updated_at: now,
-    });
+    if ctx.db.group().id().find(&id).is_none() {
+        ctx.db.group().insert(Group {
+            id: id.clone(),
+            name,
+            description,
+            created_by: created_by.clone(),
+            created_at: now,
+            updated_at: now,
+        });
+    }
     // Creator becomes group admin
     ctx.db.group_member().insert(GroupMember {
         id: make_id("gm", ctx),
@@ -77,10 +79,12 @@ pub fn add_group_member(
     is_valid_group_member_add(user_exists, already_member)
         .map_err(|e| e.to_string())?;
     let role_clean = normalize_group_role(&role);
-    ctx.db.group_member().insert(GroupMember {
-        id, group_id, user_id, role: role_clean, added_by,
-        created_at: now_ms(ctx),
-    });
+    if ctx.db.group_member().id().find(&id).is_none() {
+        ctx.db.group_member().insert(GroupMember {
+            id, group_id, user_id, role: role_clean, added_by,
+            created_at: now_ms(ctx),
+        });
+    }
     Ok(())
 }
 

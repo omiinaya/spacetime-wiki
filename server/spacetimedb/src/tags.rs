@@ -11,9 +11,11 @@ pub fn add_tag(
     name: String,
     value: String,
 ) -> Result<(), String> {
-    ctx.db.page_tag().insert(PageTag {
-        id, page_id, name: name.to_lowercase().trim().to_string(), value,
-    });
+    if ctx.db.page_tag().id().find(&id).is_none() {
+        ctx.db.page_tag().insert(PageTag {
+            id, page_id, name: name.to_lowercase().trim().to_string(), value,
+        });
+    }
     Ok(())
 }
 
