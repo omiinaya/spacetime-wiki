@@ -47,8 +47,8 @@
 > | 🟠 **Medium** | **Non-idempotent reducers** — ~15 reducers (`create_page`, `add_attachment`, `add_tag`, etc.) panic on duplicate primary key | Failed retries can crash the reducer | 2-3 hours | ❌ |
 > | 🟡 **Medium** | **51 guarded `unwrap()` calls** — safe now but fragile under refactoring | Future code motion introduces panic risk | 2-3 hours | ❌ |
 > | 🟡 **Medium** | **150+ `any` types in Tiptap code** — `helpers.ts`, `PageEditor.tsx`, `PageView.tsx`, `Transclusion.tsx` all use `any` for ProseMirror document nodes | Hides structural type errors | 8-16 hours (large refactor) | ❌ |
-> | 🟡 **Medium** | **No `#[init]` reducer** — no database bootstrap, seed data, or migration mechanism | First-run requires manual setup | 1 hour | ❌ |
-> | 🟡 **Medium** | **SHA-256 for password hashing** instead of Argon2/bcrypt/scrypt | Weak against offline cracking if DB compromised | 2 hours | ❌ |
+| 🟡 **Medium** | **No `#[init]` reducer** — database bootstrap added | First-run creates default settings | Done | ✅ **Fixed** |
+| 🟡 **Medium** | **SHA-256 for password hashing** instead of Argon2/bcrypt/scrypt | Weak against offline cracking if DB compromised | 2 hours | ❌ |
 > | ⚪ **Low** | **No Playwright E2E tests** — all tests are unit/component tests | Regression risk on complex user flows | Ongoing | ❌ |
 > | ⚪ **Low** | **Commented-out dead code removed** — 61 lines removed from PageView.tsx | Cleaner codebase | Done | ✅ **Fixed** |
 > | ⚪ **Low** | **5 copy-paste bugs fixed in sso.rs** — delete/update functions checked wrong table | Would have crashed with confusing error messages | Found during refactor | ✅ **Fixed** |

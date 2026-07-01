@@ -251,11 +251,7 @@ pub fn update_ldap_provider(
 ) -> Result<(), String> {
     validate_not_empty(&host, "LDAP host")?;
     validate_not_empty(&base_dn, "Base DN")?;
-    let found = ctx.db.ldap_provider().id().find(id.clone());
-    if found.is_none() {
-        return Err("LDAP provider not found".into());
-    }
-    let mut provider = found.unwrap();
+    let mut provider = ctx.db.ldap_provider().id().find(id).ok_or_else(|| "LDAP provider not found".to_string())?;
     provider.name = name;
     provider.slug = slug;
     provider.host = host;
@@ -370,14 +366,10 @@ pub fn update_oauth_provider(
     default_role: String,
     is_active: bool,
 ) -> Result<(), String> {
-    let found = ctx.db.oauth_provider().id().find(id.clone());
-    if found.is_none() {
-        return Err("OAuth provider not found".into());
-    }
+    let mut provider = ctx.db.oauth_provider().id().find(id).ok_or_else(|| "OAuth provider not found".to_string())?;
     validate_oauth_provider_type(&provider_type)?;
     validate_not_empty(&name, "Provider name")?;
     validate_not_empty(&client_id, "Client ID")?;
-    let mut provider = found.unwrap();
     provider.name = name;
     provider.slug = slug;
     provider.provider_type = provider_type;
