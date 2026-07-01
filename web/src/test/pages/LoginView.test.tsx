@@ -403,7 +403,7 @@ describe("LoginView", () => {
 
     await userEvent.click(screen.getByText("Use a backup code instead"));
     expect(screen.getByText("Backup Code")).toBeTruthy();
-    const backupInput: HTMLInputElement = container.querySelector('input[placeholder="XXXX XXXX"]')!;
+    const backupInput: HTMLInputElement = container.querySelector('input[placeholder="XXXX-XXXX"]')!;
     expect(backupInput).toBeTruthy();
 
     await userEvent.type(backupInput, "ABCD1234");
@@ -432,7 +432,7 @@ describe("LoginView", () => {
     });
 
     await userEvent.click(screen.getByText("Use a backup code instead"));
-    expect(container.querySelector('input[placeholder="XXXX XXXX"]')).toBeTruthy();
+    expect(container.querySelector('input[placeholder="XXXX-XXXX"]')).toBeTruthy();
 
     await userEvent.click(screen.getByText("Use authenticator app instead"));
     expect(container.querySelector('input[maxLength="6"]')).toBeTruthy();

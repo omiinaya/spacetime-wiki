@@ -191,7 +191,7 @@ export default function LoginView() {
             <label className="block text-xs font-medium mb-1">{mfaBackupMode ? "Backup Code" : "Authenticator Code"}</label>
             {mfaBackupMode ? (
               <input type="text" value={mfaBackupCode} onChange={e => setMfaBackupCode(e.target.value.toUpperCase().slice(0, 8))}
-                placeholder="XXXX XXXX"
+                placeholder="XXXX-XXXX"
                 className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
             ) : (
               <input type="text" value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
