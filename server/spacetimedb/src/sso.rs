@@ -67,17 +67,19 @@ pub fn add_saml_provider(
     validate_not_empty(&entity_id, "Entity ID")?;
     validate_url(&sso_url, "SSO URL")?;
     let now = now_ms(ctx);
-    ctx.db.saml_provider().insert(SamlProvider {
-        id, name, slug, entity_id, sso_url,
-        certificate,
-        name_id_format: if name_id_format.is_empty() { "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".into() } else { name_id_format },
-        attribute_mapping: if attribute_mapping.is_empty() { r#"{"email":"email","name":"name"}"#.into() } else { attribute_mapping },
-        auto_register,
-        is_active: true,
-        created_by,
-        created_at: now,
-        updated_at: now,
-    });
+    if ctx.db.saml_provider().id().find(&id).is_none() {
+        ctx.db.saml_provider().insert(SamlProvider {
+            id, name, slug, entity_id, sso_url,
+            certificate,
+            name_id_format: if name_id_format.is_empty() { "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".into() } else { name_id_format },
+            attribute_mapping: if attribute_mapping.is_empty() { r#"{"email":"email","name":"name"}"#.into() } else { attribute_mapping },
+            auto_register,
+            is_active: true,
+            created_by,
+            created_at: now,
+            updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -140,15 +142,17 @@ pub fn add_oidc_provider(
     validate_url(&issuer_url, "Issuer URL")?;
     validate_not_empty(&client_id, "Client ID")?;
     let now = now_ms(ctx);
-    ctx.db.oidc_provider().insert(OidcProvider {
-        id, name, slug, issuer_url, client_id,
-        client_secret: if client_secret.is_empty() { String::new() } else { client_secret },
-        scopes: if scopes.is_empty() { "openid email profile".into() } else { scopes },
-        is_active: true,
-        created_by,
-        created_at: now,
-        updated_at: now,
-    });
+    if ctx.db.oidc_provider().id().find(&id).is_none() {
+        ctx.db.oidc_provider().insert(OidcProvider {
+            id, name, slug, issuer_url, client_id,
+            client_secret: if client_secret.is_empty() { String::new() } else { client_secret },
+            scopes: if scopes.is_empty() { "openid email profile".into() } else { scopes },
+            is_active: true,
+            created_by,
+            created_at: now,
+            updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -218,14 +222,16 @@ pub fn add_ldap_provider(
     validate_not_empty(&user_filter, "User filter")?;
     let role_clean = sanitize_role(&default_role, &["admin", "member", "viewer"], "member");
     let now = now_ms(ctx);
-    ctx.db.ldap_provider().insert(LdapProvider {
-        id, name, slug, host, port, is_secure,
-        bind_dn, bind_password, base_dn, user_filter,
-        username_attribute, email_attribute, name_attribute,
-        default_role: role_clean,
-        auto_register, is_active: true,
-        created_by, created_at: now, updated_at: now,
-    });
+    if ctx.db.ldap_provider().id().find(&id).is_none() {
+        ctx.db.ldap_provider().insert(LdapProvider {
+            id, name, slug, host, port, is_secure,
+            bind_dn, bind_password, base_dn, user_filter,
+            username_attribute, email_attribute, name_attribute,
+            default_role: role_clean,
+            auto_register, is_active: true,
+            created_by, created_at: now, updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -298,10 +304,12 @@ pub fn link_ldap_user(
     external_id: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    ctx.db.ldap_user().insert(LdapUser {
-        id, user_id, ldap_provider_id, dn, external_id,
-        last_synced_at: now, created_at: now,
-    });
+    if ctx.db.ldap_user().id().find(&id).is_none() {
+        ctx.db.ldap_user().insert(LdapUser {
+            id, user_id, ldap_provider_id, dn, external_id,
+            last_synced_at: now, created_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -336,15 +344,17 @@ pub fn add_oauth_provider(
     let scopes_clean = if scope.is_empty() { default_oauth_scope(&provider_type).into() } else { scope };
     let now = now_ms(ctx);
     let provider_type_clone = provider_type.clone();
-    ctx.db.oauth_provider().insert(OauthProvider {
-        id, name, slug, provider_type,
-        authorize_url, token_url, userinfo_url,
-        scope: scopes_clean, client_id, client_secret,
-        icon: if icon.is_empty() { provider_type_clone.clone() } else { icon },
-        is_active: true, auto_register,
-        default_role: role_clean,
-        created_by, created_at: now, updated_at: now,
-    });
+    if ctx.db.oauth_provider().id().find(&id).is_none() {
+        ctx.db.oauth_provider().insert(OauthProvider {
+            id, name, slug, provider_type,
+            authorize_url, token_url, userinfo_url,
+            scope: scopes_clean, client_id, client_secret,
+            icon: if icon.is_empty() { provider_type_clone.clone() } else { icon },
+            is_active: true, auto_register,
+            default_role: role_clean,
+            created_by, created_at: now, updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -430,11 +440,13 @@ pub fn link_oauth_user(
         return Err("OAuth provider not found".into());
     }
     let now = now_ms(ctx);
-    ctx.db.oauth_user().insert(OauthUser {
-        id, user_id, provider_id, external_id, external_username, external_email,
-        access_token, refresh_token, token_expires_at,
-        last_synced_at: now, created_at: now, updated_at: now,
-    });
+    if ctx.db.oauth_user().id().find(&id).is_none() {
+        ctx.db.oauth_user().insert(OauthUser {
+            id, user_id, provider_id, external_id, external_username, external_email,
+            access_token, refresh_token, token_expires_at,
+            last_synced_at: now, created_at: now, updated_at: now,
+        });
+    }
     Ok(())
 }
 

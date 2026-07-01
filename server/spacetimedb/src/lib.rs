@@ -67,11 +67,13 @@ pub fn create_collection(
     let slug = name.to_lowercase().replace(' ', "-");
     let now = now_ms(ctx);
     let sort_order = next_col_sort_order(ctx, &parent_id);
-    ctx.db.collection().insert(Collection {
-        id: id.clone(), name: name.clone(), slug, description, parent_id, icon, color,
-        sort_order, created_by: created_by.clone(),
-        created_at: now, updated_at: now,
-    });
+    if ctx.db.collection().id().find(&id).is_none() {
+        ctx.db.collection().insert(Collection {
+            id: id.clone(), name: name.clone(), slug, description, parent_id, icon, color,
+            sort_order, created_by: created_by.clone(),
+            created_at: now, updated_at: now,
+        });
+    }
     // Creator gets admin access
     ctx.db.collection_member().insert(CollectionMember {
         id: make_id("cm", ctx),
@@ -260,17 +262,19 @@ pub fn create_webhook(
         return Err("Events must be a JSON array of strings".into());
     }
     let now = now_ms(ctx);
-    ctx.db.webhook().insert(Webhook {
-        id,
-        name,
-        url,
-        events,
-        is_active: true,
-        secret,
-        created_by,
-        created_at: now,
-        updated_at: now,
-    });
+    if ctx.db.webhook().id().find(&id).is_none() {
+        ctx.db.webhook().insert(Webhook {
+            id,
+            name,
+            url,
+            events,
+            is_active: true,
+            secret,
+            created_by,
+            created_at: now,
+            updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -623,14 +627,16 @@ pub fn create_ai_chat_session(
     page_context_id: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    ctx.db.ai_chat_session().insert(AiChatSession {
-        id,
-        user_id,
-        title,
-        page_context_id,
-        created_at: now,
-        updated_at: now,
-    });
+    if ctx.db.ai_chat_session().id().find(&id).is_none() {
+        ctx.db.ai_chat_session().insert(AiChatSession {
+            id,
+            user_id,
+            title,
+            page_context_id,
+            created_at: now,
+            updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -647,13 +653,15 @@ pub fn add_ai_chat_message(
         return Err("Invalid role. Must be user, assistant, or system".into());
     }
     let now = now_ms(ctx);
-    ctx.db.ai_chat_message().insert(AiChatMessage {
-        id,
-        session_id: session_id.clone(),
-        role,
-        content,
-        created_at: now,
-    });
+    if ctx.db.ai_chat_message().id().find(&id).is_none() {
+        ctx.db.ai_chat_message().insert(AiChatMessage {
+            id,
+            session_id: session_id.clone(),
+            role,
+            content,
+            created_at: now,
+        });
+    }
     // Update session's updated_at
     if let Some(mut session) = ctx.db.ai_chat_session().id().find(&session_id) {
         session.updated_at = now;
@@ -716,18 +724,20 @@ pub fn add_scim_provider(
     let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
     let api_token_hash = hash_password(&api_token);
     let now = now_ms(ctx);
-    ctx.db.scim_provider().insert(ScimProvider {
-        id, name, slug,
-        api_token_hash,
-        is_active: true,
-        default_role: role_clean,
-        auto_register,
-        deprovision_behavior,
-        sync_groups,
-        created_by,
-        created_at: now,
-        updated_at: now,
-    });
+    if ctx.db.scim_provider().id().find(&id).is_none() {
+        ctx.db.scim_provider().insert(ScimProvider {
+            id, name, slug,
+            api_token_hash,
+            is_active: true,
+            default_role: role_clean,
+            auto_register,
+            deprovision_behavior,
+            sync_groups,
+            created_by,
+            created_at: now,
+            updated_at: now,
+        });
+    }
     Ok(())
 }
 

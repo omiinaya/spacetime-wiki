@@ -19,18 +19,20 @@ pub fn create_page(
     let sort_order = next_sort_order(ctx, &collection_id, &parent_page_id);
     let text_content = extract_text_content(&content);
 
-    ctx.db.page().insert(Page {
-        id: id.clone(),
-        title: title.clone(),
-        slug,
-        content: content.clone(),
-        text_content, collection_id: collection_id.clone(), parent_page_id: parent_page_id.clone(),
-        status: "draft".into(), icon: String::new(), color: String::new(),
-        full_width: false, is_pinned: false, is_template: false, template_id: String::new(),
-        sort_order, created_by: created_by.clone(), updated_by: created_by.clone(),
-        created_at: now, updated_at: now, published_at: 0, deleted_at: 0,
-        direction: "ltr".into(),
-    });
+    if ctx.db.page().id().find(&id).is_none() {
+        ctx.db.page().insert(Page {
+            id: id.clone(),
+            title: title.clone(),
+            slug,
+            content: content.clone(),
+            text_content, collection_id: collection_id.clone(), parent_page_id: parent_page_id.clone(),
+            status: "draft".into(), icon: String::new(), color: String::new(),
+            full_width: false, is_pinned: false, is_template: false, template_id: String::new(),
+            sort_order, created_by: created_by.clone(), updated_by: created_by.clone(),
+            created_at: now, updated_at: now, published_at: 0, deleted_at: 0,
+            direction: "ltr".into(),
+        });
+    }
 
     ctx.db.page_revision().insert(PageRevision {
         id: make_id("rev", ctx), page_id: id.clone(), title: title.clone(), content: content.clone(),
