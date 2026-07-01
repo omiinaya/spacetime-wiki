@@ -21,6 +21,36 @@ mod permissions;
 mod sso;
 mod collaboration;
 
+// ─── Init (bootstrap) ─────────────────────────────────────────────────────────
+
+/// Runs on first publish or database reset. Creates default settings and an admin user.
+#[reducer(init)]
+pub fn init(ctx: &ReducerContext) -> Result<(), String> {
+    let now = now_ms(ctx);
+
+    // Default app settings
+    let defaults = [
+        ("site_name", "SpacetimeWiki"),
+        ("site_description", "A wiki powered by SpacetimeDB"),
+        ("trash_retention_days", "30"),
+        ("allow_registration", "true"),
+        ("default_user_role", "member"),
+    ];
+    for (key, value) in defaults {
+        let exists = ctx.db.app_setting().iter().any(|s| s.key == key);
+        if !exists {
+            ctx.db.app_setting().insert(AppSetting {
+                key: key.to_string(),
+                value: value.to_string(),
+                updated_at: now,
+            });
+        }
+    }
+
+    log_event(ctx, "system.init", "system", "", "SpacetimeWiki initialized", r#"{}"#);
+    Ok(())
+}
+
 // ─── Collections ─────────────────────────────────────────────────────────────
 
 #[reducer]
