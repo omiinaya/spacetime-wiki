@@ -53,18 +53,14 @@ pub fn update_user_role(
 ) -> Result<(), String> {
     // Only admins can change roles
     let updater = ctx.db.user().id().find(updated_by);
-    if updater.is_none() || updater.unwrap().role != "admin" {
+    if !updater.map_or(false, |u| u.role == "admin") {
         return Err("Only admins can change roles".into());
     }
     let valid_roles = ["admin", "member", "viewer"];
     if !valid_roles.contains(&new_role.as_str()) {
         return Err("Invalid role. Must be admin, member, or viewer".into());
     }
-    let found = ctx.db.user().id().find(user_id);
-    if found.is_none() {
-        return Err("User not found".into());
-    }
-    let mut user = found.unwrap();
+    let mut user = ctx.db.user().id().find(user_id).ok_or_else(|| "User not found".to_string())?;
     user.role = new_role;
     user.updated_at = now_ms(ctx);
     ctx.db.user().id().update(user);
@@ -80,14 +76,10 @@ pub fn update_user_avatar(
 ) -> Result<(), String> {
     // Only admins can change avatars
     let updater = ctx.db.user().id().find(updated_by);
-    if updater.is_none() || updater.unwrap().role != "admin" {
+    if !updater.map_or(false, |u| u.role == "admin") {
         return Err("Only admins can change user avatars".into());
     }
-    let found = ctx.db.user().id().find(user_id);
-    if found.is_none() {
-        return Err("User not found".into());
-    }
-    let mut user = found.unwrap();
+    let mut user = ctx.db.user().id().find(user_id).ok_or_else(|| "User not found".to_string())?;
     user.avatar_url = avatar_url;
     user.updated_at = now_ms(ctx);
     ctx.db.user().id().update(user);

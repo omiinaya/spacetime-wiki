@@ -21,11 +21,7 @@ pub fn create_from_template(
     collection_id: String,
     created_by: String,
 ) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == template_id && p.is_template);
-    if found.is_none() {
-        return Err("Template not found".into());
-    }
-    let template = found.unwrap();
+    let template = ctx.db.page().iter().find(|p| p.id == template_id && p.is_template).ok_or_else(|| "Template not found".to_string())?;
     create_page(
         ctx, new_id.clone(), title, template.content,
         collection_id, String::new(), created_by,

@@ -47,11 +47,7 @@ pub fn update_share_branding(
     brand_title: Option<String>,
     brand_logo_url: Option<String>,
 ) -> Result<(), String> {
-    let found = ctx.db.share_link().id().find(&share_id);
-    if found.is_none() {
-        return Err("Share link not found".into());
-    }
-    let mut share = found.unwrap();
+    let mut share = ctx.db.share_link().id().find(&share_id).ok_or_else(|| "Share link not found".to_string())?;
     share.brand_title = brand_title;
     share.brand_logo_url = brand_logo_url;
     ctx.db.share_link().id().update(share);
@@ -64,11 +60,7 @@ pub fn verify_share_password(
     token: String,
     password: String,
 ) -> Result<(), String> {
-    let found = ctx.db.share_link().iter().find(|s| s.token == token);
-    if found.is_none() {
-        return Err("Invalid share link".into());
-    }
-    let share = found.unwrap();
+    let share = ctx.db.share_link().iter().find(|s| s.token == token).ok_or_else(|| "Invalid share link".to_string())?;
     let now = now_ms(ctx);
     if share.expires_at > 0 && now > share.expires_at {
         return Err("Share link has expired".into());
@@ -86,11 +78,7 @@ pub fn verify_share_password(
 
 #[reducer]
 pub fn visit_share_link(ctx: &ReducerContext, token: String) -> Result<(), String> {
-    let found = ctx.db.share_link().iter().find(|s| s.token == token);
-    if found.is_none() {
-        return Err("Invalid share link".into());
-    }
-    let share = found.unwrap();
+    let share = ctx.db.share_link().iter().find(|s| s.token == token).ok_or_else(|| "Invalid share link".to_string())?;
     let now = now_ms(ctx);
     if share.expires_at > 0 && now > share.expires_at {
         return Err("Share link has expired".into());

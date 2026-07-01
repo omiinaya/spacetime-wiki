@@ -95,11 +95,7 @@ pub fn update_collection(
     icon: String,
     color: String,
 ) -> Result<(), String> {
-    let found = ctx.db.collection().id().find(id);
-    if found.is_none() {
-        return Err("Collection not found".into());
-    }
-    let mut col = found.unwrap();
+    let mut col = ctx.db.collection().id().find(id).ok_or_else(|| "Collection not found".to_string())?;
     col.name = name;
     col.slug = col.name.to_lowercase().replace(' ', "-");
     col.description = description;
@@ -191,11 +187,8 @@ pub fn delete_collection_sort_rule(ctx: &ReducerContext, collection_id: String) 
 #[reducer]
 pub fn apply_collection_auto_sort(ctx: &ReducerContext, collection_id: String) -> Result<(), String> {
     let rule = ctx.db.collection_sort_rule().iter()
-        .find(|r| r.collection_id == collection_id);
-    if rule.is_none() {
-        return Err("No sort rule configured for this collection".into());
-    }
-    let rule = rule.unwrap();
+        .find(|r| r.collection_id == collection_id)
+        .ok_or_else(|| "No sort rule configured for this collection".to_string())?;
     if rule.sort_field == "manual" {
         return Ok(()); // no-op for manual sort
     }
@@ -297,11 +290,8 @@ pub fn update_webhook(
     if serde_json::from_str::<Vec<String>>(&events).is_err() {
         return Err("Events must be a JSON array of strings".into());
     }
-    let found = ctx.db.webhook().id().find(&id);
-    if found.is_none() {
-        return Err("Webhook not found".into());
-    }
-    let mut wh = found.unwrap();
+    let mut wh = ctx.db.webhook().id().find(&id)
+        .ok_or_else(|| "Webhook not found".to_string())?;
     wh.name = name;
     wh.url = url;
     wh.events = events;
@@ -354,11 +344,8 @@ pub fn mark_webhook_event_sent(
     response_code: u32,
     response_body: String,
 ) -> Result<(), String> {
-    let found = ctx.db.webhook_event().id().find(&id);
-    if found.is_none() {
-        return Err("Webhook event not found".into());
-    }
-    let mut event = found.unwrap();
+    let mut event = ctx.db.webhook_event().id().find(&id)
+        .ok_or_else(|| "Webhook event not found".to_string())?;
     event.status = if (200..300).contains(&response_code) { "sent".to_string() } else { "failed".to_string() };
     event.response_code = response_code;
     event.response_body = response_body;
@@ -764,11 +751,8 @@ pub fn update_scim_provider(
     if !valid_behaviors.contains(&deprovision_behavior.as_str()) {
         return Err("Deprovision behavior must be 'deactivate' or 'delete'".into());
     }
-    let found = ctx.db.scim_provider().id().find(&id);
-    if found.is_none() {
-        return Err("SCIM provider not found".into());
-    }
-    let mut provider = found.unwrap();
+    let mut provider = ctx.db.scim_provider().id().find(&id)
+        .ok_or_else(|| "SCIM provider not found".to_string())?;
     provider.name = name;
     provider.slug = slug;
     if !api_token.is_empty() {
@@ -875,11 +859,8 @@ pub fn scim_deprovision_user(
     email: String,
     behavior: String,
 ) -> Result<(), String> {
-    let existing = ctx.db.user().iter().find(|u| u.email == email);
-    if existing.is_none() {
-        return Ok(()); // User already gone
-    }
-    let mut user = existing.unwrap();
+    let mut user = ctx.db.user().iter().find(|u| u.email == email)
+        .ok_or_else(|| "User not found".to_string())?;
     let now = now_ms(ctx);
     if behavior == "delete" {
         ctx.db.user().id().delete(&user.id);
@@ -1028,12 +1009,9 @@ pub fn consume_passkey_challenge(
     ctx: &ReducerContext,
     challenge: String,
 ) -> Result<(), String> {
-    let found = ctx.db.passkey_challenge().iter().find(|c| c.challenge == challenge);
-    if found.is_none() {
-        return Err("Challenge not found".into());
-    }
+    let c = ctx.db.passkey_challenge().iter().find(|c| c.challenge == challenge)
+        .ok_or_else(|| "Challenge not found".to_string())?;
     let now = now_ms(ctx);
-    let c = found.unwrap();
     if c.expires_at < now {
         ctx.db.passkey_challenge().challenge().delete(&challenge);
         return Err("Challenge has expired".into());
@@ -1048,11 +1026,8 @@ pub fn update_passkey_counter(
     credential_id: String,
     counter: u64,
 ) -> Result<(), String> {
-    let found = ctx.db.passkey_credential().iter().find(|c| c.credential_id == credential_id);
-    if found.is_none() {
-        return Err("Credential not found".into());
-    }
-    let mut cred = found.unwrap();
+    let mut cred = ctx.db.passkey_credential().iter().find(|c| c.credential_id == credential_id)
+        .ok_or_else(|| "Credential not found".to_string())?;
     let now = now_ms(ctx);
     cred.counter = counter;
     cred.last_used_at = now;
@@ -1283,7 +1258,7 @@ pub fn create_invitation(
     }
     // Only admins can invite
     let inviter = ctx.db.user().id().find(invited_by.clone());
-    if inviter.is_none() || inviter.unwrap().role != "admin" {
+    if !inviter.map_or(false, |u| u.role == "admin") {
         return Err("Only admins can create invitations".into());
     }
     // Check for existing pending invitation for this email
@@ -1339,12 +1314,9 @@ pub fn accept_invitation(
     user_id: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    let inv = ctx.db.invitation().iter()
-        .find(|i| i.token == token && i.status == "pending");
-    if inv.is_none() {
-        return Err("Invitation not found or already used".into());
-    }
-    let invitation = inv.unwrap();
+    let invitation = ctx.db.invitation().iter()
+        .find(|i| i.token == token && i.status == "pending")
+        .ok_or_else(|| "Invitation not found or already used".to_string())?;
     // Check expiry
     if invitation.expires_at > 0 && now > invitation.expires_at {
         let mut expired = invitation;
@@ -1354,11 +1326,8 @@ pub fn accept_invitation(
         return Err("Invitation has expired".into());
     }
     // Verify the email matches
-    let user = ctx.db.user().id().find(user_id.clone());
-    if user.is_none() {
-        return Err("User not found".into());
-    }
-    let user = user.unwrap();
+    let user = ctx.db.user().id().find(user_id.clone())
+        .ok_or_else(|| "User not found".to_string())?;
     if user.email.to_lowercase() != invitation.email.to_lowercase() {
         return Err("This invitation was sent to a different email address".into());
     }
@@ -1405,14 +1374,11 @@ pub fn accept_invitation(
 #[reducer]
 pub fn revoke_invitation(ctx: &ReducerContext, id: String, revoked_by: String) -> Result<(), String> {
     let inviter = ctx.db.user().id().find(revoked_by.clone());
-    if inviter.is_none() || inviter.unwrap().role != "admin" {
+    if !inviter.map_or(false, |u| u.role == "admin") {
         return Err("Only admins can revoke invitations".into());
     }
-    let found = ctx.db.invitation().id().find(&id);
-    if found.is_none() {
-        return Err("Invitation not found".into());
-    }
-    let mut inv = found.unwrap();
+    let mut inv = ctx.db.invitation().id().find(&id)
+        .ok_or_else(|| "Invitation not found".to_string())?;
     if inv.status != "pending" {
         return Err("Can only revoke pending invitations".into());
     }
@@ -1726,11 +1692,7 @@ pub fn create_notification(
 
 #[reducer]
 pub fn mark_notification_read(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.notification().id().find(id);
-    if found.is_none() {
-        return Err("Notification not found".into());
-    }
-    let mut notif = found.unwrap();
+    let mut notif = ctx.db.notification().id().find(id).ok_or_else(|| "Notification not found".to_string())?;
     notif.is_read = true;
     ctx.db.notification().id().update(notif);
     Ok(())
@@ -1786,17 +1748,10 @@ pub fn create_access_request(
     reason: String,
 ) -> Result<(), String> {
     // Check page exists
-    let page = ctx.db.page().id().find(&page_id);
-    if page.is_none() {
-        return Err("Page not found".into());
-    }
-    let page = page.unwrap();
+    let page = ctx.db.page().id().find(&page_id).ok_or_else(|| "Page not found".to_string())?;
 
     // Check user exists
-    let user = ctx.db.user().id().find(&requester_id);
-    if user.is_none() {
-        return Err("User not found".into());
-    }
+    let user = ctx.db.user().id().find(&requester_id).ok_or_else(|| "User not found".to_string())?;
 
     // Check if user already has a pending request for this page
     let existing = ctx.db.access_request().iter().find(|r| {
@@ -1820,7 +1775,7 @@ pub fn create_access_request(
     });
 
     // Notify the page creator/owner and all admins about the access request
-    let requester_name = user.unwrap().name.clone();
+    let requester_name = user.name.clone();
     let page_title = page.title.clone();
     let message = format!(
         "{} requested access to page \"{}\"",
@@ -1876,11 +1831,7 @@ pub fn approve_access_request(
     id: String,
     responder_id: String,
 ) -> Result<(), String> {
-    let request = ctx.db.access_request().id().find(&id);
-    if request.is_none() {
-        return Err("Access request not found".into());
-    }
-    let request = request.unwrap();
+    let request = ctx.db.access_request().id().find(&id).ok_or_else(|| "Access request not found".to_string())?;
     if request.status != "pending" {
         return Err("Access request is not pending".into());
     }
@@ -1934,11 +1885,7 @@ pub fn deny_access_request(
     id: String,
     responder_id: String,
 ) -> Result<(), String> {
-    let request = ctx.db.access_request().id().find(&id);
-    if request.is_none() {
-        return Err("Access request not found".into());
-    }
-    let request = request.unwrap();
+    let request = ctx.db.access_request().id().find(&id).ok_or_else(|| "Access request not found".to_string())?;
     if request.status != "pending" {
         return Err("Access request is not pending".into());
     }

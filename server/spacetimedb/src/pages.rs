@@ -121,11 +121,7 @@ pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Resu
 
 #[reducer]
 pub fn restore_page(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let found = ctx.db.page().iter().find(|p| p.id == id && p.status == "deleted");
-    if found.is_none() {
-        return Err("Page not found or not in trash".into());
-    }
-    let mut page = found.unwrap();
+    let mut page = ctx.db.page().iter().find(|p| p.id == id && p.status == "deleted").ok_or_else(|| "Page not found or not in trash".to_string())?;
     page.status = "draft".into();
     page.deleted_at = 0;
     page.updated_at = now_ms(ctx);
