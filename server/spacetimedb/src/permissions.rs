@@ -23,15 +23,18 @@ pub fn create_group(
             updated_at: now,
         });
     }
-    // Creator becomes group admin
-    ctx.db.group_member().insert(GroupMember {
-        id: make_id("gm", ctx),
-        group_id: id,
-        user_id: created_by,
-        role: "admin".into(),
-        added_by: String::new(),
-        created_at: now,
-    });
+    // Creator becomes group admin (idempotent — skip if already exists)
+    let admin_member_id = make_id("gm", ctx);
+    if ctx.db.group_member().id().find(&admin_member_id).is_none() {
+        ctx.db.group_member().insert(GroupMember {
+            id: admin_member_id,
+            group_id: id,
+            user_id: created_by,
+            role: "admin".into(),
+            added_by: String::new(),
+            created_at: now,
+        });
+    }
     Ok(())
 }
 
