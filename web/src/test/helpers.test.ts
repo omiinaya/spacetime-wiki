@@ -229,21 +229,19 @@ describe("markdownToProseMirror", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // tiptapToMarkdown
 // ═══════════════════════════════════════════════════════════════════════════════
-// NOTE: helpers.ts version is a stub returning empty string.
-// The complete implementation lives in tiptap-helpers.ts.
+// NOTE: helpers.ts now has the complete implementation (consolidated from tiptap-helpers.ts).
 
 describe("tiptapToMarkdown", () => {
-  it("returns empty string (stub — full impl in tiptap-helpers.ts)", () => {
+  it("converts a paragraph", () => {
     const doc = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Hello" }] }] };
-    expect(tiptapToMarkdown(doc)).toBe("");
+    expect(tiptapToMarkdown(doc)).toBe("Hello");
   });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // tiptapToHTML
 // ═══════════════════════════════════════════════════════════════════════════════
-// NOTE: helpers.ts version is simpler than tiptap-helpers.ts.
-// Does NOT append trailing newlines. Does NOT render callout blocks.
+// NOTE: helpers.ts version is now the canonical implementation.
 
 describe("tiptapToHTML", () => {
   it("converts a paragraph", () => {

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import JSZip from "jszip";
 import { api, Page, Collection } from "../../lib/api";
 import { useToast } from "../Toast";
-import { tiptapToMarkdown, tiptapToHTML } from "../../lib/tiptap-helpers";
+import { tiptapToMarkdown, tiptapToHTML } from "../../lib/helpers";
 import { FileText, Download, Loader2 } from "lucide-react";
 
 export function BulkExport() {

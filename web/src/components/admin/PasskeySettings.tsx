@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, PasskeyCredential } from "../../lib/api";
-import { arrayBufferToBase64Url } from "../../lib/tiptap-helpers";
+import { arrayBufferToBase64Url } from "../../lib/helpers";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
 export function PasskeySettings({ userId }: { userId: string | null }) {

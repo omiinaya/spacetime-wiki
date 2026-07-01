@@ -19,7 +19,9 @@ vi.mock("../lib/api", () => ({
 }));
 
 // Mock arrayBufferToBase64Url helper used by the component
-vi.mock("../lib/tiptap-helpers", () => ({
+vi.mock("../lib/helpers", () => ({
+  api: {},
+  callReducerLocal: vi.fn(),
   arrayBufferToBase64Url: (buf: ArrayBuffer) => {
     // Simple mock: return a base64url encoding stub
     const bytes = new Uint8Array(buf);

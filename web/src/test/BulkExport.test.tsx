@@ -39,10 +39,10 @@ vi.mock("jszip", () => ({
 
 // ─── Mock tiptap helpers ──────────────────────────────────────────────────────
 
-vi.mock("../../lib/tiptap-helpers", () => ({
-  tiptapToMarkdown: vi.fn(() => "# Content"),
-  tiptapToHTML: vi.fn(() => "<p>Content</p>"),
-}));
+vi.mock("../../lib/helpers", async () => {
+  const actual = await vi.importActual<typeof import("../../lib/helpers")>("../../lib/helpers");
+  return { ...actual, tiptapToMarkdown: vi.fn(() => "# Content"), tiptapToHTML: vi.fn(() => "<p>Content</p>") };
+});
 
 import { BulkExport } from "../components/admin/BulkExport";
 

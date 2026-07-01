@@ -223,68 +223,6 @@ function tiptapToMarkdown(doc: any): string {
   return lines.join("\n").trim();
 }
 
-/* function tiptapToHTML(doc: any): string {
-  if (!doc || !doc.content) return "";
-  let html = "";
-  for (const node of doc.content) {
-    switch (node.type) {
-      case "heading": {
-        const level = node.attrs?.level || 1;
-        html += `<h${level}>${node.content?.map((n: any) => n.text || "").join("") || ""}</h${level}>\n`;
-        break;
-      }
-      case "paragraph":
-        html += `<p>${node.content?.map((n: any) => n.text || "").join("") || ""}</p>\n`;
-        break;
-      case "bulletList":
-        html += "<ul>\n";
-        for (const item of node.content || []) {
-          html += `<li>${item.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || n.text || "").join("") || ""}</li>\n`;
-        }
-        html += "</ul>\n";
-        break;
-      case "orderedList":
-        html += "<ol>\n";
-        for (const item of node.content || []) {
-          html += `<li>${item.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || n.text || "").join("") || ""}</li>\n`;
-        }
-        html += "</ol>\n";
-        break;
-      case "codeBlock":
-        html += `<pre><code>${node.content?.map((n: any) => n.text || "").join("") || ""}</code></pre>\n`;
-        break;
-      case "blockquote": {
-        const qText = node.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || "").join("") || "";
-        html += `<blockquote>${qText}</blockquote>\n`;
-        break;
-      }
-      case "horizontalRule":
-        html += "<hr />\n";
-        break;
-      case "callout": {
-        const ctype = node.attrs?.type || "info";
-        const colorClass = ctype === "warning" ? "border-amber-500 bg-amber-50" :
-          ctype === "tip" ? "border-emerald-500 bg-emerald-50" :
-          ctype === "danger" ? "border-red-500 bg-red-50" :
-          "border-blue-500 bg-blue-50";
-        const icon = ctype === "warning" ? "⚠️" : ctype === "tip" ? "💡" : ctype === "danger" ? "🚨" : "ℹ️";
-        html += `<div class="callout ${colorClass}" style="border-left:4px solid;padding:12px;margin:12px 0;border-radius:6px">`;
-        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;font-weight:600;text-transform:uppercase">`;
-        html += `<span>${icon}</span><span>${ctype}</span></div>`;
-        html += `<div>${node.content?.map((n: any) => n.content?.map((m: any) => m.text || "").join("") || n.text || "").join("") || ""}</div></div>\n`;
-        break;
-      }
-      case "image":
-        html += `<img src="${node.attrs?.src || ""}" alt="${node.attrs?.alt || ""}" />\n`;
-        break;
-      default:
-        if (node.text) html += node.text;
-        break;
-    }
-  }
-  return html;
-} */
-
 function downloadFile(content: string, filename: string, mime: string) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
