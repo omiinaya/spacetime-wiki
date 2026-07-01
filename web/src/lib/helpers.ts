@@ -7,6 +7,39 @@ export async function callReducerLocal(reducer: string, args: unknown[]) {
   });
 }
 
+/** Extract inline content from an HTML element, producing ProseMirror inline nodes */
+export function extractInlineContent(el: HTMLElement): any[] {
+  const content: any[] = [];
+  for (const child of el.childNodes) {
+    if (child.nodeType === 3) {
+      const t = (child.textContent || "").trim();
+      if (t) content.push({ type: "text", text: t });
+    } else {
+      const c = child as HTMLElement;
+      const tag = c.tagName?.toLowerCase();
+      if (tag === "strong" || tag === "b") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "bold" }] });
+      } else if (tag === "em" || tag === "i") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "italic" }] });
+      } else if (tag === "u") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "underline" }] });
+      } else if (tag === "s" || tag === "del") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "strike" }] });
+      } else if (tag === "code") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "code" }] });
+      } else if (tag === "a") {
+        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "link", attrs: { href: c.getAttribute("href") || "" } }] });
+      } else if (tag === "br") {
+        content.push({ type: "text", text: " " });
+      } else {
+        const t = c.textContent?.trim();
+        if (t) content.push({ type: "text", text: t });
+      }
+    }
+  }
+  return content;
+}
+
 export function arrayBufferToBase64Url(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf);
   let binary = "";
@@ -74,38 +107,6 @@ export function htmlToProseMirror(html: string): any {
   }
   if (doc.content.length === 0) doc.content.push({ type: "paragraph", content: [] });
   return doc;
-}
-
-function extractInlineContent(el: HTMLElement): any[] {
-  const content: any[] = [];
-  for (const child of el.childNodes) {
-    if (child.nodeType === 3) {
-      const t = (child.textContent || "").trim();
-      if (t) content.push({ type: "text", text: t });
-    } else {
-      const c = child as HTMLElement;
-      const tag = c.tagName?.toLowerCase();
-      if (tag === "strong" || tag === "b") {
-        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "bold" }] });
-      } else if (tag === "em" || tag === "i") {
-        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "italic" }] });
-      } else if (tag === "u") {
-        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "underline" }] });
-      } else if (tag === "s" || tag === "del") {
-        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "strike" }] });
-      } else if (tag === "code") {
-        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "code" }] });
-      } else if (tag === "a") {
-        content.push({ type: "text", text: c.textContent || "", marks: [{ type: "link", attrs: { href: c.getAttribute("href") || "" } }] });
-      } else if (tag === "br") {
-        content.push({ type: "text", text: " " });
-      } else {
-        const t = c.textContent?.trim();
-        if (t) content.push({ type: "text", text: t });
-      }
-    }
-  }
-  return content;
 }
 
 export function markdownToProseMirror(md: string): any {
@@ -247,10 +248,121 @@ export function tiptapToMarkdown(doc: any): string {
   function walk(node: any, depth = 0) {
     if (!node) return;
     if (node.type === "doc" || node.type === "tableRow" || node.type === "tableHeader") {
-      // skip
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "paragraph") {
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "text") {
+          let t = c.text || "";
+          if (c.marks) {
+            c.marks.forEach((m: any) => {
+              if (m.type === "bold") t = `**${t}**`;
+              if (m.type === "italic") t = `_${t}_`;
+              if (m.type === "strike") t = `~~${t}~~`;
+              if (m.type === "code") t = `\`${t}\``;
+              if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
+            });
+          }
+          text += t;
+        } else if (c.type === "image") {
+          text += `![${c.attrs?.alt || ""}](${c.attrs?.src || ""})`;
+        } else if (c.type === "hardBreak") {
+          text += "\n";
+        }
+      });
+      lines.push(text);
+      lines.push("");
+    } else if (node.type === "heading") {
+      const level = node.attrs?.level || 1;
+      let text = "";
+      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      lines.push(`${"#".repeat(level)} ${text}`);
+      lines.push("");
+    } else if (node.type === "bulletList" || node.type === "orderedList") {
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "listItem") {
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "paragraph") {
+          c.content?.forEach((cc: any) => {
+            if (cc.type === "text") {
+              let t = cc.text || "";
+              if (cc.marks) {
+                cc.marks.forEach((m: any) => {
+                  if (m.type === "bold") t = `**${t}**`;
+                  if (m.type === "italic") t = `_${t}_`;
+                  if (m.type === "code") t = `\`${t}\``;
+                  if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
+                });
+              }
+              text += t;
+            }
+          });
+        }
+      });
+      lines.push(`- ${text}`);
+    } else if (node.type === "codeBlock") {
+      let text = "";
+      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      const lang = node.attrs?.language || "";
+      lines.push(`\`\`\`${lang}`);
+      lines.push(text);
+      lines.push("```");
+      lines.push("");
+    } else if (node.type === "blockquote") {
+      node.content?.forEach((c: any) => {
+        const before = lines.length;
+        walk(c, depth + 1);
+        for (let i = before; i < lines.length; i++) {
+          if (lines[i]) lines[i] = `> ${lines[i]}`;
+        }
+      });
+    } else if (node.type === "horizontalRule") {
+      lines.push("---");
+      lines.push("");
+    } else if (node.type === "callout") {
+      const ctype = node.attrs?.type || "info";
+      lines.push(`> [!${ctype.toUpperCase()}]`);
+      node.content?.forEach((c: any) => walk(c, depth + 1));
+      lines.push("");
+    } else if (node.type === "taskList") {
+      node.content?.forEach((c: any) => walk(c, depth));
+    } else if (node.type === "taskItem") {
+      const checked = node.attrs?.checked ? "x" : " ";
+      let text = "";
+      node.content?.forEach((c: any) => {
+        if (c.type === "paragraph") {
+          c.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+        }
+      });
+      lines.push(`- [${checked}] ${text}`);
+    } else if (node.type === "table") {
+      const rows: string[][] = [];
+      node.content?.forEach((row: any) => {
+        const cells: string[] = [];
+        row.content?.forEach((cell: any) => {
+          let text = "";
+          cell.content?.forEach((p: any) => {
+            p.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+          });
+          cells.push(text);
+        });
+        rows.push(cells);
+      });
+      if (rows.length > 0) {
+        const colCount = rows[0].length;
+        rows.forEach((row, i) => {
+          lines.push("| " + row.join(" | ") + " |");
+          if (i === 0) lines.push("| " + "---".repeat(colCount) + " |");
+        });
+        lines.push("");
+      }
+    } else {
+      node.content?.forEach((c: any) => walk(c, depth));
     }
   }
-  return lines.join("\n");
+  walk(doc);
+  return lines.join("\n").trim();
 }
 
 export function tiptapToHTML(json: any): string {

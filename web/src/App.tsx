@@ -24,7 +24,7 @@ import { ActivityFeed } from "./components/ActivityFeed";
 import { NotificationBell } from "./components/NotificationBell";
 import AccessRequestPanel from "./components/AccessRequestPanel";
 import { SidebarTree } from "./components/SidebarTree";
-import { htmlToProseMirror, extractInlineContent, markdownToProseMirror, tiptapToMarkdown, tiptapToHTML, arrayBufferToBase64Url } from "./lib/tiptap-helpers";
+import { htmlToProseMirror, extractInlineContent, markdownToProseMirror, tiptapToMarkdown, tiptapToHTML, arrayBufferToBase64Url } from "./lib/helpers";
 import React from "react";
 
 // Route-level page components — eagerly loaded for instant navigation
