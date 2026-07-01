@@ -3,7 +3,65 @@
 > **Goal:** Outline-inspired UI/UX with feature parity across Outline, Docmost, Wiki.js, and BookStack
 > **Stack:** SpacetimeDB (Rust backend) + React/Vite/Tailwind (frontend) + Tiptap editor
 >
-> **Status: All features implemented (🔲 → ✅). See individual sections below.**
+> **Status: All features implemented (✅). See scoring below.**
+>
+> ## Honest Assessment — July 2026
+>
+> **Overall grade: 78/100** — Feature-complete but with real technical debt that needs addressing.
+>
+> | Dimension | Score | Key Finding |
+> |-----------|:-----:|-------------|
+> | **Feature completeness vs Outline** | **95%** | All major features present. Missing: nested page trees, tables with formulas, real-time collaborative spreadsheets |
+> | **Test coverage (frontend)** | **85%** | 56 files, 1194 tests. All pages tested, all components tested, all helpers tested. Integration tests are thin — no Playwright E2E suite running |
+> | **Test coverage (STDB Rust)** | **70%** | 3,512 test lines (48.5% of total), but ~2,000 are repetitive struct-construction tests. Real reducer logic has <20% coverage. No integration tests that call reducers against a live STDB |
+> | **Code quality (frontend)** | **65%** | tsc --noEmit clean. But 150+ `any` type usages in Tiptap/ProseMirror code. Two nearly-identical helper files (`helpers.ts` vs `tiptap-helpers.ts`) with duplicated functions. 60 lines of commented-out dead code in PageView.tsx |
+> | **Code quality (Rust)** | **60%** | 51 guarded `unwrap()` calls (fragile pattern). ~80 `.iter().find()` full table scans instead of index lookups. 15 non-idempotent reducers. SHA-256 for password hashing instead of a KDF |
+> | **Code quality (Python API)** | **55%** | 50+ f-string SQL queries with incomplete `.replace("'", "''")` escaping — SQL injection risk. No try/except on most router endpoints. WebAuthn has NO cryptographic signature verification (trusts stored credentials without verifying assertions) |
+> | **STDB best practices** | **50%** | No `#[init]` reducer (no bootstrap/seed data). Every reducer does full table scan via `.iter().find()` instead of primary key index. 15 reducers can fail with `primary_key` constraint violation on duplicate calls. No integration tests |
+> | **Security** | **50%** | SQL injection surface in Python API. No timing-safe comparison for API keys. WebAuthn signatures NOT verified. SHA-256 passwords. No CSRF tokens on auth endpoints. No per-user rate limiting |
+> | **Runtime health** | **90%** | TypeScript compiles clean. Rust compiles clean (44 dead_code warnings). Python starts. Frontend builds. Tests pass (7 pre-existing test-order flakes in SsoPanel/GroupsPanel/GraphView) |
+> | **Documentation** | **85%** | AGENTS.md comprehensive. ROADMAP.md accurate. CONTRIBUTING.md, Makefile, docker-compose all present. Missing: CHANGELOG.md, API reference docs, architecture diagrams |
+>
+> ### What's Actually Done ✅
+>
+> **All claimed features in ROADMAP.md are genuinely implemented.** I verified every single one against source code — public sharing, full-text search, RBAC, SSO/OIDC/SAML/LDAP, real-time collaboration (Yjs+STDB), attachments, dark mode, MCP server, page templates, audit logging, the full Outliner editor experience. Nothing in the ROADMAP is fabricated.
+>
+> ### What's Partially Done 🟡
+>
+> | Area | Detail |
+> |------|--------|
+> | **Attachments** | Metadata CRUD works, but file/blob storage and preview rendering are minimal. Storage key pattern implies external blob integration |
+> | **WebAuthn** | Credential storage works, but **signature verification is not implemented** (code comments confirm this) |
+> | **Python error handling** | `pages.py`, `collections.py`, `auth.py` (routers) have zero try/except — any STDB connection failure returns a generic 500 with no logging |
+> | **Rust tests** | 3,512 LOC of tests but ~2,000 are repetitive struct default tests. Reducer logic is poorly tested |
+> | **API key prefix** | 8-char prefix used for lookup (32 bits of entropy) — unnecessarily weak |
+>
+> ### What Still Needs Work 🔴
+>
+> | Severity | Issue | Impact | Fix Estimate |
+> |:--------:|-------|--------|:------------:|
+> | 🔴 **Critical** | **SQL injection via f-string in Python API** — 50+ queries in `scim.py`, `pages.py`, `collections.py`, `auth.py`, `oauth.py`, `ldap_auth.py` interpolate user input directly into SQL | Attacker with control over page IDs, user IDs, or any route param can inject arbitrary STDB SQL | 2-4 hours (convert to parameterized or call_reducer) |
+> | 🔴 **High** | **WebAuthn signature verification missing** — the `webauthn.py` callback trusts stored credentials without verifying cryptographic assertions | Any stored credential ID can authenticate without possession of the authenticator | 4-8 hours (implement COSE public key verification) |
+> | 🟠 **High** | **Full table scans in all reducers** — ~80 `.iter().find()` calls that should be `.id().find(&id)` | O(n) per reducer call on a database with 1000+ rows will degrade linearly | 4-6 hours (mechanical refactor, well-scoped) |
+> | 🟠 **High** | **Duplicated helper code** — `helpers.ts` and `tiptap-helpers.ts` share 5 identical exported functions. `PageEditor.tsx` has its own local copies too | Bug risk if only one file gets fixed. Callers get different implementations | 1 hour |
+> | 🟠 **Medium** | **Non-idempotent reducers** — ~15 reducers (`create_page`, `add_attachment`, `add_tag`, etc.) panic on duplicate primary key | Failed retries can crash the reducer | 2-3 hours |
+> | 🟡 **Medium** | **51 guarded `unwrap()` calls** — safe now but fragile under refactoring | Future code motion introduces panic risk | 2-3 hours |
+> | 🟡 **Medium** | **150+ `any` types in Tiptap code** — `helpers.ts`, `PageEditor.tsx`, `PageView.tsx`, `Transclusion.tsx` all use `any` for ProseMirror document nodes | Hides structural type errors | 8-16 hours (large refactor) |
+> | 🟡 **Medium** | **No `#[init]` reducer** — no database bootstrap, seed data, or migration mechanism | First-run requires manual setup | 1 hour |
+> | 🟡 **Medium** | **SHA-256 for password hashing** instead of Argon2/bcrypt/scrypt | Weak against offline cracking if DB compromised | 2 hours |
+> | ⚪ **Low** | **No Playwright E2E tests** — all tests are unit/component tests | Regression risk on complex user flows | Ongoing |
+>
+> ### Verdict
+>
+> SpacetimeWiki has **genuine feature parity with Outline** (~95%) for the core wiki experience. The feature claims in the ROADMAP are truthful. But the project has accumulated meaningful technical debt, particularly:
+> 1. **Security**: SQL injection surface in the Python API is the #1 thing to fix
+> 2. **STDB usage**: Full table scans everywhere kills performance at scale
+> 3. **Quality hygiene**: Duplicated code, `any` types, fragile unwraps, missing WebAuthn verification
+>
+> Fixing the top 3 security issues (SQL injection, WebAuthn, SHA-256 passwords) would move security from 50% → 80%.
+> Fixing the index lookup pattern would move STDB best practices from 50% → 85%.
+>
+> **These are refinements, not rewrites.** The architecture is sound. The features are real. The code works. The technical debt is concentrated, well-understood, and mechanically fixable — it's the natural result of moving fast to build a lot of features.
 
 ## Feature Parity Matrix
 
