@@ -95,9 +95,8 @@ async def list_all_providers():
 @router.get("/user-links/{user_id}", response_model=list[OAuthUserLinkResponse])
 async def list_user_links(user_id: str):
     """List all OAuth provider links for a user."""
-    safe = user_id.replace("'", "''")
     rows = await sql_query(
-        f"SELECT * FROM oauth_user WHERE user_id = '{safe}'"
+        "SELECT * FROM oauth_user WHERE user_id = ?", user_id
     )
     return [_map_oauth_user(r) for r in rows if _map_oauth_user(r)]
 
@@ -116,7 +115,7 @@ async def oauth_login(body: dict):
         raise HTTPException(status_code=400, detail="provider_id is required")
 
     rows = await sql_query(
-        f"SELECT * FROM oauth_provider WHERE id = '{provider_id.replace(chr(39), chr(39)*2)}' AND is_active = true"
+        "SELECT * FROM oauth_provider WHERE id = ? AND is_active = true", provider_id
     )
     if not rows:
         raise HTTPException(status_code=404, detail="OAuth provider not found or inactive")
@@ -144,7 +143,7 @@ async def oauth_callback(body: dict):
 
     # 1. Fetch provider config
     rows = await sql_query(
-        f"SELECT * FROM oauth_provider WHERE id = '{provider_id.replace(chr(39), chr(39)*2)}' AND is_active = true"
+        "SELECT * FROM oauth_provider WHERE id = ? AND is_active = true", provider_id
     )
     if not rows:
         raise HTTPException(status_code=404, detail="OAuth provider not found or inactive")
@@ -253,26 +252,23 @@ async def oauth_callback(body: dict):
         raise HTTPException(status_code=401, detail="Could not determine user identity from provider")
 
     # 5. Check if this OAuth user is already linked
-    safe_ext_id = external_id.replace("'", "''")
-    safe_provider_id = provider_id.replace("'", "''")
     link_rows = await sql_query(
-        f"SELECT * FROM oauth_user WHERE external_id = '{safe_ext_id}' AND provider_id = '{safe_provider_id}'"
+        "SELECT * FROM oauth_user WHERE external_id = ? AND provider_id = ?", external_id, provider_id
     )
 
     if link_rows:
         # User already linked — return their wiki user
         oauth_user = _map_oauth_user(link_rows[0])
         user_rows = await sql_query(
-            f"SELECT * FROM \"user\" WHERE id = '{oauth_user['user_id'].replace(chr(39), chr(39)*2)}'"
+            "SELECT * FROM \"user\" WHERE id = ?", oauth_user["user_id"]
         )
         if user_rows:
             return {"user": _map_user(user_rows[0])}
 
     # 6. Try to find existing wiki user by email
     if email:
-        safe_email = email.replace("'", "''")
         user_rows = await sql_query(
-            f"SELECT * FROM \"user\" WHERE email = '{safe_email}'"
+            "SELECT * FROM \"user\" WHERE email = ?", email
         )
         if user_rows:
             existing_user = _map_user(user_rows[0])

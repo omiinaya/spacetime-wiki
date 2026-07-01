@@ -71,7 +71,7 @@ async def ldap_login(body: dict):
 
     # 1. Fetch LDAP provider config from STDB
     rows = await sql_query(
-        f"SELECT * FROM ldap_provider WHERE id = '{provider_id.replace(chr(39), chr(39)*2)}' AND is_active = true"
+        "SELECT * FROM ldap_provider WHERE id = ? AND is_active = true", provider_id
     )
     if not rows:
         raise HTTPException(status_code=404, detail="LDAP provider not found or inactive")
@@ -164,7 +164,7 @@ async def ldap_login(body: dict):
 
         # 7. Find or create the wiki user
         user_rows = await sql_query(
-            f"SELECT * FROM \"user\" WHERE email = '{email.replace(chr(39), chr(39)*2)}'"
+            "SELECT * FROM \"user\" WHERE email = ?", email
         )
 
         if user_rows:

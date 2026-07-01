@@ -371,7 +371,6 @@ export function PageView({ pageId, userId }: Props) {
       }
     }, 100);
     return () => { clearTimeout(timer); observer.disconnect(); };
-  // @ts-expect-error toc used before declaration (variable is hoisted within function)
   }, [showToc, toc]);
 
   // Link preview tooltip

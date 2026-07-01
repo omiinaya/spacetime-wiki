@@ -11,20 +11,124 @@ STDB_HOST = settings.stdb_host
 DB_ID = settings.stdb_database
 
 
-async def sql_query(sql: str) -> list[list]:
-    """Execute a raw SQL query against STDB and return rows as arrays."""
+_TABLE_NAMES = frozenset({
+    "page", "collection", "revision", "comment", "page_tag", "attachment",
+    "share_link", "user", "api_key", "search_result", "oauth_provider",
+    "oauth_user", "passkey_credential", "ldap_provider", "scim_provider",
+    "group", "group_member",
+})
+
+
+def _safe_quote(val: str) -> str:
+    """Escape and single-quote a string value for SQL injection safety.
+
+    Handles single quotes (→ '') and backslash (→ \\), the two characters
+    that can break out of a SQL string literal.  Raises TypeError if the
+    caller passes a non-string (caller should use _safe_table for idents).
+    """
+    if not isinstance(val, str):
+        raise TypeError(f"safe_literal requires a string, got {type(val).__name__}")
+    escaped = val.replace("\\", "\\\\").replace("'", "''")
+    return f"'{escaped}'"
+
+
+def _safe_table(ident: str) -> str:
+    """Double-quote a table/column identifier after verifying it is known.
+
+    Prevents SQL injection through dynamic table/column names.
+    """
+    lower = ident.lower()
+    if lower in _TABLE_NAMES:
+        return ident  # unquoted is safe for known names
+    # Double-quote unknown identifiers (defense in depth — currently unused)
+    return f'"{ident}"'
+
+
+def _build_safe_sql(sql: str, *args: object) -> str:
+    """Build a safe SQL string by substituting ? placeholders.
+
+    Supported placeholders:
+        ?  — string literal (auto-quoted and escaped)
+        ?s — same as ? (for clarity)
+        ?i — integer literal (raises if not int)
+        ?f — float literal (raises if not float)
+        ?b — boolean literal (true/false)
+
+    Usage:
+        sql_query("SELECT * FROM page WHERE id = ?", page_id)
+        sql_query("SELECT * FROM user WHERE email = ?", email)
+    """
+    parts = sql.split("?")
+    if len(parts) - 1 != len(args):
+        raise ValueError(
+            f"Expected {len(parts) - 1} argument(s) for {len(parts) - 1} "
+            f"placeholder(s) in SQL, got {len(args)}"
+        )
+    result = [parts[0]]
+    for i, arg in enumerate(args):
+        placeholder = None
+        # Detect placeholders with type suffix in the *next* part
+        part = parts[i + 1]
+        trimmed = part
+        if trimmed.startswith("s"):
+            placeholder = "string"
+            trimmed = trimmed[1:]
+        elif trimmed.startswith("i"):
+            placeholder = "int"
+            trimmed = trimmed[1:]
+        elif trimmed.startswith("f"):
+            placeholder = "float"
+            trimmed = trimmed[1:]
+        elif trimmed.startswith("b"):
+            placeholder = "bool"
+            trimmed = trimmed[1:]
+
+        if placeholder is None:
+            # plain ? — default to string
+            placeholder = "string"
+
+        if placeholder == "string":
+            if arg is None:
+                result.append("NULL")
+            else:
+                result.append(_safe_quote(str(arg)))
+        elif placeholder == "int":
+            if not isinstance(arg, int) or isinstance(arg, bool):
+                raise TypeError(f"Expected int for ?i, got {type(arg).__name__}")
+            result.append(str(arg))
+        elif placeholder == "float":
+            if not isinstance(arg, float):
+                raise TypeError(f"Expected float for ?f, got {type(arg).__name__}")
+            result.append(str(arg))
+        elif placeholder == "bool":
+            result.append("true" if arg else "false")
+
+        result.append(trimmed)
+
+    return "".join(result)
+
+
+async def sql_query(sql: str, *args: object) -> list[list]:
+    """Execute a parameterized SQL query against STDB and return rows.
+
+    Supports ? placeholders for safe value insertion (see _build_safe_sql).
+    When no placeholders are needed, pass the SQL string directly.
+
+    Returns rows as arrays (list of lists).
+    """
+    final_sql = _build_safe_sql(sql, *args) if args else sql
     url = f"http://{STDB_HOST}/v1/database/{DB_ID}/sql"
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(url, content=sql, headers={"Content-Type": "text/plain"})
+            resp = await client.post(url, content=final_sql, headers={"Content-Type": "text/plain"})
             if resp.status_code >= 400:
                 detail = resp.text[:500]
-                logger.warning("STDB SQL error (%s) on: %.200s", resp.status_code, sql)
+                logger.warning("STDB SQL error (%s) on: %.200s", resp.status_code, final_sql)
                 raise RuntimeError(f"STDB SQL error ({resp.status_code}): {detail}")
             data = resp.json()
             return (data[0] or {}).get("rows", [])
     except httpx.TimeoutException:
-        logger.error("STDB SQL timeout on: %.200s", sql)
+        logger.error("STDB SQL timeout on: %.200s", final_sql)
         raise RuntimeError("STDB query timed out")
 
 

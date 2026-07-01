@@ -82,8 +82,7 @@ def base64url_encode(data: bytes) -> str:
 
 async def get_user_by_email(email: str) -> Optional[dict]:
     """Look up a user by email with SQL injection protection."""
-    safe = email.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM user WHERE email = '{safe}'")
+    rows = await sql_query("SELECT * FROM user WHERE email = ?", email)
     if not rows:
         return None
     row = rows[0]
@@ -96,8 +95,7 @@ async def get_user_by_email(email: str) -> Optional[dict]:
 
 async def get_credentials_for_user(user_id: str) -> list[dict]:
     """Get all WebAuthn credentials for a user."""
-    safe = user_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM passkey_credential WHERE user_id = '{safe}'")
+    rows = await sql_query("SELECT * FROM passkey_credential WHERE user_id = ?", user_id)
     credentials = []
     for row in rows:
         credentials.append({
@@ -114,8 +112,7 @@ async def get_credentials_for_user(user_id: str) -> list[dict]:
 
 async def get_credential_by_credential_id(credential_id: str) -> Optional[dict]:
     """Look up a credential by credential_id."""
-    safe = credential_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM passkey_credential WHERE credential_id = '{safe}'")
+    rows = await sql_query("SELECT * FROM passkey_credential WHERE credential_id = ?", credential_id)
     if not rows:
         return None
     row = rows[0]
@@ -384,8 +381,7 @@ async def auth_complete(request: Request, body: dict):
             pass  # Non-fatal
 
         # Look up the user
-        safe_user_id = stored_user_id.replace("'", "''")
-        user_rows = await sql_query(f"SELECT * FROM user WHERE id = '{safe_user_id}'")
+        user_rows = await sql_query("SELECT * FROM user WHERE id = ?", stored_user_id)
         if not user_rows:
             raise HTTPException(status_code=404, detail="User not found")
 

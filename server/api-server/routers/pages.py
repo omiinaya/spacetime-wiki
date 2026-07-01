@@ -37,20 +37,20 @@ async def list_pages(
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List pages, optionally filtered by collection."""
-    where = f"status = '{status.replace(chr(39), chr(39)*2)}'"
+    where = "status = ?"
+    args: list[str] = [status]
     if collection_id:
-        safe = collection_id.replace("'", "''")
-        where += f" AND collection_id = '{safe}'"
+        where += " AND collection_id = ?"
+        args.append(collection_id)
 
-    rows = await sql_query(f"SELECT * FROM page WHERE {where}")
+    rows = await sql_query(f"SELECT * FROM page WHERE {where}", *args)
     return [map_page(r) for r in rows[:limit]]
 
 
 @router.get("/{page_id}", response_model=PageResponse)
 async def get_page(page_id: str):
     """Get a single page by ID."""
-    safe = page_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM page WHERE id = '{safe}'")
+    rows = await sql_query("SELECT * FROM page WHERE id = ?", page_id)
     if not rows:
         raise HTTPException(404, "Page not found")
     return map_page(rows[0])
@@ -91,8 +91,7 @@ async def delete_page(page_id: str):
 @router.get("/{page_id}/revisions", response_model=list[RevisionResponse])
 async def list_revisions(page_id: str):
     """List page revision history."""
-    safe = page_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM revision WHERE page_id = '{safe}'")
+    rows = await sql_query("SELECT * FROM revision WHERE page_id = ?", page_id)
     return [map_revision(r) for r in rows]
 
 
@@ -102,8 +101,7 @@ async def list_revisions(page_id: str):
 @router.get("/{page_id}/comments", response_model=list[CommentResponse])
 async def list_comments(page_id: str):
     """List comments on a page."""
-    safe = page_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM comment WHERE page_id = '{safe}'")
+    rows = await sql_query("SELECT * FROM comment WHERE page_id = ?", page_id)
     return [map_comment(r) for r in rows]
 
 
@@ -120,8 +118,7 @@ async def create_comment(page_id: str, body: str, user_id: str = ""):
 @router.get("/{page_id}/tags", response_model=list[TagResponse])
 async def list_tags(page_id: str):
     """List tags on a page."""
-    safe = page_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM page_tag WHERE page_id = '{safe}'")
+    rows = await sql_query("SELECT * FROM page_tag WHERE page_id = ?", page_id)
     return [map_tag(r) for r in rows]
 
 
@@ -138,8 +135,7 @@ async def add_tag(page_id: str, name: str, value: str = ""):
 @router.get("/{page_id}/attachments", response_model=list[AttachmentResponse])
 async def list_attachments(page_id: str):
     """List attachments on a page."""
-    safe = page_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM attachment WHERE page_id = '{safe}'")
+    rows = await sql_query("SELECT * FROM attachment WHERE page_id = ?", page_id)
     return [map_attachment(r) for r in rows]
 
 
@@ -149,8 +145,7 @@ async def list_attachments(page_id: str):
 @router.get("/{page_id}/share-links", response_model=list[ShareLinkResponse])
 async def list_share_links(page_id: str):
     """List share links for a page."""
-    safe = page_id.replace("'", "''")
-    rows = await sql_query(f"SELECT * FROM share_link WHERE page_id = '{safe}'")
+    rows = await sql_query("SELECT * FROM share_link WHERE page_id = ?", page_id)
     return [map_share_link(r) for r in rows]
 
 
