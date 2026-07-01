@@ -1,7 +1,11 @@
 """SpacetimeDB HTTP client — wraps SQL queries and reducer calls."""
 
+import logging
+
 import httpx
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 STDB_HOST = settings.stdb_host
 DB_ID = settings.stdb_database
@@ -10,28 +14,38 @@ DB_ID = settings.stdb_database
 async def sql_query(sql: str) -> list[list]:
     """Execute a raw SQL query against STDB and return rows as arrays."""
     url = f"http://{STDB_HOST}/v1/database/{DB_ID}/sql"
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(url, content=sql, headers={"Content-Type": "text/plain"})
-        if resp.status_code >= 400:
-            detail = resp.text[:500]
-            raise RuntimeError(f"STDB SQL error ({resp.status_code}): {detail}")
-        data = resp.json()
-        return (data[0] or {}).get("rows", [])
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(url, content=sql, headers={"Content-Type": "text/plain"})
+            if resp.status_code >= 400:
+                detail = resp.text[:500]
+                logger.warning("STDB SQL error (%s) on: %.200s", resp.status_code, sql)
+                raise RuntimeError(f"STDB SQL error ({resp.status_code}): {detail}")
+            data = resp.json()
+            return (data[0] or {}).get("rows", [])
+    except httpx.TimeoutException:
+        logger.error("STDB SQL timeout on: %.200s", sql)
+        raise RuntimeError("STDB query timed out")
 
 
 async def call_reducer(reducer: str, args: list) -> dict | None:
     """Call a SpacetimeDB reducer with positional args."""
     url = f"http://{STDB_HOST}/v1/database/{DB_ID}/call/{reducer}"
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(url, json=args)
-        if resp.status_code >= 400:
-            detail = resp.text[:500]
-            raise RuntimeError(f"STDB reducer error ({resp.status_code}): {detail}")
-        # STDB may return empty body for void reducers
-        text = resp.text.strip()
-        if not text:
-            return None
-        return resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(url, json=args)
+            if resp.status_code >= 400:
+                detail = resp.text[:500]
+                logger.warning("STDB reducer error (%s) on %s: %.200s", resp.status_code, reducer, detail)
+                raise RuntimeError(f"STDB reducer error ({resp.status_code}): {detail}")
+            # STDB may return empty body for void reducers
+            text = resp.text.strip()
+            if not text:
+                return None
+            return resp.json()
+    except httpx.TimeoutException:
+        logger.error("STDB reducer timeout on: %s", reducer)
+        raise RuntimeError("STDB reducer timed out")
 
 
 # ─── Row mappers ───────────────────────────────────────────────────────────────
