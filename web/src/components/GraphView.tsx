@@ -152,7 +152,7 @@ export default function GraphView() {
     if (!showParentChild) activeLinks = activeLinks.filter(l => l.type !== "parent-child");
     if (!showBacklinks) activeLinks = activeLinks.filter(l => l.type !== "backlink");
 
-    const sim = d3Force.forceSimulation<GraphNode>(graphNodes)
+    const sim: d3Force.Simulation<GraphNode, undefined> = d3Force.forceSimulation<GraphNode>(graphNodes)
       .force("link", d3Force.forceLink<GraphNode, GraphLink>(activeLinks).id(d => d.id).distance(d => d.type === "collection" ? 80 : 120).strength(d => d.type === "collection" ? 0.3 : 0.6))
       .force("charge", d3Force.forceManyBody<GraphNode>().strength(-250))
       .force("center", d3Force.forceCenter<GraphNode>(width / 2, height / 2))
@@ -201,7 +201,7 @@ export default function GraphView() {
       nodeEls.attr("transform", d => `translate(${d.x},${d.y})`);
     });
 
-    return () => sim.stop();
+    return () => { void sim.stop(); };
   }, [loading, graphNodes, graphLinks, showCollections, showParentChild, showBacklinks, selectedNode, navigate]);
 
   // ─── Zoom handlers ────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import { Pencil, Trash2, Key } from "lucide-react";
 import { api } from "../../lib/api";
 import { ApiKeySection } from "./ApiKeySettings";
+import type { ToastItem } from "../Toast";
 
 interface User {
   id: string;
@@ -14,7 +15,7 @@ interface UsersPanelProps {
   allUsers: User[];
   setAllUsers: React.Dispatch<React.SetStateAction<User[]>>;
   userId: string;
-  addToast: (t: { type: string; title: string; duration?: number }) => void;
+  addToast: (t: Omit<ToastItem, "id">) => string;
 }
 
 export function UsersPanel({ allUsers, setAllUsers, userId, addToast }: UsersPanelProps) {

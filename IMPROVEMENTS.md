@@ -8,7 +8,10 @@ and works the top pending item each tick.
 
 ## PENDING
 
-*(No pending items. Researching new opportunities...)*
+| Priority | Item |
+|----------|------|
+| P4 | **Fix `tsc -b` build errors (138 total)** — Exclude `src/test/` from `tsconfig.app.json` to resolve 81 vitest-axe `toHaveNoViolations` errors + `afterEach`/`beforeAll` globals. Then fix remaining ~35 real type errors in production code: `GraphView.tsx` (useEffect return type), `SidebarTree.tsx` (JSX namespace), `AdminPanels.tsx` (toast callback), `Page.tsx` (revision `created_by`), `Collection` (missing `children`), STDB `RowBuilder` insert args, mock assignments in tests, etc. |
+| P4 | **Backup code placeholder "XXXX XXXX" → proper MFA backup code label** — Replace placeholder text in `LoginView.tsx` (line 194) and test files with appropriate label (e.g. "Backup code" or "XXXX-XXXX"). |
 
 ---
 

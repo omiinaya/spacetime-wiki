@@ -12,10 +12,12 @@ interface User {
   id: string; name: string; email: string; role: string; avatar_url: string;
 }
 
+import type { ToastItem } from "../Toast";
+
 interface GroupsPanelProps {
   allUsers: User[];
   userId: string;
-  addToast: (t: { type: string; title: string; duration?: number }) => void;
+  addToast: (t: Omit<ToastItem, "id">) => string;
 }
 
 export function GroupsPanel({ allUsers, userId, addToast }: GroupsPanelProps) {
@@ -52,7 +54,7 @@ export function GroupsPanel({ allUsers, userId, addToast }: GroupsPanelProps) {
         setGroups(prev => prev.map(g => g.id === editingGroup.id ? { ...g, name: groupName, description: groupDesc } : g));
       } else {
         const id = crypto.randomUUID();
-        await api.groups.create(id, groupName, groupDesc, userId);
+        await api.groups.create(groupName, groupDesc, userId);
         setGroups(prev => [...prev, { id, name: groupName, description: groupDesc, created_by: userId, created_at: Date.now(), updated_at: Date.now() }]);
       }
       setGroupDialogOpen(false);

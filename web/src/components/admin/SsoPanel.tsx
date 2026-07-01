@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { api, OidcProvider, SamlProvider } from "../../lib/api";
 
+import type { ToastItem } from "../Toast";
+
 interface SsoPanelProps {
-  addToast: (t: { type: string; title: string; duration?: number }) => void;
+  addToast: (t: Omit<ToastItem, "id">) => string;
 }
 
 export function SsoPanel({ addToast }: SsoPanelProps) {
@@ -41,12 +43,12 @@ export function SsoPanel({ addToast }: SsoPanelProps) {
     if (!oidcName.trim() || !oidcSlug.trim() || !oidcIssuer.trim() || !oidcClientId.trim()) return;
     try {
       if (editingOidc) {
-        await api.oidc.update(editingOidc.id, oidcName, oidcSlug, oidcIssuer, oidcClientId, oidcClientSecret, oidcScopes);
-        setOidcProviders(prev => prev.map(p => p.id === editingOidc.id ? { ...p, name: oidcName, slug: oidcSlug, issuer_url: oidcIssuer, client_id: oidcClientId, scopes: oidcScopes } : p));
+        await api.oidc.update(editingOidc.id, oidcName, oidcSlug, oidcIssuer, oidcClientId, oidcClientSecret, oidcScopes, editingOidc.is_active);
+        setOidcProviders(prev => prev.map(p => p.id === editingOidc.id ? { ...p, name: oidcName, slug: oidcSlug, issuer_url: oidcIssuer, client_id: oidcClientId, client_secret: oidcClientSecret, scopes: oidcScopes } : p));
       } else {
         const id = crypto.randomUUID();
-        await api.oidc.create(id, oidcName, oidcSlug, oidcIssuer, oidcClientId, oidcClientSecret, oidcScopes);
-        setOidcProviders(prev => [...prev, { id, name: oidcName, slug: oidcSlug, issuer_url: oidcIssuer, client_id: oidcClientId, client_secret: oidcClientSecret, scopes: oidcScopes, is_active: true, created_at: Date.now() }]);
+        await api.oidc.create(oidcName, oidcSlug, oidcIssuer, oidcClientId, oidcClientSecret, oidcScopes, "admin");
+        setOidcProviders(prev => [...prev, { id, name: oidcName, slug: oidcSlug, issuer_url: oidcIssuer, client_id: oidcClientId, client_secret: oidcClientSecret, scopes: oidcScopes, is_active: true, created_by: "admin", created_at: Date.now(), updated_at: Date.now() }]);
       }
       setOidcDialogOpen(false);
       setEditingOidc(null);
@@ -64,12 +66,12 @@ export function SsoPanel({ addToast }: SsoPanelProps) {
     if (!samlName.trim() || !samlSlug.trim() || !samlEntityId.trim() || !samlSsoUrl.trim()) return;
     try {
       if (editingSaml) {
-        await api.saml.update(samlName, samlSlug, samlEntityId, samlSsoUrl, samlCert, samlNameIdFmt, samlAttrMapping, samlAutoRegister);
+        await api.saml.update(editingSaml.id, samlName, samlSlug, samlEntityId, samlSsoUrl, samlCert, samlNameIdFmt, samlAttrMapping, samlAutoRegister, editingSaml.is_active);
         setSamlProviders(prev => prev.map(p => p.id === editingSaml.id ? { ...p, name: samlName, slug: samlSlug, entity_id: samlEntityId, sso_url: samlSsoUrl, cert: samlCert, name_id_format: samlNameIdFmt, attribute_mapping: samlAttrMapping, auto_register: samlAutoRegister } : p));
       } else {
         const id = crypto.randomUUID();
-        await api.saml.create(id, samlName, samlSlug, samlEntityId, samlSsoUrl, samlCert, samlNameIdFmt, samlAttrMapping, samlAutoRegister);
-        setSamlProviders(prev => [...prev, { id, name: samlName, slug: samlSlug, entity_id: samlEntityId, sso_url: samlSsoUrl, cert: samlCert, name_id_format: samlNameIdFmt, attribute_mapping: samlAttrMapping, auto_register: samlAutoRegister, is_active: true, created_at: Date.now() }]);
+        await api.saml.create(samlName, samlSlug, samlEntityId, samlSsoUrl, samlCert, samlNameIdFmt, samlAttrMapping, samlAutoRegister, "admin");
+        setSamlProviders(prev => [...prev, { id, name: samlName, slug: samlSlug, entity_id: samlEntityId, sso_url: samlSsoUrl, certificate: samlCert, name_id_format: samlNameIdFmt, attribute_mapping: samlAttrMapping, auto_register: samlAutoRegister, is_active: true, created_by: "admin", created_at: Date.now(), updated_at: Date.now() }]);
       }
       setSamlDialogOpen(false);
       setEditingSaml(null);
