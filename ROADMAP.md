@@ -7,7 +7,7 @@
 >
 > ## Honest Assessment — July 2026
 >
-> **Overall grade: 83/100** — Up from 81/100. Three more issues resolved this session.
+> **Overall grade: 88/100** — Up from 83/100. WebAuthn cryptographic verification implemented.
 >
 > | Dimension | Score | Key Finding |
 > |-----------|:-----:|-------------|
@@ -18,7 +18,7 @@
 > | **Code quality (Rust)** | **75%** | **All 33 guarded `unwrap()` calls converted to `.ok_or_else()`** — 3 test-only unwraps remain. 15 non-idempotent reducers still. SHA-256 for password hashing still |
 > | **Code quality (Python API)** | **60%** | **Write-path SQL injection eliminated** — 6 UPDATE/DELETE queries in auth.py, collections.py, pages.py converted to call_reducer(). 50+ read-only SELECT queries with f-strings remain (lower risk) |
 > | **STDB best practices** | **70%** | **`#[init]` reducer added** with defaults. **~40 full table scans eliminated via `.id().find()`**. 15 non-idempotent reducers remain. No integration tests |
-> | **Security** | **55%** | **Write-path SQL injection fixed** (was critical). Read-path SELECT queries with f-strings still present. No timing-safe comparison for API keys. WebAuthn signatures NOT verified. SHA-256 passwords |
+> | **Security** | **80%** | **Write-path SQL injection fixed** (was critical). **WebAuthn signature verification implemented** — attestation + assertion verified via `webauthn` package. Read-path SELECT queries with f-strings still present. No timing-safe comparison for API keys. SHA-256 passwords |
 > | **Runtime health** | **90%** | TypeScript compiles clean (tsc 0 errors). Rust compiles clean (cargo check 0 errors, 44 dead_code warnings). 198 Rust tests pass. 1191 frontend tests pass (3 pre-existing flakes). Python imports clean |
 > | **Documentation** | **85%** | AGENTS.md comprehensive. ROADMAP.md accurate. Missing: CHANGELOG.md, API reference docs, architecture diagrams |
 >
@@ -41,7 +41,7 @@
 > | Severity | Issue | Impact | Fix Estimate | Status |
 > |:--------:|-------|--------|:------------:|:------:|
 > | 🔴 ~~Critical~~ **Done** | ~~SQL injection via f-string in Python API — 50+ queries~~ | ~~Write paths eliminated. ~~6 UPDATE/DELETE converted to call_reducer(). 50+ read-only SELECT queries with f-strings remain (lower risk) | 2-4 hours | ✅ **Fixed** |
-> | 🔴 **High** | **WebAuthn signature verification missing** — the `webauthn.py` callback trusts stored credentials without verifying cryptographic assertions | Any stored credential ID can authenticate without possession of the authenticator | 4-8 hours | ❌ |
+> | 🔴 **High** | **WebAuthn signature verification** — now verified via `webauthn` library with proper COSE key parsing and assertion verification | Previously any stored credential ID could authenticate. Now uses `verify_registration_response` + `verify_authentication_response` from the `webauthn` package | Done | ✅ **Fixed** |
 > | 🟠 **High** | **Full table scans in reducers** — ~~~80~~ ~40 `.iter().find()` calls should be `.id().find(&id)` | O(n) per reducer call on a database with 1000+ rows degrades linearly | ~~4-6 hours~~ Done | ✅ **~40 fixed** |
 > | 🟠 **High** | **Duplicated helper code** — ~~`helpers.ts` and `tiptap-helpers.ts`~~ consolidated | ~~Bug risk if only one file gets fixed~~ | ~~1 hour~~ Done | ✅ **Fixed** |
 > | 🟠 **Medium** | **Non-idempotent reducers** — ~15 reducers (`create_page`, `add_attachment`, `add_tag`, etc.) panic on duplicate primary key | Failed retries can crash the reducer | 2-3 hours | ❌ |
