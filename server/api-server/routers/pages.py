@@ -73,22 +73,15 @@ async def create_page(
 
 @router.put("/{page_id}", response_model=PageUpdateResponse)
 async def update_page(page_id: str, title: str | None = None, content: str | None = None):
-    """Update a page's title and/or content."""
-    safe_id = page_id.replace("'", "''")
-    if title is not None:
-        safe_title = title.replace("'", "''")
-        await sql_query(f"UPDATE page SET title = '{safe_title}' WHERE id = '{safe_id}'")
-    if content is not None:
-        safe_content = content.replace("'", "''")
-        await sql_query(f"UPDATE page SET content = '{safe_content}' WHERE id = '{safe_id}'")
+    """Update a page's title and/or content via reducer."""
+    await call_reducer("update_page", [page_id, title or "", content or "", ""])
     return {"status": "updated"}
 
 
 @router.delete("/{page_id}", response_model=PageDeleteResponse)
 async def delete_page(page_id: str):
-    """Soft-delete a page."""
-    safe = page_id.replace("'", "''")
-    await sql_query(f"UPDATE page SET status = 'deleted' WHERE id = '{safe}'")
+    """Soft-delete a page via reducer."""
+    await call_reducer("set_page_status", [page_id, "deleted"])
     return {"status": "deleted"}
 
 
