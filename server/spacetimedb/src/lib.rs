@@ -74,15 +74,18 @@ pub fn create_collection(
             created_at: now, updated_at: now,
         });
     }
-    // Creator gets admin access
-    ctx.db.collection_member().insert(CollectionMember {
-        id: make_id("cm", ctx),
-        collection_id: id.clone(),
-        user_id: created_by.clone(),
-        role: "admin".into(),
-        added_by: String::new(),
-        created_at: now,
-    });
+    // Creator gets admin access (idempotent — skip if already exists)
+    let admin_member_id = make_id("cm", ctx);
+    if ctx.db.collection_member().id().find(&admin_member_id).is_none() {
+        ctx.db.collection_member().insert(CollectionMember {
+            id: admin_member_id,
+            collection_id: id.clone(),
+            user_id: created_by.clone(),
+            role: "admin".into(),
+            added_by: String::new(),
+            created_at: now,
+        });
+    }
 
     log_event(ctx, "collection.create", &created_by, &id, &name, r#"{}"#);
     Ok(())
@@ -1076,15 +1079,18 @@ pub fn create_db_base(
         return Err("Invalid view_type. Must be 'table' or 'kanban'".into());
     }
     let now = now_ms(ctx);
-    ctx.db.db_base().insert(DbBase {
-        id,
-        page_id,
-        title,
-        view_type,
-        created_by,
-        created_at: now,
-        updated_at: now,
-    });
+    // Idempotent insert — skip if ID already exists (safe on retry)
+    if ctx.db.db_base().id().find(&id).is_none() {
+        ctx.db.db_base().insert(DbBase {
+            id,
+            page_id,
+            title,
+            view_type,
+            created_by,
+            created_at: now,
+            updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -1103,16 +1109,19 @@ pub fn create_db_column(
         return Err(format!("Invalid field_type '{}'. Must be one of: text, number, select, multi_select, date, checkbox, user, url", field_type));
     }
     let now = now_ms(ctx);
-    ctx.db.db_column().insert(DbColumn {
-        id,
-        base_id,
-        name,
-        field_type,
-        options,
-        sort_order,
-        created_at: now,
-        updated_at: now,
-    });
+    // Idempotent insert — skip if ID already exists (safe on retry)
+    if ctx.db.db_column().id().find(&id).is_none() {
+        ctx.db.db_column().insert(DbColumn {
+            id,
+            base_id,
+            name,
+            field_type,
+            options,
+            sort_order,
+            created_at: now,
+            updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -1125,14 +1134,17 @@ pub fn create_db_row(
     created_by: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    ctx.db.db_row().insert(DbRow {
-        id,
-        base_id,
-        sort_order,
-        created_by,
-        created_at: now,
-        updated_at: now,
-    });
+    // Idempotent insert — skip if ID already exists (safe on retry)
+    if ctx.db.db_row().id().find(&id).is_none() {
+        ctx.db.db_row().insert(DbRow {
+            id,
+            base_id,
+            sort_order,
+            created_by,
+            created_at: now,
+            updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -1299,21 +1311,24 @@ pub fn create_invitation(
     } else {
         0
     };
-    ctx.db.invitation().insert(Invitation {
-        id,
-        email,
-        invited_by,
-        role: role_clean,
-        page_ids,
-        collection_ids,
-        token,
-        status: "pending".into(),
-        message,
-        expires_at,
-        view_count: 0,
-        created_at: now,
-        updated_at: now,
-    });
+    // Idempotent insert — skip if ID already exists (safe on retry)
+    if ctx.db.invitation().id().find(&id).is_none() {
+        ctx.db.invitation().insert(Invitation {
+            id,
+            email,
+            invited_by,
+            role: role_clean,
+            page_ids,
+            collection_ids,
+            token,
+            status: "pending".into(),
+            message,
+            expires_at,
+            view_count: 0,
+            created_at: now,
+            updated_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -1424,15 +1439,18 @@ pub fn create_synced_block(
         return Err("Title is required".into());
     }
     let now = now_ms(ctx);
-    ctx.db.synced_block().insert(SyncedBlock {
-        id,
-        title,
-        content,
-        created_by: created_by.clone(),
-        created_at: now,
-        updated_at: now,
-        updated_by: created_by,
-    });
+    // Idempotent insert — skip if ID already exists (safe on retry)
+    if ctx.db.synced_block().id().find(&id).is_none() {
+        ctx.db.synced_block().insert(SyncedBlock {
+            id,
+            title,
+            content,
+            created_by: created_by.clone(),
+            created_at: now,
+            updated_at: now,
+            updated_by: created_by,
+        });
+    }
     Ok(())
 }
 
@@ -1479,13 +1497,16 @@ pub fn add_synced_block_ref(
         return Err("Synced block not found".into());
     }
     let now = now_ms(ctx);
-    ctx.db.synced_block_ref().insert(SyncedBlockRef {
-        id,
-        block_id,
-        page_id,
-        created_by,
-        created_at: now,
-    });
+    // Idempotent insert — skip if ID already exists (safe on retry)
+    if ctx.db.synced_block_ref().id().find(&id).is_none() {
+        ctx.db.synced_block_ref().insert(SyncedBlockRef {
+            id,
+            block_id,
+            page_id,
+            created_by,
+            created_at: now,
+        });
+    }
     Ok(())
 }
 
@@ -1684,18 +1705,21 @@ pub fn create_notification(
     if !valid_events.contains(&event_type.as_str()) {
         return Err("Invalid event type for notification".into());
     }
-    ctx.db.notification().insert(Notification {
-        id,
-        user_id,
-        event_type,
-        target_id,
-        title,
-        message,
-        actor_id,
-        icon,
-        is_read: false,
-        created_at: now_ms(ctx),
-    });
+    // Idempotent insert — skip if ID already exists (safe on retry)
+    if ctx.db.notification().id().find(&id).is_none() {
+        ctx.db.notification().insert(Notification {
+            id,
+            user_id,
+            event_type,
+            target_id,
+            title,
+            message,
+            actor_id,
+            icon,
+            is_read: false,
+            created_at: now_ms(ctx),
+        });
+    }
     Ok(())
 }
 
@@ -1772,16 +1796,19 @@ pub fn create_access_request(
 
     let now = now_ms(ctx);
     let reason_clone = reason.clone();
-    ctx.db.access_request().insert(AccessRequest {
-        id,
-        page_id: page_id.clone(),
-        requester_id: requester_id.clone(),
-        reason,
-        status: "pending".into(),
-        responded_by: String::new(),
-        responded_at: 0,
-        created_at: now,
-    });
+    // Idempotent insert — skip if ID already exists (safe on retry)
+    if ctx.db.access_request().id().find(&id).is_none() {
+        ctx.db.access_request().insert(AccessRequest {
+            id,
+            page_id: page_id.clone(),
+            requester_id: requester_id.clone(),
+            reason,
+            status: "pending".into(),
+            responded_by: String::new(),
+            responded_at: 0,
+            created_at: now,
+        });
+    }
 
     // Notify the page creator/owner and all admins about the access request
     let requester_name = user.name.clone();
