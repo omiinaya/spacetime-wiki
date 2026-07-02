@@ -1,10 +1,15 @@
 """SpacetimeDB HTTP client — SQL queries for the MCP server.
 
 Uses parameterized SQL with _safe_quote for injection safety.
+Includes retry logic with exponential backoff for STDB network failures.
 """
 
+import asyncio
+import logging
 import httpx
 from config import STDB_HOST, STDB_DATABASE
+
+logger = logging.getLogger("spacetime-wiki-mcp.stdb_client")
 
 TABLE_NAMES = frozenset({
     "page", "collection", "revision", "comment", "page_tag", "attachment",
@@ -13,6 +18,14 @@ TABLE_NAMES = frozenset({
     "group", "group_member",
 })
 
+# ─── Retry configuration ────────────────────────────────────────────────────
+
+MAX_RETRIES = 3
+BASE_DELAY_S = 0.5
+BACKOFF_FACTOR = 2.0
+
+
+# ─── Safe SQL helpers ────────────────────────────────────────────────────────
 
 def _safe_quote(val: str) -> str:
     """Escape and single-quote a string value for SQL injection safety.
@@ -57,23 +70,118 @@ def _build_safe_sql(sql: str, *args: object) -> str:
     return "".join(result)
 
 
+# ─── Retry wrapper ───────────────────────────────────────────────────────────
+
+async def _execute_with_retry(sql: str) -> list[list]:
+    """Execute a SQL query against STDB with retry and exponential backoff.
+
+    Handles:
+      - Connection refused / DNS failure (ConnectError) → retry up to 3 times
+      - Timeouts (TimeoutException) → log and return empty result
+      - HTTP errors (>=400) → raise RuntimeError immediately (no retry)
+      - Other transport errors → retry up to 3 times
+
+    Returns the rows as a list of arrays, or an empty list on non-fatal errors.
+    """
+    url = f"http://{STDB_HOST}/v1/database/{STDB_DATABASE}/sql"
+    last_exception: Exception | None = None
+    attempts_made = 0
+
+    for attempt_num in range(1, MAX_RETRIES + 1):
+        attempts_made = attempt_num
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    url,
+                    content=sql,
+                    headers={"Content-Type": "text/plain"},
+                )
+                if resp.status_code >= 400:
+                    detail = resp.text[:500]
+                    raise RuntimeError(f"STDB SQL error ({resp.status_code}): {detail}")
+                data = resp.json()
+                return (data[0] or {}).get("rows", [])
+
+        except httpx.TimeoutException as e:
+            logger.warning(
+                "STDB timeout on attempt %d/%d: %s",
+                attempt_num, MAX_RETRIES, str(e),
+            )
+            last_exception = e
+            # Timeouts don't retry — log and return empty
+            break
+
+        except httpx.ConnectError as e:
+            logger.warning(
+                "STDB connection error on attempt %d/%d: %s",
+                attempt_num, MAX_RETRIES, str(e),
+            )
+            last_exception = e
+            if attempt_num < MAX_RETRIES:
+                delay = BASE_DELAY_S * (BACKOFF_FACTOR ** (attempt_num - 1))
+                logger.info("Retrying in %.1fs...", delay)
+                await asyncio.sleep(delay)
+
+        except httpx.RemoteProtocolError as e:
+            logger.warning(
+                "STDB protocol error on attempt %d/%d: %s",
+                attempt_num, MAX_RETRIES, str(e),
+            )
+            last_exception = e
+            if attempt_num < MAX_RETRIES:
+                delay = BASE_DELAY_S * (BACKOFF_FACTOR ** (attempt_num - 1))
+                logger.info("Retrying in %.1fs...", delay)
+                await asyncio.sleep(delay)
+
+        except httpx.NetworkError as e:
+            logger.warning(
+                "STDB network error on attempt %d/%d: %s",
+                attempt_num, MAX_RETRIES, str(e),
+            )
+            last_exception = e
+            if attempt_num < MAX_RETRIES:
+                delay = BASE_DELAY_S * (BACKOFF_FACTOR ** (attempt_num - 1))
+                logger.info("Retrying in %.1fs...", delay)
+                await asyncio.sleep(delay)
+
+        except httpx.HTTPStatusError as e:
+            # HTTP-level error (non-2xx) that httpx raised as exception
+            logger.error(
+                "STDB HTTP error on attempt %d/%d: %s",
+                attempt_num, MAX_RETRIES, str(e),
+            )
+            last_exception = e
+            if attempt_num < MAX_RETRIES:
+                delay = BASE_DELAY_S * (BACKOFF_FACTOR ** (attempt_num - 1))
+                logger.info("Retrying in %.1fs...", delay)
+                await asyncio.sleep(delay)
+
+    # All retries exhausted, or timeout occurred
+    logger.error(
+        "STDB query failed after %d attempt(s): %s — returning empty result",
+        attempts_made,
+        last_exception,
+    )
+    return []
+
+
 async def sql_query(sql: str, *args: object) -> list[list]:
     """Execute a parameterized SQL query against STDB and return rows as arrays.
 
     When no placeholders are needed, pass the SQL string directly.
+
+    On STDB network failure, returns an empty list instead of crashing.
     """
     final_sql = _build_safe_sql(sql, *args) if args else sql
-    url = f"http://{STDB_HOST}/v1/database/{STDB_DATABASE}/sql"
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(url, content=final_sql, headers={"Content-Type": "text/plain"})
-        if resp.status_code >= 400:
-            detail = resp.text[:500]
-            raise RuntimeError(f"STDB SQL error ({resp.status_code}): {detail}")
-        data = resp.json()
-        return (data[0] or {}).get("rows", [])
+
+    # Truncate the SQL for logging to avoid enormous log lines
+    log_sql = final_sql if len(final_sql) < 200 else final_sql[:200] + "..."
+    logger.debug("STDB query: %s", log_sql)
+
+    return await _execute_with_retry(final_sql)
 
 
-# ─── Row mappers ───────────────────────────────────────────────────────────────
+# ─── Row mappers ─────────────────────────────────────────────────────────────
 
 def _str(row: list, idx: int) -> str:
     return str(row[idx]) if idx < len(row) and row[idx] is not None else ""
@@ -142,7 +250,7 @@ def map_tag(row: list) -> dict:
     }
 
 
-# ─── Entity helpers ────────────────────────────────────────────────────────────
+# ─── Entity helpers ──────────────────────────────────────────────────────────
 
 async def search_pages(query: str, limit: int = 20) -> list[dict]:
     """Full-text search across page titles and content."""

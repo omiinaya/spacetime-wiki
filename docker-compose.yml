@@ -70,6 +70,25 @@ services:
     networks:
       - wiki-net
 
+  # ─── Integration Tests ───────────────────────────────────────────────────────
+  # Run: docker compose run --rm tests
+  tests:
+    build:
+      context: ./server/tests
+    container_name: st-wiki-tests
+    environment:
+      STDB_HOST: spacetimedb:3001
+      DB_NAME: ${STDB_DATABASE:-spacetime_wiki}
+    depends_on:
+      spacetimedb:
+        condition: service_healthy
+      module-publisher:
+        condition: service_completed_successfully
+    profiles:
+      - tests
+    networks:
+      - wiki-net
+
   # ─── Spacetime CLI Utility ───────────────────────────────────────────────────
   # Run: docker compose run --rm spacetime-cli <cmd>
   spacetime-cli:

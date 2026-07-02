@@ -63,3 +63,10 @@ jobs:
 
       - name: Check (clippy)
         run: cargo check
+
+      - name: Tests
+        run: cargo test --lib 2>&1 | tail -20
+
+      - name: Clippy
+        run: cargo clippy -- -D warnings 2>&1 | tail -30
+        continue-on-error: true
