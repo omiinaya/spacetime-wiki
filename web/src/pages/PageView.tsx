@@ -41,14 +41,16 @@ import { PageTags } from "../components/PageTags";
 import { showToast } from "../components/Toast";
 import { MentionInput } from "../components/MentionInput";
 import { MediaManager } from "../components/MediaManager";
+import { tiptapToMarkdown as typedTiptapToMarkdown } from "../lib/helpers";
+import type { PMNode } from "../lib/prosemirror-types";
 
 const lowlight = createLowlight(common);
 
 // ─── Diff helpers (same logic as RevisionDiff) ─────────────────────────────────
 
-function tiptapToPlain(doc: any): string {
+function tiptapToPlain(doc: PMNode): string {
   const parts: string[] = [];
-  function walk(node: any) {
+  function walk(node: PMNode) {
     if (!node) return;
     if (node.type === "text") { parts.push(node.text || ""); }
     if (node.content) { for (const child of node.content) walk(child); }
@@ -59,7 +61,7 @@ function tiptapToPlain(doc: any): string {
   return parts.join("");
 }
 
-function tryParseTiptap(json: string): any {
+function tryParseTiptap(json: string): PMNode | null {
   try { const p = JSON.parse(json); if (p && p.type === "doc") return p; } catch {}
   return null;
 }
@@ -99,128 +101,8 @@ function computeDiffPreview(oldRev: PageRevision, newRev: PageRevision): Revisio
 
 // ─── Markdown export helper ──────────────────────────────────────────────────
 
-function tiptapToMarkdown(doc: any): string {
-  const lines: string[] = [];
-  function walk(node: any, depth = 0) {
-    if (!node) return;
-    if (node.type === "doc" || node.type === "tableRow" || node.type === "tableHeader") {
-      node.content?.forEach((c: any) => walk(c, depth));
-    } else if (node.type === "paragraph") {
-      let text = "";
-      node.content?.forEach((c: any) => {
-        if (c.type === "text") {
-          let t = c.text || "";
-          if (c.marks) {
-            c.marks.forEach((m: any) => {
-              if (m.type === "bold") t = `**${t}**`;
-              if (m.type === "italic") t = `_${t}_`;
-              if (m.type === "strike") t = `~~${t}~~`;
-              if (m.type === "code") t = `\`${t}\``;
-              if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
-            });
-          }
-          text += t;
-        } else if (c.type === "image") {
-          text += `![${c.attrs?.alt || ""}](${c.attrs?.src || ""})`;
-        } else if (c.type === "hardBreak") {
-          text += "\n";
-        }
-      });
-      lines.push(text);
-      lines.push("");
-    } else if (node.type === "heading") {
-      const level = node.attrs?.level || 1;
-      let text = "";
-      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
-      lines.push(`${"#".repeat(level)} ${text}`);
-      lines.push("");
-    } else if (node.type === "bulletList" || node.type === "orderedList") {
-      node.content?.forEach((c: any) => walk(c, depth));
-    } else if (node.type === "listItem") {
-      let text = "";
-      node.content?.forEach((c: any) => {
-        if (c.type === "paragraph") {
-          c.content?.forEach((cc: any) => {
-            if (cc.type === "text") {
-              let t = cc.text || "";
-              if (cc.marks) {
-                cc.marks.forEach((m: any) => {
-                  if (m.type === "bold") t = `**${t}**`;
-                  if (m.type === "italic") t = `_${t}_`;
-                  if (m.type === "code") t = `\`${t}\``;
-                  if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
-                });
-              }
-              text += t;
-            }
-          });
-        }
-      });
-      lines.push(`- ${text}`);
-    } else if (node.type === "codeBlock") {
-      let text = "";
-      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
-      const lang = node.attrs?.language || "";
-      lines.push(`\`\`\`${lang}`);
-      lines.push(text);
-      lines.push("```");
-      lines.push("");
-    } else if (node.type === "blockquote") {
-      node.content?.forEach((c: any) => {
-        const before = lines.length;
-        walk(c, depth + 1);
-        for (let i = before; i < lines.length; i++) {
-          if (lines[i]) lines[i] = `> ${lines[i]}`;
-        }
-      });
-    } else if (node.type === "horizontalRule") {
-      lines.push("---");
-      lines.push("");
-    } else if (node.type === "callout") {
-      const ctype = node.attrs?.type || "info";
-      lines.push(`> [!${ctype.toUpperCase()}]`);
-      node.content?.forEach((c: any) => walk(c, depth + 1));
-      lines.push("");
-    } else if (node.type === "taskList") {
-      node.content?.forEach((c: any) => walk(c, depth));
-    } else if (node.type === "taskItem") {
-      const checked = node.attrs?.checked ? "x" : " ";
-      let text = "";
-      node.content?.forEach((c: any) => {
-        if (c.type === "paragraph") {
-          c.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
-        }
-      });
-      lines.push(`- [${checked}] ${text}`);
-    } else if (node.type === "table") {
-      // Basic table export
-      const rows: string[][] = [];
-      node.content?.forEach((row: any) => {
-        const cells: string[] = [];
-        row.content?.forEach((cell: any) => {
-          let text = "";
-          cell.content?.forEach((p: any) => {
-            p.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
-          });
-          cells.push(text);
-        });
-        rows.push(cells);
-      });
-      if (rows.length > 0) {
-        const colCount = rows[0].length;
-        rows.forEach((row, i) => {
-          lines.push("| " + row.join(" | ") + " |");
-          if (i === 0) lines.push("| " + "---".repeat(colCount) + " |");
-        });
-        lines.push("");
-      }
-    } else {
-      // Unknown node — recurse into content
-      node.content?.forEach((c: any) => walk(c, depth));
-    }
-  }
-  walk(doc);
-  return lines.join("\n").trim();
+function tiptapToMarkdown(doc: PMNode): string {
+  return typedTiptapToMarkdown(doc);
 }
 
 function downloadFile(content: string, filename: string, mime: string) {
@@ -395,16 +277,16 @@ export function PageView({ pageId, userId }: Props) {
 
   // ─── TOC: extract headings from page JSON ───────────────────────────────
 
-  function extractHeadings(doc: any): { level: number; text: string; id: string }[] {
+  function extractHeadings(doc: PMNode): { level: number; text: string; id: string }[] {
     const headings: { level: number; text: string; id: string }[] = [];
-    function walk(node: any) {
+    function walk(node: PMNode) {
       if (!node) return;
       if (node.type === "heading") {
         let text = "";
-        node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+        node.content?.forEach((c: PMNode) => { if (c.text) text += c.text; });
         if (text) headings.push({ level: node.attrs?.level || 1, text, id: `h-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}` });
       }
-      node.content?.forEach((c: any) => walk(c));
+      node.content?.forEach((c: PMNode) => walk(c));
     }
     walk(doc);
     return headings;
@@ -479,7 +361,7 @@ export function PageView({ pageId, userId }: Props) {
       setReactions(reactionMap);
       // Load attachments
       api.attachments.list(pageId).then((rows) => setAttachments(rows as any[]));
-    } catch (err: any) { setError(String(err)); }
+    } catch (err: unknown) { setError(String(err)); }
     finally { setLoading(false); }
   };
 
@@ -527,7 +409,7 @@ export function PageView({ pageId, userId }: Props) {
           try {
             const content = JSON.parse(page!.content || "{}");
             const images: { src: string; alt: string; imageId?: string }[] = [];
-            const walkNodes = (node: any) => {
+            const walkNodes = (node: PMNode) => {
               if (node.attrs?.src && typeof node.attrs.src === "string") {
                 images.push({ src: node.attrs.src, alt: node.attrs.alt || "", imageId: node.attrs.imageId || undefined });
               }
@@ -801,14 +683,14 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
     setExportingJSON(true);
     try {
       // Parse content as ProseMirror doc
-      let doc: any;
+      let doc: PMNode | null;
       try { doc = JSON.parse(page.content); } catch { doc = null; }
 
       // Fetch tags for this page
       let tags: { name: string; value: string }[] = [];
       try {
         const tagRows = await api.tags.list(pageId);
-        tags = tagRows.map((t: any) => ({ name: t.name, value: t.value }));
+        tags = tagRows?.map((t: { name: string; value: string }) => ({ name: t.name, value: t.value })) || [];
       } catch { /* no tags */ }
 
       // Build the export payload
@@ -1050,8 +932,8 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                         setShowAccessRequest(false);
                         setAccessReason("");
                         showToast({ type: "success", title: "Access Request Sent", message: "The page owner has been notified.", duration: 4000 });
-                      } catch (e: any) {
-                        showToast({ type: "error", title: "Failed", message: e.message || "Could not send request", duration: 5000 });
+                      } catch (e: unknown) {
+                        showToast({ type: "error", title: "Failed", message: (e as Record<string, unknown>)?.message as string || "Could not send request", duration: 5000 });
                       }
                     }}
                     className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
@@ -1406,7 +1288,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
         let charCount = 0;
         try {
           const doc = JSON.parse(page.content || "{}");
-          const walkText = (node: any) => {
+          const walkText = (node: PMNode) => {
             if (!node) return;
             if (node.type === "text" && node.text) {
               const text = node.text;
@@ -1678,7 +1560,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
           )}
 
           <div className="grid gap-2">
-            {attachments.map((att: any) => (
+            {attachments.map((att: [string, string, string, string, string, string]) => (
               <div key={att[0]} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
                 <a
                   href={`data:${att[3] || "application/octet-stream"};base64,${att[5] || ""}`}
@@ -1693,7 +1575,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                 </a>
                 {userId && (
                   <button
-                    onClick={async () => { await api.attachments.delete(att[0]); setAttachments(atts => atts.filter((a: any) => a[0] !== att[0])); }}
+                    onClick={async () => { await api.attachments.delete(att[0]); setAttachments(atts => atts.filter((a: [string]) => a[0] !== att[0])); }}
                     className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
                   >
                     <Trash2 className="h-3 w-3" />
