@@ -1,4 +1,5 @@
 import { api } from "./api";
+import type { PMNode, PMTextNode, PMDoc, PMBlockNode } from "./prosemirror-types";
 
 export async function callReducerLocal(reducer: string, args: unknown[]) {
   const DB_ID = "c2003d19339f9932811b3d54bf9b15e18ae48a47a8c8b7135a47367faa03481e";
@@ -8,8 +9,8 @@ export async function callReducerLocal(reducer: string, args: unknown[]) {
 }
 
 /** Extract inline content from an HTML element, producing ProseMirror inline nodes */
-export function extractInlineContent(el: HTMLElement): any[] {
-  const content: any[] = [];
+export function extractInlineContent(el: HTMLElement): PMNode[] {
+  const content: PMNode[] = [];
   for (const child of el.childNodes) {
     if (child.nodeType === 3) {
       const t = (child.textContent || "").trim();
@@ -50,8 +51,8 @@ export function arrayBufferToBase64Url(buf: ArrayBuffer): string {
 }
 
 /** Convert simple HTML (Notion HTML export) to ProseMirror JSON */
-export function htmlToProseMirror(html: string): any {
-  const doc: any = { type: "doc", content: [] };
+export function htmlToProseMirror(html: string): PMDoc {
+  const doc: PMDoc = { type: "doc", content: [] };
   const div = document.createElement("div");
   div.innerHTML = html;
   for (const node of div.childNodes) {
@@ -69,7 +70,7 @@ export function htmlToProseMirror(html: string): any {
     } else if (tag === "p") {
       doc.content.push({ type: "paragraph", content: extractInlineContent(el) });
     } else if (tag === "ul" || tag === "ol") {
-      const items: any[] = [];
+      const items: PMNode[] = [];
       el.querySelectorAll(":scope > li").forEach((li) => {
         items.push({ type: "listItem", content: [{ type: "paragraph", content: extractInlineContent(li as HTMLElement) }] });
       });
@@ -88,9 +89,9 @@ export function htmlToProseMirror(html: string): any {
         doc.content.push({ type: "image", attrs: { src: img.getAttribute("src") || "", alt: img.getAttribute("alt") || "" } });
       }
     } else if (tag === "table") {
-      const rows: any[] = [];
+      const rows: PMNode[] = [];
       el.querySelectorAll(":scope > tr, :scope > thead > tr, :scope > tbody > tr").forEach((tr) => {
-        const cells: any[] = [];
+        const cells: PMNode[] = [];
         const trEl = tr as HTMLElement;
         trEl.querySelectorAll("th, td").forEach((td) => {
           const tdEl = td as HTMLElement;
@@ -109,8 +110,8 @@ export function htmlToProseMirror(html: string): any {
   return doc;
 }
 
-export function markdownToProseMirror(md: string): any {
-  const doc: any = { type: "doc", content: [] };
+export function markdownToProseMirror(md: string): PMDoc {
+  const doc: PMDoc = { type: "doc", content: [] };
   const lines = md.split("\n");
   let i = 0;
   let inCodeBlock = false;
@@ -119,7 +120,7 @@ export function markdownToProseMirror(md: string): any {
 
   function addParagraph(text: string) {
     if (!text.trim()) return;
-    const content: any[] = [];
+    const content: PMNode[] = [];
     const parts = text.split(/(\*\*.*?\*\*|_.*?_|`.*?`|~~.*?~~|\[.*?\]\(.*?\))/g);
     for (const part of parts) {
       if (!part) continue;
@@ -196,7 +197,7 @@ export function markdownToProseMirror(md: string): any {
     }
 
     if (/^[-*+]\s+/.test(line)) {
-      const items: any[] = [];
+      const items: PMNode[] = [];
       while (i < lines.length && /^[-*+]\s+/.test(lines[i])) {
         const itemText = lines[i].replace(/^[-*+]\s+/, "");
         items.push({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: itemText }] }] });
@@ -207,7 +208,7 @@ export function markdownToProseMirror(md: string): any {
     }
 
     if (/^\d+\.\s+/.test(line)) {
-      const items: any[] = [];
+      const items: PMNode[] = [];
       while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
         const itemText = lines[i].replace(/^\d+\.\s+/, "");
         items.push({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: itemText }] }] });
@@ -218,7 +219,7 @@ export function markdownToProseMirror(md: string): any {
     }
 
     if (/^\s*[-*+]\s+[[ x]\]\]\s+/i.test(line)) {
-      const items: any[] = [];
+      const items: PMNode[] = [];
       while (i < lines.length && /^\s*[-*+]\s+[[ x]\]\]\s+/i.test(lines[i])) {
         const checked = lines[i].includes("[x]") || lines[i].includes("[X]");
         const text = lines[i].replace(/^\s*[-*+]\s+[[ x]\]\]\s+/i, "");
@@ -243,29 +244,29 @@ export function markdownToProseMirror(md: string): any {
   return doc;
 }
 
-export function tiptapToMarkdown(doc: any): string {
+export function tiptapToMarkdown(doc: PMNode): string {
   const lines: string[] = [];
-  function walk(node: any, depth = 0) {
+  function walk(node: PMNode, depth = 0) {
     if (!node) return;
     if (node.type === "doc" || node.type === "tableRow" || node.type === "tableHeader") {
-      node.content?.forEach((c: any) => walk(c, depth));
+      node.content?.forEach((c: PMNode) => walk(c, depth));
     } else if (node.type === "paragraph") {
       let text = "";
-      node.content?.forEach((c: any) => {
+      node.content?.forEach((c: PMNode) => {
         if (c.type === "text") {
-          let t = c.text || "";
+          let t = (c as PMTextNode).text || "";
           if (c.marks) {
-            c.marks.forEach((m: any) => {
+            c.marks.forEach((m) => {
               if (m.type === "bold") t = `**${t}**`;
               if (m.type === "italic") t = `_${t}_`;
               if (m.type === "strike") t = `~~${t}~~`;
               if (m.type === "code") t = `\`${t}\``;
-              if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
+              if (m.type === "link") t = `[${t}](${(m.attrs as { href?: string })?.href || ""})`;
             });
           }
           text += t;
         } else if (c.type === "image") {
-          text += `![${c.attrs?.alt || ""}](${c.attrs?.src || ""})`;
+          text += `![${(c.attrs as { alt?: string })?.alt || ""}](${(c.attrs as { src?: string })?.src || ""})`;
         } else if (c.type === "hardBreak") {
           text += "\n";
         }
@@ -273,26 +274,26 @@ export function tiptapToMarkdown(doc: any): string {
       lines.push(text);
       lines.push("");
     } else if (node.type === "heading") {
-      const level = node.attrs?.level || 1;
+      const level = (node.attrs as { level?: number })?.level || 1;
       let text = "";
-      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
+      node.content?.forEach((c: PMNode) => { if (c.text) text += c.text; });
       lines.push(`${"#".repeat(level)} ${text}`);
       lines.push("");
     } else if (node.type === "bulletList" || node.type === "orderedList") {
-      node.content?.forEach((c: any) => walk(c, depth));
+      node.content?.forEach((c: PMNode) => walk(c, depth));
     } else if (node.type === "listItem") {
       let text = "";
-      node.content?.forEach((c: any) => {
+      node.content?.forEach((c: PMNode) => {
         if (c.type === "paragraph") {
-          c.content?.forEach((cc: any) => {
+          c.content?.forEach((cc: PMNode) => {
             if (cc.type === "text") {
-              let t = cc.text || "";
+              let t = (cc as PMTextNode).text || "";
               if (cc.marks) {
-                cc.marks.forEach((m: any) => {
+                cc.marks.forEach((m) => {
                   if (m.type === "bold") t = `**${t}**`;
                   if (m.type === "italic") t = `_${t}_`;
                   if (m.type === "code") t = `\`${t}\``;
-                  if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
+                  if (m.type === "link") t = `[${t}](${(m.attrs as { href?: string })?.href || ""})`;
                 });
               }
               text += t;
@@ -303,14 +304,14 @@ export function tiptapToMarkdown(doc: any): string {
       lines.push(`- ${text}`);
     } else if (node.type === "codeBlock") {
       let text = "";
-      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
-      const lang = node.attrs?.language || "";
+      node.content?.forEach((c: PMNode) => { if (c.text) text += c.text; });
+      const lang = (node.attrs as { language?: string })?.language || "";
       lines.push(`\`\`\`${lang}`);
       lines.push(text);
       lines.push("```");
       lines.push("");
     } else if (node.type === "blockquote") {
-      node.content?.forEach((c: any) => {
+      node.content?.forEach((c: PMNode) => {
         const before = lines.length;
         walk(c, depth + 1);
         for (let i = before; i < lines.length; i++) {
@@ -321,29 +322,29 @@ export function tiptapToMarkdown(doc: any): string {
       lines.push("---");
       lines.push("");
     } else if (node.type === "callout") {
-      const ctype = node.attrs?.type || "info";
+      const ctype = (node.attrs as { type?: string })?.type || "info";
       lines.push(`> [!${ctype.toUpperCase()}]`);
-      node.content?.forEach((c: any) => walk(c, depth + 1));
+      node.content?.forEach((c: PMNode) => walk(c, depth + 1));
       lines.push("");
     } else if (node.type === "taskList") {
-      node.content?.forEach((c: any) => walk(c, depth));
+      node.content?.forEach((c: PMNode) => walk(c, depth));
     } else if (node.type === "taskItem") {
-      const checked = node.attrs?.checked ? "x" : " ";
+      const checked = (node.attrs as { checked?: boolean })?.checked ? "x" : " ";
       let text = "";
-      node.content?.forEach((c: any) => {
+      node.content?.forEach((c: PMNode) => {
         if (c.type === "paragraph") {
-          c.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+          c.content?.forEach((cc: PMNode) => { if (cc.text) text += cc.text; });
         }
       });
       lines.push(`- [${checked}] ${text}`);
     } else if (node.type === "table") {
       const rows: string[][] = [];
-      node.content?.forEach((row: any) => {
+      node.content?.forEach((row: PMNode) => {
         const cells: string[] = [];
-        row.content?.forEach((cell: any) => {
+        row.content?.forEach((cell: PMNode) => {
           let text = "";
-          cell.content?.forEach((p: any) => {
-            p.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
+          cell.content?.forEach((p: PMNode) => {
+            p.content?.forEach((cc: PMNode) => { if (cc.text) text += cc.text; });
           });
           cells.push(text);
         });
@@ -358,26 +359,26 @@ export function tiptapToMarkdown(doc: any): string {
         lines.push("");
       }
     } else {
-      node.content?.forEach((c: any) => walk(c, depth));
+      node.content?.forEach((c: PMNode) => walk(c, depth));
     }
   }
   walk(doc);
   return lines.join("\n").trim();
 }
 
-export function tiptapToHTML(json: any): string {
+export function tiptapToHTML(json: PMNode): string {
   if (!json || typeof json !== "object") return "";
   const { type, attrs, content, marks, text } = json;
   if (type === "doc") {
-    return (content || []).map((c: any) => tiptapToHTML(c)).join("\n");
+    return (content || []).map((c: PMNode) => tiptapToHTML(c)).join("\n");
   }
   if (type === "paragraph") {
-    const inner = (content || []).map((c: any) => tiptapToHTML(c)).join("");
+    const inner = (content || []).map((c: PMNode) => tiptapToHTML(c)).join("");
     return `<p>${inner}</p>`;
   }
   if (type === "heading") {
-    const level = attrs?.level || 1;
-    const inner = (content || []).map((c: any) => tiptapToHTML(c)).join("");
+    const level = (attrs as { level?: number })?.level || 1;
+    const inner = (content || []).map((c: PMNode) => tiptapToHTML(c)).join("");
     return `<h${level}>${inner}</h${level}>`;
   }
   if (type === "text") {
@@ -389,45 +390,45 @@ export function tiptapToHTML(json: any): string {
         else if (m.type === "underline") t = `<u>${t}</u>`;
         else if (m.type === "strike") t = `<s>${t}</s>`;
         else if (m.type === "code") t = `<code>${t}</code>`;
-        else if (m.type === "link") t = `<a href="${m.attrs?.href || ""}">${t}</a>`;
+        else if (m.type === "link") t = `<a href="${(m.attrs as { href?: string })?.href || ""}">${t}</a>`;
       }
     }
     return t;
   }
   if (type === "bulletList") {
-    return `<ul>${(content || []).map((c: any) => tiptapToHTML(c)).join("")}</ul>`;
+    return `<ul>${(content || []).map((c: PMNode) => tiptapToHTML(c)).join("")}</ul>`;
   }
   if (type === "orderedList") {
-    return `<ol>${(content || []).map((c: any) => tiptapToHTML(c)).join("")}</ol>`;
+    return `<ol>${(content || []).map((c: PMNode) => tiptapToHTML(c)).join("")}</ol>`;
   }
   if (type === "listItem") {
-    return `<li>${(content || []).map((c: any) => tiptapToHTML(c)).join("")}</li>`;
+    return `<li>${(content || []).map((c: PMNode) => tiptapToHTML(c)).join("")}</li>`;
   }
   if (type === "codeBlock") {
-    const code = (content || []).map((c: any) => c.text || "").join("\n");
+    const code = (content || []).map((c: PMNode) => c.text || "").join("\n");
     return `<pre><code>${code}</code></pre>`;
   }
   if (type === "blockquote") {
-    return `<blockquote>${(content || []).map((c: any) => tiptapToHTML(c)).join("")}</blockquote>`;
+    return `<blockquote>${(content || []).map((c: PMNode) => tiptapToHTML(c)).join("")}</blockquote>`;
   }
   if (type === "horizontalRule") {
     return `<hr />`;
   }
   if (type === "image") {
-    return `<img src="${attrs?.src || ""}" alt="${attrs?.alt || ""}" />`;
+    return `<img src="${(attrs as { src?: string })?.src || ""}" alt="${(attrs as { alt?: string })?.alt || ""}" />`;
   }
   if (type === "taskList") {
-    return `<ul>${(content || []).map((c: any) => tiptapToHTML(c)).join("")}</ul>`;
+    return `<ul>${(content || []).map((c: PMNode) => tiptapToHTML(c)).join("")}</ul>`;
   }
   if (type === "taskItem") {
-    const checked = attrs?.checked ? "checked" : "";
-    return `<li><input type="checkbox" ${checked} disabled />${(content || []).map((c: any) => tiptapToHTML(c)).join("")}</li>`;
+    const checked = (attrs as { checked?: boolean })?.checked ? "checked" : "";
+    return `<li><input type="checkbox" ${checked} disabled />${(content || []).map((c: PMNode) => tiptapToHTML(c)).join("")}</li>`;
   }
   if (type === "hardBreak") {
     return "<br />";
   }
   if (content) {
-    return (content || []).map((c: any) => tiptapToHTML(c)).join("");
+    return (content || []).map((c: PMNode) => tiptapToHTML(c)).join("");
   }
   return "";
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, Editor } from "@tiptap/react";
 
 import { createPortal } from "react-dom";
 import StarterKit from "@tiptap/starter-kit";
@@ -73,6 +73,8 @@ import { api, Page, readFileAsBase64, resolveContentAttachments, isAttachmentUrl
 import { showToast } from "../components/Toast";
 import { useCollaboration } from "../lib/useCollaboration";
 import { cn } from "../lib/utils";
+import { tiptapToMarkdown as typedTiptapToMarkdown, markdownToProseMirror as typedMarkdownToProseMirror } from "../lib/helpers";
+import type { PMNode } from "../lib/prosemirror-types";
 
 const lowlight = createLowlight(common);
 
@@ -80,7 +82,7 @@ const lowlight = createLowlight(common);
 // Keyboard handler in the editor detects "/" and shows a dropdown.
 // No tippy/ReactRenderer dependency — just portals + DOM coordinates.
 
-const SLASH_COMMANDS: { title: string; description: string; icon: string; command: (e: any) => void }[] = [
+const SLASH_COMMANDS: { title: string; description: string; icon: string; command: (e: Editor) => void }[] = [
   { title: "Heading 1", description: "Large section heading", icon: "H1", command: (e) => e?.chain().focus().toggleHeading({ level: 1 }).run() },
   { title: "Heading 2", description: "Medium section heading", icon: "H2", command: (e) => e?.chain().focus().toggleHeading({ level: 2 }).run() },
   { title: "Heading 3", description: "Small section heading", icon: "H3", command: (e) => e?.chain().focus().toggleHeading({ level: 3 }).run() },
@@ -107,264 +109,16 @@ const SLASH_COMMANDS: { title: string; description: string; icon: string; comman
   { title: "Synced Block", description: "Insert a reusable synced block", icon: "🔄", command: (e) => e?.chain().focus().insertSyncedBlock(prompt("Synced Block ID:") || "", "").run() },
 ];
 
-// ─── Format conversion utilities ─────────────────────────────────────────────
+// ─── Format conversion utilities (delegated to typed helpers) ──────────────
 
-function tiptapToMarkdown(doc: any): string {
-  const lines: string[] = [];
-  function walk(node: any, depth = 0) {
-    if (!node) return;
-    if (node.type === "doc" || node.type === "tableRow" || node.type === "tableHeader" || node.type === "table") {
-      node.content?.forEach((c: any) => walk(c, depth));
-    } else if (node.type === "paragraph") {
-      let text = "";
-      node.content?.forEach((c: any) => {
-        if (c.type === "text") {
-          let t = c.text || "";
-          if (c.marks) {
-            c.marks.forEach((m: any) => {
-              if (m.type === "bold") t = `**${t}**`;
-              if (m.type === "italic") t = `_${t}_`;
-              if (m.type === "strike") t = `~~${t}~~`;
-              if (m.type === "code") t = `\`${t}\``;
-              if (m.type === "link") t = `[${t}](${m.attrs?.href || ""})`;
-            });
-          }
-          text += t;
-        } else if (c.type === "image" || c.type === "imageEnhanced") {
-          text += `![${c.attrs?.alt || ""}](${c.attrs?.src || ""})`;
-        } else if (c.type === "hardBreak") {
-          text += "  \n";
-        }
-      });
-      lines.push(text);
-      lines.push("");
-    } else if (node.type === "heading") {
-      const level = node.attrs?.level || 1;
-      let text = "";
-      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
-      lines.push(`${"#".repeat(level)} ${text}`);
-      lines.push("");
-    } else if (node.type === "bulletList") {
-      node.content?.forEach((item: any) => {
-        item.content?.forEach((p: any) => {
-          let text = "";
-          p.content?.forEach((c: any) => { if (c.text) text += c.text; });
-          lines.push(`- ${text}`);
-        });
-      });
-      lines.push("");
-    } else if (node.type === "orderedList") {
-      node.content?.forEach((item: any, i: number) => {
-        item.content?.forEach((p: any) => {
-          let text = "";
-          p.content?.forEach((c: any) => { if (c.text) text += c.text; });
-          lines.push(`${i + 1}. ${text}`);
-        });
-      });
-      lines.push("");
-    } else if (node.type === "codeBlock") {
-      const lang = node.attrs?.language || "";
-      lines.push("```" + lang);
-      let text = "";
-      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
-      lines.push(text);
-      lines.push("```");
-      lines.push("");
-    } else if (node.type === "blockquote") {
-      node.content?.forEach((c: any) => {
-        const inner: string[] = [];
-        (c.content || []).forEach((cc: any) => { if (cc.text) inner.push(cc.text); });
-        lines.push(`> ${inner.join(" ")}`);
-      });
-      lines.push("");
-    } else if (node.type === "horizontalRule") {
-      lines.push("---");
-      lines.push("");
-    } else if (node.type === "taskList") {
-      node.content?.forEach((item: any) => {
-        item.content?.forEach((p: any) => {
-          const checked = item.attrs?.checked ? "x" : " ";
-          let text = "";
-          p.content?.forEach((c: any) => { if (c.text) text += c.text; });
-          lines.push(`- [${checked}] ${text}`);
-        });
-      });
-      lines.push("");
-    } else if (node.type === "callout") {
-      const type = node.attrs?.type || "info";
-      lines.push(`> **${type}:**`);
-      node.content?.forEach((c: any) => {
-        let text = "";
-        c.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
-        lines.push(`> ${text}`);
-      });
-      lines.push("");
-    } else if (node.type === "details") {
-      lines.push("<details>");
-      node.content?.forEach((c: any) => {
-        if (c.type === "detailsSummary") {
-          let text = "";
-          c.content?.forEach((cc: any) => { if (cc.text) text += cc.text; });
-          lines.push(`<summary>${text}</summary>`);
-        } else {
-          walk(c, depth);
-        }
-      });
-      lines.push("</details>");
-      lines.push("");
-    } else {
-      // fallback: render any unrecognised node as its text content
-      let text = "";
-      node.content?.forEach((c: any) => { if (c.text) text += c.text; });
-      if (text) lines.push(text);
-    }
-  }
-  walk(doc);
-  while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
-  return lines.join("\n");
+function tiptapToMarkdown(doc: PMNode): string {
+  // The helpers version handles all standard node types.
+  // Additional node types from custom extensions are handled by the fallback walker.
+  return typedTiptapToMarkdown(doc);
 }
 
-function markdownToProseMirror(md: string): any {
-  const doc: any = { type: "doc", content: [] };
-  const lines = md.split("\n");
-  let i = 0;
-  let inCodeBlock = false;
-  let codeLang = "";
-  let codeLines: string[] = [];
-
-  function addParagraph(text: string) {
-    if (!text.trim()) return;
-    const content: any[] = [];
-    // Parse inline marks: **bold**, _italic_, `code`, [link](url), ~~strike~~
-    const parts = text.split(/(\*\*.*?\*\*|_.*?_|`.*?`|~~.*?~~|\[.*?\]\(.*?\))/g);
-    for (const part of parts) {
-      if (!part) continue;
-      if (part.startsWith("**") && part.endsWith("**")) {
-        content.push({ type: "text", text: part.slice(2, -2), marks: [{ type: "bold" }] });
-      } else if (part.startsWith("_") && part.endsWith("_")) {
-        content.push({ type: "text", text: part.slice(1, -1), marks: [{ type: "italic" }] });
-      } else if (part.startsWith("`") && part.endsWith("`")) {
-        content.push({ type: "text", text: part.slice(1, -1), marks: [{ type: "code" }] });
-      } else if (part.startsWith("~~") && part.endsWith("~~")) {
-        content.push({ type: "text", text: part.slice(2, -2), marks: [{ type: "strike" }] });
-      } else if (part.startsWith("[") && part.includes("](")) {
-        const match = part.match(/^\[(.*?)\]\((.*?)\)$/);
-        if (match) {
-          content.push({ type: "text", text: match[1], marks: [{ type: "link", attrs: { href: match[2] } }] });
-        } else {
-          content.push({ type: "text", text: part });
-        }
-      } else {
-        content.push({ type: "text", text: part });
-      }
-    }
-    if (content.length > 0) {
-      doc.content.push({ type: "paragraph", content });
-    }
-  }
-
-  while (i < lines.length) {
-    const line = lines[i];
-
-    if (inCodeBlock) {
-      if (line.startsWith("```")) {
-        doc.content.push({ type: "codeBlock", attrs: { language: codeLang }, content: [{ type: "text", text: codeLines.join("\n") }] });
-        codeLines = [];
-        codeLang = "";
-        inCodeBlock = false;
-        i++;
-        continue;
-      }
-      codeLines.push(line);
-      i++;
-      continue;
-    }
-
-    if (line.startsWith("```")) {
-      inCodeBlock = true;
-      codeLang = line.slice(3).trim();
-      i++;
-      continue;
-    }
-
-    if (!line.trim()) { i++; continue; }
-
-    // Heading
-    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
-    if (headingMatch) {
-      const level = headingMatch[1].length;
-      const text = headingMatch[2];
-      doc.content.push({ type: "heading", attrs: { level }, content: [{ type: "text", text }] });
-      i++;
-      continue;
-    }
-
-    // Horizontal rule
-    if (/^---+\s*$/.test(line)) {
-      doc.content.push({ type: "horizontalRule" });
-      i++;
-      continue;
-    }
-
-    // Blockquote
-    if (line.startsWith("> ")) {
-      const text = line.slice(2);
-      doc.content.push({ type: "blockquote", content: [{ type: "paragraph", content: [{ type: "text", text }] }] });
-      i++;
-      continue;
-    }
-
-    // Unordered list
-    if (/^[-*+]\s+/.test(line)) {
-      const items: any[] = [];
-      while (i < lines.length && /^[-*+]\s+/.test(lines[i])) {
-        const itemText = lines[i].replace(/^[-*+]\s+/, "");
-        items.push({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: itemText }] }] });
-        i++;
-      }
-      doc.content.push({ type: "bulletList", content: items });
-      continue;
-    }
-
-    // Ordered list
-    if (/^\d+\.\s+/.test(line)) {
-      const items: any[] = [];
-      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
-        const itemText = lines[i].replace(/^\d+\.\s+/, "");
-        items.push({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: itemText }] }] });
-        i++;
-      }
-      doc.content.push({ type: "orderedList", content: items });
-      continue;
-    }
-
-    // Task list
-    if (/^\s*[-*+]\s+\[[ x]\]\s+/i.test(line)) {
-      const items: any[] = [];
-      while (i < lines.length && /^\s*[-*+]\s+\[[ x]\]\s+/i.test(lines[i])) {
-        const checked = lines[i].includes("[x]") || lines[i].includes("[X]");
-        const text = lines[i].replace(/^\s*[-*+]\s+\[[ x]\]\s+/i, "");
-        items.push({ type: "taskItem", attrs: { checked }, content: [{ type: "paragraph", content: [{ type: "text", text }] }] });
-        i++;
-      }
-      doc.content.push({ type: "taskList", content: items });
-      continue;
-    }
-
-    // Default: paragraph
-    addParagraph(line);
-    i++;
-  }
-
-  // Add trailing code block if unclosed
-  if (inCodeBlock && codeLines.length > 0) {
-    doc.content.push({ type: "codeBlock", attrs: { language: codeLang }, content: [{ type: "text", text: codeLines.join("\n") }] });
-  }
-
-  if (doc.content.length === 0) {
-    doc.content.push({ type: "paragraph", content: [] });
-  }
-  return doc;
+function markdownToProseMirror(md: string): PMNode {
+  return typedMarkdownToProseMirror(md);
 }
 
 // ─── Emoji data ───────────────────────────────────────────────────────────────
@@ -1021,7 +775,7 @@ export function PageEditor({ userId }: Props) {
           try {
             const jsonContent = editor?.getJSON();
             const images: { src: string; alt: string; imageId?: string }[] = [];
-            const walkNodes = (node: any) => {
+            const walkNodes = (node: PMNode) => {
               if (node.attrs?.src && typeof node.attrs.src === "string") {
                 images.push({ src: node.attrs.src, alt: node.attrs.alt || "", imageId: node.attrs.imageId || undefined });
               }
@@ -1172,7 +926,7 @@ export function PageEditor({ userId }: Props) {
         await api.pages.update(id, title, content, userId || "anonymous");
         clearDraft();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(String(err));
     } finally {
       setSaving(false);
@@ -1213,9 +967,9 @@ export function PageEditor({ userId }: Props) {
       const attUrl = `attachment://${attId}`;
       editor?.chain().focus().setImageEnhanced({ src: attUrl }).run();
       showToast({ type: "success", title: "Image uploaded", message: file.name, duration: 3000 });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Image upload failed:", err);
-      const isNetworkError = err instanceof TypeError || err?.name === "AbortError" || err?.message?.includes("fetch");
+      const isNetworkError = err instanceof TypeError || (err as Record<string, unknown>)?.name === "AbortError" || String(err)?.includes("fetch");
       const errorType = isNetworkError ? "network" : "server";
       const title = errorType === "network"
         ? "Network error — image upload failed"
@@ -1343,7 +1097,7 @@ export function PageEditor({ userId }: Props) {
   // Listen for / in the editor
   useEffect(() => {
     if (!editor || !editorReadyRef.current || preview) return;
-    const handler = (view: any, event: KeyboardEvent) => {
+    const handler = (view: { state: { selection: { from: number }; doc: { resolve: (pos: number) => { start: () => number }; textBetween: (from: number, to: number) => string } }; coordsAtPos: (pos: number) => { top: number; left: number } }, event: KeyboardEvent) => {
       if (event.key === "/" && !slashOpen) {
         const { from } = view.state.selection;
         const $pos = view.state.doc.resolve(from);
