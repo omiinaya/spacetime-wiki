@@ -39,7 +39,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         try:
             prefix = api_key[:8]
             rows = await sql_query(
-                f"SELECT * FROM api_key WHERE key_prefix = '{prefix}' AND is_revoked = false"
+                "SELECT * FROM api_key WHERE key_prefix = ? AND is_revoked = false", prefix
             )
             if not rows:
                 return JSONResponse(
