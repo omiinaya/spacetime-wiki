@@ -9,6 +9,7 @@ Transport: stdio (suitable for Hermes native MCP client integration)
 
 import sys
 import json
+import logging
 from mcp.server import Server
 from mcp.types import (
     Tool,
@@ -29,6 +30,7 @@ from stdb_client import (
 )
 from config import MCP_SERVER_NAME
 
+logger = logging.getLogger("spacetime-wiki-mcp.server")
 
 app = Server(MCP_SERVER_NAME)
 
@@ -39,7 +41,11 @@ app = Server(MCP_SERVER_NAME)
 @app.list_resources()
 async def list_resources() -> list[Resource]:
     """List all wiki pages as resources."""
-    pages = await list_pages(limit=100)
+    try:
+        pages = await list_pages(limit=100)
+    except Exception as e:
+        logger.error("Failed to list resources from STDB: %s", e)
+        return []
     return [
         Resource(
             uri=f"wiki://pages/{p['id']}",  # type: ignore[arg-type]
@@ -56,7 +62,11 @@ async def read_resource(uri: str) -> str | bytes:  # type: ignore[override, arg-
     """Read a wiki page resource by URI."""
     if uri.startswith("wiki://pages/"):
         page_id = uri.removeprefix("wiki://pages/").split("?")[0]
-        page = await get_page(page_id)
+        try:
+            page = await get_page(page_id)
+        except Exception as e:
+            logger.error("Failed to read page %s from STDB: %s", page_id, e)
+            return json.dumps({"error": f"STDB unavailable: {e}"})
         if not page:
             raise ValueError(f"Page not found: {page_id}")
         # Fetch associated tags
@@ -195,109 +205,133 @@ async def list_tools() -> list[Tool]:
 
 @app.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-    if name == "wiki_search":
-        query = arguments["query"]
-        limit = min(arguments.get("limit", 20), 50)
-        results = await search_pages(query, limit)
-        if not results:
-            return [TextContent(type="text", text=f"No pages found matching '{query}'")]
-        lines = [f"# Search results for '{query}'\n"]
-        for p in results:
-            status_tag = f"[{p['status']}]" if p['status'] != 'published' else ""
-            col = f" in {p['collection_id']}" if p['collection_id'] else ""
-            lines.append(f"## {p['title']} {status_tag}")
-            lines.append(f"  ID: {p['id']}")
-            lines.append(f"  Slug: {p['slug']}")
-            lines.append(f"  Updated: {p['updated_at']}{col}")
-            # Show preview snippet
-            snippet = p.get('text_content', '')[:200].strip()
-            if snippet:
-                lines.append(f"  Preview: {snippet}...")
-            lines.append("")
-        return [TextContent(type="text", text="\n".join(lines))]
+    try:
+        if name == "wiki_search":
+            query = arguments["query"]
+            limit = min(arguments.get("limit", 20), 50)
+            results = await search_pages(query, limit)
+            if not results:
+                return [TextContent(type="text", text=f"No pages found matching '{query}'")]
+            lines = [f"# Search results for '{query}'\n"]
+            for p in results:
+                status_tag = f"[{p['status']}]" if p['status'] != 'published' else ""
+                col = f" in {p['collection_id']}" if p['collection_id'] else ""
+                lines.append(f"## {p['title']} {status_tag}")
+                lines.append(f"  ID: {p['id']}")
+                lines.append(f"  Slug: {p['slug']}")
+                lines.append(f"  Updated: {p['updated_at']}{col}")
+                # Show preview snippet
+                snippet = p.get('text_content', '')[:200].strip()
+                if snippet:
+                    lines.append(f"  Preview: {snippet}...")
+                lines.append("")
+            return [TextContent(type="text", text="\n".join(lines))]
 
-    elif name == "wiki_read_page":
-        page_id = arguments["id"]
-        # Try as ID first, then slug
-        page = await get_page(page_id)
-        if not page:
-            page = await get_page_by_slug(page_id)
-        if not page:
-            return [TextContent(type="text", text=f"Page not found: {page_id}")]
-        # Fetch tags
-        try:
-            tags = await list_page_tags(page["id"])
-            page["tags"] = tags
-        except Exception:
-            page["tags"] = []
-        # Fetch backlinks count
-        try:
-            backlinks = await get_backlinks(page["id"], limit=5)
-            page["backlink_count"] = len(backlinks)
-            page["backlinks_preview"] = [b["title"] for b in backlinks]
-        except Exception:
-            pass
-        return [TextContent(type="text", text=json.dumps(page, indent=2))]
+        elif name == "wiki_read_page":
+            page_id = arguments["id"]
+            # Try as ID first, then slug
+            try:
+                page = await get_page(page_id)
+            except Exception as e:
+                logger.error("Failed to get page %s from STDB: %s", page_id, e)
+                return [TextContent(type="text", text=f"STDB unavailable: {e}")]
+            if not page:
+                page = await get_page_by_slug(page_id)
+            if not page:
+                return [TextContent(type="text", text=f"Page not found: {page_id}")]
+            # Fetch tags
+            try:
+                tags = await list_page_tags(page["id"])
+                page["tags"] = tags
+            except Exception:
+                page["tags"] = []
+            # Fetch backlinks count
+            try:
+                backlinks = await get_backlinks(page["id"], limit=5)
+                page["backlink_count"] = len(backlinks)
+                page["backlinks_preview"] = [b["title"] for b in backlinks]
+            except Exception:
+                pass
+            return [TextContent(type="text", text=json.dumps(page, indent=2))]
 
-    elif name == "wiki_list_collections":
-        cols = await list_collections()
-        if not cols:
-            return [TextContent(type="text", text="No collections found")]
-        lines = [f"# Collections ({len(cols)})\n"]
-        for c in cols:
-            parent = f" (child of {c['parent_id']})" if c['parent_id'] else ""
-            icon = c.get('icon', '📁')
-            lines.append(f"- {icon} **{c['name']}**{parent}")
-            lines.append(f"  ID: {c['id']} | Slug: {c['slug']}")
-            if c.get('description'):
-                lines.append(f"  {c['description']}")
-            lines.append("")
-        return [TextContent(type="text", text="\n".join(lines))]
+        elif name == "wiki_list_collections":
+            try:
+                cols = await list_collections()
+            except Exception as e:
+                logger.error("Failed to list collections from STDB: %s", e)
+                return [TextContent(type="text", text=f"STDB unavailable: {e}")]
+            if not cols:
+                return [TextContent(type="text", text="No collections found")]
+            lines = [f"# Collections ({len(cols)})\n"]
+            for c in cols:
+                parent = f" (child of {c['parent_id']})" if c['parent_id'] else ""
+                icon = c.get('icon', '📁')
+                lines.append(f"- {icon} **{c['name']}**{parent}")
+                lines.append(f"  ID: {c['id']} | Slug: {c['slug']}")
+                if c.get('description'):
+                    lines.append(f"  {c['description']}")
+                lines.append("")
+            return [TextContent(type="text", text="\n".join(lines))]
 
-    elif name == "wiki_list_pages":
-        collection_id = arguments.get("collection_id")
-        limit = min(arguments.get("limit", 50), 100)
-        results = await list_pages(collection_id, limit)
-        if not results:
-            return [TextContent(type="text", text="No pages found")]
-        title = f" in collection {collection_id}" if collection_id else ""
-        lines = [f"# Pages{title} ({len(results)})\n"]
-        for p in results:
-            col = f" [{p['collection_id']}]" if p['collection_id'] else ""
-            tpl = " [TEMPLATE]" if p.get('is_template') else ""
-            lines.append(f"- {p['icon'] or '📄'} **{p['title']}**{tpl}{col}")
-            lines.append(f"  ID: {p['id']} | Status: {p['status']} | Updated: {p['updated_at']}")
-            lines.append("")
-        return [TextContent(type="text", text="\n".join(lines))]
+        elif name == "wiki_list_pages":
+            collection_id = arguments.get("collection_id")
+            limit = min(arguments.get("limit", 50), 100)
+            try:
+                results = await list_pages(collection_id, limit)
+            except Exception as e:
+                logger.error("Failed to list pages from STDB: %s", e)
+                return [TextContent(type="text", text=f"STDB unavailable: {e}")]
+            if not results:
+                return [TextContent(type="text", text="No pages found")]
+            title = f" in collection {collection_id}" if collection_id else ""
+            lines = [f"# Pages{title} ({len(results)})\n"]
+            for p in results:
+                col = f" [{p['collection_id']}]" if p['collection_id'] else ""
+                tpl = " [TEMPLATE]" if p.get('is_template') else ""
+                lines.append(f"- {p['icon'] or '📄'} **{p['title']}**{tpl}{col}")
+                lines.append(f"  ID: {p['id']} | Status: {p['status']} | Updated: {p['updated_at']}")
+                lines.append("")
+            return [TextContent(type="text", text="\n".join(lines))]
 
-    elif name == "wiki_get_backlinks":
-        page_id = arguments["page_id"]
-        limit = min(arguments.get("limit", 20), 50)
-        results = await get_backlinks(page_id, limit)
-        if not results:
-            return [TextContent(type="text", text=f"No pages link to {page_id}")]
-        lines = [f"# Pages linking to {page_id} ({len(results)})\n"]
-        for p in results:
-            lines.append(f"- **{p['title']}**")
-            lines.append(f"  ID: {p['id']} | Updated: {p['updated_at']}")
-            lines.append("")
-        return [TextContent(type="text", text="\n".join(lines))]
+        elif name == "wiki_get_backlinks":
+            page_id = arguments["page_id"]
+            limit = min(arguments.get("limit", 20), 50)
+            try:
+                results = await get_backlinks(page_id, limit)
+            except Exception as e:
+                logger.error("Failed to get backlinks for %s from STDB: %s", page_id, e)
+                return [TextContent(type="text", text=f"STDB unavailable: {e}")]
+            if not results:
+                return [TextContent(type="text", text=f"No pages link to {page_id}")]
+            lines = [f"# Pages linking to {page_id} ({len(results)})\n"]
+            for p in results:
+                lines.append(f"- **{p['title']}**")
+                lines.append(f"  ID: {p['id']} | Updated: {p['updated_at']}")
+                lines.append("")
+            return [TextContent(type="text", text="\n".join(lines))]
 
-    elif name == "wiki_get_linked_pages":
-        page_id = arguments["page_id"]
-        limit = min(arguments.get("limit", 20), 50)
-        results = await get_linked_pages(page_id, limit)
-        if not results:
-            return [TextContent(type="text", text=f"No linked pages found from {page_id}")]
-        lines = [f"# Pages linked from {page_id} ({len(results)})\n"]
-        for p in results:
-            lines.append(f"- **{p['title']}**")
-            lines.append(f"  ID: {p['id']} | Updated: {p['updated_at']}")
-            lines.append("")
-        return [TextContent(type="text", text="\n".join(lines))]
+        elif name == "wiki_get_linked_pages":
+            page_id = arguments["page_id"]
+            limit = min(arguments.get("limit", 20), 50)
+            try:
+                results = await get_linked_pages(page_id, limit)
+            except Exception as e:
+                logger.error("Failed to get linked pages for %s from STDB: %s", page_id, e)
+                return [TextContent(type="text", text=f"STDB unavailable: {e}")]
+            if not results:
+                return [TextContent(type="text", text=f"No linked pages found from {page_id}")]
+            lines = [f"# Pages linked from {page_id} ({len(results)})\n"]
+            for p in results:
+                lines.append(f"- **{p['title']}**")
+                lines.append(f"  ID: {p['id']} | Updated: {p['updated_at']}")
+                lines.append("")
+            return [TextContent(type="text", text="\n".join(lines))]
 
-    else:
-        raise ValueError(f"Unknown tool: {name}")
+        else:
+            raise ValueError(f"Unknown tool: {name}")
+    except Exception as e:
+        logger.error("Unhandled error in call_tool(%s): %s", name, e, exc_info=True)
+        return [TextContent(type="text", text=f"Internal error: {e}")]
 
 
 # ─── Entry point ────────────────────────────────────────────────────────────────
@@ -305,6 +339,14 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 def main():
     """Run the MCP server on stdio transport."""
     from mcp.server.stdio import stdio_server
+
+    # Configure logging — output goes to stderr so it doesn't interfere with stdio MCP transport
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        stream=sys.stderr,
+    )
+    logger.info("Starting SpacetimeWiki MCP server...")
 
     async def run():
         async with stdio_server() as (read_stream, write_stream):
