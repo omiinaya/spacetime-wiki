@@ -1032,7 +1032,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                     onChange={e => setAccessReason(e.target.value)}
                     placeholder="e.g. I need to review this document for the project..."
                     rows={3}
-                    className="w-full px-3 py-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                    className="w-full px-3 py-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50 resize-none"
                   />
                 </div>
                 <div className="flex gap-2 justify-end">
@@ -1104,7 +1104,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
       <ConfirmDialog />
 
       {/* Header bar */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-xs border-b border-border">
         <div className="flex items-center justify-between px-4 h-12">
           <div className="flex items-center gap-2">
             <button onClick={() => navigate(-1)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Go back" aria-label="Go back">
@@ -1351,7 +1351,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                 if (e.key === "Enter") { e.preventDefault(); handleTitleSave(); }
                 if (e.key === "Escape") { e.preventDefault(); setEditingTitle(false); setTitleDraft(page.title); }
               }}
-              className="flex-1 min-w-0 bg-transparent border-b-2 border-primary/50 text-3xl font-bold text-foreground outline-none py-0.5"
+              className="flex-1 min-w-0 bg-transparent border-b-2 border-primary/50 text-3xl font-bold text-foreground outline-hidden py-0.5"
               autoFocus
             />
           ) : (
@@ -1456,7 +1456,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
             value={anchorInput}
             onChange={setAnchorInput}
             placeholder="Write a comment..."
-            className="w-full min-h-[60px] px-2 py-1.5 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+            className="w-full min-h-[60px] px-2 py-1.5 rounded-md border border-border bg-background text-sm focus:outline-hidden focus:ring-1 focus:ring-primary/50 resize-none"
             minRows={2}
           />
           <div className="flex gap-2 mt-2 justify-end">
@@ -1492,7 +1492,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                 onChange={(v) => setNewComment(v)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
                 placeholder="Add a comment... (@ to mention users)"
-                className="flex-1 min-h-[36px] px-3 py-2 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                className="flex-1 min-h-[36px] px-3 py-2 rounded-md border border-border bg-card text-sm focus:outline-hidden focus:ring-1 focus:ring-primary/50 resize-none"
                 minRows={1}
               />
               <button onClick={handleAddComment} disabled={!newComment.trim()}
@@ -1614,7 +1614,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                                 }
                               }}
                               placeholder="Write a reply..."
-                              className="flex-1 min-h-[28px] px-2 py-1 rounded-md border border-border bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                              className="flex-1 min-h-[28px] px-2 py-1 rounded-md border border-border bg-background text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50 resize-none"
                               minRows={1}
                             />
                             <button onClick={() => handleReply(com.id)} disabled={!replyText[com.id]?.trim()}
@@ -2023,7 +2023,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                   value={sharePassword}
                   onChange={(e) => setSharePassword(e.target.value)}
                   placeholder="Leave empty for public link"
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               {/* TTL field */}
@@ -2034,7 +2034,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                   value={shareDays}
                   onChange={(e) => setShareDays(parseInt(e.target.value) || 0)}
                   min={0}
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               {/* Create button */}

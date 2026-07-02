@@ -13,6 +13,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.3.2",
     "@tailwindcss/typography": "^0.5.20",
     "@tiptap/extension-code-block-lowlight": "^3.27.1",
     "@tiptap/extension-collaboration": "^3.27.1",
@@ -52,7 +53,7 @@
     "react-i18next": "^17.0.8",
     "react-router-dom": "^7.18.1",
     "spacetimedb": "^2.6.0",
-    "tailwindcss": "^3.4.19",
+    "tailwindcss": "^4.3.2",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.31"
   },

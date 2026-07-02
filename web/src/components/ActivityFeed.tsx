@@ -215,7 +215,7 @@ export function ActivityFeed({ compact = false, limit = 50, onNavigate }: Activi
             )}
           >
             {/* Icon */}
-            <div className={cn("mt-0.5 flex-shrink-0", color)}>
+            <div className={cn("mt-0.5 shrink-0", color)}>
               <Icon className="w-4 h-4" />
             </div>
 
@@ -238,7 +238,7 @@ export function ActivityFeed({ compact = false, limit = 50, onNavigate }: Activi
             </div>
 
             {/* Event type badge */}
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <span className="text-[10px] uppercase tracking-wider text-gray-600 bg-gray-800/50 px-1.5 py-0.5 rounded">
                 {event.event_type.replace("page.", "").replace("collection.", "").replace("comment.", "").replace("user.", "").replace("group.", "")}
               </span>

@@ -52,7 +52,7 @@ const CellEditor: React.FC<{
         onChange={(e) => setEditValue(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={() => onSave(editValue)}
-        className="w-full bg-transparent border border-indigo-500/50 rounded px-2 py-1 text-sm outline-none"
+        className="w-full bg-transparent border border-indigo-500/50 rounded px-2 py-1 text-sm outline-hidden"
       />
     );
   }
@@ -79,7 +79,7 @@ const CellEditor: React.FC<{
       onChange={(e) => setEditValue(e.target.value)}
       onKeyDown={handleKeyDown}
       onBlur={() => onSave(editValue)}
-      className="w-full bg-transparent border border-indigo-500/50 rounded px-2 py-1 text-sm outline-none"
+      className="w-full bg-transparent border border-indigo-500/50 rounded px-2 py-1 text-sm outline-hidden"
       placeholder="Enter value..."
     />
   );
@@ -431,7 +431,7 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
             value={newColumnName}
             onChange={(e) => setNewColumnName(e.target.value)}
             placeholder="Column name"
-            className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm outline-none focus:border-indigo-500"
+            className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm outline-hidden focus:border-indigo-500"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter") handleAddColumn();
@@ -441,7 +441,7 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
           <select
             value={newColumnType}
             onChange={(e) => setNewColumnType(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm outline-none"
+            className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm outline-hidden"
           >
             <option value="text">Text</option>
             <option value="number">Number</option>
@@ -517,7 +517,7 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
     return (
       <div className="flex gap-4 overflow-x-auto pb-4">
         {sortedGroups.map(([status, groupRows]) => (
-          <div key={status} className="flex-shrink-0 w-72 bg-gray-900/80 border border-gray-800 rounded-xl">
+          <div key={status} className="shrink-0 w-72 bg-gray-900/80 border border-gray-800 rounded-xl">
             {/* Column header */}
             <div className="px-4 py-3 border-b border-gray-800">
               <div className="flex items-center justify-between">

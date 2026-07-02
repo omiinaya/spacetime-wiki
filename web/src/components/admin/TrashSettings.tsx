@@ -82,7 +82,7 @@ export function TrashSettings() {
             onChange={(e) => setDays(Math.max(0, parseInt(e.target.value) || 0))}
             min={0}
             max={365}
-            className="w-24 h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+            className="w-24 h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
           />
           <button
             onClick={handleSave}

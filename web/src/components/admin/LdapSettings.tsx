@@ -160,12 +160,12 @@ export function LdapSettings({ userId }: { userId: string | null }) {
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Name</label>
                   <input type="text" value={ldapName} onChange={e => setLdapName(e.target.value)}
-                    placeholder="Company LDAP" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    placeholder="Company LDAP" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Slug</label>
                   <input type="text" value={ldapSlug} onChange={e => setLdapSlug(e.target.value)}
-                    placeholder="company-ldap" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    placeholder="company-ldap" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
               </div>
 
@@ -174,12 +174,12 @@ export function LdapSettings({ userId }: { userId: string | null }) {
                 <div className="col-span-2">
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Host</label>
                   <input type="text" value={ldapHost} onChange={e => setLdapHost(e.target.value)}
-                    placeholder="ldap.example.com" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    placeholder="ldap.example.com" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Port</label>
                   <input type="number" value={ldapPort} onChange={e => setLdapPort(parseInt(e.target.value) || 389)}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -192,27 +192,27 @@ export function LdapSettings({ userId }: { userId: string | null }) {
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Bind DN (service account, leave empty for anonymous bind)</label>
                 <input type="text" value={ldapBindDn} onChange={e => setLdapBindDn(e.target.value)}
-                  placeholder="cn=admin,dc=example,dc=com" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  placeholder="cn=admin,dc=example,dc=com" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Bind Password</label>
                 <input type="password" value={ldapBindPw} onChange={e => setLdapBindPw(e.target.value)}
                   placeholder={editingId ? "(leave empty to keep existing)" : "Bind password"}
-                  className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
 
               {/* Directory search */}
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Base DN</label>
                 <input type="text" value={ldapBaseDn} onChange={e => setLdapBaseDn(e.target.value)}
-                  placeholder="dc=example,dc=com" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  placeholder="dc=example,dc=com" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">
                   User Filter (<code className="bg-muted px-1">{"{{username}}"}</code> is replaced with login input)
                 </label>
                 <input type="text" value={ldapFilter} onChange={e => setLdapFilter(e.target.value)}
-                  placeholder='(uid={{username}})' className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  placeholder='(uid={{username}})' className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
 
               {/* Attribute mapping */}
@@ -220,17 +220,17 @@ export function LdapSettings({ userId }: { userId: string | null }) {
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Username attr</label>
                   <input type="text" value={ldapUserAttr} onChange={e => setLdapUserAttr(e.target.value)}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Email attr</label>
                   <input type="text" value={ldapEmailAttr} onChange={e => setLdapEmailAttr(e.target.value)}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Name attr</label>
                   <input type="text" value={ldapNameAttr} onChange={e => setLdapNameAttr(e.target.value)}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
               </div>
 
@@ -239,7 +239,7 @@ export function LdapSettings({ userId }: { userId: string | null }) {
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Default role</label>
                   <select value={ldapDefaultRole} onChange={e => setLdapDefaultRole(e.target.value)}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50">
                     <option value="member">Member</option>
                     <option value="admin">Admin</option>
                     <option value="viewer">Viewer</option>
@@ -249,7 +249,7 @@ export function LdapSettings({ userId }: { userId: string | null }) {
                   <div>
                     <label className="text-[10px] text-muted-foreground/60 mb-1 block">Status</label>
                     <select value={ldapActive ? "true" : "false"} onChange={e => setLdapActive(e.target.value === "true")}
-                      className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                      className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50">
                       <option value="true">Active</option>
                       <option value="false">Disabled</option>
                     </select>

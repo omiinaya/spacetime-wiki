@@ -137,8 +137,8 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
           ref={dropdownRef}
           className={cn(
             "absolute right-0 mt-1 w-80 max-h-[70vh] overflow-hidden",
-            "rounded-lg border border-border bg-card shadow-xl backdrop-blur-sm",
-            "z-[9999] flex flex-col",
+            "rounded-lg border border-border bg-card shadow-xl backdrop-blur-xs",
+            "z-9999 flex flex-col",
           )}
         >
           {/* Header */}

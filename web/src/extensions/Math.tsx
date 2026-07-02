@@ -311,7 +311,7 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
               value={editTex}
               onChange={(e) => setEditTex(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full h-24 px-3 py-2 rounded-lg border border-border bg-[#0a0a0a] text-sm font-mono text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/50 resize-y"
+              className="w-full h-24 px-3 py-2 rounded-lg border border-border bg-[#0a0a0a] text-sm font-mono text-foreground placeholder:text-muted-foreground/40 outline-hidden focus:border-primary/50 resize-y"
               placeholder={"E = mc^2"}
               autoFocus
               spellCheck={false}

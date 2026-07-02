@@ -156,7 +156,7 @@ const ImageNodeView: React.FC<NodeViewProps> = ({
       {/* Caption */}
       {editingCaption ? (
         <input
-          className="w-full mt-1 bg-transparent text-center text-sm text-muted-foreground/70 border-b border-border/50 outline-none focus:border-primary/50 px-2 py-0.5"
+          className="w-full mt-1 bg-transparent text-center text-sm text-muted-foreground/70 border-b border-border/50 outline-hidden focus:border-primary/50 px-2 py-0.5"
           value={captionText}
           onChange={(e) => setCaptionText(e.target.value)}
           onBlur={handleCaptionBlur}

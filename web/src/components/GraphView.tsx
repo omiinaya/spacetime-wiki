@@ -275,7 +275,7 @@ export default function GraphView() {
 
         {/* Info panel */}
         {selectedNode && (
-          <div className="absolute bottom-4 left-4 max-w-xs p-3 rounded-lg border border-border bg-card/90 backdrop-blur-sm shadow-xl">
+          <div className="absolute bottom-4 left-4 max-w-xs p-3 rounded-lg border border-border bg-card/90 backdrop-blur-xs shadow-xl">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-lg">{selectedNode.icon}</span>
               <div>
@@ -295,7 +295,7 @@ export default function GraphView() {
         )}
 
         {/* Legend */}
-        <div className="absolute bottom-4 right-4 p-3 rounded-lg border border-border bg-card/80 backdrop-blur-sm shadow-xl">
+        <div className="absolute bottom-4 right-4 p-3 rounded-lg border border-border bg-card/80 backdrop-blur-xs shadow-xl">
           <div className="text-[10px] font-medium text-muted-foreground mb-2">Legend</div>
           <div className="space-y-1">
             <div className="flex items-center gap-2"><span className="w-3 h-0.5 bg-[#60a5fa]" /><span className="text-[10px] text-muted-foreground">Parent/Child</span></div>

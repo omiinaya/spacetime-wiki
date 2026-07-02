@@ -184,13 +184,13 @@ export function PasskeySettings({ userId }: { userId: string | null }) {
             <div className="space-y-3">
               <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)}
                 placeholder="Your email address"
-                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               <input type="text" value={regName} onChange={e => setRegName(e.target.value)}
                 placeholder="Display name (optional)"
-                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               <input type="text" value={deviceName} onChange={e => setDeviceName(e.target.value)}
                 placeholder="Device name (e.g. MacBook Pro)"
-                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               {status && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 text-primary text-xs">
                   <Loader2 className="h-3 w-3 animate-spin" />

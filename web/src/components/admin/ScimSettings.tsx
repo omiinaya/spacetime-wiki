@@ -184,23 +184,23 @@ export function ScimSettings({ userId }: { userId: string | null }) {
               <div className="flex gap-2">
                 <input type="text" value={name} onChange={e => setName(e.target.value)}
                   placeholder="Provider name (e.g. Okta)" autoFocus
-                  className="flex-1 h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="flex-1 h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 <input type="text" value={slug} onChange={e => setSlug(e.target.value)}
                   placeholder="slug"
-                  className="w-24 h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-24 h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
               <input type="text" value={apiToken} onChange={e => setApiToken(e.target.value)}
                 placeholder={editing ? "New API token (leave empty to keep current)" : "API token for SCIM Bearer auth"}
-                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               <div className="flex gap-2">
                 <select value={defaultRole} onChange={e => setDefaultRole(e.target.value)}
-                  className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50">
+                  className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50">
                   <option value="member">Default role: Member</option>
                   <option value="viewer">Default role: Viewer</option>
                   <option value="admin">Default role: Admin</option>
                 </select>
                 <select value={deprovisionBehavior} onChange={e => setDeprovisionBehavior(e.target.value)}
-                  className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50">
+                  className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50">
                   <option value="deactivate">Deprovision: Deactivate</option>
                   <option value="delete">Deprovision: Delete</option>
                 </select>

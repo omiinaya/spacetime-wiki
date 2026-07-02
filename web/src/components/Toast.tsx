@@ -128,13 +128,13 @@ function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] flex flex-col-reverse gap-2 max-w-sm w-full pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-9999 flex flex-col-reverse gap-2 max-w-sm w-full pointer-events-none">
       {toasts.map((toast) => (
         <div
           key={toast.id}
           className={cn(
             "pointer-events-auto animate-in slide-in-from-right-4 fade-in-0 duration-200",
-            "flex items-start gap-3 p-3 rounded-lg border shadow-lg backdrop-blur-sm",
+            "flex items-start gap-3 p-3 rounded-lg border shadow-lg backdrop-blur-xs",
             "bg-card/95 border-border",
             toast.type === "success" && "border-emerald-500/30",
             toast.type === "warning" && "border-amber-500/30",

@@ -614,7 +614,7 @@ describe("AiAssistant", () => {
       expect(modelInput).toBeInTheDocument();
     });
 
-    it("saves config on blur of input fields", async () => {
+    it("saves config on blur-sm of input fields", async () => {
       mockSessionsList.mockResolvedValue([]);
       mockConfigGetAll.mockResolvedValue([]);
       mockConfigSet.mockResolvedValue(undefined);

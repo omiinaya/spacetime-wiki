@@ -176,7 +176,7 @@ export function BulkExport() {
         <select
           value={selectedColId}
           onChange={(e) => setSelectedColId(e.target.value)}
-          className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+          className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50"
         >
           <option value="__all">All collections ({allPages.length} pages)</option>
           {collections.map((c) => {

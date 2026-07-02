@@ -105,7 +105,7 @@ export function RevisionDiff({ oldRev, newRev, onClose }: Props) {
   const removedCount = diffs.filter((d) => d.kind === "removed").length;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-[36rem] bg-sidebar border-l border-border z-30 flex flex-col shadow-2xl">
+    <div className="fixed inset-y-0 right-0 w-xl bg-sidebar border-l border-border z-30 flex flex-col shadow-2xl">
       {/* Header */}
       <div className="sticky top-0 bg-sidebar z-10 border-b border-border">
         <div className="flex items-center justify-between px-4 h-12">

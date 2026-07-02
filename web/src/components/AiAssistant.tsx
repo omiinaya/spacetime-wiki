@@ -388,7 +388,7 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
             placeholder={activeSessionId ? "Ask a question… (Enter to send, Shift+Enter for newline)" : "Start a chat first..."}
             rows={1}
             disabled={!activeSessionId || loading}
-            className="flex-1 bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 resize-none focus:outline-none focus:border-[#6c5ce7] disabled:opacity-50"
+            className="flex-1 bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 resize-none focus:outline-hidden focus:border-[#6c5ce7] disabled:opacity-50"
           />
           <button
             onClick={handleSend}

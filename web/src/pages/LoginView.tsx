@@ -192,11 +192,11 @@ export default function LoginView() {
             {mfaBackupMode ? (
               <input type="text" value={mfaBackupCode} onChange={e => setMfaBackupCode(e.target.value.toUpperCase().slice(0, 8))}
                 placeholder="XXXX-XXXX"
-                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm text-center tracking-widest font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
             ) : (
               <input type="text" value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
                 placeholder="000000" maxLength={6}
-                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm text-center tracking-widest font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
             )}
             {mfaError && <div className="text-xs text-red-400 bg-red-500/10 px-3 py-2 rounded-md">{mfaError}</div>}
             <button onClick={handleMfaVerify} disabled={mfaBackupMode ? mfaBackupCode.length < 4 : mfaCode.length !== 6}
@@ -213,18 +213,18 @@ export default function LoginView() {
               <div>
                 <label className="block text-xs font-medium mb-1">Name</label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                  className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50" required />
+                  className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-hidden focus:ring-1 focus:ring-primary/50" required />
               </div>
             )}
             <div>
               <label className="block text-xs font-medium mb-1">Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50" required />
+                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-hidden focus:ring-1 focus:ring-primary/50" required />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1">Password</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50" required />
+                className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-hidden focus:ring-1 focus:ring-primary/50" required />
             </div>
             {error && <div className="text-xs text-red-400 bg-red-500/10 px-3 py-2 rounded-md">{error}</div>}
             <button type="submit" className="w-full h-9 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90">
@@ -269,9 +269,9 @@ export default function LoginView() {
               <div key={p.id} className="space-y-2 pt-2 border-t border-border">
                 <p className="text-xs font-medium text-muted-foreground">Sign in with LDAP ({p.name})</p>
                 <input type="text" value={ldapUsername} onChange={e => setLdapUsername(e.target.value)} placeholder="LDAP username"
-                  className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 <input type="password" value={ldapPassword} onChange={e => setLdapPassword(e.target.value)} placeholder="LDAP password"
-                  className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 <button onClick={() => handleLdapSignIn(p.id)} disabled={ldapLoading}
                   className="w-full h-9 rounded-md border border-primary/30 bg-primary/5 text-sm font-medium hover:bg-primary/10 flex items-center justify-center gap-2 disabled:opacity-50">
                   {ldapLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}

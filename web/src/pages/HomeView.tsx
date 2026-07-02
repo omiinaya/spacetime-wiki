@@ -54,7 +54,7 @@ export default function HomeView() {
     return (
       <div className="p-4 md:p-6 lg:p-8 max-w-3xl mx-auto">
         <div className="text-center py-8 md:py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-linear-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
             <Library className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Spacetime Wiki</h1>

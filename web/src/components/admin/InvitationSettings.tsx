@@ -160,12 +160,12 @@ export function InvitationSettings({ userId }: { userId: string | null }) {
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Email address *</label>
                 <input type="email" value={invEmail} onChange={e => setInvEmail(e.target.value)}
                   placeholder="guest@example.com"
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Role</label>
                 <select value={invRole} onChange={e => setInvRole(e.target.value as "viewer" | "member")}
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50">
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50">
                   <option value="viewer">Viewer (read-only)</option>
                   <option value="member">Member (can edit)</option>
                 </select>
@@ -174,24 +174,24 @@ export function InvitationSettings({ userId }: { userId: string | null }) {
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Page IDs (JSON array, optional)</label>
                 <input type="text" value={invPageIds} onChange={e => setInvPageIds(e.target.value)}
                   placeholder='["page_abc","page_def"]'
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Collection IDs (JSON array, optional)</label>
                 <input type="text" value={invColIds} onChange={e => setInvColIds(e.target.value)}
                   placeholder='["col_abc"]'
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Personal message (optional)</label>
                 <input type="text" value={invMessage} onChange={e => setInvMessage(e.target.value)}
                   placeholder="Hey, I'd like to share this wiki with you..."
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Expires in (days, 0 = never)</label>
                 <input type="number" value={invExpDays} onChange={e => setInvExpDays(parseInt(e.target.value) || 0)} min={0}
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
               <div className="flex gap-2 justify-end pt-2">
                 <button onClick={() => setInviteOpen(false)}

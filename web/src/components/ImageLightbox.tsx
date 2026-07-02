@@ -186,7 +186,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose, pageId, onAdd
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm select-none"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 backdrop-blur-xs select-none"
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
@@ -223,7 +223,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose, pageId, onAdd
 
       {/* Gallery counter */}
       {isMulti && (
-        <div className="fixed top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur border border-white/10 text-xs text-white/70 font-mono tabular-nums">
+        <div className="fixed top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 text-xs text-white/70 font-mono tabular-nums">
           {currentIndex + 1} / {images.length}
         </div>
       )}
@@ -249,7 +249,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose, pageId, onAdd
       )}
 
       {/* Zoom toolbar */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-2 rounded-full bg-black/60 backdrop-blur border border-white/10 shadow-2xl">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-2 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 shadow-2xl">
         <button
           onClick={handleZoomOut}
           className="p-1.5 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
@@ -259,7 +259,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose, pageId, onAdd
           <ZoomOut className="h-4 w-4" />
         </button>
 
-        <span className="text-xs text-white/70 min-w-[3rem] text-center font-mono tabular-nums">
+        <span className="text-xs text-white/70 min-w-12 text-center font-mono tabular-nums">
           {Math.round(zoom * 100)}%
         </span>
 
@@ -310,7 +310,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose, pageId, onAdd
                     {new Date(c.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-sm text-white/80 whitespace-pre-wrap break-words">{c.body}</p>
+                <p className="text-sm text-white/80 whitespace-pre-wrap wrap-break-word">{c.body}</p>
               </div>
             ))}
           </div>
@@ -318,7 +318,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose, pageId, onAdd
           {/* Comment input */}
           <div className="p-3 border-t border-white/10">
             <textarea
-              className="w-full bg-white/10 rounded-lg px-3 py-2 text-sm text-white/90 placeholder-white/30 resize-none outline-none focus:ring-1 focus:ring-primary/50 min-h-[60px]"
+              className="w-full bg-white/10 rounded-lg px-3 py-2 text-sm text-white/90 placeholder-white/30 resize-none outline-hidden focus:ring-1 focus:ring-primary/50 min-h-[60px]"
               placeholder="Add a comment..."
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}

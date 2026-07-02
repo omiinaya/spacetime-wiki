@@ -204,7 +204,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
               onChange={(e) => { setPassword(e.target.value); setPasswordError(""); }}
               onKeyDown={(e) => { if (e.key === "Enter") handlePasswordSubmit(); }}
               placeholder="Enter password"
-              className="w-full h-10 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              className="w-full h-10 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
               autoFocus
             />
             {passwordError && (

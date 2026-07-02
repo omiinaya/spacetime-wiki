@@ -63,7 +63,7 @@ export function UsersPanel({ allUsers, setAllUsers, userId, addToast }: UsersPan
                   defaultValue={u.avatar_url}
                   placeholder="Avatar URL"
                   id={`avatar-input-${u.id}`}
-                  className="w-32 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-32 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-[10px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
                 <button
                   onClick={() => {
@@ -81,7 +81,7 @@ export function UsersPanel({ allUsers, setAllUsers, userId, addToast }: UsersPan
                 value={u.role}
                 onChange={(e) => updateUserRole(u.id, e.target.value)}
                 aria-label={`Role for ${u.name}`}
-                className="h-7 pl-2 pr-6 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="h-7 pl-2 pr-6 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
               >
                 <option value="admin">Admin</option>
                 <option value="member">Member</option>
@@ -102,7 +102,7 @@ export function UsersPanel({ allUsers, setAllUsers, userId, addToast }: UsersPan
             defaultValue={localStorage.getItem("sw_google_client_id") || ""}
             onChange={(e) => localStorage.setItem("sw_google_client_id", e.target.value)}
             placeholder="Google OAuth Client ID"
-            className="flex-1 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+            className="flex-1 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
         </div>
         <p className="text-[10px] text-muted-foreground/60 mb-3">
           Create a project at <a href="https://console.cloud.google.com/apis/credentials" target="_blank" className="text-primary hover:underline">Google Cloud Console</a>.

@@ -35,7 +35,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
           value={currentLang}
           onChange={handleChange}
           aria-label={t("admin.language_label")}
-          className="bg-transparent text-xs text-muted-foreground border border-border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer"
+          className="bg-transparent text-xs text-muted-foreground border border-border rounded px-1.5 py-0.5 focus:outline-hidden focus:ring-1 focus:ring-primary/50 cursor-pointer"
         >
           {supported.map((code) => (
             <option key={code} value={code}>
@@ -57,7 +57,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
         value={currentLang}
         onChange={handleChange}
         aria-label={t("admin.language_label")}
-        className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer"
+        className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50 cursor-pointer"
       >
         {supported.map((code) => (
           <option key={code} value={code}>
