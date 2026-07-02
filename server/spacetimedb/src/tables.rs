@@ -1,7 +1,7 @@
 use spacetimedb::*;
 
 // Allow dead code in default test constructors (only used in #[cfg(test)])
-#[allow(dead_code)]
+// Each default_* function below is annotated individually.
 
 // ─── Audit Event Log ─────────────────────────────────────────────────────────
 
@@ -1426,6 +1426,7 @@ mod tests {
 
 // ─── Default instances for testing ───────────────────────────────────────────
 
+#[cfg(test)]
 fn default_group() -> Group {
     Group {
         id: "g_default".into(),
@@ -1437,6 +1438,7 @@ fn default_group() -> Group {
     }
 }
 
+#[cfg(test)]
 fn default_collection() -> Collection {
     Collection {
         id: "c_default".into(),
@@ -1453,6 +1455,7 @@ fn default_collection() -> Collection {
     }
 }
 
+#[cfg(test)]
 fn default_page() -> Page {
     Page {
         id: "p_default".into(),
@@ -1480,6 +1483,7 @@ fn default_page() -> Page {
     }
 }
 
+#[cfg(test)]
 fn default_page_revision() -> PageRevision {
     PageRevision {
         id: "pr_default".into(),
@@ -1492,6 +1496,7 @@ fn default_page_revision() -> PageRevision {
     }
 }
 
+#[cfg(test)]
 fn default_comment() -> Comment {
     Comment {
         id: "cmt_default".into(),
@@ -1506,6 +1511,7 @@ fn default_comment() -> Comment {
     }
 }
 
+#[cfg(test)]
 fn default_attachment() -> Attachment {
     Attachment {
         id: "att_default".into(),
@@ -1519,6 +1525,7 @@ fn default_attachment() -> Attachment {
     }
 }
 
+#[cfg(test)]
 fn default_page_tag() -> PageTag {
     PageTag {
         id: "pt_default".into(),
@@ -1528,6 +1535,7 @@ fn default_page_tag() -> PageTag {
     }
 }
 
+#[cfg(test)]
 fn default_favorite() -> Favorite {
     Favorite {
         id: "fav_default".into(),
@@ -1537,6 +1545,7 @@ fn default_favorite() -> Favorite {
     }
 }
 
+#[cfg(test)]
 fn default_share_link() -> ShareLink {
     ShareLink {
         id: "sl_default".into(),
@@ -1552,6 +1561,7 @@ fn default_share_link() -> ShareLink {
     }
 }
 
+#[cfg(test)]
 fn default_page_permission() -> PagePermission {
     PagePermission {
         id: "pp_default".into(),
@@ -1563,6 +1573,7 @@ fn default_page_permission() -> PagePermission {
     }
 }
 
+#[cfg(test)]
 fn default_api_key() -> ApiKey {
     ApiKey {
         id: "ak_default".into(),
@@ -1577,6 +1588,7 @@ fn default_api_key() -> ApiKey {
     }
 }
 
+#[cfg(test)]
 fn default_webhook() -> Webhook {
     Webhook {
         id: "wh_default".into(),
@@ -1591,6 +1603,7 @@ fn default_webhook() -> Webhook {
     }
 }
 
+#[cfg(test)]
 fn default_webhook_event() -> WebhookEvent {
     WebhookEvent {
         id: "we_default".into(),
@@ -1606,6 +1619,7 @@ fn default_webhook_event() -> WebhookEvent {
     }
 }
 
+#[cfg(test)]
 fn default_collection_sort_rule() -> CollectionSortRule {
     CollectionSortRule {
         collection_id: String::new(),
@@ -1617,6 +1631,7 @@ fn default_collection_sort_rule() -> CollectionSortRule {
     }
 }
 
+#[cfg(test)]
 fn default_search_result() -> SearchResult {
     SearchResult {
         id: "sr_default".into(),
@@ -1630,6 +1645,7 @@ fn default_search_result() -> SearchResult {
     }
 }
 
+#[cfg(test)]
 fn default_saml_provider() -> SamlProvider {
     SamlProvider {
         id: "saml_default".into(),
@@ -1648,6 +1664,7 @@ fn default_saml_provider() -> SamlProvider {
     }
 }
 
+#[cfg(test)]
 fn default_oidc_provider() -> OidcProvider {
     OidcProvider {
         id: "oidc_default".into(),
@@ -1664,6 +1681,7 @@ fn default_oidc_provider() -> OidcProvider {
     }
 }
 
+#[cfg(test)]
 fn default_ldap_provider() -> LdapProvider {
     LdapProvider {
         id: "ldap_default".into(),
@@ -1688,6 +1706,7 @@ fn default_ldap_provider() -> LdapProvider {
     }
 }
 
+#[cfg(test)]
 fn default_ldap_user() -> LdapUser {
     LdapUser {
         id: "lu_default".into(),
@@ -1700,6 +1719,7 @@ fn default_ldap_user() -> LdapUser {
     }
 }
 
+#[cfg(test)]
 fn default_page_view() -> PageView {
     PageView {
         id: "pv_default".into(),
@@ -1710,6 +1730,7 @@ fn default_page_view() -> PageView {
     }
 }
 
+#[cfg(test)]
 fn default_app_setting() -> AppSetting {
     AppSetting {
         key: String::new(),
@@ -1718,6 +1739,7 @@ fn default_app_setting() -> AppSetting {
     }
 }
 
+#[cfg(test)]
 fn default_collab_update() -> CollabUpdate {
     CollabUpdate {
         id: "cu_default".into(),
@@ -1728,6 +1750,7 @@ fn default_collab_update() -> CollabUpdate {
     }
 }
 
+#[cfg(test)]
 fn default_collab_session() -> CollabSession {
     CollabSession {
         id: "cs_default".into(),
@@ -1741,6 +1764,7 @@ fn default_collab_session() -> CollabSession {
     }
 }
 
+#[cfg(test)]
 fn default_ai_config() -> AiConfig {
     AiConfig {
         key: String::new(),
@@ -1749,6 +1773,7 @@ fn default_ai_config() -> AiConfig {
     }
 }
 
+#[cfg(test)]
 fn default_ai_chat_session() -> AiChatSession {
     AiChatSession {
         id: "ais_default".into(),
@@ -1760,6 +1785,7 @@ fn default_ai_chat_session() -> AiChatSession {
     }
 }
 
+#[cfg(test)]
 fn default_ai_chat_message() -> AiChatMessage {
     AiChatMessage {
         id: "aim_default".into(),
@@ -1770,6 +1796,7 @@ fn default_ai_chat_message() -> AiChatMessage {
     }
 }
 
+#[cfg(test)]
 fn default_scim_provider() -> ScimProvider {
     ScimProvider {
         id: "scim_default".into(),
@@ -1787,6 +1814,7 @@ fn default_scim_provider() -> ScimProvider {
     }
 }
 
+#[cfg(test)]
 fn default_scim_event() -> ScimEvent {
     ScimEvent {
         id: "se_default".into(),
@@ -1801,6 +1829,7 @@ fn default_scim_event() -> ScimEvent {
     }
 }
 
+#[cfg(test)]
 fn default_passkey_credential() -> PasskeyCredential {
     PasskeyCredential {
         id: "pk_default".into(),
@@ -1815,6 +1844,7 @@ fn default_passkey_credential() -> PasskeyCredential {
     }
 }
 
+#[cfg(test)]
 fn default_passkey_challenge() -> PasskeyChallenge {
     PasskeyChallenge {
         challenge: String::new(),
@@ -1825,6 +1855,7 @@ fn default_passkey_challenge() -> PasskeyChallenge {
     }
 }
 
+#[cfg(test)]
 fn default_db_base() -> DbBase {
     DbBase {
         id: "db_default".into(),
@@ -1837,6 +1868,7 @@ fn default_db_base() -> DbBase {
     }
 }
 
+#[cfg(test)]
 fn default_db_column() -> DbColumn {
     DbColumn {
         id: "dcol_default".into(),
@@ -1850,6 +1882,7 @@ fn default_db_column() -> DbColumn {
     }
 }
 
+#[cfg(test)]
 fn default_db_row() -> DbRow {
     DbRow {
         id: "drow_default".into(),
@@ -1861,6 +1894,7 @@ fn default_db_row() -> DbRow {
     }
 }
 
+#[cfg(test)]
 fn default_db_cell() -> DbCell {
     DbCell {
         id: "dcell_default".into(),
@@ -1872,6 +1906,7 @@ fn default_db_cell() -> DbCell {
     }
 }
 
+#[cfg(test)]
 fn default_invitation() -> Invitation {
     Invitation {
         id: "inv_default".into(),
@@ -1890,6 +1925,7 @@ fn default_invitation() -> Invitation {
     }
 }
 
+#[cfg(test)]
 fn default_synced_block() -> SyncedBlock {
     SyncedBlock {
         id: "sb_default".into(),
@@ -1902,6 +1938,7 @@ fn default_synced_block() -> SyncedBlock {
     }
 }
 
+#[cfg(test)]
 fn default_synced_block_ref() -> SyncedBlockRef {
     SyncedBlockRef {
         id: "sbr_default".into(),
@@ -1912,6 +1949,7 @@ fn default_synced_block_ref() -> SyncedBlockRef {
     }
 }
 
+#[cfg(test)]
 fn default_mfa_method() -> MfaMethod {
     MfaMethod {
         id: "mfa_default".into(),
@@ -1924,6 +1962,7 @@ fn default_mfa_method() -> MfaMethod {
     }
 }
 
+#[cfg(test)]
 fn default_mfa_backup_code() -> MfaBackupCode {
     MfaBackupCode {
         id: "mbc_default".into(),
@@ -1934,6 +1973,7 @@ fn default_mfa_backup_code() -> MfaBackupCode {
     }
 }
 
+#[cfg(test)]
 fn default_watch() -> Watch {
     Watch {
         id: "w_default".into(),
@@ -1944,6 +1984,7 @@ fn default_watch() -> Watch {
     }
 }
 
+#[cfg(test)]
 fn default_notification() -> Notification {
     Notification {
         id: "n_default".into(),
@@ -1959,6 +2000,7 @@ fn default_notification() -> Notification {
     }
 }
 
+#[cfg(test)]
 fn default_access_request() -> AccessRequest {
     AccessRequest {
         id: "ar_default".into(),
@@ -1972,6 +2014,7 @@ fn default_access_request() -> AccessRequest {
     }
 }
 
+#[cfg(test)]
 fn default_oauth_provider() -> OauthProvider {
     OauthProvider {
         id: "oa_default".into(),
@@ -1994,6 +2037,7 @@ fn default_oauth_provider() -> OauthProvider {
     }
 }
 
+#[cfg(test)]
 fn default_oauth_user() -> OauthUser {
     OauthUser {
         id: "ou_default".into(),

@@ -43,7 +43,7 @@ async def list_pages(
         where += " AND collection_id = ?"
         args.append(collection_id)
 
-    rows = await sql_query(f"SELECT * FROM page WHERE {where}", *args)
+    rows = await sql_query("SELECT * FROM page WHERE " + where, *args)
     return [map_page(r) for r in rows[:limit]]
 
 
