@@ -11,12 +11,11 @@ and works the top pending item each tick.
 | Priority | Item |
 |----------|------|
 | P3 | **Playwright E2E test suite — expand coverage** — 7 spec files exist (home, navigation, collections, search, pages, page-editor, page-view). Add missing flows: login/register, public sharing, collection management CRUD, template operations, image upload, comment/create, move-to-trash. |
-| P4 | **Tailwind v4 migration** — Update PostCSS config, CSS, and class references for Tailwind v4.x breaking changes (e.g., `@apply` rules, `@config`, new theme API). Currently on Tailwind v3.4.19 with `tailwind.config.js`. Check `npx @tailwindcss/upgrade` for automatic migration. |
-| P5 | **New: MCP server tests** — Add unit tests for the MCP server's 6 tools and resource handlers. Currently untested. |
-| P5 | **New: CI pipeline — add Rust test step** — CI currently runs tsc + vitest + cargo check but doesn't run Rust unit tests (201 tests). Add `cargo test` to `.github/workflows/ci.yml`. |
 | P4 | **Frontend: reduce `any` types in Tiptap code** — 150+ `any` type usages remain in `helpers.ts`, `PageEditor.tsx`, `PageView.tsx`, `Transclusion.tsx` for ProseMirror document nodes. Add proper type definitions for the editor schema. |
 | P4 | **Rust reducer integration tests** — Only ~20% of reducer logic is covered by unit tests. Add tests that exercise reducers against a live STDB instance. |
 | P5 | **Rust: reduce repetitive struct-construction tests** — ~2,000 lines of test code are repetitive `default_*()` tests. Consolidate into parameterized tests. |
+| P5 | **New: MCP server tests** — Add unit tests for the MCP server's 6 tools and resource handlers. Currently untested. |
+| P5 | **New: CI pipeline — add Rust test step** — CI currently runs tsc + vitest + cargo check but doesn't run Rust unit tests (201 tests). Add `cargo test` to `.github/workflows/ci.yml`. |
 
 ---
 
@@ -31,4 +30,7 @@ and works the top pending item each tick.
 | 2026-07-01 | **P3 — Replace SHA-256 password hashing with Argon2** — Migrated from `sha2::Sha256` to `argon2` crate in `helpers.rs`. Uses Argon2id PHC string format. 7 new Rust tests added. All 201 Rust + 1194 frontend tests pass. | 1176880c |
 | 2026-07-01 | P5 — Fix MFA backup code placeholder — Changed "XXXX XXXX" to "XXXX-XXXX" in LoginView.tsx and 2 test references. 28/28 tests pass. | 5b6bbcb6 |
 | 2026-07-01 | P2 — Database drop recovery — STDB wiki DB was dropped. Rebuilt Rust module (fixed missing now_ms(ctx) in create_webhook), republished with new identity c200926c..., updated all configs. Fixed map_page() column index mapping. Made _int() parser resilient. | c98711c7 / b3e4a47c |
-| 2026-07-01 | P4 — Seed wiki content — Admin user, 4 collections, 10 pages, API server on :8728. Wiki API key saved to .env. All 1194 tests + tsc + cargo check pass. | (current) |
+| 2026-07-01 | P4 — Seed wiki content — Admin user, 4 collections, 10 pages, API server on :8728. Wiki API key saved to .env. All 1194 tests + tsc + cargo check pass. | 16747b0b |
+| 2026-07-01 | **P5 — Fix WASM release build** — Added `__getrandom_custom` for WASM target (required by argon2/getrandom). Added `getrandom = { features = ["custom"] }` for wasm32 in Cargo.toml. WASM build now succeeds, enabling TS binding generation. | fde6dc6c |
+| 2026-07-01 | **P5 — Regenerate TS STDB bindings** — Regenerated TS module bindings from new module (9 files: 283 insertions). Includes new share_link/share_branding fields. | d42463b9 |
+| 2026-07-01 | **P4 — Tailwind v4 migration** — Ran `@tailwindcss/upgrade --force`. Updated postcss.config.js to use `@tailwindcss/postcss`. 45 files changed, 506 insertions, 875 deletions. Build: vite build ✓ (3.11s). Tests: vitest 1194/1194 ✓, tsc --noEmit ✓. | a73b4886 |
