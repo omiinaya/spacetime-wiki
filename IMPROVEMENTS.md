@@ -10,7 +10,6 @@ and works the top pending item each tick.
 
 | Priority | Item |
 |----------|------|
-| P3 | **Playwright E2E test suite — expand coverage** — 7 spec files exist (home, navigation, collections, search, pages, page-editor, page-view). Add missing flows: login/register, public sharing, collection management CRUD, template operations, image upload, comment/create, move-to-trash. |
 | P4 | **Frontend: reduce `any` types in Tiptap code** — 150+ `any` type usages remain in `helpers.ts`, `PageEditor.tsx`, `PageView.tsx`, `Transclusion.tsx` for ProseMirror document nodes. Add proper type definitions for the editor schema. |
 | P4 | **Rust reducer integration tests** — Only ~20% of reducer logic is covered by unit tests. Add tests that exercise reducers against a live STDB instance. |
 | P5 | **Rust: reduce repetitive struct-construction tests** — ~2,000 lines of test code are repetitive `default_*()` tests. Consolidate into parameterized tests. |
@@ -23,14 +22,12 @@ and works the top pending item each tick.
 
 | Date | Item | Commit |
 |------|------|--------|
-| 2026-07-01 | **P3-SEC — SQL injection surface audit — MCP server had 8 f-string SQL queries** — Found and fixed 8 SQL injection vectors in the MCP server's `stdb_client.py` that used only `replace("'", "''")` escaping (bypassable). Converted all to parameterized `?` placeholders with `_safe_quote()` that escapes both `'` and `\`. API server was already clean (0 f-string SQL queries). All SQL injection surfaces now eliminated across both servers. | e3e4895b |
-| 2026-07-01 | **P4 — Fix 44 Rust `dead_code` warnings** — Added `#[cfg(test)]` guard to all 44 `default_*()` functions used only in tests. `cargo check` now clean (0 warnings, 0 errors). All 201 Rust + 1194 frontend tests pass. | 0f716e40 |
-| 2026-07-01 | **P3 — Fix remaining SQL f-string in `auth.py`** — Replaced `f\"SELECT ... key_prefix = '{prefix}'\"` with parameterized `\"SELECT ... key_prefix = ?\"` query. Also cleaned up cosmetic f-string in `pages.py`. All SQL queries now use `?` placeholders through `_build_safe_sql()`. | 0f716e40 |
-| 2026-07-01 | **P3 — Make ~15 non-idempotent reducers safe on retry** — Added `if ctx.db.X().id().find(&id).is_none() { insert(...) }` guards on 8 reducers that had unconditional inserts. All 201 Rust + 1194 frontend tests pass. | ed3bfcb0 |
-| 2026-07-01 | **P3 — Replace SHA-256 password hashing with Argon2** — Migrated from `sha2::Sha256` to `argon2` crate in `helpers.rs`. Uses Argon2id PHC string format. 7 new Rust tests added. All 201 Rust + 1194 frontend tests pass. | 1176880c |
-| 2026-07-01 | P5 — Fix MFA backup code placeholder — Changed "XXXX XXXX" to "XXXX-XXXX" in LoginView.tsx and 2 test references. 28/28 tests pass. | 5b6bbcb6 |
-| 2026-07-01 | P2 — Database drop recovery — STDB wiki DB was dropped. Rebuilt Rust module (fixed missing now_ms(ctx) in create_webhook), republished with new identity c200926c..., updated all configs. Fixed map_page() column index mapping. Made _int() parser resilient. | c98711c7 / b3e4a47c |
-| 2026-07-01 | P4 — Seed wiki content — Admin user, 4 collections, 10 pages, API server on :8728. Wiki API key saved to .env. All 1194 tests + tsc + cargo check pass. | 16747b0b |
-| 2026-07-01 | **P5 — Fix WASM release build** — Added `__getrandom_custom` for WASM target (required by argon2/getrandom). Added `getrandom = { features = ["custom"] }` for wasm32 in Cargo.toml. WASM build now succeeds, enabling TS binding generation. | fde6dc6c |
-| 2026-07-01 | **P5 — Regenerate TS STDB bindings** — Regenerated TS module bindings from new module (9 files: 283 insertions). Includes new share_link/share_branding fields. | d42463b9 |
-| 2026-07-01 | **P4 — Tailwind v4 migration** — Ran `@tailwindcss/upgrade --force`. Updated postcss.config.js to use `@tailwindcss/postcss`. 45 files changed, 506 insertions, 875 deletions. Build: vite build ✓ (3.11s). Tests: vitest 1194/1194 ✓, tsc --noEmit ✓. | a73b4886 |
+| 2026-07-01 | **P3-SEC — SQL injection surface audit — MCP server had 8 f-string SQL queries** | e3e4895b |
+| 2026-07-01 | **P4 — Fix 44 Rust `dead_code` warnings** | 0f716e40 |
+| 2026-07-01 | **P3 — Make ~15 non-idempotent reducers safe on retry** | ed3bfcb0 |
+| 2026-07-01 | **P3 — Replace SHA-256 password hashing with Argon2** | 1176880c |
+| 2026-07-01 | P4 — Seed wiki content — Admin user, 4 collections, 10 pages | 16747b0b |
+| 2026-07-01 | **P4 — Tailwind v4 migration** | a73b4886 |
+| 2026-07-01 | P5 — Fix WASM release build + regenerate TS bindings | fde6dc6c / d42463b9 |
+| 2026-07-01 | P2 — Database drop recovery — Rebuilt Rust module, fixed column mapping | c98711c7 / b3e4a47c |
+| 2026-07-01 | **P3 — Playwright E2E test suite — expand coverage to 14 spec files** — Added 7 new spec files: login/register, public sharing, collection CRUD, templates, comments, image upload, move-to-trash. All pass tsc --noEmit. | e6c66f19 |
