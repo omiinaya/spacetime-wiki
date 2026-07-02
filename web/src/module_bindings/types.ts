@@ -10,6 +10,18 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const AccessRequest = __t.object("AccessRequest", {
+  id: __t.string(),
+  pageId: __t.string(),
+  requesterId: __t.string(),
+  reason: __t.string(),
+  status: __t.string(),
+  respondedBy: __t.string(),
+  respondedAt: __t.u64(),
+  createdAt: __t.u64(),
+});
+export type AccessRequest = __Infer<typeof AccessRequest>;
+
 export const AiChatMessage = __t.object("AiChatMessage", {
   id: __t.string(),
   sessionId: __t.string(),
@@ -527,6 +539,8 @@ export const ShareLink = __t.object("ShareLink", {
   expiresAt: __t.u64(),
   createdAt: __t.u64(),
   visitCount: __t.u32(),
+  brandTitle: __t.option(__t.string()),
+  brandLogoUrl: __t.option(__t.string()),
 });
 export type ShareLink = __Infer<typeof ShareLink>;
 

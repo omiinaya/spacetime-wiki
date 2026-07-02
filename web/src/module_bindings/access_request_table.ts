@@ -10,11 +10,13 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default {
-  id: __t.string(),
-  name: __t.string(),
-  url: __t.string(),
-  events: __t.string(),
-  secret: __t.string(),
-  createdBy: __t.string(),
-};
+export default __t.row({
+  id: __t.string().primaryKey(),
+  pageId: __t.string().name("page_id"),
+  requesterId: __t.string().name("requester_id"),
+  reason: __t.string(),
+  status: __t.string(),
+  respondedBy: __t.string().name("responded_by"),
+  respondedAt: __t.u64().name("responded_at"),
+  createdAt: __t.u64().name("created_at"),
+});

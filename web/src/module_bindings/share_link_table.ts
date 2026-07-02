@@ -19,4 +19,6 @@ export default __t.row({
   expiresAt: __t.u64().name("expires_at"),
   createdAt: __t.u64().name("created_at"),
   visitCount: __t.u32().name("visit_count"),
+  brandTitle: __t.option(__t.string()).name("brand_title"),
+  brandLogoUrl: __t.option(__t.string()).name("brand_logo_url"),
 });
