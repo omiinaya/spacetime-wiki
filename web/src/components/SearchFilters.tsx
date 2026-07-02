@@ -105,7 +105,7 @@ export function SearchFilters({ filters, onChange }: Props) {
               id="filter-collection"
               value={filters.collectionId}
               onChange={(e) => update("collectionId", e.target.value)}
-              className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+              className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
             >
               <option value="">All collections</option>
               {collections.map((c) => (
@@ -125,7 +125,7 @@ export function SearchFilters({ filters, onChange }: Props) {
               id="filter-author"
               value={filters.authorId}
               onChange={(e) => update("authorId", e.target.value)}
-              className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+              className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
             >
               <option value="">All authors</option>
               {users.map((u) => (
@@ -147,7 +147,7 @@ export function SearchFilters({ filters, onChange }: Props) {
                 value={filters.dateFrom}
                 onChange={(e) => update("dateFrom", e.target.value)}
                 placeholder="From"
-                className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
               />
               <span className="text-[10px] text-muted-foreground/60">—</span>
               <input
@@ -155,7 +155,7 @@ export function SearchFilters({ filters, onChange }: Props) {
                 value={filters.dateTo}
                 onChange={(e) => update("dateTo", e.target.value)}
                 placeholder="To"
-                className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
               />
             </div>
           </div>
@@ -170,7 +170,7 @@ export function SearchFilters({ filters, onChange }: Props) {
               value={filters.tags}
               onChange={(e) => update("tags", e.target.value)}
               placeholder="important, meeting, draft"
-              className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
             />
             <p className="text-[9px] text-muted-foreground/40 mt-1">Comma-separated. Filters pages matching ANY of these tags.</p>
           </div>

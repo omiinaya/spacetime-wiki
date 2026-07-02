@@ -158,7 +158,7 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
                 onBlur={() => setTimeout(() => { setAdding(false); setInputValue(""); }, 200)}
                 placeholder="Add tag..."
                 autoFocus
-                className="h-6 w-28 px-2 rounded-full border border-border bg-[#0a0a0a] text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="h-6 w-28 px-2 rounded-full border border-border bg-[#0a0a0a] text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
               />
               {suggestions.length > 0 && (
                 <div className="absolute top-full left-0 mt-1 w-40 py-1 rounded-lg border border-border bg-card shadow-xl z-30">

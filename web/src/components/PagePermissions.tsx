@@ -152,7 +152,7 @@ export function PagePermissions({ pageId, userId, onClose }: Props) {
                     value={selectedUserId}
                     onChange={(e) => setSelectedUserId(e.target.value)}
                     aria-label="Select user"
-                    className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                   >
                     <option value="">Select user...</option>
                     {allUsers.map(u => (
@@ -163,7 +163,7 @@ export function PagePermissions({ pageId, userId, onClose }: Props) {
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
                     aria-label="Select role"
-                    className="h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none"
+                    className="h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden"
                   >
                     <option value="viewer">Viewer</option>
                     <option value="editor">Editor</option>
@@ -202,7 +202,7 @@ export function PagePermissions({ pageId, userId, onClose }: Props) {
                     value={selectedGroupId}
                     onChange={(e) => setSelectedGroupId(e.target.value)}
                     aria-label="Select group"
-                    className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    className="flex-1 h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                   >
                     <option value="">Select group...</option>
                     {allGroups.map(g => (
@@ -213,7 +213,7 @@ export function PagePermissions({ pageId, userId, onClose }: Props) {
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
                     aria-label="Select role"
-                    className="h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none"
+                    className="h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden"
                   >
                     <option value="viewer">Viewer</option>
                     <option value="editor">Editor</option>

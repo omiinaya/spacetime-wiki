@@ -188,7 +188,7 @@ export function MfaSettings({ userId }: { userId: string | null }) {
                 <input type="text" value={verifyCode} onChange={e => setVerifyCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
                   placeholder="000000"
                   maxLength={6}
-                  className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground text-center tracking-widest font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground text-center tracking-widest font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
 
               {/* Step 3: Save backup codes */}

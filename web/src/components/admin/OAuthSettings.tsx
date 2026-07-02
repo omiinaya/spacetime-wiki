@@ -212,12 +212,12 @@ export function OAuthSettings({ userId }: { userId: string | null }) {
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Name</label>
                   <input type="text" value={oaName} onChange={e => setOaName(e.target.value)}
-                    placeholder="My GitHub" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    placeholder="My GitHub" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Slug</label>
                   <input type="text" value={oaSlug} onChange={e => setOaSlug(e.target.value)}
-                    placeholder="my-github" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    placeholder="my-github" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
               </div>
 
@@ -225,7 +225,7 @@ export function OAuthSettings({ userId }: { userId: string | null }) {
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Provider Type</label>
                 <select value={oaType} onChange={e => handleTypeChange(e.target.value)}
-                  className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                  className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50">
                   <option value="github">GitHub</option>
                   <option value="discord">Discord</option>
                   <option value="slack">Slack</option>
@@ -238,18 +238,18 @@ export function OAuthSettings({ userId }: { userId: string | null }) {
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Authorize URL</label>
                 <input type="text" value={oaAuthUrl} onChange={e => setOaAuthUrl(e.target.value)}
-                  placeholder="https://github.com/login/oauth/authorize" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  placeholder="https://github.com/login/oauth/authorize" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Token URL</label>
                   <input type="text" value={oaTokenUrl} onChange={e => setOaTokenUrl(e.target.value)}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Userinfo URL</label>
                   <input type="text" value={oaUserUrl} onChange={e => setOaUserUrl(e.target.value)}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
               </div>
 
@@ -257,7 +257,7 @@ export function OAuthSettings({ userId }: { userId: string | null }) {
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Scope (space-separated)</label>
                 <input type="text" value={oaScope} onChange={e => setOaScope(e.target.value)}
-                  placeholder="read:user user:email" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  placeholder="read:user user:email" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
 
               {/* Client credentials */}
@@ -265,13 +265,13 @@ export function OAuthSettings({ userId }: { userId: string | null }) {
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Client ID</label>
                   <input type="text" value={oaClientId} onChange={e => setOaClientId(e.target.value)}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Client Secret</label>
                   <input type="password" value={oaClientSecret} onChange={e => setOaClientSecret(e.target.value)}
                     placeholder={editingId ? "(leave empty to keep existing)" : "Required"}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                 </div>
               </div>
 
@@ -279,7 +279,7 @@ export function OAuthSettings({ userId }: { userId: string | null }) {
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Icon identifier</label>
                 <input type="text" value={oaIcon} onChange={e => setOaIcon(e.target.value)}
-                  placeholder="github" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                  placeholder="github" className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               </div>
 
               {/* Settings */}
@@ -287,7 +287,7 @@ export function OAuthSettings({ userId }: { userId: string | null }) {
                 <div>
                   <label className="text-[10px] text-muted-foreground/60 mb-1 block">Default role</label>
                   <select value={oaDefaultRole} onChange={e => setOaDefaultRole(e.target.value)}
-                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                    className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50">
                     <option value="member">Member</option>
                     <option value="admin">Admin</option>
                     <option value="viewer">Viewer</option>
@@ -297,7 +297,7 @@ export function OAuthSettings({ userId }: { userId: string | null }) {
                   <div>
                     <label className="text-[10px] text-muted-foreground/60 mb-1 block">Status</label>
                     <select value={oaActive ? "true" : "false"} onChange={e => setOaActive(e.target.value === "true")}
-                      className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                      className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50">
                       <option value="true">Active</option>
                       <option value="false">Disabled</option>
                     </select>

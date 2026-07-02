@@ -292,7 +292,7 @@ export function WebhookSettings({ userId }: Props) {
                 <input
                   type="text" value={formName} onChange={(e) => setFormName(e.target.value)}
                   placeholder="My webhook" autoFocus
-                  className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <div>
@@ -300,7 +300,7 @@ export function WebhookSettings({ userId }: Props) {
                 <input
                   type="text" value={formUrl} onChange={(e) => setFormUrl(e.target.value)}
                   placeholder="https://hooks.example.com/notify"
-                  className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <div>
@@ -326,7 +326,7 @@ export function WebhookSettings({ userId }: Props) {
                 <input
                   type="text" value={formSecret} onChange={(e) => setFormSecret(e.target.value)}
                   placeholder="whsec_..."
-                  className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <div className="flex gap-2 justify-end pt-2">

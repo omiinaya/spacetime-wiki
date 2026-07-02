@@ -149,7 +149,7 @@ export function SidebarTree({
                           if (start > 0) parts.push(<span key="lead" className="opacity-50">…</span>);
                           while (matchIdx >= 0) {
                             if (matchIdx > cursor) parts.push(<span key={`t-${cursor}`}>{snippet.slice(cursor, matchIdx)}</span>);
-                            parts.push(<mark key={`m-${matchIdx}`} className="bg-yellow-500/30 text-foreground rounded-sm px-0.5">{snippet.slice(matchIdx, matchIdx + q.length)}</mark>);
+                            parts.push(<mark key={`m-${matchIdx}`} className="bg-yellow-500/30 text-foreground rounded-xs px-0.5">{snippet.slice(matchIdx, matchIdx + q.length)}</mark>);
                             cursor = matchIdx + q.length;
                             matchIdx = lowerSnippet.indexOf(q, cursor);
                           }
@@ -250,7 +250,7 @@ export function SidebarTree({
             {/* Empty state */}
             {collections.length === 0 && Object.keys(pagesByCollection).length === 0 && (
               <div className="px-3 py-6 text-center">
-                <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-primary/20 to-purple-600/20 flex items-center justify-center">
+                <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-linear-to-br from-primary/20 to-purple-600/20 flex items-center justify-center">
                   <Library className="h-5 w-5 text-primary/60" />
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">Welcome! Your wiki is empty.</p>
@@ -315,9 +315,9 @@ export function SidebarTree({
             <h3 className="text-sm font-semibold mb-3">Add tag to {selectedPageIds.size} page(s)</h3>
             <div className="space-y-2 mb-3">
               <input type="text" value={batchTagName} onChange={(e) => setBatchTagName(e.target.value)} placeholder="Tag name (e.g. 'department')"
-                className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
               <input type="text" value={batchTagValue} onChange={(e) => setBatchTagValue(e.target.value)} placeholder="Tag value (e.g. 'engineering')"
-                className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
             </div>
             <div className="flex gap-2">
               <button onClick={handleBatchTag} disabled={!batchTagName.trim()}

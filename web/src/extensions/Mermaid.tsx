@@ -182,7 +182,7 @@ const MermaidNodeView: React.FC<NodeViewProps> = ({
               value={editSrc}
               onChange={(e) => setEditSrc(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full h-32 px-3 py-2 rounded-lg border border-border bg-[#0a0a1a] text-sm font-mono text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/50 resize-y"
+              className="w-full h-32 px-3 py-2 rounded-lg border border-border bg-[#0a0a1a] text-sm font-mono text-foreground placeholder:text-muted-foreground/40 outline-hidden focus:border-primary/50 resize-y"
               placeholder={`graph TD\n  A[Start] --> B[Process]\n  B --> C[End]`}
               autoFocus
               spellCheck={false}

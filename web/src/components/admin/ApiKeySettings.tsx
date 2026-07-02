@@ -54,9 +54,9 @@ export function ApiKeySection({ userId }: { userId: string | null }) {
       )}
       <div className="flex gap-2">
         <input value={keyName} onChange={(e) => setKeyName(e.target.value)} placeholder="Key name"
-          className="flex-1 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+          className="flex-1 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
         <input type="number" value={keyExpiry} onChange={(e) => setKeyExpiry(parseInt(e.target.value) || 0)} min={0} placeholder="Days"
-          className="w-14 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+          className="w-14 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
         <button onClick={handleCreate} disabled={loading}
           className="h-7 px-3 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
           {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Create"}

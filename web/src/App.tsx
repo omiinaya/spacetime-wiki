@@ -1259,7 +1259,7 @@ const AppLayout = () => {
         }}
       >
         <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
-          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 rounded-md bg-linear-to-br from-primary to-purple-600 flex items-center justify-center shrink-0">
             <Library className="h-3.5 w-3.5 text-white" />
           </div>
           <span className="font-semibold text-sm">Spacetime Wiki</span>
@@ -1283,7 +1283,7 @@ const AppLayout = () => {
               type="text" placeholder="Search..."
               value={searchQuery}
               onChange={handleSearchInput}
-              className="w-full h-8 pl-8 pr-7 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              className="w-full h-8 pl-8 pr-7 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
             />
             {searchQuery && (
               <button
@@ -1462,7 +1462,7 @@ const AppLayout = () => {
       {(sidebarOpen || sidebarOverlayVisible) && (
         <div
           ref={sidebarOverlayRef}
-          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-xs md:hidden transition-opacity duration-300"
           style={{ opacity: sidebarOpen && !sidebarDragRef.current ? 1 : undefined }}
           onClick={() => { setSidebarOpen(false); setSidebarOverlayVisible(false); }}
         />
@@ -1621,14 +1621,14 @@ const AppLayout = () => {
                 <input
                   type="text" value={sharePassword} onChange={(e) => setSharePassword(e.target.value)}
                   placeholder="Leave empty for public link"
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Expires in days (0 = never)</label>
                 <input
                   type="number" value={shareDays} onChange={(e) => setShareDays(parseInt(e.target.value) || 0)} min={0}
-                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <button
@@ -1664,13 +1664,13 @@ const AppLayout = () => {
                             type="text" value={editBrandTitle}
                             onChange={(e) => setEditBrandTitle(e.target.value)}
                             placeholder="Custom page title (leave empty for page default)"
-                            className="w-full h-7 px-2 rounded border border-border bg-[#0a0a0a] text-[10px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            className="w-full h-7 px-2 rounded border border-border bg-[#0a0a0a] text-[10px] text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                           />
                           <input
                             type="text" value={editBrandLogoUrl}
                             onChange={(e) => setEditBrandLogoUrl(e.target.value)}
                             placeholder="Logo URL (leave empty for no logo)"
-                            className="w-full h-7 px-2 rounded border border-border bg-[#0a0a0a] text-[10px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            className="w-full h-7 px-2 rounded border border-border bg-[#0a0a0a] text-[10px] text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                           />
                           <div className="flex gap-1.5">
                             <button onClick={() => updateShareBranding(s.id)}
@@ -1720,7 +1720,7 @@ const AppLayout = () => {
                     <input
                       value={newPageTitle} onChange={(e) => setNewPageTitle(e.target.value)}
                       placeholder="New page title" autoFocus
-                      className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                      className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
                     <button onClick={createFromTemplate} disabled={!newPageTitle.trim()}
                       className="w-full h-8 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
                       Create from template
@@ -1743,23 +1743,23 @@ const AppLayout = () => {
                 <input
                   type="text" value={colIcon} onChange={(e) => setColIcon(e.target.value)}
                   placeholder="📁" maxLength={4}
-                  className="w-12 h-9 text-center rounded-md border border-border bg-[#0a0a0a] text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-12 h-9 text-center rounded-md border border-border bg-[#0a0a0a] text-sm focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
                 <input
                   type="text" value={colName} onChange={(e) => setColName(e.target.value)}
                   placeholder="Collection name" autoFocus
-                  className="flex-1 h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="flex-1 h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <input
                 type="text" value={colDesc} onChange={(e) => setColDesc(e.target.value)}
                 placeholder="Description (optional)"
-                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
               />
               <input
                 type="text" value={colColor} onChange={(e) => setColColor(e.target.value)}
                 placeholder="Color (hex, optional)"
-                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
               />
               {editingCol && (
                 <div>
@@ -1767,7 +1767,7 @@ const AppLayout = () => {
                   <select
                     value={colSortMode}
                     onChange={(e) => setColSortMode(e.target.value)}
-                    className="w-full h-9 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    className="w-full h-9 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                   >
                     <option value="manual">Manual (drag to reorder)</option>
                     <option value="title-asc">Title A–Z</option>
@@ -1856,7 +1856,7 @@ const AppLayout = () => {
       >
         <div className="md:hidden flex items-center gap-2 px-4 h-14 border-b border-border">
           <button onClick={() => setSidebarOpen(true)}><Menu className="h-5 w-5" /></button>
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-md bg-linear-to-br from-primary to-purple-600 flex items-center justify-center">
             <Library className="h-3 w-3 text-white" />
           </div>
           <span className="font-semibold text-sm">Spacetime Wiki</span>
@@ -1893,7 +1893,7 @@ const AppLayout = () => {
                 onChange={(e) => { setPaletteQuery(e.target.value); setPaletteIndex(0); }}
                 placeholder="Search pages, collections, or actions..."
                 autoFocus
-                className="flex-1 h-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none border-none"
+                className="flex-1 h-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-hidden border-none"
               />
               <kbd className="px-1.5 py-0.5 rounded bg-muted text-[10px] text-muted-foreground font-mono">esc</kbd>
             </div>

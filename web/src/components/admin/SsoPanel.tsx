@@ -91,15 +91,15 @@ export function SsoPanel({ addToast }: SsoPanelProps) {
     <>
       {/* OIDC Dialog */}
       {oidcDialogOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={() => setOidcDialogOpen(false)}>
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40" onClick={() => setOidcDialogOpen(false)}>
           <div className="w-full max-w-sm mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-xs font-semibold mb-3">{editingOidc ? "Edit OIDC Provider" : "Add OIDC Provider"}</h3>
-            <input value={oidcName} onChange={e => setOidcName(e.target.value)} placeholder="Provider name" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <input value={oidcSlug} onChange={e => setOidcSlug(e.target.value)} placeholder="Slug (e.g. keycloak)" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <input value={oidcIssuer} onChange={e => setOidcIssuer(e.target.value)} placeholder="Issuer URL" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <input value={oidcClientId} onChange={e => setOidcClientId(e.target.value)} placeholder="Client ID" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <input value={oidcClientSecret} onChange={e => setOidcClientSecret(e.target.value)} placeholder="Client Secret" type="password" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <input value={oidcScopes} onChange={e => setOidcScopes(e.target.value)} placeholder="Scopes (space-separated)" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-3 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+            <input value={oidcName} onChange={e => setOidcName(e.target.value)} placeholder="Provider name" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <input value={oidcSlug} onChange={e => setOidcSlug(e.target.value)} placeholder="Slug (e.g. keycloak)" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <input value={oidcIssuer} onChange={e => setOidcIssuer(e.target.value)} placeholder="Issuer URL" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <input value={oidcClientId} onChange={e => setOidcClientId(e.target.value)} placeholder="Client ID" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <input value={oidcClientSecret} onChange={e => setOidcClientSecret(e.target.value)} placeholder="Client Secret" type="password" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <input value={oidcScopes} onChange={e => setOidcScopes(e.target.value)} placeholder="Scopes (space-separated)" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-3 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
             <div className="flex gap-2 justify-end">
               <button onClick={() => setOidcDialogOpen(false)} className="px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
               <button onClick={saveOidc} className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">{editingOidc ? "Save" : "Create"}</button>
@@ -110,16 +110,16 @@ export function SsoPanel({ addToast }: SsoPanelProps) {
 
       {/* SAML Dialog */}
       {samlDialogOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={() => setSamlDialogOpen(false)}>
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40" onClick={() => setSamlDialogOpen(false)}>
           <div className="w-full max-w-sm mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl overflow-y-auto max-h-[80vh]" onClick={e => e.stopPropagation()}>
             <h3 className="text-xs font-semibold mb-3">{editingSaml ? "Edit SAML Provider" : "Add SAML Provider"}</h3>
-            <input value={samlName} onChange={e => setSamlName(e.target.value)} placeholder="Provider name" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <input value={samlSlug} onChange={e => setSamlSlug(e.target.value)} placeholder="Slug" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <input value={samlEntityId} onChange={e => setSamlEntityId(e.target.value)} placeholder="Entity ID / Issuer" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <input value={samlSsoUrl} onChange={e => setSamlSsoUrl(e.target.value)} placeholder="SSO URL" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <textarea value={samlCert} onChange={e => setSamlCert(e.target.value)} placeholder="X.509 Certificate (PEM)" rows={3} className="w-full px-3 py-2 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono" />
-            <input value={samlNameIdFmt} onChange={e => setSamlNameIdFmt(e.target.value)} placeholder="Name ID format" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            <input value={samlAttrMapping} onChange={e => setSamlAttrMapping(e.target.value)} placeholder='Attribute mapping JSON' className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+            <input value={samlName} onChange={e => setSamlName(e.target.value)} placeholder="Provider name" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <input value={samlSlug} onChange={e => setSamlSlug(e.target.value)} placeholder="Slug" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <input value={samlEntityId} onChange={e => setSamlEntityId(e.target.value)} placeholder="Entity ID / Issuer" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <input value={samlSsoUrl} onChange={e => setSamlSsoUrl(e.target.value)} placeholder="SSO URL" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <textarea value={samlCert} onChange={e => setSamlCert(e.target.value)} placeholder="X.509 Certificate (PEM)" rows={3} className="w-full px-3 py-2 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50 font-mono" />
+            <input value={samlNameIdFmt} onChange={e => setSamlNameIdFmt(e.target.value)} placeholder="Name ID format" className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
+            <input value={samlAttrMapping} onChange={e => setSamlAttrMapping(e.target.value)} placeholder='Attribute mapping JSON' className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
             <label className="flex items-center gap-2 mb-3 text-xs">
               <input type="checkbox" checked={samlAutoRegister} onChange={e => setSamlAutoRegister(e.target.checked)} className="rounded" />
               Auto-register users

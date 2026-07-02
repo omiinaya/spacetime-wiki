@@ -73,7 +73,7 @@ export function TemplatePicker({ open, onClose, collections, userId, navigate }:
           <select
             value={selectedCol}
             onChange={(e) => setSelectedCol(e.target.value)}
-            className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+            className="w-full h-8 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50"
           >
             {collections.map((c) => (
               <option key={c.id} value={c.id}>{c.icon || "📁"} {c.name}</option>

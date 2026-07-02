@@ -70,13 +70,13 @@ export function GroupsPanel({ allUsers, userId, addToast }: GroupsPanelProps) {
     <div>
       {/* Group dialog */}
       {groupDialogOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={() => setGroupDialogOpen(false)}>
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40" onClick={() => setGroupDialogOpen(false)}>
           <div className="w-full max-w-sm mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-xs font-semibold mb-3">{editingGroup ? "Edit Group" : "New Group"}</h3>
             <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Group name"
-              className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-2 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
             <input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Description (optional)"
-              className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-3 focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs mb-3 focus:outline-hidden focus:ring-1 focus:ring-primary/50" />
             <div className="flex gap-2 justify-end">
               <button onClick={() => setGroupDialogOpen(false)} className="px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
               <button onClick={saveGroup} className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
@@ -140,7 +140,7 @@ export function GroupsPanel({ allUsers, userId, addToast }: GroupsPanelProps) {
                       <select value={m.role} onChange={async (e) => {
                         await api.groups.updateMemberRole(m.id, e.target.value);
                         setGroupMembers(prev => prev.map(x => x.id === m.id ? { ...x, role: e.target.value } : x));
-                      }} className="h-6 pl-1 pr-5 rounded border border-border bg-[#0a0a0a] text-[10px] focus:outline-none">
+                      }} className="h-6 pl-1 pr-5 rounded border border-border bg-[#0a0a0a] text-[10px] focus:outline-hidden">
                         <option value="admin">Admin</option>
                         <option value="member">Member</option>
                       </select>
@@ -156,14 +156,14 @@ export function GroupsPanel({ allUsers, userId, addToast }: GroupsPanelProps) {
                 </div>
                 <div className="flex gap-2 pt-1 border-t border-border">
                   <select value={memberUserId} onChange={(e) => setMemberUserId(e.target.value)}
-                    className="flex-1 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-none focus:ring-1 focus:ring-primary/50">
+                    className="flex-1 h-7 px-2 rounded-md border border-border bg-[#0a0a0a] text-xs focus:outline-hidden focus:ring-1 focus:ring-primary/50">
                     <option value="">Select user...</option>
                     {allUsers.filter(u => !groupMembers.some(m => m.group_id === g.id && m.user_id === u.id)).map(u => (
                       <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
                     ))}
                   </select>
                   <select value={memberRole} onChange={(e) => setMemberRole(e.target.value)}
-                    className="h-7 pl-1 pr-5 rounded border border-border bg-[#0a0a0a] text-xs focus:outline-none">
+                    className="h-7 pl-1 pr-5 rounded border border-border bg-[#0a0a0a] text-xs focus:outline-hidden">
                     <option value="member">Member</option>
                     <option value="admin">Admin</option>
                   </select>

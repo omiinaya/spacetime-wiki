@@ -84,7 +84,7 @@ export function FeatureFlags() {
               onClick={() => toggleFeature(feature.key)}
               className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${flags[feature.key] !== false ? "bg-primary" : "bg-muted"}`}
             >
-              <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${flags[feature.key] !== false ? "translate-x-4" : "translate-x-0.5"}`} />
+              <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform ${flags[feature.key] !== false ? "translate-x-4" : "translate-x-0.5"}`} />
             </button>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium">{feature.label}</p>

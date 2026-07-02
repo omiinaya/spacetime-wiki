@@ -468,7 +468,7 @@ export const RichEmbed = Node.create<RichEmbedOptions>({
           ],
           [
             "div",
-            { class: "text-sm font-medium text-[color:hsl(var(--foreground))]" },
+            { class: "text-sm font-medium text-[hsl(var(--foreground))]" },
             title || src || "Open link",
           ],
           [

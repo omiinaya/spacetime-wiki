@@ -440,8 +440,8 @@ function FloatingToolbar({
       }
     };
     editor.on("selectionUpdate", update);
-    editor.on("blur", () => setShow(false));
-    return () => { editor.off("selectionUpdate", update); editor.off("blur", () => setShow(false)); };
+    editor.on("blur-sm", () => setShow(false));
+    return () => { editor.off("selectionUpdate", update); editor.off("blur-sm", () => setShow(false)); };
   }, [editor]);
 
   if (!show) return null;
@@ -503,12 +503,12 @@ function ImageToolbar({
       setWidthInput(node.attrs.width || "");
     };
     editor.on("selectionUpdate", update);
-    editor.on("blur", () => setTimeout(() => setPos(null), 200));
+    editor.on("blur-sm", () => setTimeout(() => setPos(null), 200));
     // Also update on click (if view is available)
     try { editor.view.dom.addEventListener("mouseup", update); } catch {}
     return () => {
       editor.off("selectionUpdate", update);
-      editor.off("blur", () => setPos(null));
+      editor.off("blur-sm", () => setPos(null));
       try { editor.view.dom.removeEventListener("mouseup", update); } catch {}
     };
   }, [editor]);
@@ -621,7 +621,7 @@ function ImageToolbar({
             if (e.key === "Escape") { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
           }}
           placeholder="Width"
-          className="w-16 h-6 px-1.5 rounded border border-border/50 bg-transparent text-[11px] text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/50 text-center"
+          className="w-16 h-6 px-1.5 rounded border border-border/50 bg-transparent text-[11px] text-foreground placeholder:text-muted-foreground/40 outline-hidden focus:border-primary/50 text-center"
         />
       </div>
     </div>,
@@ -668,11 +668,11 @@ function TableToolbar({
       });
     };
     editor.on("selectionUpdate", update);
-    editor.on("blur", () => setTimeout(() => setPos(null), 200));
+    editor.on("blur-sm", () => setTimeout(() => setPos(null), 200));
     try { editor.view.dom.addEventListener("mouseup", update); } catch {}
     return () => {
       editor.off("selectionUpdate", update);
-      editor.off("blur", () => setPos(null));
+      editor.off("blur-sm", () => setPos(null));
       try { editor.view.dom.removeEventListener("mouseup", update); } catch {}
     };
   }, [editor]);
@@ -1044,7 +1044,7 @@ export function PageEditor({ userId }: Props) {
         return false;
       },
       attributes: {
-        class: "prose prose-invert max-w-none focus:outline-none min-h-[60vh]",
+        class: "prose prose-invert max-w-none focus:outline-hidden min-h-[60vh]",
       },
     },
     onCreate: () => { editorReadyRef.current = true; },
@@ -1567,7 +1567,7 @@ export function PageEditor({ userId }: Props) {
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
 
       {/* Top toolbar */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-xs border-b border-border">
         <div className="flex items-center justify-between px-4 h-12">
           <div className="flex items-center gap-2">
             <button onClick={() => navigate(-1)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Back">
@@ -1795,7 +1795,7 @@ export function PageEditor({ userId }: Props) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Untitled"
-          className="w-full text-3xl font-bold bg-transparent text-foreground placeholder:text-muted-foreground/40 outline-none border-none"
+          className="w-full text-3xl font-bold bg-transparent text-foreground placeholder:text-muted-foreground/40 outline-hidden border-none"
           disabled={preview}
         />
       </div>
@@ -1819,7 +1819,7 @@ export function PageEditor({ userId }: Props) {
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(); } }}
               placeholder={tags.length === 0 ? "Add tags..." : "+ tag"}
-              className="h-6 px-2 rounded-md border border-transparent bg-transparent text-xs text-muted-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-border focus:bg-muted/50 w-24"
+              className="h-6 px-2 rounded-md border border-transparent bg-transparent text-xs text-muted-foreground placeholder:text-muted-foreground/40 focus:outline-hidden focus:border-border focus:bg-muted/50 w-24"
             />
           </div>
         </div>
@@ -1913,7 +1913,7 @@ export function PageEditor({ userId }: Props) {
           <textarea
             value={markdownSource}
             onChange={(e) => setMarkdownSource(e.target.value)}
-            className="w-full min-h-[60vh] bg-[#0a0a0a] text-foreground font-mono text-sm p-4 rounded-lg border border-border resize-y focus:outline-none focus:ring-1 focus:ring-primary/50"
+            className="w-full min-h-[60vh] bg-[#0a0a0a] text-foreground font-mono text-sm p-4 rounded-lg border border-border resize-y focus:outline-hidden focus:ring-1 focus:ring-primary/50"
             spellCheck={false}
             dir={page?.direction || "ltr"}
           />
@@ -1926,7 +1926,7 @@ export function PageEditor({ userId }: Props) {
             <textarea
               value={markdownSource}
               readOnly
-              className="w-full h-full bg-[#0a0a0a] text-foreground font-mono text-sm p-3 rounded-lg border border-border resize-none focus:outline-none"
+              className="w-full h-full bg-[#0a0a0a] text-foreground font-mono text-sm p-3 rounded-lg border border-border resize-none focus:outline-hidden"
               spellCheck={false}
               dir={page?.direction || "ltr"}
             />
@@ -2002,7 +2002,7 @@ export function PageEditor({ userId }: Props) {
       {/* Emoji picker popup */}
       {emojiOpen && (
         <div
-          className="fixed z-[100] w-56 py-1.5 rounded-lg border border-border bg-[#161616] shadow-2xl overflow-hidden"
+          className="fixed z-100 w-56 py-1.5 rounded-lg border border-border bg-[#161616] shadow-2xl overflow-hidden"
           style={{ top: emojiPos.top, left: emojiPos.left }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -2044,7 +2044,7 @@ export function PageEditor({ userId }: Props) {
       {/* Slash command popup */}
       {slashOpen && editor && (
         <div
-          className="fixed z-[100] w-64 py-1.5 rounded-lg border border-border bg-[#161616] shadow-2xl overflow-hidden"
+          className="fixed z-100 w-64 py-1.5 rounded-lg border border-border bg-[#161616] shadow-2xl overflow-hidden"
           style={{ top: slashPos.top, left: slashPos.left }}
           onClick={(e) => e.stopPropagation()}
         >

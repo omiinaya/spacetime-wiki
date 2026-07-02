@@ -213,7 +213,7 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Filter by filename or type..."
                 aria-label="Search files"
-                className="w-full h-8 pl-8 pr-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="w-full h-8 pl-8 pr-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
               />
             </div>
           </div>
