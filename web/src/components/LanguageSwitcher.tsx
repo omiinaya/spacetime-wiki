@@ -13,8 +13,6 @@ const LANGUAGE_LABELS: Record<string, string> = {
   es: "Español",
   fr: "Français",
   de: "Deutsch",
-  ja: "日本語",
-  zh: "中文",
 };
 
 export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {

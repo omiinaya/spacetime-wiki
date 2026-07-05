@@ -14,6 +14,7 @@ logging.basicConfig(
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -31,6 +32,23 @@ from routers.imports import router as imports_router
 from routers.ldap_auth import router as ldap_router
 from routers.oauth import router as oauth_router
 from models import HealthResponse
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security headers to every response."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        return response
+
 
 # ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -72,6 +90,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security headers
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Trusted hosts — restrict to localhost and configured domains
 
 # API key auth (applied to all paths except docs/health/register-key)
 app.add_middleware(ApiKeyMiddleware)
