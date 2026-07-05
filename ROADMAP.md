@@ -10,6 +10,20 @@
 
 ## 🔴 Critical (P0-P1) — Security, stability, blockers
 
+### P0 — 50/50 tables are PUBLIC — secrets exposed via STDB SQL
+- **File:** `server/spacetimedb/src/tables.rs` (all 50 tables)
+- **Issue:** Every table is declared `#[table(public)]`, including tables that store cryptographic secrets. Anyone who can connect to STDB port 3001 (no auth required) can `SELECT *` read:
+  - `mfa_method.totp_secret` — raw TOTP seeds (complete 2FA bypass)
+  - `oauth_user.access_token` + `refresh_token` — live OAuth tokens for Slack/Discord/GitHub
+  - `ldap_provider.bind_password` — LDAP admin password plaintext
+  - `user.password_hash` — Argon2 password hashes (offline cracking)
+  - `oidc_provider.client_secret`, `oauth_provider.client_secret` — OAuth client secrets
+  - `webhook.secret` — webhook signing secrets
+  - Full wiki page content (`page`, `page_revision`) — defeats entire permission system
+- **See:** `PRIVACY-AUDIT.md` in `server/spacetimedb/` for full table-by-table analysis
+- **Fix:** Split sensitive fields into private tables, add read-access reducers, or firewall STDB port 3001 from direct external access. At minimum: make `mfa_method`, `oauth_user`, `ldap_provider`, `user` (sensitive fields), `oidc_provider`, `oauth_provider`, `webhook` tables private.
+- **Effort:** 8-16 hours (architectural change — existing API server uses `SELECT *` SQL queries that don't work with private STDB tables; needs reducer-based read access)
+
 ### P0 — CORS config is spec-invalid
 - **File:** `server/api-server/main.py:70`
 - **Issue:** `allow_origins=["*"]` + `allow_credentials=True` — browsers reject this per CORS spec
