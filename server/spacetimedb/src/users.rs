@@ -52,7 +52,7 @@ pub fn update_user_role(
 ) -> Result<(), String> {
     // Only admins can change roles
     let updater = ctx.db.user().id().find(updated_by);
-    if !updater.map_or(false, |u| u.role == "admin") {
+    if updater.is_none_or(|u| u.role != "admin") {
         return Err("Only admins can change roles".into());
     }
     let valid_roles = ["admin", "member", "viewer"];
@@ -75,7 +75,7 @@ pub fn update_user_avatar(
 ) -> Result<(), String> {
     // Only admins can change avatars
     let updater = ctx.db.user().id().find(updated_by);
-    if !updater.map_or(false, |u| u.role == "admin") {
+    if updater.is_none_or(|u| u.role != "admin") {
         return Err("Only admins can change user avatars".into());
     }
     let mut user = ctx.db.user().id().find(user_id).ok_or_else(|| "User not found".to_string())?;
