@@ -17,7 +17,7 @@ ARG VITE_API_BASE
 RUN npm run build
 
 # ─── Serve stage ─────────────────────────────────────────────────────────────
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
