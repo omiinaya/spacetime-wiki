@@ -7,14 +7,18 @@
  *   - Sample published and draft pages
  *
  * Environment variables:
- *   STDB_HOST  — default: localhost:3001
- *   STDB_DB    — default: spacetime_wiki
+ *   STDB_HOST      — default: localhost:3001
+ *   STDB_DATABASE  — default: spacetime-wiki (URL-safe name, see docker-compose)
+ *   STDB_DB        — alias for STDB_DATABASE (legacy)
+ *
+ * The database name MUST be URL-safe — STDB 2.x rejects underscores in paths.
+ * Both docker-compose and this fixture default to "spacetime-wiki".
  */
 
 import type { FullConfig } from "@playwright/test";
 
 const STDB_HOST = process.env.STDB_HOST || "localhost:3001";
-const DB_NAME = process.env.STDB_DB || "spacetime_wiki";
+const DB_NAME = process.env.STDB_DATABASE || process.env.STDB_DB || "spacetime-wiki";
 
 function genId(prefix: string): string {
   const ts = Date.now();
@@ -50,8 +54,11 @@ async function sqlExists(sql: string): Promise<boolean> {
 
 async function stdbHealthCheck(): Promise<boolean> {
   try {
-    const res = await fetch(`http://${STDB_HOST}/health`, { signal: AbortSignal.timeout(3000) });
-    return res.ok;
+    // STDB 2.6+ uses /v1/health; fall back to /health for older versions
+    const res = await fetch(`http://${STDB_HOST}/v1/health`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) return true;
+    const resLegacy = await fetch(`http://${STDB_HOST}/health`, { signal: AbortSignal.timeout(2000) });
+    return resLegacy.ok;
   } catch {
     return false;
   }
@@ -59,7 +66,7 @@ async function stdbHealthCheck(): Promise<boolean> {
 
 async function globalSetup(_config: FullConfig): Promise<void> {
   // ── Wait for STDB to be ready (up to 30s) ───────────────────────────────
-  console.log(`[e2e-setup] Connecting to STDB at ${STDB_HOST}...`);
+  console.log(`[e2e-setup] Connecting to STDB at ${STDB_HOST} (db: ${DB_NAME})...`);
   for (let attempt = 1; attempt <= 10; attempt++) {
     if (await stdbHealthCheck()) break;
     if (attempt === 10) {
