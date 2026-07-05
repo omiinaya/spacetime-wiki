@@ -41,7 +41,4 @@ export default defineConfig({
       },
     },
   },
-  optimizeDeps: {
-    include: ["highlight.js", "lowlight", "@tiptap/extension-code-block-lowlight"],
-  },
 });
