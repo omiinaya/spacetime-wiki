@@ -1293,7 +1293,7 @@ pub fn create_invitation(
     }
     // Only admins can invite
     let inviter = ctx.db.user().id().find(invited_by.clone());
-    if !inviter.map_or(false, |u| u.role == "admin") {
+    if inviter.is_none_or(|u| u.role != "admin") {
         return Err("Only admins can create invitations".into());
     }
     // Check for existing pending invitation for this email
@@ -1412,7 +1412,7 @@ pub fn accept_invitation(
 #[reducer]
 pub fn revoke_invitation(ctx: &ReducerContext, id: String, revoked_by: String) -> Result<(), String> {
     let inviter = ctx.db.user().id().find(revoked_by.clone());
-    if !inviter.map_or(false, |u| u.role == "admin") {
+    if inviter.is_none_or(|u| u.role != "admin") {
         return Err("Only admins can revoke invitations".into());
     }
     let mut inv = ctx.db.invitation().id().find(&id)
