@@ -7,6 +7,7 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   reporter: [["list"]],
+  globalSetup: "./e2e/global-setup.ts",
   use: {
     baseURL: "http://localhost:5184",
     headless: true,
