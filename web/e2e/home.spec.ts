@@ -28,7 +28,7 @@ test.describe("Home page", () => {
     const count = await pageEntries.count();
     for (let i = 0; i < Math.min(count, 3); i++) {
       const text = await pageEntries.nth(i).textContent();
-      expect(text).toMatch(/Updated\s+\d+[hd] ago/);
+      expect(text).toMatch(/Updated\s+(just now|\d+[mhd] ago)/);
     }
   });
 
