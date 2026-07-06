@@ -312,15 +312,17 @@ async def _handle_wiki_search(arguments: dict[str, Any]) -> list[TextContent]:
     """Execute wiki_search with validated args."""
     query = _get_str_arg(arguments, "query", max_len=256)
     limit = _get_int_arg(arguments, "limit", default=20, min_val=1, max_val=50)
+    offset = _get_int_arg(arguments, "offset", default=0, min_val=0, max_val=9999)
 
     # Always returns a string thanks to required=True and _get_str_arg raising
     assert query is not None
-    results = await search_pages(query, limit)
+    results = await search_pages(query, limit, offset)
 
     if not results:
         return _text(f"No pages found matching '{query}'")
 
-    lines = [f"# Search results for '{query}'\n"]
+    pagination = f" (showing {len(results)}, offset={offset})" if offset else ""
+    lines = [f"# Search results for '{query}'{pagination}\n"]
     for p in results:
         status_tag = f"[{p['status']}]" if p['status'] != 'published' else ""
         col = f" in {p['collection_id']}" if p['collection_id'] else ""
