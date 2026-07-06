@@ -4,10 +4,10 @@ Handles the Authorization Code flow: redirect to provider, callback with code ex
 and user info retrieval. Supports auto-registration for new users.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from stdb_client import sql_query, call_reducer
-from models import OAuthProviderResponse, OAuthLoginResponse, OAuthCallbackResponse, OAuthUserLinkResponse
+from models import OAuthProviderResponse, OAuthLoginResponse, OAuthCallbackResponse, OAuthUserLinkResponse, PaginatedResponse
 
 router = APIRouter(prefix="/api/v1/auth/oauth", tags=["oauth"])
 
@@ -78,27 +78,60 @@ def _map_oauth_user(row: list) -> dict | None:
     }
 
 
-@router.get("/providers", response_model=list[OAuthProviderResponse])
-async def list_providers():
+@router.get("/providers", response_model=PaginatedResponse)
+async def list_providers(
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List all active OAuth providers (without secrets)."""
-    rows = await sql_query("SELECT * FROM oauth_provider WHERE is_active = true")
-    return [_map_oauth_provider(r) for r in rows if _map_oauth_provider(r)]
+    count_rows = await sql_query("SELECT COUNT(*) FROM oauth_provider WHERE is_active = true")
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query("SELECT * FROM oauth_provider WHERE is_active = true LIMIT ?i OFFSET ?i", limit, offset)
+    return {
+        "data": [_map_oauth_provider(r) for r in rows if _map_oauth_provider(r)],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
-@router.get("/providers/all", response_model=list[OAuthProviderResponse])
-async def list_all_providers():
+@router.get("/providers/all", response_model=PaginatedResponse)
+async def list_all_providers(
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List all OAuth providers including inactive (admin only, without secrets)."""
-    rows = await sql_query("SELECT * FROM oauth_provider")
-    return [_map_oauth_provider(r) for r in rows if _map_oauth_provider(r)]
+    count_rows = await sql_query("SELECT COUNT(*) FROM oauth_provider")
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query("SELECT * FROM oauth_provider LIMIT ?i OFFSET ?i", limit, offset)
+    return {
+        "data": [_map_oauth_provider(r) for r in rows if _map_oauth_provider(r)],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
-@router.get("/user-links/{user_id}", response_model=list[OAuthUserLinkResponse])
-async def list_user_links(user_id: str):
+@router.get("/user-links/{user_id}", response_model=PaginatedResponse)
+async def list_user_links(
+    user_id: str,
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List all OAuth provider links for a user."""
-    rows = await sql_query(
-        "SELECT * FROM oauth_user WHERE user_id = ?", user_id
+    count_rows = await sql_query(
+        "SELECT COUNT(*) FROM oauth_user WHERE user_id = ?", user_id
     )
-    return [_map_oauth_user(r) for r in rows if _map_oauth_user(r)]
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query(
+        "SELECT * FROM oauth_user WHERE user_id = ? LIMIT ?i OFFSET ?i", user_id, limit, offset
+    )
+    return {
+        "data": [_map_oauth_user(r) for r in rows if _map_oauth_user(r)],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 @router.post("/login", response_model=OAuthLoginResponse)
