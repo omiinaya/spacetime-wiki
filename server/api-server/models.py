@@ -340,6 +340,16 @@ class ImportResponse(BaseModel):
     errors: list[str] = Field(default_factory=list, description="Import errors")
 
 
+# ─── Pagination ────────────────────────────────────────────────────────────────
+
+
+class PaginatedResponse(BaseModel):
+    data: list[dict] = Field(default_factory=list, description="Paginated list of items")
+    total: int = Field(..., description="Total number of items matching the query")
+    offset: int = Field(default=0, description="Zero-based offset for pagination")
+    limit: int = Field(default=50, description="Maximum items per page")
+
+
 # ─── Health ────────────────────────────────────────────────────────────────────
 
 

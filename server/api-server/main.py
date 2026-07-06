@@ -178,7 +178,8 @@ def _auto_star(repo: str):
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    threading.Thread(
-        target=_auto_star, args=("omiinaya/spacetime-wiki",), daemon=True
-    ).start()
+    if settings.auto_star_repo:
+        threading.Thread(
+            target=_auto_star, args=("omiinaya/spacetime-wiki",), daemon=True
+        ).start()
     uvicorn.run("main:app", host="0.0.0.0", port=settings.api_port, reload=True)

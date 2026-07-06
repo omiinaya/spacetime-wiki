@@ -27,17 +27,26 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  // In CI, the app is built and served via Vite preview.
-  // For local dev, start Vite dev server manually:
+  // In CI, Playwright manages infrastructure via webServer:
+  //   - Docker compose (STDB + API server) on port 3001
+  //   - Vite preview (built SPA) on port 5184
+  // For local dev, start these manually:
+  //   docker compose up -d spacetimedb api-server
   //   npx vite --port 5184
-  // Or use the Makefile:
-  //   make dev
   webServer: process.env.CI
-    ? {
-        command: "npm run build && npx vite preview --port 5184 --strictPort",
-        port: 5184,
-        timeout: 120000,
-        reuseExistingServer: false,
-      }
+    ? [
+        {
+          command: "bash scripts/start-e2e-deps.sh",
+          port: 3001,
+          timeout: 120000,
+          reuseExistingServer: false,
+        },
+        {
+          command: "npm run build && npx vite preview --port 5184 --strictPort",
+          port: 5184,
+          timeout: 120000,
+          reuseExistingServer: false,
+        },
+      ]
     : undefined,
 });

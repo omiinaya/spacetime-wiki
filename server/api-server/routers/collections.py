@@ -1,5 +1,5 @@
 """Collection CRUD endpoints."""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from stdb_client import sql_query, call_reducer, map_collection
 from models import (
@@ -7,16 +7,27 @@ from models import (
     CollectionCreateResponse,
     CollectionUpdateResponse,
     CollectionDeleteResponse,
+    PaginatedResponse,
 )
 
 router = APIRouter(prefix="/api/v1/collections", tags=["collections"])
 
 
-@router.get("", response_model=list[CollectionResponse])
-async def list_collections():
+@router.get("", response_model=PaginatedResponse)
+async def list_collections(
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List all collections."""
-    rows = await sql_query("SELECT * FROM collection")
-    return [map_collection(r) for r in rows]
+    count_rows = await sql_query("SELECT COUNT(*) FROM collection")
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query("SELECT * FROM collection LIMIT ?i OFFSET ?i", limit, offset)
+    return {
+        "data": [map_collection(r) for r in rows],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 @router.get("/{collection_id}", response_model=CollectionResponse)
