@@ -35,18 +35,45 @@ from models import HealthResponse
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from starlette.responses import Response
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add security headers to every response."""
+    """Add comprehensive security headers to every response."""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next) -> Response:
         response = await call_next(request)
+        # Clickjacking prevention
         response.headers["X-Frame-Options"] = "DENY"
+        # MIME-type sniffing prevention
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
+        # Legacy XSS filter (deprecated in modern browsers, set to 0 for safety)
+        response.headers["X-XSS-Protection"] = "0"
+        # Referrer policy
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        # Feature restriction via Permissions-Policy
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(), geolocation=(), "
+            "interest-cohort=(), browsing-topics=()"
+        )
+        # HSTS — only when not in a local/dev context
+        if not settings.debug:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains; preload"
+            )
+        # Cross-origin isolation
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        # Content Security Policy for API responses
+        # Browser-facing CSP is set by nginx; this covers direct API access
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'"
+        )
         return response
 
 
@@ -95,6 +122,17 @@ app.add_middleware(
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Trusted hosts — restrict to localhost and configured domains
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=[
+        "localhost",
+        "127.0.0.1",
+        "127.0.0.1",
+        "*.local",
+        "spacetime-wiki",
+        "api-server",
+    ],
+)
 
 # API key auth (applied to all paths except docs/health/register-key)
 app.add_middleware(ApiKeyMiddleware)
@@ -162,9 +200,9 @@ def _auto_star(repo: str):
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             if resp.status == 204 or resp.status == 200:
-                logger.info(f"⭐ Starred {repo}")
+                logger.info(f"Starred {repo}")
             elif resp.status == 409:
-                logger.info(f"⭐ Already starred {repo}")
+                logger.info(f"Already starred {repo}")
             else:
                 logger.warning(f"Failed to star {repo}: HTTP {resp.status}")
     except urllib.error.HTTPError as e:

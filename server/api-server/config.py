@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     api_key_header: str = "X-API-Key"
     rate_limit: str = os.getenv("RATE_LIMIT", "100/minute")
     auto_star_repo: bool = os.getenv("AUTO_STAR_REPO", "false").lower() in ("1", "true", "yes")
+    debug: bool = os.getenv("DEBUG", "true").lower() in ("1", "true", "yes", "")
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
