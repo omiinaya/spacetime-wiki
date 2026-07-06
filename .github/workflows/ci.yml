@@ -74,10 +74,16 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: [self-hosted, ubuntu-latest]
+    timeout-minutes: 30
 
     defaults:
       run:
         working-directory: web
+
+    env:
+      CI: "true"
+      STDB_HOST: localhost:3001
+      STDB_DATABASE: spacetime-wiki
 
     steps:
       - uses: actions/checkout@v4
@@ -94,32 +100,13 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium
 
-      - name: Build Docker images
-        run: |
-          cd ..
-          docker compose build module-publisher api-server
+      - name: Run E2E tests
+        run: npx playwright test
 
-      - name: Start STDB
-        run: |
-          cd ..
-          docker compose up -d spacetimedb
-          echo "Waiting for STDB to be healthy..."
-          for i in $(seq 1 60); do
-            if curl -sf http://localhost:3001/v1/health >/dev/null 2>&1; then
-              echo "STDB ready after ${i}s"
-              break
-            fi
-            - name: Run E2E tests
-              run: npx playwright test
-              env:
-                CI: "true"
-                STDB_HOST: localhost:3001
-                STDB_DATABASE: spacetime-wiki
-
-            - name: Upload Playwright report
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                name: playwright-report
-                path: web/playwright-report/
-                retention-days: 7
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 7
