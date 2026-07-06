@@ -33,9 +33,10 @@ test-watch: ## Run frontend tests in watch mode
 	cd $(WEB_DIR) && npm run test:watch
 
 .PHONY: test-e2e
-test-e2e: ## Run Playwright E2E tests (requires built app + preview)
-	cd $(WEB_DIR) && npm run build && npm run preview &
-	cd $(WEB_DIR) && npx playwright test
+test-e2e: ## Run Playwright E2E tests (builds app + starts preview server)
+	cd $(WEB_DIR) && npm run build && npx vite preview --port 5184 --strictPort &
+	sleep 3
+	cd $(WEB_DIR) && npx playwright test; EXIT_CODE=$$?; kill %1 2>/dev/null; exit $$EXIT_CODE
 
 .PHONY: lint
 lint: ## Run ESLint on frontend code
@@ -68,11 +69,11 @@ module-test: ## Run Rust unit tests (via SpacetimeDB test runner)
 
 .PHONY: publish-module
 publish-module: ## Publish Rust module to a running SpacetimeDB instance
-	cd $(SPACETIMEDB_DIR) && spacetime publish --server http://localhost:3001 spacetime_wiki
+	cd $(SPACETIMEDB_DIR) && spacetime publish --server http://localhost:3001 spacetime-wiki
 
 .PHONY: generate-bindings
 generate-bindings: ## Generate TypeScript bindings from published module
-	cd $(SPACETIMEDB_DIR) && spacetime generate --server http://localhost:3001 --out-dir ../../web/src/module_bindings spacetime_wiki
+	cd $(SPACETIMEDB_DIR) && spacetime generate --server http://localhost:3001 --out-dir ../../web/src/module_bindings spacetime-wiki
 
 # ── Docker Compose ────────────────────────────────────────────────────────────
 

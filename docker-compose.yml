@@ -26,7 +26,7 @@ services:
     container_name: st-wiki-publisher
     environment:
       STDB_HOST: spacetimedb:3001
-      DB_NAME: spacetime_wiki
+      DB_NAME: spacetime-wiki
     depends_on:
       spacetimedb:
         condition: service_healthy
@@ -43,7 +43,7 @@ services:
       - "8711:8711"
     environment:
       STDB_HOST: spacetimedb:3001
-      STDB_DATABASE: ${STDB_DATABASE:-spacetime_wiki}
+      STDB_DATABASE: ${STDB_DATABASE:-spacetime-wiki}
       API_PORT: 8711
       RATE_LIMIT: ${RATE_LIMIT:-100/minute}
     depends_on:
@@ -59,7 +59,7 @@ services:
       context: ./web
       args:
         VITE_STDB_HOST: ${VITE_STDB_HOST:-spacetimedb:3001}
-        VITE_STDB_DB: ${VITE_STDB_DB:-spacetime_wiki}
+        VITE_STDB_DB: ${VITE_STDB_DB:-spacetime-wiki}
         VITE_API_BASE: ${VITE_API_BASE:-http://api-server:8711}
     container_name: st-wiki-frontend
     ports:
@@ -78,7 +78,7 @@ services:
     container_name: st-wiki-tests
     environment:
       STDB_HOST: spacetimedb:3001
-      DB_NAME: ${STDB_DATABASE:-spacetime_wiki}
+      DB_NAME: ${STDB_DATABASE:-spacetime-wiki}
     depends_on:
       spacetimedb:
         condition: service_healthy
