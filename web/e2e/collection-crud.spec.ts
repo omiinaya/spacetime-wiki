@@ -50,7 +50,7 @@ test.describe("Collection management — CRUD", () => {
     const sidebar = page.locator("aside");
     // Look for collection-like text in the sidebar
     const collectionBtn = sidebar.locator("button").filter({ hasText: /Uncategorized|Engineering|Design|Marketing|Research/i });
-    const collectionVisible = await collectionBtn.first().isVisible({ timeout: 5000 }).catch(() => false);
+    const _collectionVisible = await collectionBtn.first().isVisible({ timeout: 5000 }).catch(() => false);
     // Collections may or may not exist
   });
 
@@ -62,7 +62,7 @@ test.describe("Collection management — CRUD", () => {
     const btnVisible = await collectionBtn.isVisible({ timeout: 5000 }).catch(() => false);
     if (btnVisible) {
       const text = await collectionBtn.textContent();
-      const countMatch = text?.match(/(\d+)/);
+      const _countMatch = text?.match(/(\d+)/);
       // May or may not have a page count
     }
   });
