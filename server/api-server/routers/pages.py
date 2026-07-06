@@ -25,15 +25,17 @@ from models import (
     AttachmentResponse,
     ShareLinkResponse,
     ShareLinkCreateResponse,
+    PaginatedResponse,
 )
 
 router = APIRouter(prefix="/api/v1/pages", tags=["pages"])
 
 
-@router.get("", response_model=list[PageResponse])
+@router.get("", response_model=PaginatedResponse)
 async def list_pages(
     collection_id: str | None = Query(None, description="Filter by collection ID"),
     status: str = Query("active", description="Page status filter"),
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List pages, optionally filtered by collection."""
@@ -43,8 +45,16 @@ async def list_pages(
         where += " AND collection_id = ?"
         args.append(collection_id)
 
-    rows = await sql_query("SELECT * FROM page WHERE " + where, *args)
-    return [map_page(r) for r in rows[:limit]]
+    count_rows = await sql_query("SELECT COUNT(*) FROM page WHERE " + where, *args)
+    total = count_rows[0][0] if count_rows else 0
+
+    rows = await sql_query("SELECT * FROM page WHERE " + where + " LIMIT ?i OFFSET ?i", *args, limit, offset)
+    return {
+        "data": [map_page(r) for r in rows],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 @router.get("/{page_id}", response_model=PageResponse)
@@ -88,21 +98,43 @@ async def delete_page(page_id: str):
 # ─── Revisions ─────────────────────────────────────────────────────────────────
 
 
-@router.get("/{page_id}/revisions", response_model=list[RevisionResponse])
-async def list_revisions(page_id: str):
+@router.get("/{page_id}/revisions", response_model=PaginatedResponse)
+async def list_revisions(
+    page_id: str,
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List page revision history."""
-    rows = await sql_query("SELECT * FROM revision WHERE page_id = ?", page_id)
-    return [map_revision(r) for r in rows]
+    count_rows = await sql_query("SELECT COUNT(*) FROM revision WHERE page_id = ?", page_id)
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query("SELECT * FROM revision WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
+    return {
+        "data": [map_revision(r) for r in rows],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 # ─── Comments ──────────────────────────────────────────────────────────────────
 
 
-@router.get("/{page_id}/comments", response_model=list[CommentResponse])
-async def list_comments(page_id: str):
+@router.get("/{page_id}/comments", response_model=PaginatedResponse)
+async def list_comments(
+    page_id: str,
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List comments on a page."""
-    rows = await sql_query("SELECT * FROM comment WHERE page_id = ?", page_id)
-    return [map_comment(r) for r in rows]
+    count_rows = await sql_query("SELECT COUNT(*) FROM comment WHERE page_id = ?", page_id)
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query("SELECT * FROM comment WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
+    return {
+        "data": [map_comment(r) for r in rows],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 @router.post("/{page_id}/comments", response_model=CommentCreateResponse)
@@ -115,11 +147,22 @@ async def create_comment(page_id: str, body: str, user_id: str = ""):
 # ─── Tags ──────────────────────────────────────────────────────────────────────
 
 
-@router.get("/{page_id}/tags", response_model=list[TagResponse])
-async def list_tags(page_id: str):
+@router.get("/{page_id}/tags", response_model=PaginatedResponse)
+async def list_tags(
+    page_id: str,
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List tags on a page."""
-    rows = await sql_query("SELECT * FROM page_tag WHERE page_id = ?", page_id)
-    return [map_tag(r) for r in rows]
+    count_rows = await sql_query("SELECT COUNT(*) FROM page_tag WHERE page_id = ?", page_id)
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query("SELECT * FROM page_tag WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
+    return {
+        "data": [map_tag(r) for r in rows],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 @router.post("/{page_id}/tags", response_model=TagCreateResponse)
@@ -132,21 +175,43 @@ async def add_tag(page_id: str, name: str, value: str = ""):
 # ─── Attachments ───────────────────────────────────────────────────────────────
 
 
-@router.get("/{page_id}/attachments", response_model=list[AttachmentResponse])
-async def list_attachments(page_id: str):
+@router.get("/{page_id}/attachments", response_model=PaginatedResponse)
+async def list_attachments(
+    page_id: str,
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List attachments on a page."""
-    rows = await sql_query("SELECT * FROM attachment WHERE page_id = ?", page_id)
-    return [map_attachment(r) for r in rows]
+    count_rows = await sql_query("SELECT COUNT(*) FROM attachment WHERE page_id = ?", page_id)
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query("SELECT * FROM attachment WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
+    return {
+        "data": [map_attachment(r) for r in rows],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 # ─── Share links ───────────────────────────────────────────────────────────────
 
 
-@router.get("/{page_id}/share-links", response_model=list[ShareLinkResponse])
-async def list_share_links(page_id: str):
+@router.get("/{page_id}/share-links", response_model=PaginatedResponse)
+async def list_share_links(
+    page_id: str,
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List share links for a page."""
-    rows = await sql_query("SELECT * FROM share_link WHERE page_id = ?", page_id)
-    return [map_share_link(r) for r in rows]
+    count_rows = await sql_query("SELECT COUNT(*) FROM share_link WHERE page_id = ?", page_id)
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query("SELECT * FROM share_link WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
+    return {
+        "data": [map_share_link(r) for r in rows],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 @router.post("/{page_id}/share-links", response_model=ShareLinkCreateResponse)
