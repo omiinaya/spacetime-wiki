@@ -106,6 +106,8 @@ class SearchResponse(BaseModel):
     query: str = Field(default="", description="Original search query")
     filters: SearchFilters = Field(default_factory=SearchFilters, description="Applied filters")
     total: int = Field(default=0, description="Total result count")
+    offset: int = Field(default=0, description="Zero-based offset for pagination")
+    limit: int = Field(default=50, description="Maximum items per page")
 
 
 class AutocompleteResult(BaseModel):
