@@ -37,6 +37,9 @@ export default defineConfig({
           if (id.includes("@tiptap") || id.includes("prosemirror")) {
             return "editor";
           }
+          if (id.includes("node_modules/katex")) {
+            return "katex";
+          }
         },
       },
     },
