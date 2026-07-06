@@ -1,25 +1,35 @@
 """Authentication and API key management endpoints."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from auth import generate_api_key
 from stdb_client import sql_query, call_reducer, map_api_key
-from models import ApiKeyResponse, ApiKeyRegisterResponse, ApiKeyRevokeResponse
+from models import ApiKeyResponse, ApiKeyRegisterResponse, ApiKeyRevokeResponse, PaginatedResponse
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-@router.get("/keys", response_model=list[ApiKeyResponse])
-async def list_api_keys():
+@router.get("/keys", response_model=PaginatedResponse)
+async def list_api_keys(
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
+    limit: int = Query(50, le=100, description="Max results"),
+):
     """List all registered API keys (without the raw key, only metadata)."""
-    rows = await sql_query("SELECT * FROM api_key")
+    count_rows = await sql_query("SELECT COUNT(*) FROM api_key")
+    total = count_rows[0][0] if count_rows else 0
+    rows = await sql_query("SELECT * FROM api_key LIMIT ?i OFFSET ?i", limit, offset)
     keys = []
     for r in rows:
         k = map_api_key(r)
         # Never expose key_hash
         del k["key_hash"]
         keys.append(k)
-    return keys
+    return {
+        "data": keys,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 @router.post("/register-key", response_model=ApiKeyRegisterResponse)
