@@ -26,6 +26,7 @@ async def search(
     to_date: str = Query("", alias="to", description="Date range end (ms epoch or ISO date)"),
     tags: str = Query("", description="Comma-separated tag:value filters, e.g. 'status:published,priority:high'"),
     limit: int = Query(50, le=100, description="Max results"),
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
 ):
     """Full-text search with advanced filters.
 
@@ -114,7 +115,7 @@ async def search(
 
     # Map results
     results = []
-    for r in rows[:limit]:
+    for r in rows[offset:offset+limit]:
         results.append({
             "id": str(r[0] or "") if len(r) > 0 else "",
             "search_token": str(r[1] or "") if len(r) > 1 else "",
@@ -136,7 +137,9 @@ async def search(
             "to": to_date or None,
             "tags": tags or None,
         },
-        "total": len(results),
+        "total": len(rows),
+        "offset": offset,
+        "limit": limit,
     }
 
 
@@ -161,7 +164,7 @@ async def autocomplete(
         search_token,
     )
     results = []
-    for r in rows[:limit]:
+    for r in rows[offset:offset+limit]:
         results.append({
             "id": str(r[0] or "") if len(r) > 0 else "",
             "page_id": str(r[2] or "") if len(r) > 2 else "",
