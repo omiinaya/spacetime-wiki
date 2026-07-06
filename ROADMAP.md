@@ -4,7 +4,7 @@
 
 **Repository:** https://github.com/omiinaya/spacetime-wiki
 **Tech Stack:** React 19 + TypeScript 5.9 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
-**Stats:** 67 reducers, 50 tables, 201 Rust tests, 56 frontend test files (1,194 tests), 14 E2E specs (102 cases), 112 API endpoints, 6 MCP tools
+**Stats:** 140 reducers, 50 tables, 201 Rust tests, 56 frontend test files (1,194 tests), 14 E2E specs (79 cases), 51 API endpoints, 6 MCP tools
 
 ---
 
@@ -98,10 +98,9 @@
 - **Fix:** Switch to multi-stage: builder stage for pip compile, final slim image
 - **Effort:** 1 hour
 
-### P2 — Auto-star on startup is unusual
-- **File:** `server/api-server/main.py:157-160`
-- **Issue:** On startup, the API server auto-stars the repo (sends PUT to GitHub API). Unusual production behavior — could hit rate limits.
-- **Fix:** Move to a one-time setup script or add a config flag
+### P2 — Auto-star on startup is unusual — ✅ DONE
+- **File:** `server/api-server/main.py`, `server/api-server/config.py`
+- **Fix:** Moved behind `AUTO_STAR_REPO` config flag (default: `false`). Disabled by default.
 - **Effort:** 30 min
 
 ### P2 — E2E tests failing on fresh DB
@@ -367,7 +366,7 @@
 ### Sprint 3 — API Quality (4-6 hours)
 1. Add pagination to all list endpoints
 2. Add pagination to MCP list tools
-3. Move auto-star to config flag
+3. Move auto-star to config flag — ✅ DONE (behind `AUTO_STAR_REPO` env var, default `false`)
 4. Fix API server Dockerfile multi-stage
 
 ### Sprint 4 — TypeScript Quality (8-10 hours)
