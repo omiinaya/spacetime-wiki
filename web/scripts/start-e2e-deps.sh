@@ -1,11 +1,7 @@
 #!/bin/bash
-# Start Docker dependencies for Playwright E2E tests
-# Used by Playwright webServer config when CI=true.
-#
+# Starts Docker dependencies for Playwright E2E tests
+# Used by Playwright webServer config in CI.
 # Starts: STDB → publish module → API server
-# Playwright waits for port 3001 (STDB) before running tests,
-# and sends SIGTERM to this process after all tests complete.
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -19,7 +15,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[e2e-deps] Building module-publisher & api-server images..."
-$COMPOSE build --quiet module-publisher api-server
+$COMPOSE build module-publisher api-server
 
 echo "[e2e-deps] Starting STDB..."
 $COMPOSE up -d spacetimedb
@@ -44,7 +40,7 @@ $COMPOSE up --abort-on-container-exit module-publisher
 echo "[e2e-deps] Starting API server..."
 $COMPOSE up -d api-server
 
-# Brief warm-up wait for API server to accept connections
+# Brief wait for API server to accept connections
 for i in $(seq 1 10); do
   if curl -sf http://localhost:8711/health >/dev/null 2>&1; then
     echo "[e2e-deps] API server ready after ${i}s"
@@ -57,6 +53,5 @@ for i in $(seq 1 10); do
 done
 
 echo "[e2e-deps] All dependencies ready — E2E tests can proceed"
-
-# Keep running — Playwright webServer sends SIGTERM when tests complete
+# Keep running — Playwright webServer will SIGTERM this process when done
 sleep infinity
