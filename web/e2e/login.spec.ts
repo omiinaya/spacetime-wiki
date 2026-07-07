@@ -14,7 +14,7 @@ test.describe("Login page — unauthenticated state", () => {
     await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.getByLabel("Password")).toBeVisible();
-    await expect(page.locator("form").getByRole("button", { name: "Sign in" })).toBeVisible();
+    await expect(page.locator("form").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   });
 
   test("shows a link to switch to registration mode", async ({ page }) => {
@@ -22,7 +22,7 @@ test.describe("Login page — unauthenticated state", () => {
   });
 
   test("shows an error for empty form submission", async ({ page }) => {
-    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+    await page.locator("form").getByRole("button", { name: "Sign in", exact: true }).click();
     // Browser validation should prevent submission for empty required fields
     const emailInput = page.getByLabel("Email");
     const validity = await emailInput.evaluate((el: HTMLInputElement) => el.validationMessage);
@@ -71,7 +71,7 @@ test.describe("Login flow", () => {
   test("signs in with valid admin credentials", async ({ page }) => {
     await page.getByLabel("Email").fill("admin@spacetimewiki.local");
     await page.getByLabel("Password").fill("admin123");
-    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+    await page.locator("form").getByRole("button", { name: "Sign in", exact: true }).click();
 
     // Should redirect to home
     await expect(page).toHaveURL("/", { timeout: 15000 });
@@ -82,7 +82,7 @@ test.describe("Login flow", () => {
   test("shows error for invalid credentials", async ({ page }) => {
     await page.getByLabel("Email").fill("admin@spacetimewiki.local");
     await page.getByLabel("Password").fill("wrong_password_123");
-    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+    await page.locator("form").getByRole("button", { name: "Sign in", exact: true }).click();
 
     // Should show error or stay on login page
     await page.waitForTimeout(2000);
@@ -93,7 +93,7 @@ test.describe("Login flow", () => {
     // First sign in
     await page.getByLabel("Email").fill("admin@spacetimewiki.local");
     await page.getByLabel("Password").fill("admin123");
-    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+    await page.locator("form").getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page).toHaveURL("/", { timeout: 15000 });
 
     // Clear localStorage to simulate sign-out
