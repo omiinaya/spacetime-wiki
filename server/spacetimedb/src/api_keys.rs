@@ -61,8 +61,7 @@ mod tests {
 
     #[test]
     fn test_revoke_api_key_mark_revoked() {
-        let mut revoked = false;
-        revoked = true;
+        let revoked = true;
         assert!(revoked);
     }
 

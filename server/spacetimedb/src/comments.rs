@@ -71,8 +71,7 @@ mod tests {
 
     #[test]
     fn test_resolve_comment_mark_resolved() {
-        let mut resolved = false;
-        resolved = true;
+        let resolved = true;
         assert!(resolved);
     }
 }
