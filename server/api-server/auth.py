@@ -71,8 +71,8 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             request.state.api_key_name = key_record["name"]
             request.state.api_user_id = key_record["user_id"]
 
-        except Exception:
-            logger.error("Auth middleware error", exc_info=True)
+        except Exception as e:
+            logger.error("Auth middleware error: %s", e, exc_info=True)
             return JSONResponse(
                 status_code=500,
                 content={"detail": "Internal authentication error."},
