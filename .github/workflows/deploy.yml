@@ -47,6 +47,16 @@ jobs:
             type=sha,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
+      - name: Extract metadata (tags, labels) for module-publisher
+        id: meta-module
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/module-publisher
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - name: Build & push frontend
         uses: docker/build-push-action@v6
         with:
@@ -67,6 +77,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build & push module-publisher
+        uses: docker/build-push-action@v6
+        with:
+          context: server/spacetimedb
+          push: true
+          tags: ${{ steps.meta-module.outputs.tags }}
+          labels: ${{ steps.meta-module.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   deploy:
     name: Deploy
     needs: build
@@ -84,7 +104,13 @@ jobs:
 
       - name: Pull latest images
         run: |
-          docker compose pull --ignore-pull-failures api-server frontend || true
+          docker compose pull --ignore-pull-failures module-publisher api-server frontend || true
+
+      - name: Re-publish STDB module
+        run: |
+          docker compose up -d --no-deps module-publisher || true
+        env:
+          COMPOSE_FILE: docker-compose.yml
 
       - name: Deploy with Docker Compose
         run: |
@@ -110,3 +136,7 @@ jobs:
             fi
             sleep 2
           done
+
+      - name: Clean up old Docker images
+        run: |
+          docker image prune -f --filter "until=24h"
