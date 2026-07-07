@@ -1773,16 +1773,6 @@ fn default_ai_config() -> AiConfig {
     }
 }
 
-#[cfg(test)]
-fn default_ai_chat_session() -> AiChatSession {
-    AiChatSession {
-        id: "ais_default".into(),
-        user_id: String::new(),
-        title: String::new(),
-        page_context_id: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
 }
 
 #[cfg(test)]
@@ -1814,19 +1804,6 @@ fn default_scim_provider() -> ScimProvider {
     }
 }
 
-#[cfg(test)]
-fn default_scim_event() -> ScimEvent {
-    ScimEvent {
-        id: "se_default".into(),
-        provider_id: String::new(),
-        resource_type: String::new(),
-        operation: String::new(),
-        external_id: String::new(),
-        local_id: String::new(),
-        status: String::new(),
-        detail: String::new(),
-        created_at: 0,
-    }
 }
 
 #[cfg(test)]
@@ -1882,16 +1859,6 @@ fn default_db_column() -> DbColumn {
     }
 }
 
-#[cfg(test)]
-fn default_db_row() -> DbRow {
-    DbRow {
-        id: "drow_default".into(),
-        base_id: String::new(),
-        sort_order: 0,
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
 }
 
 #[cfg(test)]
@@ -1938,15 +1905,6 @@ fn default_synced_block() -> SyncedBlock {
     }
 }
 
-#[cfg(test)]
-fn default_synced_block_ref() -> SyncedBlockRef {
-    SyncedBlockRef {
-        id: "sbr_default".into(),
-        block_id: String::new(),
-        page_id: String::new(),
-        created_by: String::new(),
-        created_at: 0,
-    }
 }
 
 #[cfg(test)]
@@ -1962,15 +1920,6 @@ fn default_mfa_method() -> MfaMethod {
     }
 }
 
-#[cfg(test)]
-fn default_mfa_backup_code() -> MfaBackupCode {
-    MfaBackupCode {
-        id: "mbc_default".into(),
-        user_id: String::new(),
-        code_hash: String::new(),
-        is_used: false,
-        created_at: 0,
-    }
 }
 
 #[cfg(test)]
