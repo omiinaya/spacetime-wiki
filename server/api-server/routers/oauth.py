@@ -257,7 +257,7 @@ async def oauth_callback(body: dict):
                         if primary:
                             email = primary["email"]
             except Exception:
-                pass
+                logger.warning("Failed to fetch GitHub emails for OAuth user")
     elif provider_type == "discord":
         external_id = str(userinfo.get("id", ""))
         external_username = userinfo.get("username", "")

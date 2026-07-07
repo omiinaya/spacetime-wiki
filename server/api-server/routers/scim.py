@@ -1,5 +1,6 @@
 """SCIM 2.0 identity provisioning API — for IdPs like Okta, Azure AD, OneLogin."""
 import hashlib
+import logging
 import uuid
 from typing import Optional
 
@@ -7,6 +8,8 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from stdb_client import sql_query, call_reducer
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/scim/v2", tags=["scim"])
 
@@ -43,8 +46,8 @@ async def _record_event(provider_id: str, resource_type: str, operation: str,
             event_id, provider_id, resource_type, operation,
             external_id, local_id, status, detail,
         ])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error("Failed to record SCIM event: %s", e)
 
 
 def _wiki_user_to_scim(rows: list) -> Optional[dict]:
