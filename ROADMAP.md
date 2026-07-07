@@ -86,7 +86,7 @@
   - `routers/ldap_auth.py:211`
 - **Issue:** Five bare `except Exception:` blocks silently swallow errors with no logging
 - **Fix:** Add proper logging with `logger.exception()`, or narrow to specific exception types
-- **Sprint fix:** `cb51290` (narrowed 7 `except Exception:` blocks to specific types) + `c8441b1` (added logging to 5 remaining blocks): `auth.py`, `main.py`, `scim.py`, `webauthn.py` + `4b9fbea8` (narrowed 2 remaining bare blocks in `seed-e2e-data.py` to specific types with error output)
+- **Sprint fix:** `cb51290` (narrowed 7 `except Exception:` blocks to specific types) + `c8441b1` (added logging to 5 remaining blocks): `auth.py`, `main.py`, `scim.py`, `webauthn.py` + `4b9fbea8` (narrowed 2 remaining bare blocks in `seed-e2e-data.py` to specific types with error output) + `d68bfe7` (narrowed 9 more blocks in `scim.py` and `webauthn.py` from `Exception` to `RuntimeError`)
 - **Effort:** 1 hour
 
 ### P2 — No deploy/release workflow ✅ DONE
