@@ -104,11 +104,10 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium
 
-      # Infrastructure (STDB + API server + Vite preview) is managed
-      # automatically by Playwright's webServer feature configured in
-      # web/playwright.config.ts when CI=true. The webServer starts Docker
-      # containers (via web/scripts/start-e2e-deps.sh) and the Vite preview
-      # server, then waits for both to be healthy before running tests.
+      # STDB (port 3001), API server (port 8711), and Vite preview (port 5184)
+      # are all managed by Playwright's webServer config in playwright.config.ts
+      # via web/scripts/start-e2e-deps.sh. Playwright auto-kills them when tests
+      # finish, and start-e2e-deps.sh self-cleans (deletes the E2E STDB database).
       - name: Run E2E tests
         run: npx playwright test
 

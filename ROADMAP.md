@@ -58,17 +58,17 @@
 
 ## 🟡 High Priority (P2) — Feature gaps, quality, testing
 
-### P2 — E2E tests not in CI
-- **Files:** `.github/workflows/ci.yml`, `web/playwright.config.ts`
-- **Issues:**
-  - No E2E test run in CI pipeline
-  - No `webServer` config in Playwright — requires manually running dev server
-  - No API mocking — E2E tests require full STDB + API server stack
-  - Workers limited to 1 (slow — 79 tests × ~8s each)
-  - Chromium only (no Firefox/WebKit)
-  - No retries configured
-- **Fix:** Add E2E job to CI with docker-compose services, add `webServer` to Playwright config, add retries (2 in CI, 1 locally)
-- **Effort:** 4-6 hours
+|### P2 — E2E tests not in CI ✅ DONE
+|- **Files:** `.github/workflows/ci.yml`, `web/playwright.config.ts`
+|- **Issues:**
+|  - ~~No E2E test run in CI pipeline~~ ✅ E2E job added with Playwright `webServer`
+|  - ~~No `webServer` config in Playwright — requires manually running dev server~~ ✅ Dual webServer: `start-e2e-deps.sh` (STDB + API) + Vite preview
+|  - No API mocking — E2E tests require full STDB + API server stack (still true — intentional)
+|  - Workers limited to 1 (slow — 79 tests × ~8s each) — ✅ bumped to 2 in CI
+|  - Chromium only (no Firefox/WebKit) — still true
+|  - ~~No retries configured~~ ✅ retries: 3 in CI, 1 locally
+|- **Fix:** Add E2E job to CI with Playwright `webServer` managing STDB + API + Vite deps
+|- **Effort:** 4-6 hours
 
 ### P2 — Rust CI doesn't run tests or clippy
 - **File:** `.github/workflows/ci.yml` (Rust job)
@@ -84,6 +84,7 @@
   - `routers/ldap_auth.py:211`
 - **Issue:** Five bare `except Exception:` blocks silently swallow errors with no logging
 - **Fix:** Add proper logging with `logger.exception()`, or narrow to specific exception types
+- **Sprint fix:** `cb51290` (narrowed 7 `except Exception:` blocks to specific types) + `c8441b1` (added logging to 5 remaining blocks): `auth.py`, `main.py`, `scim.py`, `webauthn.py`
 - **Effort:** 1 hour
 
 ### P2 — No deploy/release workflow ✅ DONE
@@ -344,7 +345,7 @@
 | **API endpoints** | 51 | Not paginated |
 | **MCP tools** | 6 | No error handling |
 | **i18n locales** | 4 (en, es, fr, de) | 2 more referenced but missing |
-| **CI jobs** | 2 (Frontend + Rust partial) | Missing: E2E, Docker, deploy |
+| **CI jobs** | 3 (Frontend + Rust + E2E) | Updated: E2E added with Playwright webServer |
 
 ---
 
@@ -358,7 +359,7 @@
 5. Add CSRF protection
 
 ### Sprint 2 — CI & Testing (6-8 hours)
-1. Add E2E to CI with Playwright `webServer`
+1. Add E2E to CI with Playwright `webServer` ✅ DONE
 2. Add Rust test/clippy to CI
 3. Fix E2E tests to work with fresh DB (seed data fixture)
 4. Add retries to Playwright config
