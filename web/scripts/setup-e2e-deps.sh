@@ -13,6 +13,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+export PATH="$HOME/.cargo/bin:$HOME/.local/share/spacetime/bin/2.6.1:$PATH"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 DB_NAME="${STDB_DATABASE:-spacetime-wiki}"
@@ -66,6 +67,7 @@ STDB_DATABASE="${DB_NAME}" \
   uvicorn main:app --host 0.0.0.0 --port "${API_PORT}" > /tmp/e2e-api-server.log 2>&1 &
 API_PID=$!
 echo "[e2e-setup] API server PID: ${API_PID}"
+echo "$API_PID" > /tmp/e2e-api-server.pid
 
 # Wait for API server to accept connections
 for i in $(seq 1 15); do
@@ -79,12 +81,6 @@ for i in $(seq 1 15); do
   fi
   sleep 2
 done
-
-# ── Seed E2E test data ─────────────────────────────────────────────────────
-# Seeds admin user + sample pages into the fresh STDB instance.
-# global-setup.ts also seeds, but it connects to STDB directly and can race with module publishing — seeding here after API is healthy is more reliable.
-echo "[e2e-setup] Seeding E2E test data..."
-python3 "$SCRIPT_DIR/seed-e2e-data.py" || echo "[e2e-setup] WARNING: Seeding failed — E2E tests may have issues."
 
 echo "[e2e-setup] All dependencies ready — E2E tests can proceed"
 # Stay alive — Playwright webServer will SIGTERM this process when tests finish
