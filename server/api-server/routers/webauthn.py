@@ -17,11 +17,14 @@ Usage:
 
 import base64
 import json
+import logging
 import os
 import time
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
+
+logger = logging.getLogger(__name__)
 from webauthn import (
     generate_registration_options,
     verify_registration_response,
@@ -209,7 +212,8 @@ async def register_complete(request: Request, body: dict):
         try:
             await call_reducer("consume_passkey_challenge", [challenge_b64])
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Challenge verification failed: {e}")
+            logger.error("Challenge verification failed during registration: %s", e, exc_info=True)
+            raise HTTPException(status_code=400, detail="Challenge verification failed.")
 
         rp_id = get_rp_id(request)
         rp_origin = get_rp_origin(request)
@@ -335,7 +339,8 @@ async def auth_complete(request: Request, body: dict):
         try:
             await call_reducer("consume_passkey_challenge", [challenge_b64])
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Challenge verification failed: {e}")
+            logger.error("Challenge verification failed during auth: %s", e, exc_info=True)
+            raise HTTPException(status_code=400, detail="Challenge verification failed.")
 
         # Look up the credential to get stored public key
         cred = await get_credential_by_credential_id(credential_id)

@@ -47,7 +47,7 @@ async def _record_event(provider_id: str, resource_type: str, operation: str,
             external_id, local_id, status, detail,
         ])
     except Exception as e:
-        logger.error("Failed to record SCIM event: %s", e)
+        logger.error("Failed to record SCIM event: %s", e, exc_info=True)
 
 
 def _wiki_user_to_scim(rows: list) -> Optional[dict]:
