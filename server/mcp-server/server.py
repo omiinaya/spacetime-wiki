@@ -7,10 +7,15 @@ so that AI agents can read, search, and navigate the wiki knowledge base.
 Transport: stdio (suitable for Hermes native MCP client integration)
 """
 
-import sys
+import asyncio
 import json
 import logging
-from typing import Any
+import sys
+import time
+import uuid
+from contextlib import asynccontextmanager
+from contextvars import ContextVar
+from typing import Any, AsyncIterator
 
 from mcp.server import Server
 from mcp.types import (
@@ -28,14 +33,82 @@ from stdb_client import (
     get_backlinks,
     list_page_tags,
     get_linked_pages,
+    get_collection,
+    get_correlation_id,
+    set_correlation_id,
     STDBError,
-    map_page,
+    close_http_client,
+    sql_query,
 )
 from config import MCP_SERVER_NAME
 
 logger = logging.getLogger("spacetime-wiki-mcp.server")
 
-app = Server(MCP_SERVER_NAME)
+
+# ─── Lifespan (startup validation + shutdown cleanup) ────────────────────────
+
+
+@asynccontextmanager
+async def server_lifespan(server: Server) -> AsyncIterator[dict[str, Any]]:
+    """Manage server lifecycle: validate STDB on startup, clean up on shutdown.
+
+    Yields an empty context dict for future extensibility.
+    """
+    # ── Startup ──────────────────────────────────────────────────────────
+    logger.info("Starting SpacetimeWiki MCP server...")
+    try:
+        logger.info("Performing startup STDB connectivity check...")
+        start = time.monotonic()
+        rows = await sql_query("SELECT 1 AS ok")
+        elapsed = time.monotonic() - start
+        logger.info("STDB reachable (%d rows, %dms)", len(rows), int(elapsed * 1000))
+    except Exception as e:
+        logger.warning("STDB unreachable at startup: %s — will retry on first tool call", e)
+
+    yield {}
+
+    # ── Shutdown ─────────────────────────────────────────────────────────
+    logger.info("Shutting down SpacetimeWiki MCP server — closing HTTPX client...")
+    await close_http_client()
+    logger.info("Shutdown complete.")
+
+
+app = Server(MCP_SERVER_NAME, lifespan=server_lifespan)
+
+# ─── Correlation ID for request tracing ──────────────────────────────────────
+
+request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
+
+
+def get_request_id() -> str:
+    """Get or generate a request ID for the current request context."""
+    rid = request_id_var.get()
+    if rid is None:
+        rid = uuid.uuid4().hex[:12]
+        request_id_var.set(rid)
+    return rid
+
+
+def set_request_id(rid: str | None) -> None:
+    """Set the request ID for the current request context."""
+    request_id_var.set(rid)
+
+
+# ─── Concurrency semaphore ───────────────────────────────────────────────────
+
+# Limits concurrent STDB operations to prevent connection pool exhaustion
+# when many MCP tool calls arrive simultaneously.
+_CONCURRENCY_SEMAPHORE = asyncio.Semaphore(10)
+
+
+async def _with_concurrency(coro):
+    """Execute a coroutine under the concurrency semaphore.
+
+    Prevents STDB connection pool exhaustion when many tool calls
+    arrive simultaneously.
+    """
+    async with _CONCURRENCY_SEMAPHORE:
+        return await coro
 
 
 # ─── Argument validation helpers ─────────────────────────────────────────────
@@ -96,6 +169,39 @@ def _get_int_arg(
     return v
 
 
+# ─── Structured error responses ──────────────────────────────────────────────
+
+
+class MCPErrorCode:
+    """Standardized error codes for MCP tool responses."""
+
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+    NOT_FOUND = "NOT_FOUND"
+    STDB_UNAVAILABLE = "STDB_UNAVAILABLE"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
+    TIMEOUT = "TIMEOUT"
+    CIRCUIT_OPEN = "CIRCUIT_OPEN"
+
+
+def _error_response(
+    code: str,
+    message: str,
+    details: dict[str, Any] | None = None,
+) -> list[TextContent]:
+    """Build a structured error response with error code and correlation ID."""
+    corr_id = get_correlation_id()
+    error_obj = {
+        "error": {
+            "code": code,
+            "message": message,
+            "correlation_id": corr_id,
+        }
+    }
+    if details:
+        error_obj["error"]["details"] = details
+    return [TextContent(type="text", text=json.dumps(error_obj, indent=2))]
+
+
 def _text(msg: str) -> list[TextContent]:
     """Shortcut for a single-text-content MCP response."""
     return [TextContent(type="text", text=msg)]
@@ -106,10 +212,49 @@ def _tool_error(
     error: Exception,
     context: str = "",
 ) -> list[TextContent]:
-    """Build a user-facing error response for a tool failure."""
+    """Build a user-facing error response for a tool failure.
+
+    Maps exception types to structured error codes and includes
+    correlation IDs for debugging.
+    """
     ctx = f" ({context})" if context else ""
-    logger.error("Error in %s%s: %s", tool_name, ctx, error, exc_info=True)
-    return _text(f"Error: {error}")
+    logger.error(
+        "Error in %s%s: %s (correlation_id=%s)",
+        tool_name, ctx, error, get_correlation_id(), exc_info=True,
+    )
+
+    if isinstance(error, (ValueError, TypeError)):
+        return _error_response(
+            MCPErrorCode.VALIDATION_ERROR,
+            str(error),
+            {"tool": tool_name, "context": context},
+        )
+
+    if isinstance(error, TimeoutError):
+        return _error_response(
+            MCPErrorCode.TIMEOUT,
+            f"Operation timed out: {error}",
+            {"tool": tool_name, "context": context},
+        )
+
+    if isinstance(error, STDBError):
+        code_map = {
+            "STDB_CONNECTION_FAILED": MCPErrorCode.STDB_UNAVAILABLE,
+            "STDB_TIMEOUT": MCPErrorCode.TIMEOUT,
+            "STDB_CIRCUIT_OPEN": MCPErrorCode.CIRCUIT_OPEN,
+        }
+        mapped_code = code_map.get(error.code.value, MCPErrorCode.STDB_UNAVAILABLE)
+        return _error_response(
+            mapped_code,
+            f"Database error: {error}",
+            {"tool": tool_name, "context": context, "correlation_id": error.correlation_id},
+        )
+
+    return _error_response(
+        MCPErrorCode.INTERNAL_ERROR,
+        f"Internal error: {error}",
+        {"tool": tool_name, "context": context},
+    )
 
 
 # ─── Resources ─────────────────────────────────────────────────────────────────
@@ -118,11 +263,18 @@ def _tool_error(
 @app.list_resources()
 async def list_resources() -> list[Resource]:
     """List all wiki pages as resources."""
+    set_request_id(uuid.uuid4().hex[:12])
+    corr_id = get_request_id()
+    logger.info("list_resources called (request_id=%s)", corr_id)
+
     try:
-        pages = await list_pages(limit=100)
+        pages = await _with_concurrency(list_pages(limit=100))
     except Exception as e:
-        logger.error("Failed to list resources from STDB: %s", e)
+        logger.error(
+            "Failed to list resources from STDB: %s (request_id=%s)", e, corr_id,
+        )
         return []
+
     return [
         Resource(
             uri=f"wiki://pages/{p['id']}",  # type: ignore[arg-type]
@@ -136,29 +288,64 @@ async def list_resources() -> list[Resource]:
 
 @app.read_resource()
 async def read_resource(uri: str) -> str | bytes:  # type: ignore[override, arg-type]
-    """Read a wiki page resource by URI."""
+    """Read a wiki page or collection resource by URI."""
+    set_request_id(uuid.uuid4().hex[:12])
+    corr_id = get_request_id()
+    logger.info("read_resource called for %s (request_id=%s)", uri, corr_id)
+
     if not uri or not isinstance(uri, str):
-        raise ValueError("URI must be a non-empty string")
+        return json.dumps({
+            "error": "URI must be a non-empty string",
+            "correlation_id": corr_id,
+        })
 
     if uri.startswith("wiki://pages/"):
         page_id = uri.removeprefix("wiki://pages/").split("?")[0]
         if not page_id:
-            raise ValueError("Missing page ID in resource URI")
+            return json.dumps({
+                "error": "Missing page ID in resource URI",
+                "correlation_id": corr_id,
+            })
 
         try:
-            page = await get_page(page_id)
+            page = await _with_concurrency(get_page(page_id))
         except ValueError as e:
-            raise ValueError(f"Invalid page ID in URI: {e}")
+            logger.warning(
+                "Invalid page ID in URI %s: %s (request_id=%s)", uri, e, corr_id,
+            )
+            return json.dumps({
+                "error": f"Invalid page ID: {e}",
+                "correlation_id": corr_id,
+            })
+        except STDBError as e:
+            logger.error(
+                "STDB error reading page %s: %s (request_id=%s)",
+                page_id, e, corr_id, exc_info=True,
+            )
+            return json.dumps({
+                "error": f"Database error: {e}",
+                "code": e.code.value,
+                "correlation_id": corr_id,
+            })
         except Exception as e:
-            logger.error("Failed to read page %s from STDB: %s", page_id, e)
-            return json.dumps({"error": f"STDB unavailable: {e}"})
+            logger.error(
+                "Failed to read page %s from STDB: %s (request_id=%s)",
+                page_id, e, corr_id, exc_info=True,
+            )
+            return json.dumps({
+                "error": f"STDB unavailable: {e}",
+                "correlation_id": corr_id,
+            })
 
         if not page:
-            raise ValueError(f"Page not found: {page_id}")
+            return json.dumps({
+                "error": f"Page not found: {page_id}",
+                "correlation_id": corr_id,
+            })
 
         # Fetch associated tags (non-fatal — degrade gracefully)
         try:
-            tags = await list_page_tags(page_id)
+            tags = await _with_concurrency(list_page_tags(page_id))
             page["tags"] = tags
         except (STDBError, ValueError) as e:
             logger.error("Failed to fetch tags for page %s: %s", page_id, e)
@@ -166,7 +353,56 @@ async def read_resource(uri: str) -> str | bytes:  # type: ignore[override, arg-
 
         return json.dumps(page, indent=2)
 
-    raise ValueError(f"Unknown resource URI: {uri}")
+    if uri.startswith("wiki://collections/"):
+        collection_id = uri.removeprefix("wiki://collections/").split("?")[0]
+        if not collection_id:
+            return json.dumps({
+                "error": "Missing collection ID in resource URI",
+                "correlation_id": corr_id,
+            })
+
+        try:
+            collection = await _with_concurrency(get_collection(collection_id))
+        except ValueError as e:
+            logger.warning(
+                "Invalid collection ID in URI %s: %s (request_id=%s)", uri, e, corr_id,
+            )
+            return json.dumps({
+                "error": f"Invalid collection ID: {e}",
+                "correlation_id": corr_id,
+            })
+        except STDBError as e:
+            logger.error(
+                "STDB error reading collection %s: %s (request_id=%s)",
+                collection_id, e, corr_id, exc_info=True,
+            )
+            return json.dumps({
+                "error": f"Database error: {e}",
+                "code": e.code.value,
+                "correlation_id": corr_id,
+            })
+        except Exception as e:
+            logger.error(
+                "Failed to read collection %s from STDB: %s (request_id=%s)",
+                collection_id, e, corr_id, exc_info=True,
+            )
+            return json.dumps({
+                "error": f"STDB unavailable: {e}",
+                "correlation_id": corr_id,
+            })
+
+        if not collection:
+            return json.dumps({
+                "error": f"Collection not found: {collection_id}",
+                "correlation_id": corr_id,
+            })
+
+        return json.dumps(collection, indent=2)
+
+    return json.dumps({
+        "error": f"Unknown resource URI: {uri}",
+        "correlation_id": corr_id,
+    })
 
 
 @app.list_resource_templates()
@@ -193,6 +429,17 @@ async def list_resource_templates() -> list[ResourceTemplate]:
 @app.list_tools()
 async def list_tools() -> list[Tool]:
     return [
+        Tool(
+            name="wiki_health",
+            description=(
+                "Check the health of the MCP server and STDB connectivity. "
+                "Useful for diagnosing connectivity issues."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {},
+            },
+        ),
         Tool(
             name="wiki_search",
             description=(
@@ -248,7 +495,7 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "limit": {
                         "type": "integer",
-                        "description": "Maximum results (default 50)",
+                        "description": "Maximum results (default 50, max 100)",
                         "default": 50,
                     },
                     "offset": {
@@ -271,7 +518,7 @@ async def list_tools() -> list[Tool]:
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Maximum results (default 50)",
+                        "description": "Maximum results (default 50, max 100)",
                         "default": 50,
                     },
                     "offset": {
@@ -297,7 +544,7 @@ async def list_tools() -> list[Tool]:
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Maximum results (default 20)",
+                        "description": "Maximum results (default 20, max 50)",
                         "default": 20,
                     },
                     "offset": {
@@ -323,7 +570,7 @@ async def list_tools() -> list[Tool]:
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Maximum results (default 20)",
+                        "description": "Maximum results (default 20, max 50)",
                         "default": 20,
                     },
                     "offset": {
@@ -341,6 +588,28 @@ async def list_tools() -> list[Tool]:
 # ─── Tool dispatch ────────────────────────────────────────────────────────────
 
 
+async def _handle_wiki_health(arguments: dict[str, Any]) -> list[TextContent]:
+    """Execute wiki_health — check server and STDB status."""
+    set_request_id(uuid.uuid4().hex[:12])
+    start = time.monotonic()
+    stdb_status = "unknown"
+    try:
+        rows = await sql_query("SELECT 1 AS ok")
+        elapsed = time.monotonic() - start
+        stdb_status = f"reachable ({len(rows)} rows, {int(elapsed * 1000)}ms)"
+    except Exception as e:
+        elapsed = time.monotonic() - start
+        stdb_status = f"unreachable: {e} ({int(elapsed * 1000)}ms)"
+
+    lines = [
+        "# SpacetimeWiki MCP Server Health\n",
+        f"- Server: running (request_id={get_request_id()})",
+        f"- STDB: {stdb_status}",
+        f"- Concurrency semaphore: {_CONCURRENCY_SEMAPHORE}",
+    ]
+    return _text("\n".join(lines))
+
+
 async def _handle_wiki_search(arguments: dict[str, Any]) -> list[TextContent]:
     """Execute wiki_search with validated args."""
     query = _get_str_arg(arguments, "query", max_len=256)
@@ -349,7 +618,13 @@ async def _handle_wiki_search(arguments: dict[str, Any]) -> list[TextContent]:
 
     # Always returns a string thanks to required=True and _get_str_arg raising
     assert query is not None
-    results = await search_pages(query, limit, offset)
+
+    try:
+        results = await _with_concurrency(search_pages(query, limit, offset))
+    except STDBError as e:
+        return _tool_error("wiki_search", e, context="stdb")
+    except Exception as e:
+        return _tool_error("wiki_search", e, context="internal")
 
     if not results:
         return _text(f"No pages found matching '{query}'")
@@ -377,14 +652,18 @@ async def _handle_wiki_read_page(arguments: dict[str, Any]) -> list[TextContent]
 
     # Try as ID first
     try:
-        page = await get_page(page_id_or_slug)
+        page = await _with_concurrency(get_page(page_id_or_slug))
+    except STDBError as e:
+        return _tool_error("wiki_read_page", e, context="stdb")
     except ValueError as e:
         return _text(f"Invalid page ID: {e}")
 
     if not page:
         # Fall back to slug lookup
         try:
-            page = await get_page_by_slug(page_id_or_slug)
+            page = await _with_concurrency(get_page_by_slug(page_id_or_slug))
+        except STDBError as e:
+            return _tool_error("wiki_read_page", e, context="stdb")
         except ValueError as e:
             return _text(f"Invalid slug: {e}")
 
@@ -393,7 +672,7 @@ async def _handle_wiki_read_page(arguments: dict[str, Any]) -> list[TextContent]
 
     # Enrich with tags (non-fatal — degrade gracefully)
     try:
-        tags = await list_page_tags(page["id"])
+        tags = await _with_concurrency(list_page_tags(page["id"]))
         page["tags"] = tags
     except (STDBError, ValueError) as e:
         logger.error("Failed to fetch tags for page %s: %s", page["id"], e)
@@ -401,7 +680,7 @@ async def _handle_wiki_read_page(arguments: dict[str, Any]) -> list[TextContent]
 
     # Enrich with backlink count (non-fatal)
     try:
-        backlinks = await get_backlinks(page["id"], limit=5)
+        backlinks = await _with_concurrency(get_backlinks(page["id"], limit=5))
         page["backlink_count"] = len(backlinks)
         page["backlinks_preview"] = [b["title"] for b in backlinks]
     except STDBError as e:
@@ -418,7 +697,9 @@ async def _handle_wiki_list_collections(
     offset = _get_int_arg(arguments, "offset", default=0, min_val=0, max_val=9999)
 
     try:
-        cols = await list_collections(limit=limit, offset=offset)
+        cols = await _with_concurrency(list_collections(limit=limit, offset=offset))
+    except STDBError as e:
+        return _tool_error("wiki_list_collections", e, context="stdb")
     except Exception as e:
         logger.error("Failed to list collections from STDB: %s", e, exc_info=True)
         return _text(f"STDB unavailable: {e}")
@@ -448,9 +729,11 @@ async def _handle_wiki_list_pages(arguments: dict[str, Any]) -> list[TextContent
     offset = _get_int_arg(arguments, "offset", default=0, min_val=0, max_val=9999)
 
     try:
-        results = await list_pages(collection_id, limit, offset)
+        results = await _with_concurrency(list_pages(collection_id, limit, offset))
     except ValueError as e:
         return _text(f"Invalid argument: {e}")
+    except STDBError as e:
+        return _tool_error("wiki_list_pages", e, context="stdb")
     except Exception as e:
         logger.error("Failed to list pages from STDB: %s", e, exc_info=True)
         return _text(f"STDB unavailable: {e}")
@@ -479,9 +762,11 @@ async def _handle_wiki_get_backlinks(arguments: dict[str, Any]) -> list[TextCont
     assert page_id is not None
 
     try:
-        results = await get_backlinks(page_id, limit, offset)
+        results = await _with_concurrency(get_backlinks(page_id, limit, offset))
     except ValueError as e:
         return _text(f"Invalid page ID: {e}")
+    except STDBError as e:
+        return _tool_error("wiki_get_backlinks", e, context="stdb")
     except Exception as e:
         logger.error("Failed to get backlinks for %s from STDB: %s", page_id, e, exc_info=True)
         return _text(f"STDB unavailable: {e}")
@@ -507,9 +792,11 @@ async def _handle_wiki_get_linked_pages(
     assert page_id is not None
 
     try:
-        results = await get_linked_pages(page_id, limit, offset)
+        results = await _with_concurrency(get_linked_pages(page_id, limit, offset))
     except ValueError as e:
         return _text(f"Invalid page ID: {e}")
+    except STDBError as e:
+        return _tool_error("wiki_get_linked_pages", e, context="stdb")
     except Exception as e:
         logger.error("Failed to get linked pages for %s from STDB: %s", page_id, e, exc_info=True)
         return _text(f"STDB unavailable: {e}")
@@ -529,6 +816,7 @@ async def _handle_wiki_get_linked_pages(
 
 
 _TOOL_HANDLERS: dict[str, Any] = {
+    "wiki_health": _handle_wiki_health,
     "wiki_search": _handle_wiki_search,
     "wiki_read_page": _handle_wiki_read_page,
     "wiki_list_collections": _handle_wiki_list_collections,
@@ -546,18 +834,28 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     exceptions (serialization errors, logic bugs) always produce a user-facing
     error instead of a cryptic MCP protocol failure.
     """
+    set_request_id(uuid.uuid4().hex[:12])
+
     if not isinstance(arguments, dict):
-        return _text(f"Internal error: arguments must be a dict, got {type(arguments).__name__}")
+        return _error_response(
+            MCPErrorCode.VALIDATION_ERROR,
+            f"Internal error: arguments must be a dict, got {type(arguments).__name__}",
+        )
 
     handler = _TOOL_HANDLERS.get(name)
     if not handler:
-        return _text(f"Unknown tool: {name}")
+        return _error_response(
+            MCPErrorCode.VALIDATION_ERROR,
+            f"Unknown tool: {name}",
+        )
 
     try:
         return await handler(arguments)
     except (ValueError, TypeError) as e:
         # User-facing validation errors
         return _tool_error(name, e, context="validation")
+    except STDBError as e:
+        return _tool_error(name, e, context="stdb")
     except Exception as e:
         # Internal / unexpected errors
         return _tool_error(name, e, context="internal")
@@ -576,8 +874,8 @@ def main() -> None:
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         stream=sys.stderr,
+        force=True,
     )
-    logger.info("Starting SpacetimeWiki MCP server...")
 
     async def run() -> None:
         async with stdio_server() as (read_stream, write_stream):
@@ -588,7 +886,6 @@ def main() -> None:
             )
 
     import asyncio
-
     asyncio.run(run())
 
 

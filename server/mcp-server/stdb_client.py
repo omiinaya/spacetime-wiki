@@ -269,6 +269,22 @@ async def _get_http_client() -> httpx.AsyncClient:
     return _http_client
 
 
+# ─── Cleanup function ─────────────────────────────────────────────────────────
+
+
+async def close_http_client() -> None:
+    """Close the shared HTTPX client connection pool.
+
+    Should be called during server shutdown to release connections
+    and prevent ResourceWarning / unclosed transport messages.
+    """
+    global _http_client
+    client = _http_client
+    if client is not None:
+        _http_client = None
+        await client.aclose()
+
+
 # ─── Retry wrapper with circuit breaker ──────────────────────────────────────
 
 
