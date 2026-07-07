@@ -85,7 +85,7 @@ async function globalSetup(_config: FullConfig): Promise<void> {
 
   // ── Check if seed data already exists ───────────────────────────────────
   const adminExists = await sqlExists(
-    "SELECT id FROM user WHERE email = 'admin@spacetimewiki.local'"
+    `SELECT id FROM "user" WHERE email = 'admin@spacetimewiki.local'`
   );
   if (adminExists) {
     console.log("[e2e-setup] Seed data already exists, skipping.");
