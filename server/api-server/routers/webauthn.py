@@ -266,6 +266,8 @@ async def register_complete(request: Request, body: dict):
 
 
 # ─── Authentication ────────────────────────────────────────────────────────────
+# ─── Authentication ────────────────────────────────────────────────────────────
+# ─── Authentication ────────────────────────────────────────────────────────────
 
 
 @router.get("/auth/begin", response_model=WebAuthnBeginAuthResponse)

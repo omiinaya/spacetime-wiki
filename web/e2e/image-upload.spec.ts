@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
-import path from "path";
-import fs from "fs";
+import { signInAsAdmin } from "./helpers";
 
 /**
  * Image upload and attachment operations E2E tests.
@@ -9,12 +8,7 @@ import fs from "fs";
 
 test.describe("Image handling — page view", () => {
   test.beforeEach(async ({ page }) => {
-    // Sign in as admin
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("admin@spacetimewiki.local");
-    await page.getByLabel("Password").fill("admin123");
-    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL("/", { timeout: 15000 });
+    await signInAsAdmin(page);
   });
 
   test("home page loads without breaking", async ({ page }) => {
@@ -25,11 +19,7 @@ test.describe("Image handling — page view", () => {
 
 test.describe("Editor — new page loads", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("admin@spacetimewiki.local");
-    await page.getByLabel("Password").fill("admin123");
-    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL("/", { timeout: 15000 });
+    await signInAsAdmin(page);
   });
 
   test("editor loads for new page", async ({ page }) => {
