@@ -4,7 +4,7 @@ import logging
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 
 from stdb_client import sql_query, call_reducer
@@ -175,14 +175,26 @@ GROUP_SCHEMA = {
 
 
 @router.get("/Schemas")
-async def list_schemas(request: Request):
+async def list_schemas(
+    request: Request,
+    startIndex: int = Query(1, ge=1, description="SCIM 1-based start index"),
+    count: int = Query(100, ge=0, le=1000, description="Max items per page"),
+):
     pid = await _get_provider(request)
     if not pid:
         raise HTTPException(status_code=401, detail="Invalid or missing SCIM token")
+
+    all_schemas = [USER_SCHEMA, GROUP_SCHEMA]
+    total = len(all_schemas)
+    start = max(0, startIndex - 1)
+    page = all_schemas[start:start + count]
+
     return {
         "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
-        "totalResults": 2,
-        "Resources": [USER_SCHEMA, GROUP_SCHEMA],
+        "totalResults": total,
+        "startIndex": startIndex,
+        "itemsPerPage": count,
+        "Resources": page,
     }
 
 
