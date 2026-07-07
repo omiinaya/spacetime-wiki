@@ -6,14 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Git tag to release (e.g., v1.2.3)'
+        description: 'Existing Git tag to release (e.g., v1.2.3)'
         required: true
         type: string
-      prerelease:
-        description: 'Mark as pre-release'
-        required: false
-        default: false
-        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -24,36 +19,9 @@ permissions:
   packages: write
 
 jobs:
-  version:
-    name: Resolve Version
-    runs-on: [self-hosted, ubuntu-latest]
-    outputs:
-      version: ${{ steps.get-version.outputs.version }}
-      prerelease: ${{ steps.get-version.outputs.prerelease }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Get version from tag or input
-        id: get-version
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG="${{ inputs.tag }}"
-          else
-            TAG="${GITHUB_REF_NAME}"
-          fi
-          VERSION="${TAG#v}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          if echo "${VERSION}" | grep -qiE '-(rc|beta|alpha|pre|dev)'; then
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          fi
-
   build-images:
     name: Build & Push Docker Images
     runs-on: [self-hosted, ubuntu-latest]
-    needs: version
 
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +44,6 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=${{ needs.version.outputs.version }}
             type=sha,format=short
             type=raw,value=latest
 
@@ -88,7 +55,6 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=${{ needs.version.outputs.version }}
             type=sha,format=short
             type=raw,value=latest
 
@@ -115,8 +81,8 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: [self-hosted, ubuntu-latest]
-    needs: [version, build-images]
-    if: github.event_name != 'workflow_dispatch' || inputs.prerelease == ''
+    needs: build-images
+    if: github.event_name != 'workflow_dispatch'
 
     steps:
       - uses: actions/checkout@v4
@@ -136,18 +102,32 @@ jobs:
             });
             return response.data.body;
 
+      - name: Detect prerelease
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if echo "${VERSION}" | grep -qiE '-(rc|beta|alpha|pre|dev)'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: v${{ needs.version.outputs.version }}
+          name: ${{ github.ref_name }}
           body: |
             ${{ steps.release-notes.outputs.result }}
 
             ## Docker Images
 
-            - `ghcr.io/${{ github.repository }}/frontend:${{ needs.version.outputs.version }}`
-            - `ghcr.io/${{ github.repository }}/api-server:${{ needs.version.outputs.version }}`
-          prerelease: ${{ needs.version.outputs.prerelease }}
+            - `ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}`
+            - `ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name#v }}`
+            - `ghcr.io/${{ github.repository }}/frontend:latest`
+            - `ghcr.io/${{ github.repository }}/api-server:${{ github.ref_name }}`
+            - `ghcr.io/${{ github.repository }}/api-server:${{ github.ref_name#v }}`
+            - `ghcr.io/${{ github.repository }}/api-server:latest`
+          prerelease: ${{ steps.version.outputs.prerelease }}
           generate_release_notes: false
           make_latest: true
