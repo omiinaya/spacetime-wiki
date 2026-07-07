@@ -28,22 +28,27 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  // In CI, Playwright manages infrastructure via webServer:
-  //   - Docker compose (STDB + API server) on port 3001
-  //   - Vite preview (built SPA) on port 5184
+  // In CI:
+  //   - STDB (port 3001) and API server (port 8711) are started via webServer
+  //     using web/scripts/start-e2e-deps.sh (publishes module, starts uvicorn,
+  //     self-cleans on test completion via SIGTERM trap)
+  //   - The frontend Vite preview (port 5184) is managed here as another webServer
   // For local dev, start these manually:
   //   docker compose up -d spacetimedb api-server
   //   npx vite --port 5184
   webServer: process.env.CI
     ? [
+        // API deps: checks STDB → publishes module → starts API server → waits for health
         {
           command: "bash scripts/start-e2e-deps.sh",
-          port: 3001,
+          port: 8711,
           timeout: 120000,
           reuseExistingServer: false,
         },
+        // Frontend: builds + serves Vite preview
         {
-          command: "npm run build && npx vite preview --port 5184 --strictPort",
+          command:
+            "VITE_STDB_HOST=${VITE_STDB_HOST:-localhost:3001} VITE_STDB_DB=${VITE_STDB_DB:-spacetime-wiki} VITE_API_BASE=${VITE_API_BASE:-http://localhost:8711} npm run build && npx vite preview --port 5184 --strictPort",
           port: 5184,
           timeout: 120000,
           reuseExistingServer: false,
