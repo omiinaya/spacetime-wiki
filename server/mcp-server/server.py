@@ -599,6 +599,7 @@ async def _handle_wiki_health(arguments: dict[str, Any]) -> list[TextContent]:
         stdb_status = f"reachable ({len(rows)} rows, {int(elapsed * 1000)}ms)"
     except Exception as e:
         elapsed = time.monotonic() - start
+        logger.warning("STDB health check failed: %s (%dms)", e, int(elapsed * 1000), exc_info=True)
         stdb_status = f"unreachable: {e} ({int(elapsed * 1000)}ms)"
 
     lines = [
