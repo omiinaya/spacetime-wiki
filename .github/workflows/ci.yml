@@ -5,6 +5,13 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      skip_e2e:
+        description: 'Skip E2E tests (useful for quick CI runs)'
+        required: false
+        default: 'false'
+        type: string
 
 jobs:
   frontend:
@@ -73,6 +80,7 @@ jobs:
 
   e2e:
     name: E2E (Playwright)
+    if: ${{ !startsWith(github.event_name, 'workflow_dispatch') || github.event.inputs.skip_e2e != 'true' }}
     runs-on: [self-hosted, ubuntu-latest]
     timeout-minutes: 30
 
@@ -84,7 +92,6 @@ jobs:
       CI: "true"
       STDB_HOST: localhost:3001
       STDB_DATABASE: spacetime-wiki
-      # VITE_* vars are inlined at Vite build time (picked up from web/.env too)
       VITE_STDB_HOST: localhost:3001
       VITE_STDB_DB: spacetime-wiki
       VITE_API_BASE: http://localhost:8711
@@ -104,9 +111,6 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium
 
-      # Native STDB (port 3001) must be running on the self-hosted runner.
-      # setup-e2e-deps.sh publishes the module and starts the API server (port 8711).
-      # Both are managed by Playwright's webServer and auto-killed when tests finish.
       - name: Run E2E tests
         run: npx playwright test
 

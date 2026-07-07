@@ -65,6 +65,13 @@ async function stdbHealthCheck(): Promise<boolean> {
 }
 
 async function globalSetup(_config: FullConfig): Promise<void> {
+  // In CI, the webServer (setup-e2e-deps.sh) handles seeding after module
+  // publish + API server — short-circuit here to avoid racing with startup.
+  if (process.env.CI) {
+    console.log("[e2e-setup] CI mode: seeding deferred to webServer (setup-e2e-deps.sh).");
+    return;
+  }
+
   // ── Wait for STDB to be ready (up to 30s) ───────────────────────────────
   console.log(`[e2e-setup] Connecting to STDB at ${STDB_HOST} (db: ${DB_NAME})...`);
   for (let attempt = 1; attempt <= 10; attempt++) {
