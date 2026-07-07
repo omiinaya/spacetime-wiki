@@ -84,16 +84,15 @@ async def search(
     )
     total = count_rows[0][0] if count_rows else 0
 
-    # Fetch paginated results
-    rows = await sql_query(
-        "SELECT * FROM search_result WHERE search_token = ? ORDER BY created_at DESC LIMIT ?i OFFSET ?i",
-        search_token, limit, offset,
-    )
-
     if tags:
+        # Tag filters can't be pushed to SQL — fetch all, filter locally, then slice
         tag_pairs = [t.strip() for t in tags.split(",") if t.strip()]
+        all_rows = await sql_query(
+            "SELECT * FROM search_result WHERE search_token = ? ORDER BY created_at DESC",
+            search_token,
+        )
         filtered = []
-        for row in rows:
+        for row in all_rows:
             page_id = str(row[2]) if len(row) > 2 else ""
             if not page_id:
                 continue
@@ -118,11 +117,19 @@ async def search(
                         break
             if all_match:
                 filtered.append(row)
-        rows = filtered
+        total = len(filtered)
+        page = filtered[offset:offset + limit]
+    else:
+        # No tags — efficient SQL-level pagination
+        rows = await sql_query(
+            "SELECT * FROM search_result WHERE search_token = ? ORDER BY created_at DESC LIMIT ?i OFFSET ?i",
+            search_token, limit, offset,
+        )
+        page = rows
 
     # Map results
     results = []
-    for r in rows[offset:offset+limit]:
+    for r in page:
         results.append({
             "id": str(r[0] or "") if len(r) > 0 else "",
             "search_token": str(r[1] or "") if len(r) > 1 else "",
@@ -144,7 +151,7 @@ async def search(
             "to": to_date or None,
             "tags": tags or None,
         },
-        "total": len(rows),
+        "total": total,
         "offset": offset,
         "limit": limit,
     }
@@ -154,6 +161,7 @@ async def search(
 async def autocomplete(
     q: str = Query(..., min_length=1, description="Search query prefix"),
     limit: int = Query(10, le=25, description="Max suggestions"),
+    offset: int = Query(0, ge=0, description="Zero-based offset"),
 ):
     """Quick title-only autocomplete search."""
     search_token = _gen_search_token()
@@ -166,12 +174,19 @@ async def autocomplete(
         0,   # date_from
         0,   # date_to
     ])
-    rows = await sql_query(
-        "SELECT * FROM search_result WHERE search_token = ? ORDER BY created_at DESC",
+    # Get total count for pagination
+    count_rows = await sql_query(
+        "SELECT COUNT(*) FROM search_result WHERE search_token = ?",
         search_token,
     )
+    total = count_rows[0][0] if count_rows else 0
+    # Fetch paginated results
+    rows = await sql_query(
+        "SELECT * FROM search_result WHERE search_token = ? ORDER BY created_at DESC LIMIT ?i OFFSET ?i",
+        search_token, limit, offset,
+    )
     results = []
-    for r in rows[offset:offset+limit]:
+    for r in rows:
         results.append({
             "id": str(r[0] or "") if len(r) > 0 else "",
             "page_id": str(r[2] or "") if len(r) > 2 else "",
