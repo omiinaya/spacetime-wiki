@@ -5,7 +5,7 @@ import time
 from fastapi import APIRouter, HTTPException, Query
 
 from stdb_client import sql_query, call_reducer
-from models import SearchResponse, AutocompleteResult
+from models import SearchResponse, PaginatedResponse
 
 router = APIRouter(prefix="/api/v1/search", tags=["search"])
 
@@ -157,7 +157,7 @@ async def search(
     }
 
 
-@router.get("/autocomplete", response_model=list[AutocompleteResult])
+@router.get("/autocomplete", response_model=PaginatedResponse)
 async def autocomplete(
     q: str = Query(..., min_length=1, description="Search query prefix"),
     limit: int = Query(10, le=25, description="Max suggestions"),
@@ -193,4 +193,9 @@ async def autocomplete(
             "title": str(r[3] or "") if len(r) > 3 else "",
             "slug": str(r[4] or "") if len(r) > 4 else "",
         })
-    return results
+    return {
+        "data": results,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
