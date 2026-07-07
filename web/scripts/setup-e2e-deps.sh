@@ -82,6 +82,13 @@ for i in $(seq 1 15); do
   sleep 2
 done
 
+# ── Seed E2E test data ─────────────────────────────────────────────────────
+# Seeds admin user + sample pages into the fresh STDB instance.
+# global-setup.ts can't do this because it runs before webServer starts;
+# seeding here after module publish + API server is more reliable.
+echo "[e2e-setup] Seeding E2E test data..."
+python3 "$SCRIPT_DIR/seed-e2e-data.py" || echo "[e2e-setup] WARNING: Seeding failed — E2E tests may have issues."
+
 echo "[e2e-setup] All dependencies ready — E2E tests can proceed"
 # Stay alive — Playwright webServer will SIGTERM this process when tests finish
 sleep infinity
