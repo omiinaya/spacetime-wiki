@@ -216,22 +216,26 @@ async def list_users(
         sql += " WHERE email = ?"
         bind_args.append(email)
 
-    rows = await sql_query(sql, *bind_args)
+    # Get total count
+    count_sql = "SELECT COUNT(*) FROM user"
+    if filter and "userName eq" in filter:
+        count_sql += " WHERE email = ?"
+    count_rows = await sql_query(count_sql, *bind_args)
+    total = count_rows[0][0] if count_rows else 0
+
+    # Fetch paginated results
+    start = max(0, startIndex - 1)
+    rows = await sql_query(sql + " LIMIT ?i OFFSET ?i", *bind_args, count, start)
     all_users = rows if isinstance(rows, list) else []
     scim_users = [_wiki_user_to_scim([u]) for u in all_users]
     scim_users = [u for u in scim_users if u is not None]
-
-    total = len(scim_users)
-    start = max(0, startIndex - 1)
-    end = min(start + count, total)
-    page = scim_users[start:end] if start < total else []
 
     return {
         "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
         "totalResults": total,
         "startIndex": startIndex,
         "itemsPerPage": count,
-        "Resources": page,
+        "Resources": scim_users,
     }
 
 
@@ -399,7 +403,16 @@ async def list_groups(
         sql += " WHERE name = ?"
         bind_args.append(name)
 
-    rows = await sql_query(sql, *bind_args)
+    # Get total count
+    count_sql = "SELECT COUNT(*) FROM \"group\""
+    if filter and "displayName eq" in filter:
+        count_sql += " WHERE name = ?"
+    count_rows = await sql_query(count_sql, *bind_args)
+    total = count_rows[0][0] if count_rows else 0
+
+    # Fetch paginated results
+    start = max(0, startIndex - 1)
+    rows = await sql_query(sql + " LIMIT ?i OFFSET ?i", *bind_args, count, start)
     all_groups = rows if isinstance(rows, list) else []
     scim_groups = []
     for g in all_groups:
@@ -413,17 +426,12 @@ async def list_groups(
                     sg["members"].append({"value": uid, "type": "User"})
             scim_groups.append(sg)
 
-    total = len(scim_groups)
-    start = max(0, startIndex - 1)
-    end = min(start + count, total)
-    page = scim_groups[start:end] if start < total else []
-
     return {
         "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
         "totalResults": total,
         "startIndex": startIndex,
         "itemsPerPage": count,
-        "Resources": page,
+        "Resources": scim_groups,
     }
 
 
