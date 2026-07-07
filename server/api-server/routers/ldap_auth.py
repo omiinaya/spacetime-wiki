@@ -1,8 +1,13 @@
 """LDAP authentication router — bind, search, and verify users against LDAP."""
 
+import logging
+
 from fastapi import APIRouter, HTTPException
 
+from models import LDAPLoginResponse
 from stdb_client import sql_query, call_reducer
+
+logger = logging.getLogger(__name__)
 from models import LDAPLoginResponse
 
 router = APIRouter(prefix="/api/v1/auth/ldap", tags=["ldap"])
@@ -203,6 +208,7 @@ async def ldap_login(body: dict):
     except HTTPException:
         raise
     except Exception as exc:
+        logger.error("LDAP authentication error: %s", exc, exc_info=True)
         raise HTTPException(status_code=500, detail=f"LDAP authentication error: {exc}")
     finally:
         if conn and conn.bound:
