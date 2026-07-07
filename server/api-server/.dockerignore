@@ -1,0 +1,29 @@
+# ─── Python build artifacts ────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# ─── Secrets and dev config ─────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── VCS ────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ─── Generated / dev-only files ─────────────────────────────────────────────
+openapi.json
+generate_openapi.py
+README.md
+
+# ─── Unused Node.js files (Express.js remnants) ─────────────────────────────
+node_modules/
+package.json
+package-lock.json
+
+# ─── Unused source directory (legacy Express.js code) ───────────────────────
+src/
