@@ -77,10 +77,17 @@ async def search(
         date_to,
     ])
 
-    # If tags are specified, build an EXISTS subquery for each tag pair
-    rows = await sql_query(
-        "SELECT * FROM search_result WHERE search_token = ? ORDER BY created_at DESC",
+    # Get total count for pagination
+    count_rows = await sql_query(
+        "SELECT COUNT(*) FROM search_result WHERE search_token = ?",
         search_token,
+    )
+    total = count_rows[0][0] if count_rows else 0
+
+    # Fetch paginated results
+    rows = await sql_query(
+        "SELECT * FROM search_result WHERE search_token = ? ORDER BY created_at DESC LIMIT ?i OFFSET ?i",
+        search_token, limit, offset,
     )
 
     if tags:

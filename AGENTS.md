@@ -81,10 +81,10 @@ stdb: true
 68|├── docker-compose.yml            # 4 services + CLI utility
 69|├── .env.example                  # All configurable env vars
 70|├── .github/workflows/ci.yml      # CI: tsc + tests + Rust build
-71|└── .husky/pre-commit             # Pre-commit: tsc + vitest + cargo check
-72|```
-73|
-74|---
+71|├── .github/workflows/deploy.yml   # Deploy: Docker build, push, docker compose
+72|├── .github/workflows/release.yml  # Release: Docker build + GitHub Release creation
+73|└── .husky/pre-commit             # Pre-commit: tsc + vitest + cargo check
+74|```
 75|
 76|## 3. Task-to-File Mapping
 77|
@@ -254,4 +254,20 @@ stdb: true
 240|| `docker-compose.yml` | Service definitions and ports |
 241|| `.github/workflows/ci.yml` | CI pipeline (tsc + tests + Rust build) |
 242|| `server/api-server/openapi.json` | Full OpenAPI spec (when generated) |
+
+---
+
+## 9. Project Stats
+
+| Metric | Count |
+|--------|-------|
+| **STDB Reducers** | 140 (67 in `lib.rs`, 73 across 14 module files) |
+| **STDB Tables** | 50 (all `#[table(public)])` |
+| **Rust Tests** | 201 (all unit, no integration tests) |
+| **Frontend Test Files** | 56 |
+| **Frontend Tests** | 1,194 (Vitest) |
+| **E2E Spec Files** | 14 |
+| **E2E Test Cases** | 79 |
+| **API Endpoints** | 51 (FastAPI REST gateway) |
+| **MCP Tools** | 6 (`wiki_search`, `wiki_read_page`, `wiki_list_collections`, `wiki_list_pages`, `wiki_get_backlinks`, `wiki_get_linked_pages`) |
 243|

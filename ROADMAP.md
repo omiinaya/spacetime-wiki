@@ -64,7 +64,7 @@
   - No E2E test run in CI pipeline
   - No `webServer` config in Playwright — requires manually running dev server
   - No API mocking — E2E tests require full STDB + API server stack
-  - Workers limited to 1 (slow — 102 tests × ~8s each)
+  - Workers limited to 1 (slow — 79 tests × ~8s each)
   - Chromium only (no Firefox/WebKit)
   - No retries configured
 - **Fix:** Add E2E job to CI with docker-compose services, add `webServer` to Playwright config, add retries (2 in CI, 1 locally)
@@ -86,10 +86,10 @@
 - **Fix:** Add proper logging with `logger.exception()`, or narrow to specific exception types
 - **Effort:** 1 hour
 
-### P2 — No deploy/release workflow
-- **File:** `.github/workflows/`
-- **Issue:** Only CI workflow exists. No Docker image build, no push to registry, no deploy step.
-- **Fix:** Create a `deploy.yml` workflow that builds Docker images and deploys them
+### P2 — No deploy/release workflow ✅ DONE
+- **File:** `.github/workflows/deploy.yml`, `.github/workflows/release.yml`
+- **Issue:** Only CI workflow existed. No Docker image build, no push to registry, no deploy step.
+- **Fix:** Created `deploy.yml` (builds Docker images, pushes to GHCR, deploys via docker compose with health checks) + `release.yml` (builds Docker images, creates GitHub Release with auto-generated changelog). Triggers on push to master + version tags (v*).
 - **Effort:** 3 hours
 
 ### P2 — API server Dockerfile has no multi-stage build
@@ -272,10 +272,10 @@
 - **Fix:** Add to security headers middleware
 - **Effort:** 5 min
 
-### P4 — Review nginx config completeness
+### P4 — Review nginx config completeness  ✅ *DONE (2026-07-06)*
 - **File:** `web/Dockerfile`
 - **Issue:** Inline nginx config may be missing cache headers, gzip, security headers
-- **Fix:** Extract to a dedicated `nginx.conf` file, add proper configuration
+- **Fix:** Extracted to `web/nginx.conf` with full security headers, gzip, caching, API proxy, OpenAPI docs proxy, and SPA fallback
 - **Effort:** 1 hour
 
 ### P4 — Remove `optimizeDeps.include` for highlight.js/lowlight
@@ -325,7 +325,7 @@
 | **API server** | 9 routes + 5 core `.py` | 3,360 | 0 | 5 bare excepts, no pagination, CORS broken, no CSP |
 | **MCP server** | 3 `.py` | 561 | 0 | Zero error handling, no pagination |
 | **Frontend** | ~170 hand-written `.ts/.tsx` | — | 56 files / 1,194 tests | 273 `any`, App.tsx 2k lines, KaTeX duplication, stale deps |
-| **E2E** | 14 `.ts` | — | 102 test cases | Not in CI, 0 API mocking, fails on fresh DB |
+| **E2E** | 14 `.ts` | — | 79 test cases | Not in CI, 0 API mocking, fails on fresh DB |
 | **Infra** | 4 Dockerfiles + compose | — | — | No deploy workflow, no multi-stage API build |
 
 ## 📊 Overall Stats
@@ -334,14 +334,14 @@
 |--------|-------|--------|
 | **Rust tests** | 201/201 ✅ | Passing |
 | **Frontend tests** | 1,194/1,194 ✅ | Passing |
-| **E2E test files** | 14 (102 tests) | ⚠️ Failing on fresh DB |
+| **E2E test files** | 14 (79 tests) | ⚠️ Failing on fresh DB |
 | **TypeScript errors** | 0 ✅ | Clean |
 | **Security vulns** | 0 ✅ | Clean |
 | **Clippy warnings** | 4 | 🟡 Need fix |
 | **`any` usages** | 273 | 🔴 Systematic migration needed |
 | **`console.log` in production** | 22 (all structured logging) | ✅ Acceptable |
 | **TODO/FIXME markers** | 0 | ✅ Clean |
-| **API endpoints** | 112 | Not paginated |
+| **API endpoints** | 51 | Not paginated |
 | **MCP tools** | 6 | No error handling |
 | **i18n locales** | 4 (en, es, fr, de) | 2 more referenced but missing |
 | **CI jobs** | 2 (Frontend + Rust partial) | Missing: E2E, Docker, deploy |
@@ -385,7 +385,7 @@
 ### Sprint 6 — Deployment & i18n (4 hours)
 1. Add deploy/release GitHub workflow
 2. Add/remove missing i18n locales
-3. Extract nginx config to dedicated file
+3. ✅ Extract nginx config to dedicated file — done (commit bd7e085)
 4. Add security headers middleware
 
 ---
