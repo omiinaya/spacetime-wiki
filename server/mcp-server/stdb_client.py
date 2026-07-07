@@ -2,11 +2,17 @@
 
 Uses parameterized SQL with ``_safe_quote`` for injection safety.
 Includes retry logic with exponential backoff for STDB network failures.
+Implements circuit breaker pattern to prevent cascading failures.
 """
 
 import asyncio
 import json
 import logging
+import time
+import uuid
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
 
 import httpx
@@ -21,6 +27,165 @@ from config import (
 )
 
 logger = logging.getLogger("spacetime-wiki-mcp.stdb_client")
+
+# ─── Correlation ID for request tracing ──────────────────────────────────────
+
+correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
+
+
+def get_correlation_id() -> str:
+    """Get or generate a correlation ID for the current request context."""
+    cid = correlation_id_var.get()
+    if cid is None:
+        cid = uuid.uuid4().hex[:12]
+        correlation_id_var.set(cid)
+    return cid
+
+
+def set_correlation_id(cid: str | None) -> None:
+    """Set the correlation ID for the current request context."""
+    correlation_id_var.set(cid)
+
+
+# ─── Circuit Breaker ─────────────────────────────────────────────────────────
+
+
+class CircuitState(Enum):
+    """Circuit breaker states."""
+
+    CLOSED = "closed"      # Normal operation, requests go through
+    OPEN = "open"          # Failing, requests blocked
+    HALF_OPEN = "half_open"  # Testing if service recovered
+
+
+@dataclass
+class CircuitBreaker:
+    """Circuit breaker for STDB connection failures.
+
+    Prevents cascading failures by stopping requests when STDB is consistently
+    failing, allowing it time to recover.
+    """
+
+    failure_threshold: int = 5
+    success_threshold: int = 2
+    timeout: float = 30.0  # seconds before trying half-open
+
+    _state: CircuitState = field(default=CircuitState.CLOSED, init=False)
+    _failure_count: int = field(default=0, init=False)
+    _success_count: int = field(default=0, init=False)
+    _last_failure_time: float = field(default=0.0, init=False)
+    _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
+
+    @property
+    def state(self) -> CircuitState:
+        return self._state
+
+    def _record_success(self) -> None:
+        if self._state == CircuitState.HALF_OPEN:
+            self._success_count += 1
+            if self._success_count >= self.success_threshold:
+                self._state = CircuitState.CLOSED
+                self._failure_count = 0
+                self._success_count = 0
+                logger.info("Circuit breaker CLOSED — STDB recovered")
+        elif self._state == CircuitState.CLOSED:
+            self._failure_count = 0
+
+    def _record_failure(self) -> None:
+        self._failure_count += 1
+        self._last_failure_time = time.time()
+
+        if self._state == CircuitState.HALF_OPEN:
+            self._state = CircuitState.OPEN
+            self._success_count = 0
+            logger.warning("Circuit breaker OPEN — STDB still failing")
+        elif self._state == CircuitState.CLOSED and self._failure_count >= self.failure_threshold:
+            self._state = CircuitState.OPEN
+            logger.warning(
+                "Circuit breaker OPEN after %d consecutive failures",
+                self.failure_threshold,
+            )
+
+    async def can_execute(self) -> bool:
+        """Check if a request can proceed, updating state as needed."""
+        async with self._lock:
+            if self._state == CircuitState.CLOSED:
+                return True
+
+            if self._state == CircuitState.OPEN:
+                # Check if timeout has passed to try half-open
+                if time.time() - self._last_failure_time >= self.timeout:
+                    self._state = CircuitState.HALF_OPEN
+                    self._success_count = 0
+                    logger.info("Circuit breaker HALF_OPEN — testing STDB recovery")
+                    return True
+                return False
+
+            # HALF_OPEN allows one request through
+            return True
+
+    async def execute_with_breaker(self, operation, *args, **kwargs):
+        """Execute an operation with circuit breaker protection."""
+        can_proceed = await self.can_execute()
+        if not can_proceed:
+            raise RuntimeError("Circuit breaker OPEN — STDB unavailable")
+
+        try:
+            result = await operation(*args, **kwargs)
+            self._record_success()
+            return result
+        except Exception as e:
+            self._record_failure()
+            raise
+
+
+# Global circuit breaker instance
+_circuit_breaker = CircuitBreaker()
+
+
+def get_circuit_breaker() -> CircuitBreaker:
+    """Get the global circuit breaker instance."""
+    return _circuit_breaker
+
+
+# ─── Error types for structured error handling ───────────────────────────────
+
+
+class STDBErrorCode(str, Enum):
+    """Structured error codes for STDB operations."""
+
+    CONNECTION_FAILED = "STDB_CONNECTION_FAILED"
+    TIMEOUT = "STDB_TIMEOUT"
+    QUERY_FAILED = "STDB_QUERY_FAILED"
+    INVALID_RESPONSE = "STDB_INVALID_RESPONSE"
+    CIRCUIT_OPEN = "STDB_CIRCUIT_OPEN"
+    VALIDATION_ERROR = "STDB_VALIDATION_ERROR"
+    NOT_FOUND = "STDB_NOT_FOUND"
+
+
+class STDBError(Exception):
+    """Structured exception for STDB errors with error codes."""
+
+    def __init__(
+        self,
+        message: str,
+        code: STDBErrorCode = STDBErrorCode.QUERY_FAILED,
+        correlation_id: str | None = None,
+        original_error: Exception | None = None,
+    ):
+        super().__init__(message)
+        self.code = code
+        self.correlation_id = correlation_id or get_correlation_id()
+        self.original_error = original_error
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for structured logging/response."""
+        return {
+            "error": str(self),
+            "code": self.code.value,
+            "correlation_id": self.correlation_id,
+        }
+
 
 TABLE_NAMES = frozenset({
     "page", "collection", "revision", "comment", "page_tag", "attachment",
@@ -75,7 +240,36 @@ def _truncate_log(sql: str, max_len: int = 200) -> str:
     return sql if len(sql) < max_len else sql[:max_len] + "..."
 
 
-# ─── Retry wrapper ───────────────────────────────────────────────────────────
+# ─── Shared HTTPX client with connection pooling ────────────────────────────
+
+_http_client: httpx.AsyncClient | None = None
+
+
+async def _get_http_client() -> httpx.AsyncClient:
+    """Get or create the shared HTTPX client.
+
+    Using a single shared client allows connection pooling, connection
+    reuse, and better timeout management across all STDB queries.
+    """
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(
+                connect=STDB_TIMEOUT_S,
+                read=STDB_TIMEOUT_S,
+                write=STDB_TIMEOUT_S,
+                pool=STDB_TIMEOUT_S,
+            ),
+            limits=httpx.Limits(
+                max_keepalive_connections=10,
+                max_connections=20,
+                keepalive_expiry=30.0,
+            ),
+        )
+    return _http_client
+
+
+# ─── Retry wrapper with circuit breaker ──────────────────────────────────────
 
 
 async def _execute_with_retry(sql: str) -> list[list]:
@@ -93,84 +287,118 @@ async def _execute_with_retry(sql: str) -> list[list]:
     """
     last_exception: Exception | None = None
     attempts_made = 0
+    cid = get_correlation_id()
 
     for attempt in range(1, STDB_MAX_RETRIES + 1):
         attempts_made = attempt
         try:
-            async with httpx.AsyncClient(timeout=STDB_TIMEOUT_S) as client:
-                resp = await client.post(
-                    STDB_SQL_URL,
-                    content=sql,
-                    headers={"Content-Type": "text/plain"},
+            client = await _get_http_client()
+            resp = await client.post(
+                STDB_SQL_URL,
+                content=sql,
+                headers={"Content-Type": "text/plain"},
+            )
+            if resp.status_code >= 400:
+                detail = resp.text[:500]
+                raise STDBError(
+                    f"STDB SQL error ({resp.status_code}): {detail}",
+                    code=STDBErrorCode.QUERY_FAILED,
+                    correlation_id=cid,
                 )
-                if resp.status_code >= 400:
-                    detail = resp.text[:500]
-                    raise RuntimeError(
-                        f"STDB SQL error ({resp.status_code}): {detail}"
-                    )
-                data = resp.json()
-                # STDB returns [{"rows": [...]}] or [{"rows": ...}] per table
-                if isinstance(data, list) and data:
-                    return data[0].get("rows", [])
-                return []
+            data = resp.json()
+            # STDB returns [{"rows": [...]}] or [{"rows": ...}] per table
+            if isinstance(data, list) and data:
+                return data[0].get("rows", [])
+            return []
 
         except httpx.TimeoutException as e:
             logger.warning(
-                "STDB timeout attempt %d/%d: %s",
-                attempt, STDB_MAX_RETRIES, e,
+                "STDB timeout attempt %d/%d (cid=%s): %s",
+                attempt, STDB_MAX_RETRIES, cid, e,
             )
-            last_exception = e
+            last_exception = STDBError(
+                f"STDB timeout: {e}",
+                code=STDBErrorCode.TIMEOUT,
+                correlation_id=cid,
+                original_error=e,
+            )
             if attempt < STDB_MAX_RETRIES:
                 delay = STDB_BASE_DELAY_S * (2.0 ** (attempt - 1))
-                logger.info("Retrying in %.1fs...", delay)
+                logger.info("Retrying in %.1fs... (cid=%s)", delay, cid)
                 await asyncio.sleep(delay)
 
         except httpx.TransportError as e:
             logger.warning(
-                "STDB transport error attempt %d/%d: %s",
-                attempt, STDB_MAX_RETRIES, e,
+                "STDB transport error attempt %d/%d (cid=%s): %s",
+                attempt, STDB_MAX_RETRIES, cid, e,
             )
-            last_exception = e
+            last_exception = STDBError(
+                f"STDB connection failed: {e}",
+                code=STDBErrorCode.CONNECTION_FAILED,
+                correlation_id=cid,
+                original_error=e,
+            )
             if attempt < STDB_MAX_RETRIES:
                 delay = STDB_BASE_DELAY_S * (2.0 ** (attempt - 1))
-                logger.info("Retrying in %.1fs...", delay)
+                logger.info("Retrying in %.1fs... (cid=%s)", delay, cid)
                 await asyncio.sleep(delay)
 
         except httpx.HTTPStatusError as e:
             # Non-2xx that httpx raised as an exception (shouldn't happen with
             # our manual status check, but belt-and-braces)
             logger.warning(
-                "STDB HTTP error attempt %d/%d: %s",
-                attempt, STDB_MAX_RETRIES, e,
+                "STDB HTTP error attempt %d/%d (cid=%s): %s",
+                attempt, STDB_MAX_RETRIES, cid, e,
             )
-            last_exception = e
+            last_exception = STDBError(
+                f"STDB HTTP error: {e}",
+                code=STDBErrorCode.QUERY_FAILED,
+                correlation_id=cid,
+                original_error=e,
+            )
             if attempt < STDB_MAX_RETRIES:
                 delay = STDB_BASE_DELAY_S * (2.0 ** (attempt - 1))
-                logger.info("Retrying in %.1fs...", delay)
+                logger.info("Retrying in %.1fs... (cid=%s)", delay, cid)
                 await asyncio.sleep(delay)
 
         except json.JSONDecodeError as e:
             logger.error(
-                "STDB returned non-JSON response attempt %d/%d: %s",
-                attempt, STDB_MAX_RETRIES, e,
+                "STDB returned non-JSON response attempt %d/%d (cid=%s): %s",
+                attempt, STDB_MAX_RETRIES, cid, e,
             )
-            last_exception = e
+            last_exception = STDBError(
+                f"STDB invalid response: {e}",
+                code=STDBErrorCode.INVALID_RESPONSE,
+                correlation_id=cid,
+                original_error=e,
+            )
             # Non-retriable — response format is broken, pointless to retry
             break
 
-        except RuntimeError:
+        except STDBError:
             # Our own raised errors (>=400, structural) — re-raise immediately
+            raise
+
+        except RuntimeError as e:
+            # Circuit breaker or other runtime errors
             raise
 
     # All retries exhausted or non-retriable error
     logger.error(
-        "STDB query failed after %d attempt(s): %s — returning empty result",
-        attempts_made, last_exception,
+        "STDB query failed after %d attempt(s) (cid=%s): %s — returning empty result",
+        attempts_made, cid, last_exception,
     )
-    return []
+    if last_exception and isinstance(last_exception, STDBError):
+        raise last_exception
+    raise STDBError(
+        f"STDB query failed after {attempts_made} attempts",
+        code=STDBErrorCode.QUERY_FAILED,
+        correlation_id=cid,
+        original_error=last_exception,
+    )
 
 
-# ─── Public query helper ─────────────────────────────────────────────────────
+# ─── Public query helper with circuit breaker ────────────────────────────────
 
 
 async def sql_query(sql: str, *args: object) -> list[list]:
@@ -182,8 +410,32 @@ async def sql_query(sql: str, *args: object) -> list[list]:
     crashing — callers should check for empty results.
     """
     final_sql = _build_safe_sql(sql, *args) if args else sql
-    logger.debug("STDB query: %s", _truncate_log(final_sql))
-    return await _execute_with_retry(final_sql)
+    logger.debug("STDB query (cid=%s): %s", get_correlation_id(), _truncate_log(final_sql))
+
+    async def _execute():
+        return await _execute_with_retry(final_sql)
+
+    try:
+        return await _circuit_breaker.execute_with_breaker(_execute)
+    except STDBError as e:
+        if e.code == STDBErrorCode.CIRCUIT_OPEN:
+            logger.warning("Circuit breaker open, returning empty result (cid=%s)", get_correlation_id())
+            return []
+        raise
+
+
+async def sql_query_or_raise(sql: str, *args: object) -> list[list]:
+    """Execute a query and raise on any error (including circuit breaker open).
+
+    Use this when the caller needs to distinguish between "no results" and "error".
+    """
+    final_sql = _build_safe_sql(sql, *args) if args else sql
+    logger.debug("STDB query (cid=%s): %s", get_correlation_id(), _truncate_log(final_sql))
+
+    async def _execute():
+        return await _execute_with_retry(final_sql)
+
+    return await _circuit_breaker.execute_with_breaker(_execute)
 
 
 # ─── Row mappers with safety checks ──────────────────────────────────────────
@@ -336,13 +588,14 @@ def _clamp_int(val: object, label: str, default: int, min_v: int, max_v: int) ->
 # ─── Entity helpers ──────────────────────────────────────────────────────────
 
 
-async def search_pages(query: str, limit: int = 20) -> list[dict]:
+async def search_pages(query: str, limit: int = 20, offset: int = 0) -> list[dict]:
     """Full-text search across page titles and content.
 
     Raises ``ValueError`` for invalid input.
     """
     q = _validate_non_empty_string(query, "query")
     limit = _clamp_int(limit, "limit", 20, 1, 50)
+    offset = _clamp_int(offset, "offset", 0, 0, 9999)
     rows = await sql_query("SELECT * FROM page WHERE status != 'deleted'")
     q_lower = q.lower()
     filtered = []
@@ -350,7 +603,7 @@ async def search_pages(query: str, limit: int = 20) -> list[dict]:
         page = map_page(r)
         if q_lower in page["title"].lower() or q_lower in page["text_content"].lower():
             filtered.append(page)
-    return filtered[:limit]
+    return filtered[offset:offset + limit]
 
 
 async def get_page(page_id: str) -> dict | None:
@@ -456,3 +709,16 @@ async def get_linked_pages(page_id: str, limit: int = 20) -> list[dict]:
     )
     rows = await sql_query(sql, page_id, *args)
     return [map_page(r) for r in rows[:limit]]
+
+
+async def get_collection(collection_id: str) -> dict | None:
+    """Get a single collection by ID.
+
+    Raises ``ValueError`` for invalid *collection_id*.
+    Returns ``None`` when no collection matches.
+    """
+    _validate_id(collection_id, "collection_id")
+    rows = await sql_query("SELECT * FROM collection WHERE id = ?", collection_id)
+    if rows:
+        return map_collection(rows[0])
+    return None
