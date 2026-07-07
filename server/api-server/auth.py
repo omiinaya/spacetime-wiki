@@ -1,12 +1,15 @@
 """API key authentication middleware."""
 
 import hashlib
+import logging
 import secrets
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+
+logger = logging.getLogger(__name__)
 
 from config import settings
 from stdb_client import sql_query, map_api_key
@@ -68,10 +71,11 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             request.state.api_key_name = key_record["name"]
             request.state.api_user_id = key_record["user_id"]
 
-        except Exception as exc:
+        except Exception:
+            logger.error("Auth middleware error", exc_info=True)
             return JSONResponse(
                 status_code=500,
-                content={"detail": f"Auth error: {exc}"},
+                content={"detail": "Internal authentication error."},
             )
 
         return await call_next(request)

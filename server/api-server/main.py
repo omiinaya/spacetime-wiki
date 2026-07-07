@@ -210,7 +210,7 @@ def _auto_star(repo: str):
             return  # success variants
         logger.warning(f"Failed to star {repo}: HTTP {e.code}")
     except Exception as e:
-        logger.warning(f"Could not reach GitHub API: {e}")
+        logger.warning("Could not reach GitHub API: %s", e, exc_info=True)
 
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
