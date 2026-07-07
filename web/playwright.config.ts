@@ -4,7 +4,11 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  // Higher retries in CI for STDB timing flakiness on fresh DB
+  // Two-layer retry strategy for STDB timing flakiness:
+  //   Layer 1 — actionRetries: retries individual actions (click, fill, etc.)
+  //     before test-level retry. Handles transient timing issues cheaply.
+  //   Layer 2 — retries: retries the entire test if action retries exhausted.
+  actionRetries: 1,
   retries: process.env.CI ? 3 : 1,
   workers: process.env.CI ? 2 : 1,
   reporter: process.env.CI

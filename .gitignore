@@ -13,3 +13,4 @@ __pycache__/
 1503119589608001616/
 server/api-server/.venv/
 server/api-server/.venv
+.nfs*
