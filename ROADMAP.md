@@ -92,10 +92,10 @@
 - **Fix:** Created `deploy.yml` (builds Docker images, pushes to GHCR, deploys via docker compose with health checks) + `release.yml` (builds Docker images, creates GitHub Release with auto-generated changelog). Triggers on push to master + version tags (v*).
 - **Effort:** 3 hours
 
-### P2 — API server Dockerfile has no multi-stage build
+### P2 — API server Dockerfile has no multi-stage build ✅ DONE
 - **File:** `server/api-server/Dockerfile`
 - **Issue:** Installs `gcc` as build dependency but doesn't use multi-stage — adds ~150MB
-- **Fix:** Switch to multi-stage: builder stage for pip compile, final slim image
+- **Fix:** Switched to multi-stage: builder stage (pip install with gcc) → final slim image (no gcc). Added HEALTHCHECK, non-root user, .dockerignore. SHA: 42684c4
 - **Effort:** 1 hour
 
 ### P2 — Auto-star on startup is unusual — ✅ DONE
