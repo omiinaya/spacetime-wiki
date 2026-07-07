@@ -3,7 +3,8 @@ import { cn } from "../lib/utils";
 import { SidebarTree } from "./SidebarTree";
 import { SearchFilters } from "./SearchFilters";
 import { NotificationBell } from "./NotificationBell";
-import type { Page, Collection, SearchFilterState } from "../lib/api";
+import type { Page, Collection } from "../lib/api";
+import type { SearchFilterState } from "../components/SearchFilters";
 
 interface SidebarProps {
   // Core data
@@ -34,7 +35,7 @@ interface SidebarProps {
   openEditCol: (col: Collection) => Promise<void>;
   openCreateCol: () => void;
   pageLimits: Record<string, number>;
-  setPageLimits: (v: Record<string, number>) => void;
+  setPageLimits: (fn: (prev: Record<string, number>) => Record<string, number>) => void;
 
   // Sidebar state
   sidebarOpen: boolean;
