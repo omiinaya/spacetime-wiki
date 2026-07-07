@@ -84,6 +84,10 @@ jobs:
       CI: "true"
       STDB_HOST: localhost:3001
       STDB_DATABASE: spacetime-wiki
+      # VITE_* vars are inlined at Vite build time (picked up from web/.env too)
+      VITE_STDB_HOST: localhost:3001
+      VITE_STDB_DB: spacetime-wiki
+      VITE_API_BASE: http://localhost:8711
 
     steps:
       - uses: actions/checkout@v4
