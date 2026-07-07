@@ -1,11 +1,15 @@
 """Import endpoints — Notion, Markdown, Confluence imports via REST API."""
 
+import logging
+
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 import html.parser
 import re
 
 from stdb_client import call_reducer, sql_query
 from models import ImportResponse
+
+logger = logging.getLogger("spacetime-wiki-api.imports")
 
 router = APIRouter(prefix="/api/v1/import", tags=["import"])
 
@@ -227,6 +231,7 @@ async def import_notion(
                 page_ids_by_dir[f"{entry['dir']}/{entry['name']}"] = page_id
                 created += 1
             except Exception as e:
+                logger.error("Failed to create page '%s': %s", entry["path"], e, exc_info=True)
                 errors.append(f"{entry['path']}: {e}")
 
         zf.close()
@@ -370,6 +375,7 @@ async def import_confluence(
                 page_ids_by_meta_id[entry["meta_id"]] = page_id
             created += 1
         except Exception as e:
+            logger.error("Failed to create Confluence page '%s': %s", entry["path"], e, exc_info=True)
             errors.append(f"{entry['path']}: {e}")
 
     zf.close()

@@ -76,7 +76,7 @@
 - **Fix:** Add `cargo test --lib` and `cargo clippy -- -D warnings` steps
 - **Effort:** 1 hour
 
-### P2 — 5 bare `except Exception:` blocks
+### P2 — 5 bare `except Exception:` blocks ✅ DONE
 - **Files:**
   - `routers/imports.py:178,263`
   - `routers/scim.py:46`
