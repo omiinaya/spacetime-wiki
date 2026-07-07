@@ -28,6 +28,7 @@ from stdb_client import (
     get_backlinks,
     list_page_tags,
     get_linked_pages,
+    STDBError,
     map_page,
 )
 from config import MCP_SERVER_NAME
@@ -159,7 +160,8 @@ async def read_resource(uri: str) -> str | bytes:  # type: ignore[override, arg-
         try:
             tags = await list_page_tags(page_id)
             page["tags"] = tags
-        except Exception:
+        except (STDBError, ValueError) as e:
+            logger.error("Failed to fetch tags for page %s: %s", page_id, e)
             page["tags"] = []
 
         return json.dumps(page, indent=2)
@@ -362,7 +364,8 @@ async def _handle_wiki_read_page(arguments: dict[str, Any]) -> list[TextContent]
     try:
         tags = await list_page_tags(page["id"])
         page["tags"] = tags
-    except Exception:
+    except (STDBError, ValueError) as e:
+        logger.error("Failed to fetch tags for page %s: %s", page["id"], e)
         page["tags"] = []
 
     # Enrich with backlink count (non-fatal)
@@ -370,8 +373,8 @@ async def _handle_wiki_read_page(arguments: dict[str, Any]) -> list[TextContent]
         backlinks = await get_backlinks(page["id"], limit=5)
         page["backlink_count"] = len(backlinks)
         page["backlinks_preview"] = [b["title"] for b in backlinks]
-    except Exception:
-        pass
+    except STDBError as e:
+        logger.error("Failed to fetch backlinks for page %s: %s", page["id"], e)
 
     return _text(json.dumps(page, indent=2))
 
