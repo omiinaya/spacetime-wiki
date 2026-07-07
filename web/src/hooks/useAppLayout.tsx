@@ -1,10 +1,8 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api, Page, Collection, Notification as NotifType } from "../lib/api";
-import {
-  connectSubscriptions, disconnectSubscriptions, defaultSubscriptionManager,
-  usePagesSubscription, useCollectionsSubscription, useNotificationsSubscription,
-} from "../lib/subscriptions";
+import { connectSubscriptions, disconnectSubscriptions, defaultSubscriptionManager } from "../lib/subscriptions";
+import { usePagesSubscription, useCollectionsSubscription, useNotificationsSubscription } from "../lib/api";
 import { useToast, initGlobalToast, showToast } from "../components/Toast";
 import { useSearch } from "./useSearch";
 import { useImportExport } from "./useImportExport";
@@ -120,7 +118,6 @@ export function useAppLayout() {
   }, [theme]);
 
   useEffect(() => { setUserId(localStorage.getItem("sw_user_id")); }, [location.pathname]);
-}
 
   // ─── Subscriptions ──────────────────────────────────────────────────────
   useEffect(() => {
