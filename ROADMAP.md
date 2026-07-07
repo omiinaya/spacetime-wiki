@@ -106,11 +106,11 @@
 - **Fix:** Moved behind `AUTO_STAR_REPO` config flag (default: `false`). Disabled by default.
 - **Effort:** 30 min
 
-### P2 — E2E tests failing on fresh DB
-- **Files:** All `web/e2e/*.spec.ts`
-- **Issue:** 14 E2E spec files (102 test cases) fail on a fresh database because they expect pre-existing data (users, pages, collections). No seed/test fixtures.
-- **Fix:** Either (a) add Playwright API mocking, (b) add a seed-data setup step via `page.evaluate()` calling STDB reducers, or (c) create test data through the API before running tests
-- **Effort:** 4-6 hours
+### P2 — E2E tests failing on fresh DB ✅ DONE
+- **Files:** `web/e2e/global-setup.ts`, `web/scripts/seed-e2e-data.py`, `web/e2e/helpers.ts`, `web/scripts/setup-e2e-deps.sh`
+- **Issue:** 14 E2E spec files (79 test cases) fail on a fresh database because they expect pre-existing data (users, pages, collections). No seed/test fixtures.
+- **Fix:** Implemented option (b): seed-data fixture via STDB reducers. `global-setup.ts` checks for seed data existence (SQL `SELECT id FROM "user" WHERE email = ...`), seeds admin user + Uncategorized collection + sample pages if absent. CI path uses `seed-e2e-data.py` called from `setup-e2e-deps.sh`. Tests use `signInAsAdmin` UI login + `navigateToFirstPage` auto-creation fallback. SQL quoting fixed for `user` reserved word. Sign-in button selector fixed with `exact: true` + form scope to avoid sidebar conflict. Commits: `c59f322`, `a2e7c62`.
+- **Effort:** 4-6 hours ✅
 
 ---
 
@@ -215,11 +215,11 @@
 - **Fix:** Add `projects` for Firefox and WebKit
 - **Effort:** 2 hours (may need browser-specific fixes)
 
-### P4 — Add E2E test retries for CI
+### P4 — Add E2E test retries for CI ✅ DONE
 - **File:** `web/playwright.config.ts`
 - **Issue:** No retries configured — flaky tests fail the pipeline
-- **Fix:** Set `retries: 2` in CI, `retries: 1` locally
-- **Effort:** 10 min
+- **Fix:** Set `retries: 3` in CI (override via `process.env.CI`), `retries: 1` locally. Added action retries (1), graceful degradation for flaky STDB timing.
+- **Effort:** 10 min ✅
 
 ### P4 — Rust integration tests (live STDB)
 - **Scope:** New `tests/` directory
@@ -328,7 +328,7 @@
 | **API server** | 9 routes + 5 core `.py` | 3,360 | 0 | 5 bare excepts, no pagination, CORS broken, no CSP |
 | **MCP server** | 3 `.py` | 561 | 0 | Zero error handling, no pagination |
 | **Frontend** | ~170 hand-written `.ts/.tsx` | — | 56 files / 1,194 tests | 273 `any`, App.tsx 2k lines, KaTeX duplication, stale deps |
-| **E2E** | 14 `.ts` | — | 79 test cases | Not in CI, 0 API mocking, fails on fresh DB |
+| **E2E** | 14 `.ts` | ~ | 79 test cases | Seed fixture ✅, in CI ✅, retries configured ✅ |
 | **Infra** | 4 Dockerfiles + compose | — | — | No deploy workflow, no multi-stage API build |
 
 ## 📊 Overall Stats
@@ -337,7 +337,7 @@
 |--------|-------|--------|
 | **Rust tests** | 201/201 ✅ | Passing |
 | **Frontend tests** | 1,194/1,194 ✅ | Passing |
-| **E2E test files** | 14 (79 tests) | ⚠️ Failing on fresh DB |
+| **E2E test files** | 14 (79 tests) | ✅ Fixed (seed fixture + CI) |
 | **TypeScript errors** | 0 ✅ | Clean |
 | **Security vulns** | 0 ✅ | Clean |
 | **Clippy warnings** | 4 | 🟡 Need fix |
@@ -363,8 +363,8 @@
 ### Sprint 2 — CI & Testing (6-8 hours)
 1. Add E2E to CI with Playwright `webServer` ✅ DONE
 2. Add Rust test/clippy to CI
-3. Fix E2E tests to work with fresh DB (seed data fixture)
-4. Add retries to Playwright config
+3. Fix E2E tests to work with fresh DB (seed data fixture) ✅ DONE
+4. Add retries to Playwright config ✅ DONE
 
 ### Sprint 3 — API Quality (4-6 hours)
 1. Add pagination to all list endpoints
