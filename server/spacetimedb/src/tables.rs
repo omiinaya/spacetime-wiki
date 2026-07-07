@@ -1773,7 +1773,6 @@ fn default_ai_config() -> AiConfig {
     }
 }
 
-}
 
 #[cfg(test)]
 fn default_ai_chat_message() -> AiChatMessage {
@@ -1804,7 +1803,6 @@ fn default_scim_provider() -> ScimProvider {
     }
 }
 
-}
 
 #[cfg(test)]
 fn default_passkey_credential() -> PasskeyCredential {
@@ -1859,7 +1857,6 @@ fn default_db_column() -> DbColumn {
     }
 }
 
-}
 
 #[cfg(test)]
 fn default_db_cell() -> DbCell {
@@ -1905,7 +1902,6 @@ fn default_synced_block() -> SyncedBlock {
     }
 }
 
-}
 
 #[cfg(test)]
 fn default_mfa_method() -> MfaMethod {
@@ -1920,7 +1916,6 @@ fn default_mfa_method() -> MfaMethod {
     }
 }
 
-}
 
 #[cfg(test)]
 fn default_watch() -> Watch {
