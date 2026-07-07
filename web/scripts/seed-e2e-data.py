@@ -59,7 +59,8 @@ def sql_exists(sql: str) -> bool:
             data = json.loads(resp.read().decode("utf-8"))
             rows = data[0].get("rows", []) if data else []
             return len(rows) > 0
-    except Exception:
+    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, OSError) as e:
+        print(f"  [seed]  SQL check failed: {e}", file=sys.stderr)
         return False
 
 
@@ -74,9 +75,14 @@ def wait_for_stdb(max_attempts: int = 15, delay: int = 2) -> bool:
             with urllib.request.urlopen(req, timeout=5):
                 print(f"[seed] STDB ready after {attempt * delay}s")
                 return True
-        except Exception:
+        except urllib.error.URLError as e:
             if attempt == max_attempts:
-                print(f"[seed] ERROR: STDB not reachable after {max_attempts * delay}s", file=sys.stderr)
+                print(f"[seed] ERROR: STDB not reachable after {max_attempts * delay}s ({e})", file=sys.stderr)
+                return False
+            time.sleep(delay)
+        except OSError as e:
+            if attempt == max_attempts:
+                print(f"[seed] ERROR: STDB not reachable after {max_attempts * delay}s ({e})", file=sys.stderr)
                 return False
             time.sleep(delay)
     return False
