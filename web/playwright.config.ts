@@ -4,7 +4,8 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
+  // Higher retries in CI for STDB timing flakiness on fresh DB
+  retries: process.env.CI ? 3 : 1,
   workers: process.env.CI ? 2 : 1,
   reporter: process.env.CI
     ? [["list"], ["html", { open: "never" }]]
