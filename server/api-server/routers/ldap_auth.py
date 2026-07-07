@@ -208,5 +208,5 @@ async def ldap_login(body: dict):
         if conn and conn.bound:
             try:
                 conn.unbind()
-            except Exception:
+            except ldap3.core.exceptions.LDAPException:
                 pass

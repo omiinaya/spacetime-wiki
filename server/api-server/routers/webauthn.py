@@ -377,7 +377,7 @@ async def auth_complete(request: Request, body: dict):
         new_counter = verification.new_sign_count or (cred["counter"] + 1)
         try:
             await call_reducer("update_passkey_counter", [credential_id, new_counter])
-        except Exception:
+        except RuntimeError:
             pass  # Non-fatal
 
         # Look up the user

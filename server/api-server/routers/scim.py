@@ -356,7 +356,7 @@ async def update_user(request: Request, user_id: str):
             behavior = str(r.get("deprovision_behavior", "deactivate")) if isinstance(r, dict) else str(r[5] if len(r) > 5 else "deactivate")
         try:
             await call_reducer("scim_deprovision_user", [email, behavior])
-        except Exception:
+        except RuntimeError:
             pass
 
     await _record_event(pid, "User", "PUT", external_id, uid, "success", f"Updated user '{email}'")
