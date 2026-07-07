@@ -211,6 +211,11 @@ async def list_tools() -> list[Tool]:
                         "description": "Maximum results (default 20, max 50)",
                         "default": 20,
                     },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Zero-based offset (default 0)",
+                        "default": 0,
+                    },
                 },
                 "required": ["query"],
             },
@@ -240,7 +245,18 @@ async def list_tools() -> list[Tool]:
             ),
             inputSchema={
                 "type": "object",
-                "properties": {},
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum results (default 50)",
+                        "default": 50,
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Zero-based offset (default 0)",
+                        "default": 0,
+                    },
+                },
             },
         ),
         Tool(
@@ -257,6 +273,11 @@ async def list_tools() -> list[Tool]:
                         "type": "integer",
                         "description": "Maximum results (default 50)",
                         "default": 50,
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Zero-based offset (default 0)",
+                        "default": 0,
                     },
                 },
             },
@@ -279,6 +300,11 @@ async def list_tools() -> list[Tool]:
                         "description": "Maximum results (default 20)",
                         "default": 20,
                     },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Zero-based offset (default 0)",
+                        "default": 0,
+                    },
                 },
                 "required": ["page_id"],
             },
@@ -299,6 +325,11 @@ async def list_tools() -> list[Tool]:
                         "type": "integer",
                         "description": "Maximum results (default 20)",
                         "default": 20,
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Zero-based offset (default 0)",
+                        "default": 0,
                     },
                 },
                 "required": ["page_id"],
@@ -380,11 +411,14 @@ async def _handle_wiki_read_page(arguments: dict[str, Any]) -> list[TextContent]
 
 
 async def _handle_wiki_list_collections(
-    arguments: dict[str, Any],  # noqa: ARG001
+    arguments: dict[str, Any],
 ) -> list[TextContent]:
     """Execute wiki_list_collections with validated args."""
+    limit = _get_int_arg(arguments, "limit", default=50, min_val=1, max_val=100)
+    offset = _get_int_arg(arguments, "offset", default=0, min_val=0, max_val=9999)
+
     try:
-        cols = await list_collections()
+        cols = await list_collections(limit=limit, offset=offset)
     except Exception as e:
         logger.error("Failed to list collections from STDB: %s", e, exc_info=True)
         return _text(f"STDB unavailable: {e}")
@@ -392,7 +426,8 @@ async def _handle_wiki_list_collections(
     if not cols:
         return _text("No collections found")
 
-    lines = [f"# Collections ({len(cols)})\n"]
+    pagination = f" (showing {len(cols)}, offset={offset})" if offset else ""
+    lines = [f"# Collections ({limit}+ total, showing {len(cols)}){pagination}\n"]
     for c in cols:
         parent = f" (child of {c['parent_id']})" if c['parent_id'] else ""
         icon = c.get('icon', '📁')
@@ -440,10 +475,11 @@ async def _handle_wiki_get_backlinks(arguments: dict[str, Any]) -> list[TextCont
     """Execute wiki_get_backlinks with validated args."""
     page_id = _get_str_arg(arguments, "page_id", max_len=256)
     limit = _get_int_arg(arguments, "limit", default=20, min_val=1, max_val=50)
+    offset = _get_int_arg(arguments, "offset", default=0, min_val=0, max_val=9999)
     assert page_id is not None
 
     try:
-        results = await get_backlinks(page_id, limit)
+        results = await get_backlinks(page_id, limit, offset)
     except ValueError as e:
         return _text(f"Invalid page ID: {e}")
     except Exception as e:
@@ -467,10 +503,11 @@ async def _handle_wiki_get_linked_pages(
     """Execute wiki_get_linked_pages with validated args."""
     page_id = _get_str_arg(arguments, "page_id", max_len=256)
     limit = _get_int_arg(arguments, "limit", default=20, min_val=1, max_val=50)
+    offset = _get_int_arg(arguments, "offset", default=0, min_val=0, max_val=9999)
     assert page_id is not None
 
     try:
-        results = await get_linked_pages(page_id, limit)
+        results = await get_linked_pages(page_id, limit, offset)
     except ValueError as e:
         return _text(f"Invalid page ID: {e}")
     except Exception as e:

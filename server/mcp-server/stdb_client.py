@@ -632,63 +632,81 @@ async def get_page_by_slug(slug: str) -> dict | None:
     return None
 
 
-async def list_collections() -> list[dict]:
-    """List all collections."""
-    rows = await sql_query("SELECT * FROM collection")
+async def list_collections(limit: int = 50, offset: int = 0) -> list[dict]:
+    """List collections with pagination.
+
+    Raises ``ValueError`` for invalid parameters.
+    """
+    limit = _clamp_int(limit, "limit", 50, 1, 100)
+    offset = _clamp_int(offset, "offset", 0, 0, 9999)
+    rows = await sql_query(
+        "SELECT * FROM collection LIMIT ?i OFFSET ?i",
+        limit, offset,
+    )
     return [map_collection(r) for r in rows]
 
 
-async def list_pages(collection_id: str | None = None, limit: int = 50) -> list[dict]:
+async def list_pages(collection_id: str | None = None, limit: int = 50, offset: int = 0) -> list[dict]:
     """List pages, optionally filtered by collection.
 
     Raises ``ValueError`` for invalid *collection_id*.
     """
     limit = _clamp_int(limit, "limit", 50, 1, 100)
+    offset = _clamp_int(offset, "offset", 0, 0, 9999)
     if collection_id:
         _validate_id(collection_id, "collection_id")
         rows = await sql_query(
-            "SELECT * FROM page WHERE collection_id = ? AND status != 'deleted'",
-            collection_id,
+            "SELECT * FROM page WHERE collection_id = ? AND status != 'deleted' LIMIT ?i OFFSET ?i",
+            collection_id, limit, offset,
         )
     else:
         rows = await sql_query(
-            "SELECT * FROM page WHERE status != 'deleted'"
+            "SELECT * FROM page WHERE status != 'deleted' LIMIT ?i OFFSET ?i",
+            limit, offset,
         )
-    return [map_page(r) for r in rows[:limit]]
+    return [map_page(r) for r in rows]
 
 
-async def get_backlinks(page_id: str, limit: int = 20) -> list[dict]:
+async def get_backlinks(page_id: str, limit: int = 20, offset: int = 0) -> list[dict]:
     """Find pages that link to the given page by searching for its ID in text_content.
 
     Raises ``ValueError`` for invalid *page_id*.
     """
     _validate_id(page_id, "page_id")
     limit = _clamp_int(limit, "limit", 20, 1, 50)
+    offset = _clamp_int(offset, "offset", 0, 0, 9999)
     rows = await sql_query(
-        "SELECT * FROM page WHERE status != 'deleted' AND id != ? AND text_content LIKE ?",
+        "SELECT * FROM page WHERE status != 'deleted' AND id != ? AND text_content LIKE ? LIMIT ?i OFFSET ?i",
         page_id,
         f"%{page_id}%",
+        limit, offset,
     )
-    return [map_page(r) for r in rows[:limit]]
+    return [map_page(r) for r in rows]
 
 
-async def list_page_tags(page_id: str) -> list[dict]:
-    """List tags for a specific page.
+async def list_page_tags(page_id: str, limit: int = 50, offset: int = 0) -> list[dict]:
+    """List tags for a specific page with pagination.
 
     Raises ``ValueError`` for invalid *page_id*.
     """
     _validate_id(page_id, "page_id")
-    rows = await sql_query("SELECT * FROM page_tag WHERE page_id = ?", page_id)
+    limit = _clamp_int(limit, "limit", 50, 1, 100)
+    offset = _clamp_int(offset, "offset", 0, 0, 9999)
+    rows = await sql_query(
+        "SELECT * FROM page_tag WHERE page_id = ? LIMIT ?i OFFSET ?i",
+        page_id, limit, offset,
+    )
     return [map_tag(r) for r in rows]
 
 
-async def get_linked_pages(page_id: str, limit: int = 20) -> list[dict]:
+async def get_linked_pages(page_id: str, limit: int = 20, offset: int = 0) -> list[dict]:
     """Find pages referenced via internal links in other pages' text_content.
 
     Raises ``ValueError`` for invalid *page_id*.
     """
     _validate_id(page_id, "page_id")
     limit = _clamp_int(limit, "limit", 20, 1, 50)
+    offset = _clamp_int(offset, "offset", 0, 0, 9999)
     page = await get_page(page_id)
     if not page:
         return []
@@ -706,9 +724,10 @@ async def get_linked_pages(page_id: str, limit: int = 20) -> list[dict]:
         "WHERE status != 'deleted'\n"
         f"  AND id != ?\n"
         f"  AND ({where})\n"
+        "LIMIT ?i OFFSET ?i\n"
     )
-    rows = await sql_query(sql, page_id, *args)
-    return [map_page(r) for r in rows[:limit]]
+    rows = await sql_query(sql, page_id, *args, limit, offset)
+    return [map_page(r) for r in rows]
 
 
 async def get_collection(collection_id: str) -> dict | None:
