@@ -4,10 +4,14 @@ Handles the Authorization Code flow: redirect to provider, callback with code ex
 and user info retrieval. Supports auto-registration for new users.
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 
 from stdb_client import sql_query, call_reducer
 from models import OAuthProviderResponse, OAuthLoginResponse, OAuthCallbackResponse, OAuthUserLinkResponse, PaginatedResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/auth/oauth", tags=["oauth"])
 
@@ -256,7 +260,7 @@ async def oauth_callback(body: dict):
                         )
                         if primary:
                             email = primary["email"]
-            except Exception:
+            except (httpx.RequestError, ValueError):
                 logger.warning("Failed to fetch GitHub emails for OAuth user")
     elif provider_type == "discord":
         external_id = str(userinfo.get("id", ""))

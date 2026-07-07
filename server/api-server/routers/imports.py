@@ -175,7 +175,7 @@ async def import_notion(
 
         try:
             zf = zipfile.ZipFile(io.BytesIO(raw))
-        except Exception:
+        except (zipfile.BadZipFile, zipfile.LargeZipFile):
             raise HTTPException(400, "Invalid ZIP file")
 
         # Collect entries
@@ -260,7 +260,7 @@ async def import_confluence(
 
     try:
         zf = zipfile.ZipFile(io.BytesIO(raw))
-    except Exception:
+    except (zipfile.BadZipFile, zipfile.LargeZipFile):
         raise HTTPException(400, "Invalid ZIP file")
 
     # ── Parse pages.xml for page metadata ─────────────────────────────────
@@ -290,7 +290,7 @@ async def import_confluence(
                             parent = prop.text or ""
                     if pid:
                         pages_meta[pid] = {"title": title, "parent_id": parent}
-    except Exception:
+    except (ET.ParseError, zipfile.BadZipFile, ValueError):
         # pages.xml/entities.xml is optional; fall back to HTML filenames
         pass
 
