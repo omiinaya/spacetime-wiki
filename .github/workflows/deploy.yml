@@ -58,7 +58,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build & push frontend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: web
           push: true
@@ -68,7 +68,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & push API server
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: server/api-server
           push: true
@@ -78,7 +78,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & push module-publisher
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: server/spacetimedb
           push: true
