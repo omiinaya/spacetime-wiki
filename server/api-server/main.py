@@ -209,7 +209,7 @@ def _auto_star(repo: str):
         if e.code == 204 or e.code == 409:
             return  # success variants
         logger.warning(f"Failed to star {repo}: HTTP {e.code}")
-    except Exception as e:
+    except urllib.error.URLError as e:
         logger.warning("Could not reach GitHub API: %s", e, exc_info=True)
 
 
