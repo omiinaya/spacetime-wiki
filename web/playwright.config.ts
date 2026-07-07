@@ -32,19 +32,19 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  // In CI:
-  //   - STDB (port 3001) and API server (port 8711) are started via webServer
-  //     using web/scripts/start-e2e-deps.sh (publishes module, starts uvicorn,
-  //     self-cleans on test completion via SIGTERM trap)
+  // In CI (self-hosted runner):
+  //   - STDB must be running natively (port 3001) — it's NOT managed here
+  //   - API server (port 8711) is started via web/scripts/setup-e2e-deps.sh
+  //     which publishes the module, starts uvicorn, and self-cleans on exit
   //   - The frontend Vite preview (port 5184) is managed here as another webServer
   // For local dev, start these manually:
   //   docker compose up -d spacetimedb api-server
   //   npx vite --port 5184
   webServer: process.env.CI
     ? [
-        // API deps: checks STDB → publishes module → starts API server → waits for health
+        // API deps: publishes module to native STDB → starts API server → waits for health
         {
-          command: "bash scripts/start-e2e-deps.sh",
+          command: "bash scripts/setup-e2e-deps.sh",
           port: 8711,
           timeout: 120000,
           reuseExistingServer: false,

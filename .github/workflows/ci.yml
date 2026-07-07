@@ -104,12 +104,15 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium
 
-      # STDB (port 3001), API server (port 8711), and Vite preview (port 5184)
-      # are all managed by Playwright's webServer config in playwright.config.ts
-      # via web/scripts/start-e2e-deps.sh. Playwright auto-kills them when tests
-      # finish, and start-e2e-deps.sh self-cleans (deletes the E2E STDB database).
+      # Native STDB (port 3001) must be running on the self-hosted runner.
+      # setup-e2e-deps.sh publishes the module and starts the API server (port 8711).
+      # Both are managed by Playwright's webServer and auto-killed when tests finish.
       - name: Run E2E tests
         run: npx playwright test
+
+      - name: Cleanup E2E dependencies
+        if: always()
+        run: bash scripts/cleanup-e2e-deps.sh
 
       - name: Upload Playwright report
         if: always()

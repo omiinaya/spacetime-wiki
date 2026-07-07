@@ -63,11 +63,9 @@ async def server_lifespan(server: Server) -> AsyncIterator[dict[str, Any]]:
         elapsed = time.monotonic() - start
         logger.info("STDB reachable (%d rows, %dms)", len(rows), int(elapsed * 1000))
     except Exception as e:
-        logger.warning("STDB unreachable at startup: %s — will retry on first tool call", e)
+        logger.warning("STDB unreachable at startup: %s — will retry on first tool call", e, exc_info=True)
 
     yield {}
-
-    # ── Shutdown ─────────────────────────────────────────────────────────
     logger.info("Shutting down SpacetimeWiki MCP server — closing HTTPX client...")
     await close_http_client()
     logger.info("Shutdown complete.")
@@ -271,7 +269,7 @@ async def list_resources() -> list[Resource]:
         pages = await _with_concurrency(list_pages(limit=100))
     except Exception as e:
         logger.error(
-            "Failed to list resources from STDB: %s (request_id=%s)", e, corr_id,
+            "Failed to list resources from STDB: %s (request_id=%s)", e, corr_id, exc_info=True,
         )
         return []
 

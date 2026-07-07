@@ -13,7 +13,7 @@ test.describe("Image handling — page view", () => {
     await page.goto("/login");
     await page.getByLabel("Email").fill("admin@spacetimewiki.local");
     await page.getByLabel("Password").fill("admin123");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL("/", { timeout: 15000 });
   });
 
@@ -28,7 +28,7 @@ test.describe("Editor — new page loads", () => {
     await page.goto("/login");
     await page.getByLabel("Email").fill("admin@spacetimewiki.local");
     await page.getByLabel("Password").fill("admin123");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL("/", { timeout: 15000 });
   });
 
