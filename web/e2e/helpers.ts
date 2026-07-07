@@ -26,7 +26,7 @@ export async function signInAsAdmin(page: Page): Promise<void> {
 
   await page.getByLabel("Email").fill(ADMIN_EMAIL);
   await page.getByLabel("Password").fill(ADMIN_PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.locator("form").getByRole("button", { name: "Sign in" }).click();
 
   // Wait for redirect
   await expect(page).toHaveURL("/", { timeout: 20000 });

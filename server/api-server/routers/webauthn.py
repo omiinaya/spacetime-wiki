@@ -261,6 +261,7 @@ async def register_complete(request: Request, body: dict):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error("WebAuthn registration failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 
@@ -403,4 +404,5 @@ async def auth_complete(request: Request, body: dict):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error("WebAuthn authentication failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
