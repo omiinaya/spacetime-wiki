@@ -194,8 +194,8 @@ function FloatingToolbar({
       }
     };
     editor.on("selectionUpdate", update);
-    editor.on("blur-sm", () => setShow(false));
-    return () => { editor.off("selectionUpdate", update); editor.off("blur-sm", () => setShow(false)); };
+    editor.on("blur" as any, () => setShow(false));
+    return () => { editor.off("selectionUpdate", update); editor.off("blur" as any, () => setShow(false)); };
   }, [editor]);
 
   if (!show) return null;
@@ -257,12 +257,12 @@ function ImageToolbar({
       setWidthInput(node.attrs.width || "");
     };
     editor.on("selectionUpdate", update);
-    editor.on("blur-sm", () => setTimeout(() => setPos(null), 200));
+    editor.on("blur" as any, () => setTimeout(() => setPos(null), 200));
     // Also update on click (if view is available)
     try { editor.view.dom.addEventListener("mouseup", update); } catch {}
     return () => {
       editor.off("selectionUpdate", update);
-      editor.off("blur-sm", () => setPos(null));
+      editor.off("blur" as any, () => setPos(null));
       try { editor.view.dom.removeEventListener("mouseup", update); } catch {}
     };
   }, [editor]);
@@ -422,11 +422,11 @@ function TableToolbar({
       });
     };
     editor.on("selectionUpdate", update);
-    editor.on("blur-sm", () => setTimeout(() => setPos(null), 200));
+    editor.on("blur" as any, () => setTimeout(() => setPos(null), 200));
     try { editor.view.dom.addEventListener("mouseup", update); } catch {}
     return () => {
       editor.off("selectionUpdate", update);
-      editor.off("blur-sm", () => setPos(null));
+      editor.off("blur" as any, () => setPos(null));
       try { editor.view.dom.removeEventListener("mouseup", update); } catch {}
     };
   }, [editor]);
@@ -777,7 +777,7 @@ export function PageEditor({ userId }: Props) {
             const images: { src: string; alt: string; imageId?: string }[] = [];
             const walkNodes = (node: PMNode) => {
               if (node.attrs?.src && typeof node.attrs.src === "string") {
-                images.push({ src: node.attrs.src, alt: node.attrs.alt || "", imageId: node.attrs.imageId || undefined });
+                images.push({ src: node.attrs.src as string, alt: (node.attrs.alt as string) || "", imageId: (node.attrs.imageId as string) || undefined });
               }
               if (node.content) {
                 node.content.forEach(walkNodes);
@@ -974,7 +974,7 @@ export function PageEditor({ userId }: Props) {
       const title = errorType === "network"
         ? "Network error — image upload failed"
         : "Upload failed";
-      const msg = err?.message || String(err) || "Unknown error";
+      const msg = (err as Error)?.message || String(err) || "Unknown error";
       // Offer retry on first attempt
       if (retryCount < 2) {
         showToast({
@@ -1196,13 +1196,13 @@ export function PageEditor({ userId }: Props) {
             const textBefore = view.state.doc.textBetween(nodeStart, from);
             const bracketIdx = textBefore.lastIndexOf("[[");
             if (bracketIdx >= 0) {
-              view.dispatch(view.state.tr
+              (view as any).dispatch((view as any).state.tr
                 .delete(nodeStart + bracketIdx, from)
                 .insertText(p.title, nodeStart + bracketIdx));
               // Wrap in a link
               const after = nodeStart + bracketIdx + p.title.length;
-              view.dispatch(view.state.tr
-                .addMark(nodeStart + bracketIdx, after, view.state.schema.marks.link.create({ href: `/page/${p.id}` })));
+              (view as any).dispatch((view as any).state.tr
+                .addMark(nodeStart + bracketIdx, after, (view as any).state.schema.marks.link.create({ href: `/page/${p.id}` })));
             }
           }
           setShowPageLink(false);

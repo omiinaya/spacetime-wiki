@@ -650,13 +650,10 @@ export function useAppLayout() {
     PAGE_LIMIT,
 
     // Sidebar refs and state
-    sidebarNavRef, sidebarElRef, importRef,
+    sidebarNavRef, sidebarElRef,
     touchStartRef, sidebarDragRef, sidebarTouchDelta,
     SIDEBAR_W, sidebarOverlayRef, sidebarOverlayVisible,
     setSidebarOverlayVisible,
-
-    // Import/export refs
-    notionImportRef, confluenceImportRef,
     ...impExp,
 
     // Search

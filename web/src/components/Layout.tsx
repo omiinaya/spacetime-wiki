@@ -76,7 +76,7 @@ export function Layout() {
         selectedPageIds={s.selectedPageIds}
         togglePageSelection={s.togglePageSelection}
         clearSelection={s.clearSelection}
-        handlePageClick={s.handlePageClick}
+        handlePageClick={(pageId, e) => s.handlePageClick(pageId, e, s.navigate)}
         handleBatchArchive={s.handleBatchArchive}
         handleBatchDelete={s.handleBatchDelete}
         handleBatchMove={s.handleBatchMove}

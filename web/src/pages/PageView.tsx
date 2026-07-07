@@ -284,7 +284,7 @@ export function PageView({ pageId, userId }: Props) {
       if (node.type === "heading") {
         let text = "";
         node.content?.forEach((c: PMNode) => { if (c.text) text += c.text; });
-        if (text) headings.push({ level: node.attrs?.level || 1, text, id: `h-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}` });
+        if (text) headings.push({ level: (node.attrs as any)?.level || 1, text, id: `h-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}` });
       }
       node.content?.forEach((c: PMNode) => walk(c));
     }
@@ -411,7 +411,7 @@ export function PageView({ pageId, userId }: Props) {
             const images: { src: string; alt: string; imageId?: string }[] = [];
             const walkNodes = (node: PMNode) => {
               if (node.attrs?.src && typeof node.attrs.src === "string") {
-                images.push({ src: node.attrs.src, alt: node.attrs.alt || "", imageId: node.attrs.imageId || undefined });
+                images.push({ src: node.attrs.src as string, alt: (node.attrs.alt as string) || "", imageId: (node.attrs.imageId as string) || undefined });
               }
               if (node.content) {
                 node.content.forEach(walkNodes);
@@ -1570,7 +1570,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
                   <Paperclip className="h-3.5 w-3.5" />
                   {att[2] || "file"}
                   <span className="text-[10px] text-muted-foreground">
-                    ({att[4] ? `${(att[4] / 1024).toFixed(1)} KB` : ""})
+                    ({att[4] ? `${(Number(att[4]) / 1024).toFixed(1)} KB` : ""})
                   </span>
                 </a>
                 {userId && (
