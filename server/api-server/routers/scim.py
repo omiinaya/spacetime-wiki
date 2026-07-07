@@ -46,7 +46,7 @@ async def _record_event(provider_id: str, resource_type: str, operation: str,
             event_id, provider_id, resource_type, operation,
             external_id, local_id, status, detail,
         ])
-    except Exception as e:
+    except RuntimeError as e:
         logger.error("Failed to record SCIM event: %s", e, exc_info=True)
 
 
@@ -309,7 +309,7 @@ async def create_user(request: Request):
         await call_reducer("scim_sync_user", [
             email, display_name, external_id, pid, default_role, True,
         ])
-    except Exception as e:
+    except RuntimeError as e:
         await _record_event(pid, "User", "POST", external_id, "", "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to create user: {e}")
 
@@ -345,7 +345,7 @@ async def update_user(request: Request, user_id: str):
         await call_reducer("scim_sync_user", [
             email, display_name, external_id, pid, "member", True,
         ])
-    except Exception as e:
+    except RuntimeError as e:
         await _record_event(pid, "User", "PUT", external_id, user_id, "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to update user: {e}")
 
@@ -390,7 +390,7 @@ async def delete_user(request: Request, user_id: str):
     try:
         await call_reducer("scim_deprovision_user", [email, "delete"])
         await _record_event(pid, "User", "DELETE", "", user_id, "success", f"Deleted user '{email}'")
-    except Exception as e:
+    except RuntimeError as e:
         await _record_event(pid, "User", "DELETE", "", user_id, "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {e}")
 
@@ -493,7 +493,7 @@ async def create_group(request: Request):
     gid = str(uuid.uuid4())
     try:
         await call_reducer("scim_sync_group", [gid, display_name, external_id, pid])
-    except Exception as e:
+    except RuntimeError as e:
         await _record_event(pid, "Group", "POST", external_id, "", "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to create group: {e}")
 
@@ -525,7 +525,7 @@ async def update_group(request: Request, group_id: str):
 
     try:
         await call_reducer("scim_sync_group", [group_id, display_name, external_id, pid])
-    except Exception as e:
+    except RuntimeError as e:
         await _record_event(pid, "Group", "PUT", external_id, group_id, "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to update group: {e}")
 
@@ -554,7 +554,7 @@ async def delete_group(request: Request, group_id: str):
         await call_reducer("scim_deprovision_group", [name])
         await _record_event(pid, "Group", "DELETE", "", group_id, "success",
                             f"Deleted group '{name}'")
-    except Exception as e:
+    except RuntimeError as e:
         await _record_event(pid, "Group", "DELETE", "", group_id, "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to delete group: {e}")
 
