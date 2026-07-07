@@ -8,6 +8,7 @@ from models import LDAPLoginResponse
 from stdb_client import sql_query, call_reducer
 
 logger = logging.getLogger(__name__)
+from models import LDAPLoginResponse
 
 router = APIRouter(prefix="/api/v1/auth/ldap", tags=["ldap"])
 

@@ -58,19 +58,19 @@
 
 ## 🟡 High Priority (P2) — Feature gaps, quality, testing
 
-||### P2 — E2E tests not in CI ✅ DONE
-||- **Files:** `.github/workflows/ci.yml`, `web/playwright.config.ts`, `web/scripts/setup-e2e-deps.sh`
-||- **Issues:**
-||  - ~~No E2E test run in CI pipeline~~ ✅ E2E job added with Playwright `webServer`
-||  - ~~No `webServer` config in Playwright — requires manually running dev server~~ ✅ webServer: `setup-e2e-deps.sh` (native STDB + API) + Vite preview
-||  - ~~Docker-based deps conflicts with native STDB on port 3001~~ ✅ Switched to native `spacetimedb-cli` + `uvicorn`
-||  - ~~No cleanup after E2E tests~~ ✅ Added `cleanup-e2e-deps.sh` step in CI (always-run)
-||  - No API mocking — E2E tests require full STDB + API server stack (still true — intentional)
-||  - Workers limited to 1 (slow — 79 tests × ~8s each) — ✅ bumped to 2 in CI
-||  - Chromium only (no Firefox/WebKit) — still true
-||  - ~~No retries configured~~ ✅ retries: 3 in CI, 1 locally
-||- **Fix:** Add E2E job to CI with Playwright `webServer` using native tooling (spacetimedb-cli + uvicorn) on the self-hosted runner's existing STDB instance
-||- **Effort:** 4-6 hours
+|### P2 — E2E tests not in CI ✅ DONE
+|- **Files:** `.github/workflows/ci.yml`, `web/playwright.config.ts`, `web/scripts/setup-e2e-deps.sh`
+|- **Issues:**
+|  - ~~No E2E test run in CI pipeline~~ ✅ E2E job added with Playwright `webServer`
+|  - ~~No `webServer` config in Playwright — requires manually running dev server~~ ✅ webServer: `setup-e2e-deps.sh` (native STDB + API) + Vite preview
+|  - ~~Docker-based deps conflicts with native STDB on port 3001~~ ✅ Switched to native `spacetimedb-cli` + `uvicorn`
+|  - ~~No cleanup after E2E tests~~ ✅ Added `cleanup-e2e-deps.sh` step in CI (always-run)
+|  - No API mocking — E2E tests require full STDB + API server stack (still true — intentional)
+|  - Workers limited to 1 (slow — 79 tests × ~8s each) — ✅ bumped to 2 in CI
+|  - Chromium only (no Firefox/WebKit) — still true
+|  - ~~No retries configured~~ ✅ retries: 3 in CI, 1 locally
+|- **Fix:** Add E2E job to CI with Playwright `webServer` using native tooling (spacetimedb-cli + uvicorn) on the self-hosted runner's existing STDB instance
+|- **Effort:** 4-6 hours
 
 ### P2 — Rust CI doesn't run tests or clippy
 - **File:** `.github/workflows/ci.yml` (Rust job)
@@ -86,7 +86,7 @@
   - `routers/ldap_auth.py:211`
 - **Issue:** Five bare `except Exception:` blocks silently swallow errors with no logging
 - **Fix:** Add proper logging with `logger.exception()`, or narrow to specific exception types
-- **Sprint fix:** `cb51290` (narrowed 7 `except Exception:` blocks to specific types) + `c8441b1` (added logging to 5 remaining blocks): `auth.py`, `main.py`, `scim.py`, `webauthn.py` + `4715c4c` (logging for MCP server health check bare except)
+- **Sprint fix:** `cb51290` (narrowed 7 `except Exception:` blocks to specific types) + `c8441b1` (added logging to 5 remaining blocks): `auth.py`, `main.py`, `scim.py`, `webauthn.py`
 - **Effort:** 1 hour
 
 ### P2 — No deploy/release workflow ✅ DONE
