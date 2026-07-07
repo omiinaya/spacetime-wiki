@@ -82,7 +82,7 @@ done
 
 # ── Seed E2E test data ─────────────────────────────────────────────────────
 # Seeds admin user + sample pages into the fresh STDB instance.
-# The global-setup.ts can't do this because it runs before webServer starts.
+# global-setup.ts also seeds, but it connects to STDB directly and can race with module publishing — seeding here after API is healthy is more reliable.
 echo "[e2e-setup] Seeding E2E test data..."
 python3 "$SCRIPT_DIR/seed-e2e-data.py" || echo "[e2e-setup] WARNING: Seeding failed — E2E tests may have issues."
 
