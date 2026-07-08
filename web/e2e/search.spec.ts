@@ -8,7 +8,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Search — sidebar search bar", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
   });
 
   test("shows search input in sidebar", async ({ page }) => {
