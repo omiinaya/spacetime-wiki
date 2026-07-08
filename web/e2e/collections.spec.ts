@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Collections — sidebar", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
   });
 
   test("shows collections section in sidebar", async ({ page }) => {

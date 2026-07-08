@@ -13,7 +13,7 @@ test.describe("Templates — picker and usage", () => {
 
   test("New page opens template picker", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     await page.locator("aside").getByRole("button", { name: "New page" }).first().click();
     await page.waitForTimeout(500);
@@ -26,7 +26,7 @@ test.describe("Templates — picker and usage", () => {
 
   test("clicking Blank page navigates to editor", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     await page.locator("aside").getByRole("button", { name: "New page" }).first().click();
     await page.waitForTimeout(500);
