@@ -35,7 +35,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose, pageId, onAdd
   const imageId = current?.imageId;
 
   // Filter comments for this specific image
-  const imageComments = comments?.filter(c => 'text_anchor' in c && (c as any).text_anchor === `image:${imageId}`) || [];
+  const imageComments = comments?.filter(c => 'text_anchor' in c && (c as unknown).text_anchor === `image:${imageId}`) || [];
 
   // ── Reset zoom on image change ───────────────────────────────────────────
   const resetZoom = useCallback(() => {

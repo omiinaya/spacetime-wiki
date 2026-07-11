@@ -121,7 +121,7 @@ export function BulkExport() {
 
         try {
           const atts = await api.attachments.list(page.id);
-          for (const att of atts as any[]) {
+          for (const att of atts as unknown[]) {
             const filename = att[2] || "file";
             const base64Data = att[5] || "";
             if (base64Data) {

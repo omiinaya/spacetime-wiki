@@ -178,7 +178,7 @@ const analyticsApi = {
     callReducer("record_page_view", [pageId, viewer]),
   getViewCount: (pageId: string) =>
     sqlQuery(`SELECT COUNT(*) FROM page_view WHERE page_id = '${pageId}'`)
-      .then((rows) => Number((rows[0]?.[0] as any) ?? 0)),
+      .then((rows) => Number((rows[0]?.[0] as unknown) ?? 0)),
   getTrending: (limit: number = 8) =>
     sqlQuery(
       "SELECT page_id, COUNT(*) FROM page_view " +

@@ -194,8 +194,8 @@ function FloatingToolbar({
       }
     };
     editor.on("selectionUpdate", update);
-    editor.on("blur" as any, () => setShow(false));
-    return () => { editor.off("selectionUpdate", update); editor.off("blur" as any, () => setShow(false)); };
+    editor.on("blur" as unknown, () => setShow(false));
+    return () => { editor.off("selectionUpdate", update); editor.off("blur" as unknown, () => setShow(false)); };
   }, [editor]);
 
   if (!show) return null;
@@ -238,11 +238,11 @@ function ImageToolbar({
     const update = () => {
       if (!editor) return;
       const { selection } = editor.state;
-      if ((selection as any).type.name !== "NodeSelection") {
+      if ((selection as unknown).type.name !== "NodeSelection") {
         setPos(null);
         return;
       }
-      const node = (selection as any).node;
+      const node = (selection as unknown).node;
       if (!node || (node.type.name !== "imageEnhanced")) {
         setPos(null);
         return;
@@ -257,12 +257,12 @@ function ImageToolbar({
       setWidthInput(node.attrs.width || "");
     };
     editor.on("selectionUpdate", update);
-    editor.on("blur" as any, () => setTimeout(() => setPos(null), 200));
+    editor.on("blur" as unknown, () => setTimeout(() => setPos(null), 200));
     // Also update on click (if view is available)
     try { editor.view.dom.addEventListener("mouseup", update); } catch {}
     return () => {
       editor.off("selectionUpdate", update);
-      editor.off("blur" as any, () => setPos(null));
+      editor.off("blur" as unknown, () => setPos(null));
       try { editor.view.dom.removeEventListener("mouseup", update); } catch {}
     };
   }, [editor]);
@@ -270,8 +270,8 @@ function ImageToolbar({
   if (!pos || !editor) return null;
 
   const { selection } = editor.state;
-  if ((selection as any).type.name !== "NodeSelection") return null;
-  const node = (selection as any).node;
+  if ((selection as unknown).type.name !== "NodeSelection") return null;
+  const node = (selection as unknown).node;
   if (!node || node.type.name !== "imageEnhanced") return null;
 
   const currentAttrs = node.attrs;
@@ -422,11 +422,11 @@ function TableToolbar({
       });
     };
     editor.on("selectionUpdate", update);
-    editor.on("blur" as any, () => setTimeout(() => setPos(null), 200));
+    editor.on("blur" as unknown, () => setTimeout(() => setPos(null), 200));
     try { editor.view.dom.addEventListener("mouseup", update); } catch {}
     return () => {
       editor.off("selectionUpdate", update);
-      editor.off("blur" as any, () => setPos(null));
+      editor.off("blur" as unknown, () => setPos(null));
       try { editor.view.dom.removeEventListener("mouseup", update); } catch {}
     };
   }, [editor]);
@@ -895,7 +895,7 @@ export function PageEditor({ userId }: Props) {
         if (parsed?.type === "doc") {
           // Resolve any attachment:// URLs to blob URLs for display
           resolveContentAttachments(parsed, blobUrlCacheRef.current).then((resolved) => {
-            editor.commands.setContent(resolved as any);
+            editor.commands.setContent(resolved as unknown);
           });
         }
       } catch { /* ignore */ }
@@ -919,7 +919,7 @@ export function PageEditor({ userId }: Props) {
         const result = await api.pages.create(
           title, content, "", "", userId || "anonymous",
         );
-        const newId = typeof result === "string" ? result : String((result as any)[0] || result);
+        const newId = typeof result === "string" ? result : String((result as unknown)[0] || result);
         clearDraft();
         navigate(`/page/${newId}`);
       } else if (id) {
@@ -1022,7 +1022,7 @@ export function PageEditor({ userId }: Props) {
   const handleDuplicate = async () => {
     if (!id) return;
     const result = await api.pages.duplicate(id, userId || "anonymous");
-    const newId = typeof result === "string" ? result : String((result as any)[0] || result);
+    const newId = typeof result === "string" ? result : String((result as unknown)[0] || result);
     navigate(`/page/${newId}/edit`);
   };
 
@@ -1196,13 +1196,13 @@ export function PageEditor({ userId }: Props) {
             const textBefore = view.state.doc.textBetween(nodeStart, from);
             const bracketIdx = textBefore.lastIndexOf("[[");
             if (bracketIdx >= 0) {
-              (view as any).dispatch((view as any).state.tr
+              (view as unknown).dispatch((view as unknown).state.tr
                 .delete(nodeStart + bracketIdx, from)
                 .insertText(p.title, nodeStart + bracketIdx));
               // Wrap in a link
               const after = nodeStart + bracketIdx + p.title.length;
-              (view as any).dispatch((view as any).state.tr
-                .addMark(nodeStart + bracketIdx, after, (view as any).state.schema.marks.link.create({ href: `/page/${p.id}` })));
+              (view as unknown).dispatch((view as unknown).state.tr
+                .addMark(nodeStart + bracketIdx, after, (view as unknown).state.schema.marks.link.create({ href: `/page/${p.id}` })));
             }
           }
           setShowPageLink(false);
@@ -1250,8 +1250,8 @@ export function PageEditor({ userId }: Props) {
       }
       return false;
     };
-    try { editor.view.dom.addEventListener("keydown", handler as any, true); } catch {}
-    return () => { try { editor.view.dom.removeEventListener("keydown", handler as any, true); } catch {} };
+    try { editor.view.dom.addEventListener("keydown", handler as unknown, true); } catch {}
+    return () => { try { editor.view.dom.removeEventListener("keydown", handler as unknown, true); } catch {} };
   }, [editor, slashOpen, preview, filteredCommands, slashIndex, showPageLink, pageLinkQuery, pageLinkIndex, allPages]);
 
   // Close slash menu on click outside

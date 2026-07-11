@@ -316,7 +316,7 @@ export async function getScimEvents(providerId?: string): Promise<ScimEvent[]> {
   let sql = "SELECT * FROM scim_event";
   if (providerId) sql += ` WHERE provider_id = '${providerId}'`;
   sql += " LIMIT 100";
-  return sqlQuery(sql).then((rows) => (rows as any as unknown[][]).map(mapScimEvent));
+  return sqlQuery(sql).then((rows) => (rows as unknown[][]).map(mapScimEvent));
 }
 
 export async function recordScimEvent(): Promise<void> {
@@ -354,7 +354,7 @@ export async function toggleFavorite(userId: string, pageId: string): Promise<vo
 
 export async function getPagePermissions(pageId: string): Promise<PagePermission[]> {
   return sqlQuery(`SELECT * FROM page_permission WHERE page_id = '${pageId}'`)
-    .then((rows) => (rows as any as unknown[][]).map(mapPagePermission));
+    .then((rows) => (rows as unknown[][]).map(mapPagePermission));
 }
 
 export async function setPagePermission(pageId: string, userId: string, groupId: string, role: string): Promise<void> {

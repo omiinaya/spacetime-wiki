@@ -96,10 +96,10 @@ export function useImportExport(userId: string | null, onRefresh: () => void) {
       formData.append("file", file);
       formData.append("collection_id", "");
       formData.append("created_by", userId || "anonymous");
-      const apiBase = (window as any).__API_BASE__ || "/api/v1";
+      const apiBase = (window as unknown).__API_BASE__ || "/api/v1";
       const res = await fetch(`${apiBase}/import/confluence`, {
         method: "POST",
-        headers: { "X-API-Key": (window as any).__API_KEY__ || "" },
+        headers: { "X-API-Key": (window as unknown).__API_KEY__ || "" },
         body: formData,
       });
       if (!res.ok) throw new Error(await res.text() || `Server error: ${res.status}`);

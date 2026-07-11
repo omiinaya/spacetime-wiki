@@ -87,7 +87,7 @@ export function ActivityFeed({ compact = false, limit = 50, onNavigate }: Activi
     const loadUsernames = async () => {
       try {
         const { sqlQuery } = await import("../lib/api");
-        const rows = await sqlQuery("SELECT id, name FROM user") as any as unknown[][];
+        const rows = await sqlQuery("SELECT id, name FROM user") as unknown[][];
         const map: Record<string, string> = {};
         for (const row of rows) {
           map[String(row[0])] = String(row[1] ?? "");

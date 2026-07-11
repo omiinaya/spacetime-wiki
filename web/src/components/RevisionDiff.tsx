@@ -13,9 +13,9 @@ interface Props {
 
 // ─── Tiptap JSON to plain text ───────────────────────────────────────────────
 
-function tiptapToPlain(doc: any): string {
+function tiptapToPlain(doc: unknown): string {
   const parts: string[] = [];
-  function walk(node: any) {
+  function walk(node: unknown) {
     if (!node) return;
     if (node.type === "text") {
       parts.push(node.text || "");
@@ -41,7 +41,7 @@ function tiptapToPlain(doc: any): string {
   return parts.join("");
 }
 
-function tryParseTiptap(json: string): any {
+function tryParseTiptap(json: string): unknown {
   try {
     const parsed = JSON.parse(json);
     if (parsed && parsed.type === "doc") return parsed;

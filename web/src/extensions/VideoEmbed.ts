@@ -11,7 +11,7 @@ export interface VideoProvider {
   /** Extract video ID from a matched URL */
   extractId: (url: string) => string | null;
   /** Build embed URL from video ID */
-  embedUrl: (id: string, attrs?: Record<string, any>) => string;
+  embedUrl: (id: string, attrs?: Record<string, unknown>) => string;
   /** If true, the embed uses an iframe with allowFullScreen */
   allowFullScreen?: boolean;
 }
@@ -113,7 +113,7 @@ export function buildEmbedUrl(url: string): { provider: VideoProvider; embedSrc:
 // ─── Options ───────────────────────────────────────────────────────────────────
 
 export interface VideoEmbedOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
   width: number;
   height: number;
 }
@@ -259,7 +259,7 @@ export const VideoEmbed = Node.create<VideoEmbedOptions>({
         (options) =>
         ({ commands }) => {
           // Auto-detect provider if not specified
-          const attrs: Record<string, any> = { ...options };
+          const attrs: Record<string, unknown> = { ...options };
           if (!options.provider && options.src) {
             const info = buildEmbedUrl(options.src);
             if (info) {

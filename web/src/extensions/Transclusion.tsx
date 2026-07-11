@@ -82,7 +82,7 @@ export const Transclusion = Node.create<TransclusionOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(TransclusionNodeView as any);
+    return ReactNodeViewRenderer(TransclusionNodeView as unknown);
   },
 
   addCommands() {

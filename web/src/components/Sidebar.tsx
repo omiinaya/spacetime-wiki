@@ -10,7 +10,7 @@ interface SidebarProps {
   // Core data
   pages: Page[];
   collections: Collection[];
-  collectionTree: (Collection & { children: any[] })[];
+  collectionTree: (Collection & { children: unknown[] })[];
   pagesByCollection: Record<string, Page[]>;
   favoritePages: Page[];
   loading: boolean;
@@ -26,7 +26,7 @@ interface SidebarProps {
   isActive: (pageId: string) => boolean;
   navigate: (path: string) => void;
   userId: string | null;
-  notificationList: any[];
+  notificationList: unknown[];
   refreshNotifications: () => void;
 
   // Sidebar tree props

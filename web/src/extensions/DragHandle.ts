@@ -47,7 +47,7 @@ export const DragHandle = Extension.create({
                   grip.innerHTML = "⋮⋮";
 
                   grip.addEventListener("dragstart", (e: DragEvent) => {
-                    const view = (grip as any).view as import("@tiptap/pm/view").EditorView;
+                    const view = (grip as unknown).view as import("@tiptap/pm/view").EditorView;
                     if (!view) return;
 
                     const { state, dispatch } = view;

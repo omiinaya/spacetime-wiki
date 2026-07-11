@@ -134,8 +134,8 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
         `),
       ]);
 
-      const toNum = (rows: any) => Number((rows[0] as any)?.c || 0);
-      const toNum2 = (rows: any, key: string) => Number((rows[0] as any)?.[key] || 0);
+      const toNum = (rows: unknown) => Number((rows[0] as unknown)?.c || 0);
+      const toNum2 = (rows: unknown, key: string) => Number((rows[0] as unknown)?.[key] || 0);
 
       setStats({
         totalPages: toNum(pageRows),
@@ -151,13 +151,13 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
       });
 
       setTopContributors(
-        (contribRows as any[]).map((r: any) => ({
+        (contribRows as unknown[]).map((r: unknown) => ({
           user_id: String(r.user_id || ""),
           user_name: String(r.user_name || "Unknown"),
           page_count: Number(r.page_count || 0),
         }))
       );
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Failed to load stats:", e);
       setError("Failed to load wiki statistics. Make sure the database is connected.");
     } finally {
@@ -173,7 +173,7 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
         "SELECT id, event_type, actor_id, target_name, created_at FROM audit_event "
       );
       setRecentActivity(
-        (rows as any[]).map((r: any) => ({
+        (rows as unknown[]).map((r: unknown) => ({
           id: String(r.id || ""),
           event_type: String(r.event_type || ""),
           actor_id: String(r.actor_id || ""),

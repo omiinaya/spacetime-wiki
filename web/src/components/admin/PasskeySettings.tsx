@@ -108,7 +108,7 @@ export function PasskeySettings({ userId }: { userId: string | null }) {
       setDeviceName("");
       await loadCredentials();
       setTimeout(() => setStatus(""), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(`Registration failed: ${err.message || err}`);
       setStatus("");
     }

@@ -23,17 +23,17 @@ export default function AccessRequestPanel({ userId }: { userId: string | null }
           let requesterName = "Unknown user";
           try {
             const pageRows = await sqlQuery(`SELECT title FROM page WHERE id = '${req.page_id}'`);
-            if (pageRows.length > 0) pageTitle = String((pageRows[0] as any).title || "Unknown page");
+            if (pageRows.length > 0) pageTitle = String((pageRows[0] as unknown).title || "Unknown page");
           } catch {}
           try {
             const userRows = await sqlQuery(`SELECT name FROM \`user\` WHERE id = '${req.requester_id}'`);
-            if (userRows.length > 0) requesterName = String((userRows[0] as any).name || "Unknown user");
+            if (userRows.length > 0) requesterName = String((userRows[0] as unknown).name || "Unknown user");
           } catch {}
           return { ...req, pageTitle, requesterName };
         })
       );
       setRequests(enriched);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.message || "Failed to load access requests");
     } finally {
       setLoading(false);
@@ -48,7 +48,7 @@ export default function AccessRequestPanel({ userId }: { userId: string | null }
     try {
       await accessRequestApi.approve(id, userId);
       loadRequests();
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.message || "Failed to approve request");
     }
   };
@@ -59,7 +59,7 @@ export default function AccessRequestPanel({ userId }: { userId: string | null }
     try {
       await accessRequestApi.deny(id, userId);
       loadRequests();
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.message || "Failed to deny request");
     }
   };

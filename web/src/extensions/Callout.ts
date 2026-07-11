@@ -1,7 +1,7 @@
 import { Node, mergeAttributes, wrappingInputRule } from "@tiptap/core";
 
 export interface CalloutOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
   types: { key: string; label: string; color: string; icon: string }[];
 }
 

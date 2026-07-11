@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 // Dynamically import mermaid (~800KB with all diagram types) only when the first
 // mermaid node is rendered. This avoids adding it to the initial bundle.
 
-let _mermaid: any = null;
+let _mermaid: unknown = null;
 let _mermaidPromise: Promise<void> | null = null;
 
 async function ensureMermaid(): Promise<void> {
@@ -38,7 +38,7 @@ async function ensureMermaid(): Promise<void> {
 // ─── Options ───────────────────────────────────────────────────────────────────
 
 export interface MermaidOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module "@tiptap/core" {

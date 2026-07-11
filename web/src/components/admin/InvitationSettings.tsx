@@ -50,7 +50,7 @@ export function InvitationSettings({ userId }: { userId: string | null }) {
       setInvEmail("");
       setInvMessage("");
       loadInvitations();
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.message || "Failed to create invitation");
     }
   };
@@ -60,7 +60,7 @@ export function InvitationSettings({ userId }: { userId: string | null }) {
     try {
       await api.invitations.revoke(id, userId);
       loadInvitations();
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.message || "Failed to revoke invitation");
     }
   };

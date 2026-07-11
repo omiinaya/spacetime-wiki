@@ -12,7 +12,7 @@ const DEFAULT_PLANTUML_SERVER = "https://www.plantuml.com/plantuml";
 // ─── Options ─────────────────────────────────────────────────────────────────
 
 export interface PlantUMLOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
   serverUrl?: string;
 }
 
@@ -58,7 +58,7 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
 
   const serverUrl =
     (editor.extensionManager.extensions.find(
-      (ext: any) => ext.name === "plantuml",
+      (ext: unknown) => ext.name === "plantuml",
     )?.options as PlantUMLOptions)?.serverUrl || DEFAULT_PLANTUML_SERVER;
 
   const diagramUrl = src ? getDiagramUrl(src, serverUrl) : "";

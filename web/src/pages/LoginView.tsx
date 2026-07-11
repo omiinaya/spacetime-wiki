@@ -17,7 +17,7 @@ export default function LoginView() {
   const [ldapUsername, setLdapUsername] = useState("");
   const [ldapPassword, setLdapPassword] = useState("");
   const [ldapLoading, setLdapLoading] = useState(false);
-  const [oauthProviders, setOauthProviders] = useState<any[]>([]);
+  const [oauthProviders, setOauthProviders] = useState<unknown[]>([]);
 
   useEffect(() => {
     api.oidc.listActive().then(setOidcProviders).catch(() => {});
@@ -40,7 +40,7 @@ export default function LoginView() {
     });
   };
 
-  const handleOAuthSignIn = (provider: any) => {
+  const handleOAuthSignIn = (provider: unknown) => {
     const cv = Array.from(crypto.getRandomValues(new Uint8Array(32)))
       .map(b => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"[b % 66]).join("");
     crypto.subtle.digest("SHA-256", new TextEncoder().encode(cv)).then(hash => {
@@ -64,7 +64,7 @@ export default function LoginView() {
     });
   };
 
-  const handleSamlSignIn = (provider: any) => {
+  const handleSamlSignIn = (provider: unknown) => {
     const requestId = "_" + crypto.randomUUID().replace(/-/g, "");
     const acsUrl = `${window.location.origin}/auth/saml/callback`;
     const authnRequest = `<?xml version="1.0" encoding="UTF-8"?>
@@ -96,7 +96,7 @@ export default function LoginView() {
       const result = await resp.json();
       if (result.user) { localStorage.setItem("sw_user_id", result.user.id); navigate("/"); }
       else throw new Error("No user returned");
-    } catch (err: any) { setError(`LDAP failed: ${err.message || err}`); }
+    } catch (err: unknown) { setError(`LDAP failed: ${err.message || err}`); }
     finally { setLdapLoading(false); }
   };
 
@@ -111,7 +111,7 @@ export default function LoginView() {
       if (mfaEnabled) { setPendingUserId(user.id); setMfaRequired(true); return; }
       localStorage.setItem("sw_user_id", user.id);
       navigate("/");
-    } catch (err: any) { setError(String(err)); }
+    } catch (err: unknown) { setError(String(err)); }
   };
 
   const [mfaRequired, setMfaRequired] = useState(false);
@@ -133,7 +133,7 @@ export default function LoginView() {
       }
       localStorage.setItem("sw_user_id", pendingUserId);
       navigate("/");
-    } catch (err: any) { setMfaError(err.message || "Verification failed"); }
+    } catch (err: unknown) { setMfaError(err.message || "Verification failed"); }
   };
 
   const handlePasskeySignIn = async () => {
@@ -147,7 +147,7 @@ export default function LoginView() {
         timeout: options.timeout, rpId: options.rpId, userVerification: options.userVerification,
       };
       if (options.allowCredentials?.length > 0) {
-        publicKey.allowCredentials = options.allowCredentials.map((cred: any) => ({
+        publicKey.allowCredentials = options.allowCredentials.map((cred: unknown) => ({
           id: Uint8Array.from(atob(cred.id.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)),
           type: "public-key" as PublicKeyCredentialType, transports: cred.transports as AuthenticatorTransport[],
         }));
@@ -171,7 +171,7 @@ export default function LoginView() {
       const result = await verifyResp.json();
       if (result.user) { localStorage.setItem("sw_user_id", result.user.id); navigate("/"); }
       else throw new Error("No user returned");
-    } catch (err: any) { setError(`Passkey sign-in failed: ${err.message || err}`); }
+    } catch (err: unknown) { setError(`Passkey sign-in failed: ${err.message || err}`); }
   };
 
   return (

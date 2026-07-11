@@ -10,7 +10,7 @@ const DRAWIO_EMBED_URL = "https://embed.diagrams.net/?embed=1&spin=1&proto=json&
 // ─── Options ─────────────────────────────────────────────────────────────────
 
 export interface DrawioOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module "@tiptap/core" {

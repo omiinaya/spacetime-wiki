@@ -172,7 +172,7 @@ export function PageView({ pageId, userId }: Props) {
   const [shareLinks, setShareLinks] = useState<{ id: string; token: string; expires_at: number; visit_count: number; password_hash: string }[]>([]);
   // const [shareLoading, setShareLoading] = useState(false);
   const [shareCreating, setShareCreating] = useState(false);
-  const [attachments, setAttachments] = useState<any[]>([]);
+  const [attachments, setAttachments] = useState<unknown[]>([]);
   const [uploading, setUploading] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [showToc, setShowToc] = useState(false);
@@ -284,7 +284,7 @@ export function PageView({ pageId, userId }: Props) {
       if (node.type === "heading") {
         let text = "";
         node.content?.forEach((c: PMNode) => { if (c.text) text += c.text; });
-        if (text) headings.push({ level: (node.attrs as any)?.level || 1, text, id: `h-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}` });
+        if (text) headings.push({ level: (node.attrs as unknown)?.level || 1, text, id: `h-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}` });
       }
       node.content?.forEach((c: PMNode) => walk(c));
     }
@@ -360,7 +360,7 @@ export function PageView({ pageId, userId }: Props) {
       }
       setReactions(reactionMap);
       // Load attachments
-      api.attachments.list(pageId).then((rows) => setAttachments(rows as any[]));
+      api.attachments.list(pageId).then((rows) => setAttachments(rows as unknown[]));
     } catch (err: unknown) { setError(String(err)); }
     finally { setLoading(false); }
   };
@@ -455,7 +455,7 @@ export function PageView({ pageId, userId }: Props) {
           resolveContentAttachments(parsed, blobUrlCacheRef.current).then((resolved) => {
             // Then resolve transclusions ({{@page_id}} syntax)
             resolveTransclusions(resolved).then((resolvedWithTransclusions) => {
-              editor.commands.setContent(resolvedWithTransclusions as any);
+              editor.commands.setContent(resolvedWithTransclusions as unknown);
             });
           });
         } else {
@@ -638,7 +638,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
 
       // Add attachments
       const atts = await api.attachments.list(pageId);
-      for (const att of atts as any[]) {
+      for (const att of atts as unknown[]) {
         const filename = att[2] || "file";
         const base64Data = att[5] || "";
         if (base64Data) {
@@ -694,7 +694,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
       } catch { /* no tags */ }
 
       // Build the export payload
-      const exportData: Record<string, any> = {
+      const exportData: Record<string, unknown> = {
         title: page.title,
         slug: page.slug,
         icon: page.icon || "",
@@ -747,7 +747,7 @@ ${md.split("\n").map(l => l.startsWith("#") ? `<h${l.match(/^#+/)?.[0]?.length |
       });
       await api.attachments.add(pageId, file.name, file.type, file.size, base64, userId);
       const rows = await api.attachments.list(pageId);
-      setAttachments(rows as any[]);
+      setAttachments(rows as unknown[]);
     } catch (err) { console.error(err); }
     finally { setUploading(false); }
     e.target.value = "";
