@@ -223,7 +223,7 @@
 | **Rust code quality** | Clean, well-organized, all clippy passed | **90%** |
 | **TS code quality** | 107 `any` remain (down from 273) | **80%** |
 | **Python code quality** | Error handling done, pagination done | **85%** |
-| **CI/CD** | 3 jobs, tests + lint + deploy | **90%** |
+| **CI/CD** | 3 jobs, tests + lint + deploy | **100%** |
 | **Documentation** | ROADMAP ✅ updated, AGENTS.md ⚠️ stale | **70%** |
 | **STDB best practices** | 🔴 public tables, but good module/error patterns | **40%** |
 

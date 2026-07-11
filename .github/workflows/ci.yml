@@ -37,6 +37,9 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+      - name: Lint
+        run: npm run lint
+
       - name: Run tests
         run: npm test
 
@@ -68,7 +71,7 @@ jobs:
       - name: Build
         run: cargo build
 
-      - name: Check (clippy)
+      - name: Check
         run: cargo check
 
       - name: Tests
@@ -76,7 +79,6 @@ jobs:
 
       - name: Clippy
         run: cargo clippy -- -D warnings 2>&1 | tail -30
-        continue-on-error: true
 
   e2e:
     name: E2E (Playwright)
