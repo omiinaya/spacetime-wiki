@@ -5,11 +5,16 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint": "cd web && npm run lint",
+    "lint:fix": "cd web && npm run lint:fix",
+    "format": "cd web && npm run format",
+    "format:check": "cd web && npm run format:check"
   },
   "lint-staged": {
-    "web/src/**/*.{ts,tsx}": [
-      "bash -c 'cd web && /home/hindsight/spacetime-wiki/web/node_modules/.bin/vitest run --changed --reporter=verbose --no-color 2>&1 | tail -5'"
+    "web/src/**/*.{ts,tsx,js,jsx,json,css,md}": [
+      "node /home/hindsight/spacetime-wiki/web/node_modules/.bin/prettier --write",
+      "bash -c 'cd web && node /home/hindsight/spacetime-wiki/web/node_modules/.bin/vitest run --changed --reporter=verbose --no-color 2>&1 | tail -5'"
     ],
     "server/spacetimedb/src/**/*.rs": []
   },

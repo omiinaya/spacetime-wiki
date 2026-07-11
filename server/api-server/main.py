@@ -47,7 +47,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         # MIME-type sniffing prevention
         response.headers["X-Content-Type-Options"] = "nosniff"
-        # Legacy XSS filter (deprecated in modern browsers, set to 0 for safety)
         response.headers["X-XSS-Protection"] = "0"
         # Referrer policy
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
