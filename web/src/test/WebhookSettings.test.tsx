@@ -37,7 +37,7 @@ const sampleWebhooks = [
     name: 'Slack Notifier',
     url: 'https://hooks.slack.com/xxx',
     events: JSON.stringify(['page.create', 'page.update']),
-    secret: process.env.WEBHOOK_SECRET || '',
+    secret: 'whsec_test123',
     is_active: true,
     created_at: 1000,
     created_by: 'u1',
