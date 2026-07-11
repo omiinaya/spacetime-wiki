@@ -3,10 +3,10 @@
 // Clicking opens a dropdown showing recent notifications with the ability to
 // mark them as read or navigate to the target page.
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Bell, CheckCheck, Trash2, X, ExternalLink, Clock } from "lucide-react";
-import { cn, timeAgo } from "../lib/utils";
-import { api, type Notification } from "../lib/api";
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Bell, CheckCheck, Trash2, X, ExternalLink, Clock } from 'lucide-react';
+import { cn, timeAgo } from '../lib/utils';
+import { api, type Notification } from '../lib/api';
 
 interface NotificationBellProps {
   userId: string | null;
@@ -34,18 +34,18 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
   // Close on Escape
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === 'Escape') setOpen(false);
     };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, [open]);
 
   const handleMarkAllRead = useCallback(async () => {
@@ -54,7 +54,7 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
       await api.notifications.markAllRead(userId);
       onRefresh?.();
     } catch (err) {
-      console.error("Failed to mark all read:", err);
+      console.error('Failed to mark all read:', err);
     }
   }, [userId, onRefresh]);
 
@@ -64,27 +64,33 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
       await api.notifications.clearAll(userId);
       onRefresh?.();
     } catch (err) {
-      console.error("Failed to clear all:", err);
+      console.error('Failed to clear all:', err);
     }
   }, [userId, onRefresh]);
 
-  const handleMarkRead = useCallback(async (id: string) => {
-    try {
-      await api.notifications.markRead(id);
-      onRefresh?.();
-    } catch (err) {
-      console.error("Failed to mark notification read:", err);
-    }
-  }, [onRefresh]);
+  const handleMarkRead = useCallback(
+    async (id: string) => {
+      try {
+        await api.notifications.markRead(id);
+        onRefresh?.();
+      } catch (err) {
+        console.error('Failed to mark notification read:', err);
+      }
+    },
+    [onRefresh],
+  );
 
-  const handleDelete = useCallback(async (id: string) => {
-    try {
-      await api.notifications.delete(id);
-      onRefresh?.();
-    } catch (err) {
-      console.error("Failed to delete notification:", err);
-    }
-  }, [onRefresh]);
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        await api.notifications.delete(id);
+        onRefresh?.();
+      } catch (err) {
+        console.error('Failed to delete notification:', err);
+      }
+    },
+    [onRefresh],
+  );
 
   const navigateToTarget = useCallback((notif: Notification) => {
     if (notif.target_id) {
@@ -96,16 +102,26 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
   // Icon for notification type
   const getEventIcon = (eventType: string): string => {
     switch (eventType) {
-      case "page.create": return "📄";
-      case "page.update": return "✏️";
-      case "page.delete": return "🗑️";
-      case "page.publish": return "🚀";
-      case "page.archive": return "📦";
-      case "comment.create": return "💬";
-      case "collection.create": return "📁";
-      case "collection.update": return "📂";
-      case "collection.delete": return "❌";
-      default: return "🔔";
+      case 'page.create':
+        return '📄';
+      case 'page.update':
+        return '✏️';
+      case 'page.delete':
+        return '🗑️';
+      case 'page.publish':
+        return '🚀';
+      case 'page.archive':
+        return '📦';
+      case 'comment.create':
+        return '💬';
+      case 'collection.create':
+        return '📁';
+      case 'collection.update':
+        return '📂';
+      case 'collection.delete':
+        return '❌';
+      default:
+        return '🔔';
     }
   };
 
@@ -117,17 +133,17 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
         ref={buttonRef}
         onClick={() => setOpen(!open)}
         className={cn(
-          "relative p-1.5 rounded-md transition-colors",
-          "text-muted-foreground hover:text-foreground hover:bg-muted",
-          open && "bg-muted text-foreground",
+          'relative p-1.5 rounded-md transition-colors',
+          'text-muted-foreground hover:text-foreground hover:bg-muted',
+          open && 'bg-muted text-foreground',
         )}
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         title="Notifications"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[14px] h-3.5 px-1 text-[9px] font-bold leading-none text-white bg-red-500 rounded-full">
-            {unreadCount > 99 ? "99+" : unreadCount}
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
@@ -136,9 +152,9 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
         <div
           ref={dropdownRef}
           className={cn(
-            "absolute right-0 mt-1 w-80 max-h-[70vh] overflow-hidden",
-            "rounded-lg border border-border bg-card shadow-xl backdrop-blur-xs",
-            "z-9999 flex flex-col",
+            'absolute right-0 mt-1 w-80 max-h-[70vh] overflow-hidden',
+            'rounded-lg border border-border bg-card shadow-xl backdrop-blur-xs',
+            'z-9999 flex flex-col',
           )}
         >
           {/* Header */}
@@ -195,9 +211,9 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
                 <div
                   key={notif.id}
                   className={cn(
-                    "group flex items-start gap-2.5 px-3 py-2.5 border-b border-border/50 last:border-0",
-                    "hover:bg-muted/50 cursor-pointer transition-colors",
-                    !notif.is_read && "bg-primary/5",
+                    'group flex items-start gap-2.5 px-3 py-2.5 border-b border-border/50 last:border-0',
+                    'hover:bg-muted/50 cursor-pointer transition-colors',
+                    !notif.is_read && 'bg-primary/5',
                   )}
                   onClick={() => navigateToTarget(notif)}
                 >
@@ -208,10 +224,12 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className={cn(
-                      "text-[11px] leading-tight",
-                      !notif.is_read ? "text-foreground font-medium" : "text-muted-foreground",
-                    )}>
+                    <p
+                      className={cn(
+                        'text-[11px] leading-tight',
+                        !notif.is_read ? 'text-foreground font-medium' : 'text-muted-foreground',
+                      )}
+                    >
                       {notif.title}
                     </p>
                     {notif.message && (
@@ -233,7 +251,10 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
                   <div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     {!notif.is_read && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleMarkRead(notif.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkRead(notif.id);
+                        }}
                         className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                         title="Mark as read"
                       >
@@ -241,7 +262,10 @@ export function NotificationBell({ userId, notifications, onRefresh }: Notificat
                       </button>
                     )}
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(notif.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(notif.id);
+                      }}
                       className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
                       title="Delete notification"
                     >

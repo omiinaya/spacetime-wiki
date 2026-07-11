@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
 
 // ─── Mock WebSocket ───────────────────────────────────────────────────────────
 // Must use a real class (not arrow function) because `new WebSocket()` requires
@@ -32,10 +32,18 @@ function makeMockWs(): MockWebSocket {
     onclose: null,
     onerror: null,
     onmessage: null,
-    triggerOpen() { ws.onopen?.(new Event("open")); },
-    triggerClose(code = 1000) { ws.onclose?.(new CloseEvent("close", { code, wasClean: true })); },
-    triggerMessage(data: string) { ws.onmessage?.(new MessageEvent("message", { data })); },
-    triggerError() { ws.onerror?.(new Event("error")); },
+    triggerOpen() {
+      ws.onopen?.(new Event('open'));
+    },
+    triggerClose(code = 1000) {
+      ws.onclose?.(new CloseEvent('close', { code, wasClean: true }));
+    },
+    triggerMessage(data: string) {
+      ws.onmessage?.(new MessageEvent('message', { data }));
+    },
+    triggerError() {
+      ws.onerror?.(new Event('error'));
+    },
   };
   return ws;
 }
@@ -71,7 +79,7 @@ import {
   defaultSubscriptionManager,
   connectSubscriptions,
   disconnectSubscriptions,
-} from "../lib/subscriptions";
+} from '../lib/subscriptions';
 
 function ws(): MockWebSocket {
   return currentMockWs!;
@@ -85,7 +93,7 @@ function constructorCallCount(): number {
 // SubscriptionManager
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("SubscriptionManager", () => {
+describe('SubscriptionManager', () => {
   let manager: SubscriptionManager;
 
   beforeEach(() => {
@@ -99,36 +107,36 @@ describe("SubscriptionManager", () => {
     vi.useRealTimers();
   });
 
-  it("starts in disconnected state", () => {
-    expect(manager.connectionState).toBe("disconnected");
+  it('starts in disconnected state', () => {
+    expect(manager.connectionState).toBe('disconnected');
     expect(manager.isConnected()).toBe(false);
   });
 
-  it("creates a WebSocket on connect()", () => {
+  it('creates a WebSocket on connect()', () => {
     manager.connect();
     expect(constructorCallCount()).toBe(1);
   });
 
-  it("notifies listener of connecting state when connect() is called", () => {
+  it('notifies listener of connecting state when connect() is called', () => {
     const listener = vi.fn();
     manager.onStateChange(listener);
 
     manager.connect();
-    expect(listener).toHaveBeenCalledWith("connecting");
+    expect(listener).toHaveBeenCalledWith('connecting');
   });
 
-  it("notifies listener of connected state when ws opens", () => {
+  it('notifies listener of connected state when ws opens', () => {
     const listener = vi.fn();
     manager.onStateChange(listener);
 
     manager.connect();
     ws().triggerOpen();
 
-    expect(listener).toHaveBeenCalledWith("connected");
+    expect(listener).toHaveBeenCalledWith('connected');
     expect(manager.isConnected()).toBe(true);
   });
 
-  it("transitions to disconnected on close", () => {
+  it('transitions to disconnected on close', () => {
     manager.connect();
     ws().triggerOpen();
 
@@ -136,83 +144,79 @@ describe("SubscriptionManager", () => {
     manager.onStateChange(listener);
 
     ws().triggerClose(1000);
-    expect(listener).toHaveBeenCalledWith("disconnected");
+    expect(listener).toHaveBeenCalledWith('disconnected');
   });
 
-  it("disconnect() closes the WebSocket and clears state", () => {
+  it('disconnect() closes the WebSocket and clears state', () => {
     manager.connect();
     ws().triggerOpen();
 
     manager.disconnect();
     expect(ws().close).toHaveBeenCalled();
-    expect(manager.connectionState).toBe("disconnected");
+    expect(manager.connectionState).toBe('disconnected');
   });
 
-  it("subscribe() sends query immediately when connected", () => {
+  it('subscribe() sends query immediately when connected', () => {
     manager.connect();
     ws().triggerOpen();
 
     const onRows = vi.fn();
-    manager.subscribe({ sql: "SELECT * FROM page", onRows });
+    manager.subscribe({ sql: 'SELECT * FROM page', onRows });
 
     expect(ws().send).toHaveBeenCalledWith(
-      JSON.stringify({ type: "subscribe", sql: "SELECT * FROM page" }),
+      JSON.stringify({ type: 'subscribe', sql: 'SELECT * FROM page' }),
     );
   });
 
-  it("subscribe() queues query when not connected, sends on connect", () => {
+  it('subscribe() queues query when not connected, sends on connect', () => {
     const onRows = vi.fn();
-    manager.subscribe({ sql: "SELECT * FROM page", onRows });
+    manager.subscribe({ sql: 'SELECT * FROM page', onRows });
     expect(ws().send).not.toHaveBeenCalled();
 
     manager.connect();
     ws().triggerOpen();
     expect(ws().send).toHaveBeenCalledWith(
-      JSON.stringify({ type: "subscribe", sql: "SELECT * FROM page" }),
+      JSON.stringify({ type: 'subscribe', sql: 'SELECT * FROM page' }),
     );
   });
 
-  it("unsubscribe removes query so it no longer gets messages", () => {
+  it('unsubscribe removes query so it no longer gets messages', () => {
     manager.connect();
     ws().triggerOpen();
 
     const onRows = vi.fn();
-    const unsub = manager.subscribe({ sql: "SELECT * FROM page", onRows });
+    const unsub = manager.subscribe({ sql: 'SELECT * FROM page', onRows });
 
     unsub();
-    ws().triggerMessage(
-      JSON.stringify({ type: "snapshot", table: "page", rows: [{ id: "1" }] }),
-    );
+    ws().triggerMessage(JSON.stringify({ type: 'snapshot', table: 'page', rows: [{ id: '1' }] }));
     expect(onRows).not.toHaveBeenCalled();
   });
 
-  it("calls onRows when matching snapshot arrives", () => {
+  it('calls onRows when matching snapshot arrives', () => {
     manager.connect();
     ws().triggerOpen();
 
     const onRows = vi.fn();
-    manager.subscribe({ sql: "SELECT * FROM page", onRows });
+    manager.subscribe({ sql: 'SELECT * FROM page', onRows });
 
     ws().triggerMessage(
-      JSON.stringify({ type: "snapshot", table: "page", rows: [{ id: "1", title: "Test" }] }),
+      JSON.stringify({ type: 'snapshot', table: 'page', rows: [{ id: '1', title: 'Test' }] }),
     );
-    expect(onRows).toHaveBeenCalledWith([{ id: "1", title: "Test" }]);
+    expect(onRows).toHaveBeenCalledWith([{ id: '1', title: 'Test' }]);
   });
 
-  it("calls onError when server error arrives", () => {
+  it('calls onError when server error arrives', () => {
     manager.connect();
     ws().triggerOpen();
 
     const onError = vi.fn();
-    manager.subscribe({ sql: "SELECT * FROM page", onRows: vi.fn(), onError });
+    manager.subscribe({ sql: 'SELECT * FROM page', onRows: vi.fn(), onError });
 
-    ws().triggerMessage(
-      JSON.stringify({ type: "error", message: "Table not found" }),
-    );
-    expect(onError).toHaveBeenCalledWith("Table not found");
+    ws().triggerMessage(JSON.stringify({ type: 'error', message: 'Table not found' }));
+    expect(onError).toHaveBeenCalledWith('Table not found');
   });
 
-  it("reconnects with exponential backoff after abnormal close", () => {
+  it('reconnects with exponential backoff after abnormal close', () => {
     manager.connect();
     ws().triggerOpen();
     ws().triggerClose(1006);
@@ -231,7 +235,7 @@ describe("SubscriptionManager", () => {
     expect(constructorCallCount()).toBe(3);
   });
 
-  it("does NOT reconnect after fatal error (never connected)", () => {
+  it('does NOT reconnect after fatal error (never connected)', () => {
     manager.connect();
     ws().triggerError();
     ws().triggerClose(1006);
@@ -240,7 +244,7 @@ describe("SubscriptionManager", () => {
     expect(constructorCallCount()).toBe(1);
   });
 
-  it("removes state listener on returned unsubscribe", () => {
+  it('removes state listener on returned unsubscribe', () => {
     const listener = vi.fn();
     const unsub = manager.onStateChange(listener);
     unsub();
@@ -249,7 +253,7 @@ describe("SubscriptionManager", () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
-  it("does not reconnect after explicit disconnect()", () => {
+  it('does not reconnect after explicit disconnect()', () => {
     manager.connect();
     ws().triggerOpen();
 
@@ -258,7 +262,7 @@ describe("SubscriptionManager", () => {
     expect(constructorCallCount()).toBe(1);
   });
 
-  it("prevents duplicate connect calls", () => {
+  it('prevents duplicate connect calls', () => {
     manager.connect();
     expect(constructorCallCount()).toBe(1);
 
@@ -271,7 +275,7 @@ describe("SubscriptionManager", () => {
 // useSubscription hook
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("useSubscription hook", () => {
+describe('useSubscription hook', () => {
   const mapper = (row: unknown[]) => ({ id: row[0] as string });
 
   beforeEach(() => {
@@ -288,46 +292,40 @@ describe("useSubscription hook", () => {
     vi.useRealTimers();
   });
 
-  it("returns rows from HTTP fetch", async () => {
+  it('returns rows from HTTP fetch', async () => {
     mockFetch.mockResolvedValue({
-      text: () => Promise.resolve(JSON.stringify([{ rows: [["1"]] }])),
+      text: () => Promise.resolve(JSON.stringify([{ rows: [['1']] }])),
     });
 
-    const { result } = renderHook(() =>
-      useSubscription("SELECT * FROM page", mapper)
-    );
+    const { result } = renderHook(() => useSubscription('SELECT * FROM page', mapper));
 
     await vi.waitFor(() => {
-      expect(result.current.rows).toEqual([{ id: "1" }]);
+      expect(result.current.rows).toEqual([{ id: '1' }]);
     });
   });
 
-  it("returns empty rows for null sql", () => {
-    const { result } = renderHook(() =>
-      useSubscription(null, mapper)
-    );
+  it('returns empty rows for null sql', () => {
+    const { result } = renderHook(() => useSubscription(null, mapper));
 
     expect(result.current.rows).toEqual([]);
   });
 
-  it("reports connecting state after mount (useEffect fires connect)", () => {
-    const { result } = renderHook(() =>
-      useSubscription("SELECT id FROM page", mapper)
-    );
+  it('reports connecting state after mount (useEffect fires connect)', () => {
+    const { result } = renderHook(() => useSubscription('SELECT id FROM page', mapper));
 
     // The hook's useEffect fires synchronously in test, calling connect()
     // which immediately transitions to "connecting"
-    expect(["disconnected", "connecting", "connected", "reconnecting"]).toContain(result.current.state);
+    expect(['disconnected', 'connecting', 'connected', 'reconnecting']).toContain(
+      result.current.state,
+    );
   });
 
-  it("handles non-JSON HTTP response gracefully", async () => {
+  it('handles non-JSON HTTP response gracefully', async () => {
     mockFetch.mockResolvedValue({
-      text: () => Promise.resolve("no such table: xyz"),
+      text: () => Promise.resolve('no such table: xyz'),
     });
 
-    const { result } = renderHook(() =>
-      useSubscription("SELECT * FROM xyz", mapper)
-    );
+    const { result } = renderHook(() => useSubscription('SELECT * FROM xyz', mapper));
 
     await vi.waitFor(() => {
       expect(Array.isArray(result.current.rows)).toBe(true);
@@ -335,12 +333,10 @@ describe("useSubscription hook", () => {
     expect(result.current.rows).toHaveLength(0);
   });
 
-  it("handles fetch rejection gracefully", async () => {
-    mockFetch.mockRejectedValue(new Error("Network error"));
+  it('handles fetch rejection gracefully', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'));
 
-    const { result } = renderHook(() =>
-      useSubscription("SELECT * FROM page", mapper)
-    );
+    const { result } = renderHook(() => useSubscription('SELECT * FROM page', mapper));
 
     await vi.waitFor(() => {
       expect(Array.isArray(result.current.rows)).toBe(true);
@@ -353,19 +349,19 @@ describe("useSubscription hook", () => {
 // connectSubscriptions / disconnectSubscriptions
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("singleton wrappers", () => {
+describe('singleton wrappers', () => {
   beforeEach(() => {
     defaultSubscriptionManager.disconnect();
   });
 
-  it("connectSubscriptions calls connect on the singleton", () => {
-    const spy = vi.spyOn(defaultSubscriptionManager, "connect");
+  it('connectSubscriptions calls connect on the singleton', () => {
+    const spy = vi.spyOn(defaultSubscriptionManager, 'connect');
     connectSubscriptions();
     expect(spy).toHaveBeenCalled();
   });
 
-  it("disconnectSubscriptions calls disconnect on the singleton", () => {
-    const spy = vi.spyOn(defaultSubscriptionManager, "disconnect");
+  it('disconnectSubscriptions calls disconnect on the singleton', () => {
+    const spy = vi.spyOn(defaultSubscriptionManager, 'disconnect');
     disconnectSubscriptions();
     expect(spy).toHaveBeenCalled();
   });

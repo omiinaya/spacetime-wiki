@@ -1,7 +1,7 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { setLanguage, getSupportedLanguages } from "../i18n/config";
-import { Languages } from "lucide-react";
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { setLanguage, getSupportedLanguages } from '../i18n/config';
+import { Languages } from 'lucide-react';
 
 interface LanguageSwitcherProps {
   /** Optional compact mode for sidebar placement */
@@ -9,16 +9,16 @@ interface LanguageSwitcherProps {
 }
 
 const LANGUAGE_LABELS: Record<string, string> = {
-  en: "English",
-  es: "Español",
-  fr: "Français",
-  de: "Deutsch",
+  en: 'English',
+  es: 'Español',
+  fr: 'Français',
+  de: 'Deutsch',
 };
 
 export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
   const { t, i18n } = useTranslation();
 
-  const currentLang = i18n.language?.slice(0, 2) || "en";
+  const currentLang = i18n.language?.slice(0, 2) || 'en';
   const supported = getSupportedLanguages();
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -32,7 +32,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
         <select
           value={currentLang}
           onChange={handleChange}
-          aria-label={t("admin.language_label")}
+          aria-label={t('admin.language_label')}
           className="bg-transparent text-xs text-muted-foreground border border-border rounded px-1.5 py-0.5 focus:outline-hidden focus:ring-1 focus:ring-primary/50 cursor-pointer"
         >
           {supported.map((code) => (
@@ -49,12 +49,12 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
     <div className="space-y-1.5">
       <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wider flex items-center gap-1">
         <Languages className="h-3 w-3" />
-        {t("admin.language_label")}
+        {t('admin.language_label')}
       </label>
       <select
         value={currentLang}
         onChange={handleChange}
-        aria-label={t("admin.language_label")}
+        aria-label={t('admin.language_label')}
         className="w-full h-8 px-3 rounded-md border border-border bg-[#0a0a0a] text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/50 cursor-pointer"
       >
         {supported.map((code) => (

@@ -8,18 +8,18 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
   name: __t.string(),
   slug: __t.string(),
-  issuerUrl: __t.string().name("issuer_url"),
-  clientId: __t.string().name("client_id"),
-  clientSecret: __t.string().name("client_secret"),
+  issuerUrl: __t.string().name('issuer_url'),
+  clientId: __t.string().name('client_id'),
+  clientSecret: __t.string().name('client_secret'),
   scopes: __t.string(),
-  isActive: __t.bool().name("is_active"),
-  createdBy: __t.string().name("created_by"),
-  createdAt: __t.u64().name("created_at"),
-  updatedAt: __t.u64().name("updated_at"),
+  isActive: __t.bool().name('is_active'),
+  createdBy: __t.string().name('created_by'),
+  createdAt: __t.u64().name('created_at'),
+  updatedAt: __t.u64().name('updated_at'),
 });

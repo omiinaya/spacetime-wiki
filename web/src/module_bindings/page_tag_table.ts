@@ -8,11 +8,11 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
-  pageId: __t.string().name("page_id"),
+  pageId: __t.string().name('page_id'),
   name: __t.string(),
   value: __t.string(),
 });

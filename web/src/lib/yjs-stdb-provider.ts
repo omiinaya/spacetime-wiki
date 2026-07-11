@@ -14,20 +14,29 @@
  * 5. Expose a y-protocols Awareness instance for Tiptap v3 CollaborationCursor.
  */
 
-import * as Y from "yjs";
-import { Awareness } from "y-protocols/awareness";
-import { api, type CollabUpdate } from "./api";
+import * as Y from 'yjs';
+import { Awareness } from 'y-protocols/awareness';
+import { api, type CollabUpdate } from './api';
 
 const COLLAB_COLORS = [
-  "#4A90D9", "#E8734A", "#50B86C", "#D94A8C",
-  "#B87D4A", "#6B5B95", "#D4A843", "#4AB8B8",
-  "#B84A6B", "#5B8C5B", "#8C5B8C", "#B8B84A",
+  '#4A90D9',
+  '#E8734A',
+  '#50B86C',
+  '#D94A8C',
+  '#B87D4A',
+  '#6B5B95',
+  '#D4A843',
+  '#4AB8B8',
+  '#B84A6B',
+  '#5B8C5B',
+  '#8C5B8C',
+  '#B8B84A',
 ];
 
 function getUserColor(userId: string): string {
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
-    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+    hash = (hash << 5) - hash + userId.charCodeAt(i);
     hash |= 0;
   }
   return COLLAB_COLORS[Math.abs(hash) % COLLAB_COLORS.length];
@@ -59,7 +68,7 @@ export class YjsStdbProvider {
     if (this.destroyed) return;
 
     // 1. Set local awareness state
-    this.awareness.setLocalStateField("user", {
+    this.awareness.setLocalStateField('user', {
       name: this.userName,
       color: this.color,
     });
@@ -75,15 +84,15 @@ export class YjsStdbProvider {
         Y.applyUpdate(this.doc, binary);
       }
     } catch (err) {
-      console.warn("YjsStdbProvider: failed to fetch existing updates", err);
+      console.warn('YjsStdbProvider: failed to fetch existing updates', err);
     }
 
     // 4. Register observer to broadcast local edits
     this.updateHandler = (update: Uint8Array, origin: unknown) => {
-      if (origin === this || origin === "remote") return; // ignore own broadcasts and remote updates
+      if (origin === this || origin === 'remote') return; // ignore own broadcasts and remote updates
       this.scheduleBroadcast(update);
     };
-    this.doc.on("update", this.updateHandler);
+    this.doc.on('update', this.updateHandler);
   }
 
   /** Schedule a debounced broadcast of a Yjs update */
@@ -93,7 +102,7 @@ export class YjsStdbProvider {
       if (this.destroyed) return;
       const base64 = btoa(String.fromCharCode(...update));
       api.collaboration.broadcastUpdate(this.pageId, base64, this.userId).catch((err) => {
-        console.warn("YjsStdbProvider: broadcast failed", err);
+        console.warn('YjsStdbProvider: broadcast failed', err);
       });
     }, 100);
   }
@@ -103,9 +112,9 @@ export class YjsStdbProvider {
     if (this.destroyed) return;
     try {
       const binary = Uint8Array.from(atob(updateData), (c) => c.charCodeAt(0));
-      Y.applyUpdate(this.doc, binary, "remote");
+      Y.applyUpdate(this.doc, binary, 'remote');
     } catch (err) {
-      console.warn("YjsStdbProvider: applyRemoteUpdate failed", err);
+      console.warn('YjsStdbProvider: applyRemoteUpdate failed', err);
     }
   }
 
@@ -116,7 +125,9 @@ export class YjsStdbProvider {
   }
 
   /** Get awareness data for other users on this page */
-  async getOtherSessions(): Promise<{ userId: string; userName: string; color: string; cursorPosition: string }[]> {
+  async getOtherSessions(): Promise<
+    { userId: string; userName: string; color: string; cursorPosition: string }[]
+  > {
     try {
       const sessions = await api.collaboration.getSessions(this.pageId);
       return sessions
@@ -136,7 +147,7 @@ export class YjsStdbProvider {
   destroy(): void {
     this.destroyed = true;
     if (this.updateHandler) {
-      this.doc.off("update", this.updateHandler);
+      this.doc.off('update', this.updateHandler);
       this.updateHandler = null;
     }
     if (this.broadcastDebounce) {

@@ -4,13 +4,13 @@
 //   const { addToast } = useToast();
 //   addToast({ type: "success", title: "Saved!", message: "Page updated" });
 
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
-import { X, CheckCircle, AlertTriangle, Info, AlertCircle } from "lucide-react";
-import { cn } from "../lib/utils";
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { X, CheckCircle, AlertTriangle, Info, AlertCircle } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type ToastType = "info" | "success" | "warning" | "error";
+export type ToastType = 'info' | 'success' | 'warning' | 'error';
 
 export interface ToastItem {
   id: string;
@@ -25,7 +25,7 @@ export interface ToastItem {
 }
 
 interface ToastContextValue {
-  addToast: (toast: Omit<ToastItem, "id">) => string;
+  addToast: (toast: Omit<ToastItem, 'id'>) => string;
   removeToast: (id: string) => void;
   clearToasts: () => void;
   toasts: ToastItem[];
@@ -37,7 +37,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within a ToastProvider");
+  if (!ctx) throw new Error('useToast must be used within a ToastProvider');
   return ctx;
 }
 
@@ -58,7 +58,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addToast = useCallback(
-    (toast: Omit<ToastItem, "id">): string => {
+    (toast: Omit<ToastItem, 'id'>): string => {
       counterRef.current += 1;
       const id = `toast_${counterRef.current}_${Date.now()}`;
       const item: ToastItem = { ...toast, id, duration: toast.duration ?? 4000 };
@@ -108,13 +108,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 function ToastIcon({ type }: { type: ToastType }) {
   switch (type) {
-    case "success":
+    case 'success':
       return <CheckCircle className="h-4 w-4 text-emerald-400" />;
-    case "warning":
+    case 'warning':
       return <AlertTriangle className="h-4 w-4 text-amber-400" />;
-    case "error":
+    case 'error':
       return <AlertCircle className="h-4 w-4 text-red-400" />;
-    case "info":
+    case 'info':
     default:
       return <Info className="h-4 w-4 text-blue-400" />;
   }
@@ -133,13 +133,13 @@ function ToastContainer() {
         <div
           key={toast.id}
           className={cn(
-            "pointer-events-auto animate-in slide-in-from-right-4 fade-in-0 duration-200",
-            "flex items-start gap-3 p-3 rounded-lg border shadow-lg backdrop-blur-xs",
-            "bg-card/95 border-border",
-            toast.type === "success" && "border-emerald-500/30",
-            toast.type === "warning" && "border-amber-500/30",
-            toast.type === "error" && "border-red-500/30",
-            toast.type === "info" && "border-blue-500/30",
+            'pointer-events-auto animate-in slide-in-from-right-4 fade-in-0 duration-200',
+            'flex items-start gap-3 p-3 rounded-lg border shadow-lg backdrop-blur-xs',
+            'bg-card/95 border-border',
+            toast.type === 'success' && 'border-emerald-500/30',
+            toast.type === 'warning' && 'border-amber-500/30',
+            toast.type === 'error' && 'border-red-500/30',
+            toast.type === 'info' && 'border-blue-500/30',
           )}
           role="alert"
         >
@@ -149,7 +149,9 @@ function ToastContainer() {
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-foreground">{toast.title}</p>
             {toast.message && (
-              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{toast.message}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                {toast.message}
+              </p>
             )}
             {toast.action && (
               <button
@@ -178,16 +180,16 @@ function ToastContainer() {
 // React component access. Must call initGlobalToast() first with the addToast
 // function from a component that has access to the context.
 
-let globalAddToast: ((toast: Omit<ToastItem, "id">) => string) | null = null;
+let globalAddToast: ((toast: Omit<ToastItem, 'id'>) => string) | null = null;
 
-export function initGlobalToast(addToastFn: (toast: Omit<ToastItem, "id">) => string) {
+export function initGlobalToast(addToastFn: (toast: Omit<ToastItem, 'id'>) => string) {
   globalAddToast = addToastFn;
 }
 
-export function showToast(toast: Omit<ToastItem, "id">): string | undefined {
+export function showToast(toast: Omit<ToastItem, 'id'>): string | undefined {
   if (globalAddToast) {
     return globalAddToast(toast);
   }
-  console.warn("[Toast] Global toast not initialized. Calling addToast from a component context.");
+  console.warn('[Toast] Global toast not initialized. Calling addToast from a component context.');
   return undefined;
 }

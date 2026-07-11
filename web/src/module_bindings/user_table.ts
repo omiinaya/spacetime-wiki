@@ -8,15 +8,15 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
   name: __t.string(),
   email: __t.string(),
-  passwordHash: __t.string().name("password_hash"),
+  passwordHash: __t.string().name('password_hash'),
   role: __t.string(),
-  avatarUrl: __t.string().name("avatar_url"),
-  createdAt: __t.u64().name("created_at"),
-  updatedAt: __t.u64().name("updated_at"),
+  avatarUrl: __t.string().name('avatar_url'),
+  createdAt: __t.u64().name('created_at'),
+  updatedAt: __t.u64().name('updated_at'),
 });

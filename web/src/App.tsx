@@ -1,8 +1,8 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import React from "react";
-import { ToastProvider } from "./components/Toast";
-import { Layout } from "./components/Layout";
-import SharedPageView from "./pages/SharedPageView";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { ToastProvider } from './components/Toast';
+import { Layout } from './components/Layout';
+import SharedPageView from './pages/SharedPageView';
 
 export default function App() {
   return (

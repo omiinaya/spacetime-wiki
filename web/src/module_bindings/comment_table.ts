@@ -8,16 +8,16 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
-  pageId: __t.string().name("page_id"),
-  parentCommentId: __t.string().name("parent_comment_id"),
-  userId: __t.string().name("user_id"),
+  pageId: __t.string().name('page_id'),
+  parentCommentId: __t.string().name('parent_comment_id'),
+  userId: __t.string().name('user_id'),
   body: __t.string(),
-  textAnchor: __t.string().name("text_anchor"),
-  isResolved: __t.bool().name("is_resolved"),
-  createdAt: __t.u64().name("created_at"),
-  updatedAt: __t.u64().name("updated_at"),
+  textAnchor: __t.string().name('text_anchor'),
+  isResolved: __t.bool().name('is_resolved'),
+  createdAt: __t.u64().name('created_at'),
+  updatedAt: __t.u64().name('updated_at'),
 });

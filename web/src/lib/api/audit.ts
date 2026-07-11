@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: ISC
 
-import type { AuditEvent } from "./types";
-import { tableQuery } from "./client";
-import { mapAuditEvent } from "./mappers";
+import type { AuditEvent } from './types';
+import { tableQuery } from './client';
+import { mapAuditEvent } from './mappers';
 
 export const auditApi = {
   /** Fetch recent audit events. Supports optional limit. Note: STDB does not support ORDER BY. */

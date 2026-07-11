@@ -13,10 +13,10 @@
 //   // Later:
 //   sub.disconnect();
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from 'react';
 
-const STDB_HOST = import.meta.env.VITE_STDB_HOST || "localhost:3001";
-const DB_ID = import.meta.env.VITE_STDB_DB || "spacetime-wiki";
+const STDB_HOST = import.meta.env.VITE_STDB_HOST || 'localhost:3001';
+const DB_ID = import.meta.env.VITE_STDB_DB || 'spacetime-wiki';
 const WS_URL = `ws://${STDB_HOST}/v1/database/${DB_ID}/subscribe`;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ export interface SubscriptionQuery {
   onError?: (err: string) => void;
 }
 
-type ConnectionState = "disconnected" | "connecting" | "connected" | "reconnecting";
+type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
 // ─── Subscription Manager ────────────────────────────────────────────────────
 // Manages a single WebSocket connection to STDB's subscribe endpoint.
@@ -35,7 +35,7 @@ type ConnectionState = "disconnected" | "connecting" | "connected" | "reconnecti
 
 export class SubscriptionManager {
   private ws: WebSocket | null = null;
-  private state: ConnectionState = "disconnected";
+  private state: ConnectionState = 'disconnected';
   private queries: SubscriptionQuery[] = [];
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private stateListeners: Set<(state: ConnectionState) => void> = new Set();
@@ -64,35 +64,38 @@ export class SubscriptionManager {
 
   connect() {
     if (this.fatal) return;
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)
+    ) {
       return;
     }
-    this.setState("connecting");
+    this.setState('connecting');
     try {
       this.ws = new WebSocket(WS_URL);
     } catch (err) {
-      console.error("[STDB Sub] WebSocket creation failed:", err);
-      this.setState("disconnected");
+      console.error('[STDB Sub] WebSocket creation failed:', err);
+      this.setState('disconnected');
       this.scheduleReconnect();
       return;
     }
 
     this.ws.onopen = () => {
-      console.log("[STDB Sub] Connected to", WS_URL);
-      this.setState("connected");
+      console.log('[STDB Sub] Connected to', WS_URL);
+      this.setState('connected');
       this.everConnected = true;
       this.consecutiveFailures = 0;
       this.reconnectDelay = 1000;
       // Resubscribe all queries
       for (const q of this.queries) {
-        this.ws?.send(JSON.stringify({ type: "subscribe", sql: q.sql }));
+        this.ws?.send(JSON.stringify({ type: 'subscribe', sql: q.sql }));
       }
     };
 
     this.ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data as string);
-        if (msg.type === "snapshot" || msg.type === "update") {
+        if (msg.type === 'snapshot' || msg.type === 'update') {
           // Route rows to matching subscribers
           // STDB returns { type: "snapshot"|"update", table: "page", rows: [...] }
           for (const q of this.queries) {
@@ -102,31 +105,33 @@ export class SubscriptionManager {
               q.onRows(msg.rows || []);
             }
           }
-        } else if (msg.type === "error") {
-          console.error("[STDB Sub] Server error:", msg.message);
+        } else if (msg.type === 'error') {
+          console.error('[STDB Sub] Server error:', msg.message);
           for (const q of this.queries) {
-            q.onError?.(msg.message || "Unknown error");
+            q.onError?.(msg.message || 'Unknown error');
           }
         }
       } catch (err) {
-        console.error("[STDB Sub] Failed to parse message:", err);
+        console.error('[STDB Sub] Failed to parse message:', err);
       }
     };
 
     this.ws.onerror = (event) => {
       if (!this.everConnected) {
         // STDB server doesn't support the subscribe WebSocket endpoint
-        console.warn("[STDB Sub] WebSocket subscribe endpoint not available (common on older STDB versions). Data loads via HTTP.");
+        console.warn(
+          '[STDB Sub] WebSocket subscribe endpoint not available (common on older STDB versions). Data loads via HTTP.',
+        );
         this.fatal = true;
         this.ws?.close();
       } else {
-        console.warn("[STDB Sub] WebSocket error:", event);
+        console.warn('[STDB Sub] WebSocket error:', event);
       }
     };
 
     this.ws.onclose = (event) => {
       console.log(`[STDB Sub] Disconnected (code=${event.code})`);
-      this.setState("disconnected");
+      this.setState('disconnected');
       this.ws = null;
       if (this.fatal) return;
       if (this.everConnected || this.consecutiveFailures < this.maxConsecutiveFailures) {
@@ -136,8 +141,8 @@ export class SubscriptionManager {
         this.fatal = true;
         console.warn(
           `[STDB Sub] Stopped reconnecting after ${this.maxConsecutiveFailures} failures — ` +
-          "the WebSocket subscribe endpoint may not be available on this STDB server. " +
-          "Data still loads via HTTP."
+            'the WebSocket subscribe endpoint may not be available on this STDB server. ' +
+            'Data still loads via HTTP.',
         );
       }
     };
@@ -153,7 +158,7 @@ export class SubscriptionManager {
       this.ws.close();
       this.ws = null;
     }
-    this.setState("disconnected");
+    this.setState('disconnected');
   }
 
   private scheduleReconnect() {
@@ -163,7 +168,7 @@ export class SubscriptionManager {
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.maxReconnectDelay);
-      this.setState("reconnecting");
+      this.setState('reconnecting');
       this.connect();
     }, delay);
   }
@@ -172,7 +177,7 @@ export class SubscriptionManager {
     this.queries.push(query);
     // If already connected, send subscription immediately
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type: "subscribe", sql: query.sql }));
+      this.ws.send(JSON.stringify({ type: 'subscribe', sql: query.sql }));
     }
     // Return unsubscribe function
     return () => {
@@ -181,7 +186,7 @@ export class SubscriptionManager {
   }
 
   isConnected(): boolean {
-    return this.state === "connected";
+    return this.state === 'connected';
   }
 }
 
@@ -200,17 +205,17 @@ export function useSubscription<T>(
 ): { rows: T[]; connected: boolean; state: ConnectionState } {
   const [rows, setRows] = useState<T[]>([]);
   const [connected, setConnected] = useState(false);
-  const [state, setState] = useState<ConnectionState>("disconnected");
+  const [state, setState] = useState<ConnectionState>('disconnected');
   const rowsRef = useRef<T[]>([]);
 
   useEffect(() => {
     const unsubState = defaultSubscriptionManager.onStateChange((s) => {
       setState(s);
-      setConnected(s === "connected");
+      setConnected(s === 'connected');
     });
 
     // Connect on first hook mount
-    if (defaultSubscriptionManager.connectionState === "disconnected") {
+    if (defaultSubscriptionManager.connectionState === 'disconnected') {
       defaultSubscriptionManager.connect();
     }
 
@@ -218,7 +223,6 @@ export function useSubscription<T>(
       unsubState();
     };
     // key allows hook to reconnect when the identity changes (e.g., different page ID)
-     
   }, [key]);
 
   useEffect(() => {
@@ -231,29 +235,31 @@ export function useSubscription<T>(
         rowsRef.current = mapped;
         setRows([...mapped]);
       },
-      onError: (err) => console.error("[STDB Sub] Query error:", err, sql),
+      onError: (err) => console.error('[STDB Sub] Query error:', err, sql),
     });
 
     // Immediately fetch initial data via HTTP (until snapshot arrives)
     fetch(`http://${STDB_HOST}/v1/database/${DB_ID}/sql`, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
       body: sql,
     })
-      .then((res) => res.text().then((text) => {
-        // STDB may return non-JSON error messages (e.g. "no such table" or
-        // syntax errors for tables that haven't been published yet).
-        // Handle gracefully by using empty data.
-        try {
-          const data = JSON.parse(text);
-          const initialRows = ((data[0]?.rows || []) as unknown[][]).map(mapper);
-          rowsRef.current = initialRows;
-          setRows([...initialRows]);
-        } catch {
-          console.warn("[STDB Sub] Non-JSON response, using empty data:", text.slice(0, 120));
-        }
-      }))
-      .catch((err) => console.error("[STDB Sub] HTTP fetch failed:", err));
+      .then((res) =>
+        res.text().then((text) => {
+          // STDB may return non-JSON error messages (e.g. "no such table" or
+          // syntax errors for tables that haven't been published yet).
+          // Handle gracefully by using empty data.
+          try {
+            const data = JSON.parse(text);
+            const initialRows = ((data[0]?.rows || []) as unknown[][]).map(mapper);
+            rowsRef.current = initialRows;
+            setRows([...initialRows]);
+          } catch {
+            console.warn('[STDB Sub] Non-JSON response, using empty data:', text.slice(0, 120));
+          }
+        }),
+      )
+      .catch((err) => console.error('[STDB Sub] HTTP fetch failed:', err));
 
     return () => {
       unsub();

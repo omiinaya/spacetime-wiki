@@ -8,19 +8,19 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
   name: __t.string(),
   slug: __t.string(),
-  apiTokenHash: __t.string().name("api_token_hash"),
-  isActive: __t.bool().name("is_active"),
-  defaultRole: __t.string().name("default_role"),
-  autoRegister: __t.bool().name("auto_register"),
-  deprovisionBehavior: __t.string().name("deprovision_behavior"),
-  syncGroups: __t.bool().name("sync_groups"),
-  createdBy: __t.string().name("created_by"),
-  createdAt: __t.u64().name("created_at"),
-  updatedAt: __t.u64().name("updated_at"),
+  apiTokenHash: __t.string().name('api_token_hash'),
+  isActive: __t.bool().name('is_active'),
+  defaultRole: __t.string().name('default_role'),
+  autoRegister: __t.bool().name('auto_register'),
+  deprovisionBehavior: __t.string().name('deprovision_behavior'),
+  syncGroups: __t.bool().name('sync_groups'),
+  createdBy: __t.string().name('created_by'),
+  createdAt: __t.u64().name('created_at'),
+  updatedAt: __t.u64().name('updated_at'),
 });

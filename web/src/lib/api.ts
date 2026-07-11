@@ -1,2 +1,2 @@
 // SPDX-License-Identifier: ISC
-export * from "./api/index";
+export * from './api/index';

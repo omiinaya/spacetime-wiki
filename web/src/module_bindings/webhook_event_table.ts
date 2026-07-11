@@ -8,17 +8,17 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
-  webhookId: __t.string().name("webhook_id"),
-  eventType: __t.string().name("event_type"),
-  pageId: __t.string().name("page_id"),
+  webhookId: __t.string().name('webhook_id'),
+  eventType: __t.string().name('event_type'),
+  pageId: __t.string().name('page_id'),
   payload: __t.string(),
   status: __t.string(),
-  responseCode: __t.u32().name("response_code"),
-  responseBody: __t.string().name("response_body"),
-  createdAt: __t.u64().name("created_at"),
-  sentAt: __t.u64().name("sent_at"),
+  responseCode: __t.u32().name('response_code'),
+  responseBody: __t.string().name('response_body'),
+  createdAt: __t.u64().name('created_at'),
+  sentAt: __t.u64().name('sent_at'),
 });

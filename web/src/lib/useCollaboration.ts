@@ -5,12 +5,12 @@
  * and provides the Tiptap Collaboration extensions configuration.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import * as Y from "yjs";
-import Collaboration from "@tiptap/extension-collaboration";
-import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
-import { YjsStdbProvider } from "./yjs-stdb-provider";
-import { useCollabSessionsSubscription, useCollabUpdatesSubscription } from "./api";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import * as Y from 'yjs';
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import { YjsStdbProvider } from './yjs-stdb-provider';
+import { useCollabSessionsSubscription, useCollabUpdatesSubscription } from './api';
 
 interface RemoteUser {
   userId: string;
@@ -61,7 +61,7 @@ export function useCollaboration(
     providerRef.current = provider;
     setProviderReady(true);
     provider.initialize().catch((err) => {
-      console.warn("useCollaboration: failed to initialize", err);
+      console.warn('useCollaboration: failed to initialize', err);
     });
 
     return () => {
@@ -110,8 +110,8 @@ export function useCollaboration(
   const collaborationCursorExtension = CollaborationCursor.configure({
     provider: providerRef.current as unknown,
     user: {
-      name: userName || "Unknown",
-      color: userId ? getColorForUser(userId) : "#4A90D9",
+      name: userName || 'Unknown',
+      color: userId ? getColorForUser(userId) : '#4A90D9',
     },
   });
 
@@ -128,15 +128,24 @@ export function useCollaboration(
 
 // Color assignment helper (mirrors the one in the provider)
 const COLLAB_COLORS = [
-  "#4A90D9", "#E8734A", "#50B86C", "#D94A8C",
-  "#B87D4A", "#6B5B95", "#D4A843", "#4AB8B8",
-  "#B84A6B", "#5B8C5B", "#8C5B8C", "#B8B84A",
+  '#4A90D9',
+  '#E8734A',
+  '#50B86C',
+  '#D94A8C',
+  '#B87D4A',
+  '#6B5B95',
+  '#D4A843',
+  '#4AB8B8',
+  '#B84A6B',
+  '#5B8C5B',
+  '#8C5B8C',
+  '#B8B84A',
 ];
 
 function getColorForUser(userId: string): string {
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
-    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+    hash = (hash << 5) - hash + userId.charCodeAt(i);
     hash |= 0;
   }
   return COLLAB_COLORS[Math.abs(hash) % COLLAB_COLORS.length];

@@ -1,12 +1,19 @@
 // SPDX-License-Identifier: ISC
 
-import { useSubscription } from "../subscriptions";
-import { mapPage, mapCollection, mapNotification, mapWatch, mapCollabSession, mapCollabUpdate } from "./mappers";
+import { useSubscription } from '../subscriptions';
+import {
+  mapPage,
+  mapCollection,
+  mapNotification,
+  mapWatch,
+  mapCollabSession,
+  mapCollabUpdate,
+} from './mappers';
 
 export const SUBSCRIPTION_SQLS = {
   pages: "SELECT * FROM page WHERE status != 'deleted'",
-  allPages: "SELECT * FROM page",
-  collections: "SELECT * FROM collection",
+  allPages: 'SELECT * FROM page',
+  collections: 'SELECT * FROM collection',
   comments: (pageId: string) => `SELECT * FROM comment WHERE page_id = '${pageId}'`,
   favorites: (userId: string) => `SELECT * FROM favorite WHERE user_id = '${userId}'`,
   tags: (pageId: string) => `SELECT * FROM page_tag WHERE page_id = '${pageId}'`,
@@ -17,7 +24,7 @@ export const SUBSCRIPTION_SQLS = {
   dbRows: (baseId: string) => `SELECT * FROM db_row WHERE base_id = '${baseId}'`,
   dbCellsForBase: (baseId: string) =>
     `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = '${baseId}'`,
-  collectionSortRules: "SELECT * FROM collection_sort_rule",
+  collectionSortRules: 'SELECT * FROM collection_sort_rule',
   notifications: (userId: string) => `SELECT * FROM notification WHERE user_id = '${userId}'`,
   watch: (userId: string) => `SELECT * FROM watch WHERE user_id = '${userId}'`,
 } as const;

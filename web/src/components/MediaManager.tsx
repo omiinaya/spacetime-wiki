@@ -1,6 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { api, Attachment } from "../lib/api";
-import { X, Search, Paperclip, Image, FileText, Film, Trash2, Copy, Check, Upload, Loader2, ArrowUpRight } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { api, Attachment } from '../lib/api';
+import {
+  X,
+  Search,
+  Paperclip,
+  Image,
+  FileText,
+  Film,
+  Trash2,
+  Copy,
+  Check,
+  Upload,
+  Loader2,
+  ArrowUpRight,
+} from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -11,22 +24,24 @@ function formatSize(bytes: number): string {
 }
 
 function formatDate(ts: number): string {
-  if (!ts) return "";
-  return new Date(ts).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
+  if (!ts) return '';
+  return new Date(ts).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   });
 }
 
 function getIcon(mime: string) {
-  if (mime.startsWith("image/")) return Image;
-  if (mime.startsWith("video/")) return Film;
-  if (mime.includes("pdf")) return FileText;
-  if (mime.includes("text") || mime.includes("code")) return FileText;
+  if (mime.startsWith('image/')) return Image;
+  if (mime.startsWith('video/')) return Film;
+  if (mime.includes('pdf')) return FileText;
+  if (mime.includes('text') || mime.includes('code')) return FileText;
   return Paperclip;
 }
 
 function isPreviewable(mime: string): boolean {
-  return mime.startsWith("image/") || mime.startsWith("video/");
+  return mime.startsWith('image/') || mime.startsWith('video/');
 }
 
 // ─── Props ─────────────────────────────────────────────────────────────────
@@ -44,7 +59,7 @@ interface MediaManagerProps {
 
 export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: MediaManagerProps) {
   const [atts, setAtts] = useState<Attachment[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -59,13 +74,15 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
       const rows = await api.attachments.list(pageId);
       setAtts(rows);
     } catch (err) {
-      console.error("Failed to load attachments:", err);
+      console.error('Failed to load attachments:', err);
     } finally {
       setLoading(false);
     }
   }, [pageId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // ─── Upload ────────────────────────────────────────────────────────────────
 
@@ -75,14 +92,14 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
     try {
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
+        reader.onload = () => resolve((reader.result as string).split(',')[1] || '');
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
       await api.attachments.add(pageId, file.name, file.type, file.size, base64, userId);
       await load();
     } catch (err) {
-      console.error("Upload failed:", err);
+      console.error('Upload failed:', err);
     } finally {
       setUploading(false);
     }
@@ -91,7 +108,7 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleUpload(file);
-    e.target.value = "";
+    e.target.value = '';
   };
 
   // ─── Drag and drop ───────────────────────────────────────────────────────
@@ -123,7 +140,7 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
       await api.attachments.delete(id);
       setAtts((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
-      console.error("Delete failed:", err);
+      console.error('Delete failed:', err);
     }
   };
 
@@ -152,7 +169,10 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col rounded-xl border border-border bg-card shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -168,7 +188,7 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
             Media Browser
             {atts.length > 0 && (
               <span className="text-[10px] text-muted-foreground font-normal">
-                ({atts.length} file{atts.length !== 1 ? "s" : ""})
+                ({atts.length} file{atts.length !== 1 ? 's' : ''})
               </span>
             )}
           </h3>
@@ -192,11 +212,15 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
                   ) : (
                     <Upload className="h-3 w-3" />
                   )}
-                  {uploading ? "Uploading..." : "Upload"}
+                  {uploading ? 'Uploading...' : 'Upload'}
                 </button>
               </>
             )}
-            <button onClick={onClose} aria-label="Close media browser" className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
+            <button
+              onClick={onClose}
+              aria-label="Close media browser"
+              className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -281,7 +305,7 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
                     {/* Thumbnail / Icon */}
                     <div className="aspect-video flex items-center justify-center bg-muted/20 relative overflow-hidden">
                       {isPreviewableFile ? (
-                        att.mime_type.startsWith("image/") ? (
+                        att.mime_type.startsWith('image/') ? (
                           <img
                             src={`data:${att.mime_type};base64,${att.storage_key}`}
                             alt={att.filename}
@@ -298,7 +322,10 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
                         {isPreviewableFile && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); setPreviewId(att.id); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewId(att.id);
+                            }}
                             className="p-1.5 rounded bg-white/20 text-white hover:bg-white/30 transition-colors"
                             title="Preview"
                           >
@@ -306,15 +333,25 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
                           </button>
                         )}
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleCopyLink(att.id); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyLink(att.id);
+                          }}
                           className="p-1.5 rounded bg-white/20 text-white hover:bg-white/30 transition-colors"
                           title="Copy link"
                         >
-                          {isCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {isCopied ? (
+                            <Check className="h-3.5 w-3.5" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
                         </button>
                         {userId && !pickMode && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleDelete(att.id); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(att.id);
+                            }}
                             className="p-1.5 rounded bg-red-500/30 text-white hover:bg-red-500/50 transition-colors"
                             title="Delete"
                           >
@@ -356,13 +393,13 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
               >
                 <X className="h-4 w-4" />
               </button>
-              {previewAtt.mime_type.startsWith("image/") ? (
+              {previewAtt.mime_type.startsWith('image/') ? (
                 <img
                   src={`data:${previewAtt.mime_type};base64,${previewAtt.storage_key}`}
                   alt={previewAtt.filename}
                   className="max-w-full max-h-[75vh] rounded-lg shadow-2xl object-contain"
                 />
-              ) : previewAtt.mime_type.startsWith("video/") ? (
+              ) : previewAtt.mime_type.startsWith('video/') ? (
                 <video
                   src={`data:${previewAtt.mime_type};base64,${previewAtt.storage_key}`}
                   controls
@@ -377,9 +414,13 @@ export function MediaManager({ pageId, userId, onClose, pickMode, onPick }: Medi
                   className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
                 >
                   {copiedId === previewAtt.id ? (
-                    <><Check className="h-3 w-3" /> Copied!</>
+                    <>
+                      <Check className="h-3 w-3" /> Copied!
+                    </>
                   ) : (
-                    <><Copy className="h-3 w-3" /> Copy attachment link</>
+                    <>
+                      <Copy className="h-3 w-3" /> Copy attachment link
+                    </>
                   )}
                 </button>
               </div>

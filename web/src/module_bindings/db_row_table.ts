@@ -8,13 +8,13 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
-  baseId: __t.string().name("base_id"),
-  sortOrder: __t.u32().name("sort_order"),
-  createdBy: __t.string().name("created_by"),
-  createdAt: __t.u64().name("created_at"),
-  updatedAt: __t.u64().name("updated_at"),
+  baseId: __t.string().name('base_id'),
+  sortOrder: __t.u32().name('sort_order'),
+  createdBy: __t.string().name('created_by'),
+  createdAt: __t.u64().name('created_at'),
+  updatedAt: __t.u64().name('updated_at'),
 });

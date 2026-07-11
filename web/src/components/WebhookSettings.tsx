@@ -1,17 +1,28 @@
-import { useState, useEffect } from "react";
-import { api, Webhook, WebhookEvent } from "../lib/api";
-import { Plus, Trash2, Pencil, Loader2, Send, X, CheckCircle, AlertCircle, Clock, Eye } from "lucide-react";
-import { cn, timeAgo } from "../lib/utils";
+import { useState, useEffect } from 'react';
+import { api, Webhook, WebhookEvent } from '../lib/api';
+import {
+  Plus,
+  Trash2,
+  Pencil,
+  Loader2,
+  Send,
+  X,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Eye,
+} from 'lucide-react';
+import { cn, timeAgo } from '../lib/utils';
 
 // ─── Event type options ───────────────────────────────────────────────────────
 
 const EVENT_OPTIONS = [
-  { value: "page.create", label: "Page created" },
-  { value: "page.update", label: "Page updated" },
-  { value: "page.delete", label: "Page deleted" },
-  { value: "page.publish", label: "Page published" },
-  { value: "page.archive", label: "Page archived" },
-  { value: "comment.create", label: "Comment added" },
+  { value: 'page.create', label: 'Page created' },
+  { value: 'page.update', label: 'Page updated' },
+  { value: 'page.delete', label: 'Page deleted' },
+  { value: 'page.publish', label: 'Page published' },
+  { value: 'page.archive', label: 'Page archived' },
+  { value: 'comment.create', label: 'Comment added' },
 ];
 
 // ─── Webhook Settings ─────────────────────────────────────────────────────────
@@ -29,10 +40,10 @@ export function WebhookSettings({ userId }: Props) {
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formName, setFormName] = useState("");
-  const [formUrl, setFormUrl] = useState("");
-  const [formEvents, setFormEvents] = useState<string[]>(["page.create", "page.update"]);
-  const [formSecret, setFormSecret] = useState("");
+  const [formName, setFormName] = useState('');
+  const [formUrl, setFormUrl] = useState('');
+  const [formEvents, setFormEvents] = useState<string[]>(['page.create', 'page.update']);
+  const [formSecret, setFormSecret] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Events panel state
@@ -45,7 +56,7 @@ export function WebhookSettings({ userId }: Props) {
       const whs = await api.webhooks.list();
       setWebhooks(whs);
     } catch (e) {
-      console.error("Failed to load webhooks:", e);
+      console.error('Failed to load webhooks:', e);
     } finally {
       setLoading(false);
     }
@@ -57,10 +68,10 @@ export function WebhookSettings({ userId }: Props) {
 
   const openCreate = () => {
     setEditingId(null);
-    setFormName("");
-    setFormUrl("https://");
-    setFormEvents(["page.create", "page.update"]);
-    setFormSecret("");
+    setFormName('');
+    setFormUrl('https://');
+    setFormEvents(['page.create', 'page.update']);
+    setFormSecret('');
     setShowForm(true);
   };
 
@@ -71,7 +82,7 @@ export function WebhookSettings({ userId }: Props) {
     try {
       setFormEvents(JSON.parse(wh.events));
     } catch {
-      setFormEvents(["page.create"]);
+      setFormEvents(['page.create']);
     }
     setFormSecret(wh.secret);
     setShowForm(true);
@@ -90,9 +101,16 @@ export function WebhookSettings({ userId }: Props) {
       const eventsJson = JSON.stringify(formEvents);
       if (editingId) {
         const wh = webhooks.find((w) => w.id === editingId);
-        await api.webhooks.update(editingId, formName, formUrl, eventsJson, formSecret, wh?.is_active ?? true);
+        await api.webhooks.update(
+          editingId,
+          formName,
+          formUrl,
+          eventsJson,
+          formSecret,
+          wh?.is_active ?? true,
+        );
       } else {
-        await api.webhooks.create(formName, formUrl, eventsJson, formSecret, userId || "anonymous");
+        await api.webhooks.create(formName, formUrl, eventsJson, formSecret, userId || 'anonymous');
       }
       setShowForm(false);
       await loadWebhooks();
@@ -104,7 +122,7 @@ export function WebhookSettings({ userId }: Props) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this webhook? All pending events will be removed.")) return;
+    if (!confirm('Delete this webhook? All pending events will be removed.')) return;
     await api.webhooks.delete(id);
     await loadWebhooks();
   };
@@ -122,7 +140,7 @@ export function WebhookSettings({ userId }: Props) {
       setEvents(evts);
       setShowEvents(true);
     } catch (e) {
-      console.error("Failed to load events:", e);
+      console.error('Failed to load events:', e);
     } finally {
       setEventsLoading(false);
     }
@@ -130,12 +148,12 @@ export function WebhookSettings({ userId }: Props) {
 
   const handleFireTest = async (wh: Webhook) => {
     const testPayload = JSON.stringify({
-      event: "test",
-      data: { message: "This is a test webhook event from Spacetime Wiki." },
+      event: 'test',
+      data: { message: 'This is a test webhook event from Spacetime Wiki.' },
       timestamp: Date.now(),
     });
     try {
-      await api.webhooks.fire(wh.id, "page.create", "", testPayload);
+      await api.webhooks.fire(wh.id, 'page.create', '', testPayload);
       // Reload events if panel is open
       if (showEvents && eventsWebhookId === wh.id) {
         loadEvents(wh.id);
@@ -147,9 +165,9 @@ export function WebhookSettings({ userId }: Props) {
 
   const statusIcon = (status: string) => {
     switch (status) {
-      case "sent":
+      case 'sent':
         return <CheckCircle className="h-3 w-3 text-green-500" />;
-      case "failed":
+      case 'failed':
         return <AlertCircle className="h-3 w-3 text-red-500" />;
       default:
         return <Clock className="h-3 w-3 text-yellow-500" />;
@@ -159,7 +177,9 @@ export function WebhookSettings({ userId }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Webhooks</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Webhooks
+        </p>
         <button
           onClick={openCreate}
           className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
@@ -174,7 +194,8 @@ export function WebhookSettings({ userId }: Props) {
         </div>
       ) : webhooks.length === 0 ? (
         <div className="py-6 text-center text-xs text-muted-foreground">
-          No webhooks configured. Webhooks send HTTP POST notifications when pages are created, updated, or deleted.
+          No webhooks configured. Webhooks send HTTP POST notifications when pages are created,
+          updated, or deleted.
         </div>
       ) : (
         <div className="space-y-2">
@@ -189,8 +210,8 @@ export function WebhookSettings({ userId }: Props) {
                 >
                   <div
                     className={cn(
-                      "w-2 h-2 rounded-full shrink-0",
-                      wh.is_active ? "bg-green-500" : "bg-muted-foreground/40",
+                      'w-2 h-2 rounded-full shrink-0',
+                      wh.is_active ? 'bg-green-500' : 'bg-muted-foreground/40',
                     )}
                   />
                   <span className="text-xs font-medium truncate">{wh.name}</span>
@@ -239,13 +260,13 @@ export function WebhookSettings({ userId }: Props) {
                       <button
                         onClick={() => handleToggleActive(wh)}
                         className={cn(
-                          "ml-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors",
+                          'ml-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors',
                           wh.is_active
-                            ? "bg-green-500/10 text-green-500 hover:bg-green-500/20"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80",
+                            ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80',
                         )}
                       >
-                        {wh.is_active ? "Active" : "Inactive"}
+                        {wh.is_active ? 'Active' : 'Inactive'}
                       </button>
                     </div>
                   </div>
@@ -254,7 +275,11 @@ export function WebhookSettings({ userId }: Props) {
                     <div className="flex flex-wrap gap-1 mt-1">
                       {(() => {
                         let parsed: string[];
-                        try { parsed = JSON.parse(wh.events); } catch { parsed = []; }
+                        try {
+                          parsed = JSON.parse(wh.events);
+                        } catch {
+                          parsed = [];
+                        }
                         return parsed;
                       })().map((evt) => (
                         <span
@@ -283,22 +308,35 @@ export function WebhookSettings({ userId }: Props) {
 
       {/* Create/Edit form */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowForm(false)}>
-          <div className="w-full max-w-md mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-semibold mb-4">{editingId ? "Edit webhook" : "New webhook"}</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={() => setShowForm(false)}
+        >
+          <div
+            className="w-full max-w-md mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-semibold mb-4">
+              {editingId ? 'Edit webhook' : 'New webhook'}
+            </h3>
             <div className="space-y-3">
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Name</label>
                 <input
-                  type="text" value={formName} onChange={(e) => setFormName(e.target.value)}
-                  placeholder="My webhook" autoFocus
+                  type="text"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="My webhook"
+                  autoFocus
                   className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">URL</label>
                 <input
-                  type="text" value={formUrl} onChange={(e) => setFormUrl(e.target.value)}
+                  type="text"
+                  value={formUrl}
+                  onChange={(e) => setFormUrl(e.target.value)}
                   placeholder="https://hooks.example.com/notify"
                   className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
@@ -307,7 +345,10 @@ export function WebhookSettings({ userId }: Props) {
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">Events</label>
                 <div className="grid grid-cols-2 gap-1">
                   {EVENT_OPTIONS.map((opt) => (
-                    <label key={opt.value} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/30 transition-colors cursor-pointer">
+                    <label
+                      key={opt.value}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/30 transition-colors cursor-pointer"
+                    >
                       <input
                         type="checkbox"
                         checked={formEvents.includes(opt.value)}
@@ -321,22 +362,38 @@ export function WebhookSettings({ userId }: Props) {
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground/60 mb-1 block">
-                  Secret <span className="text-muted-foreground/40">(optional — sent as X-Webhook-Secret header)</span>
+                  Secret{' '}
+                  <span className="text-muted-foreground/40">
+                    (optional — sent as X-Webhook-Secret header)
+                  </span>
                 </label>
                 <input
-                  type="text" value={formSecret} onChange={(e) => setFormSecret(e.target.value)}
+                  type="text"
+                  value={formSecret}
+                  onChange={(e) => setFormSecret(e.target.value)}
                   placeholder="whsec_..."
                   className="w-full h-9 px-3 rounded-md border border-border bg-[#0a0a0a] text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <div className="flex gap-2 justify-end pt-2">
-                <button onClick={() => setShowForm(false)} className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
                   Cancel
                 </button>
-                <button onClick={handleSave} disabled={!formName.trim() || !formUrl.trim() || saving}
+                <button
+                  onClick={handleSave}
+                  disabled={!formName.trim() || !formUrl.trim() || saving}
                   className="h-8 px-4 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
                 >
-                  {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : editingId ? "Save" : "Create"}
+                  {saving ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : editingId ? (
+                    'Save'
+                  ) : (
+                    'Create'
+                  )}
                 </button>
               </div>
             </div>
@@ -346,13 +403,29 @@ export function WebhookSettings({ userId }: Props) {
 
       {/* Events panel */}
       {showEvents && eventsWebhookId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => { setShowEvents(false); setEventsWebhookId(null); }}>
-          <div className="w-full max-w-lg mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={() => {
+            setShowEvents(false);
+            setEventsWebhookId(null);
+          }}
+        >
+          <div
+            className="w-full max-w-lg mx-4 p-5 rounded-xl border border-border bg-card shadow-2xl max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary" /> Webhook Events
               </h3>
-              <button onClick={() => { setShowEvents(false); setEventsWebhookId(null); }} className="p-1 rounded hover:bg-muted" aria-label="Close events panel">
+              <button
+                onClick={() => {
+                  setShowEvents(false);
+                  setEventsWebhookId(null);
+                }}
+                className="p-1 rounded hover:bg-muted"
+                aria-label="Close events panel"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -367,7 +440,10 @@ export function WebhookSettings({ userId }: Props) {
             ) : (
               <div className="space-y-2">
                 {events.map((evt) => (
-                  <div key={evt.id} className="p-3 rounded-md border border-border hover:bg-muted/30 transition-colors">
+                  <div
+                    key={evt.id}
+                    className="p-3 rounded-md border border-border hover:bg-muted/30 transition-colors"
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       {statusIcon(evt.status)}
                       <span className="text-xs font-medium">{evt.event_type}</span>
@@ -376,22 +452,23 @@ export function WebhookSettings({ userId }: Props) {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
-                      <span className={cn(
-                        "px-1 py-0.5 rounded font-medium",
-                        evt.status === "sent" && "bg-green-500/10 text-green-500",
-                        evt.status === "failed" && "bg-red-500/10 text-red-500",
-                        evt.status === "pending" && "bg-yellow-500/10 text-yellow-500",
-                      )}>
+                      <span
+                        className={cn(
+                          'px-1 py-0.5 rounded font-medium',
+                          evt.status === 'sent' && 'bg-green-500/10 text-green-500',
+                          evt.status === 'failed' && 'bg-red-500/10 text-red-500',
+                          evt.status === 'pending' && 'bg-yellow-500/10 text-yellow-500',
+                        )}
+                      >
                         {evt.status}
                       </span>
-                      {evt.response_code > 0 && (
-                        <span>HTTP {evt.response_code}</span>
-                      )}
+                      {evt.response_code > 0 && <span>HTTP {evt.response_code}</span>}
                     </div>
-                    {evt.response_body && evt.response_body !== "{}" && (
+                    {evt.response_body && evt.response_body !== '{}' && (
                       <details className="mt-1">
                         <summary className="text-[10px] text-muted-foreground/60 cursor-pointer hover:text-foreground">
-                          <Eye className="h-2.5 w-2.5 inline mr-1" />Response
+                          <Eye className="h-2.5 w-2.5 inline mr-1" />
+                          Response
                         </summary>
                         <pre className="mt-1 p-2 rounded bg-[#0a0a0a] text-[10px] text-muted-foreground overflow-x-auto max-h-24">
                           {evt.response_body.slice(0, 500)}

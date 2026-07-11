@@ -8,9 +8,9 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
-export const AccessRequest = __t.object("AccessRequest", {
+export const AccessRequest = __t.object('AccessRequest', {
   id: __t.string(),
   pageId: __t.string(),
   requesterId: __t.string(),
@@ -22,7 +22,7 @@ export const AccessRequest = __t.object("AccessRequest", {
 });
 export type AccessRequest = __Infer<typeof AccessRequest>;
 
-export const AiChatMessage = __t.object("AiChatMessage", {
+export const AiChatMessage = __t.object('AiChatMessage', {
   id: __t.string(),
   sessionId: __t.string(),
   role: __t.string(),
@@ -31,7 +31,7 @@ export const AiChatMessage = __t.object("AiChatMessage", {
 });
 export type AiChatMessage = __Infer<typeof AiChatMessage>;
 
-export const AiChatSession = __t.object("AiChatSession", {
+export const AiChatSession = __t.object('AiChatSession', {
   id: __t.string(),
   userId: __t.string(),
   title: __t.string(),
@@ -41,14 +41,14 @@ export const AiChatSession = __t.object("AiChatSession", {
 });
 export type AiChatSession = __Infer<typeof AiChatSession>;
 
-export const AiConfig = __t.object("AiConfig", {
+export const AiConfig = __t.object('AiConfig', {
   key: __t.string(),
   value: __t.string(),
   updatedAt: __t.u64(),
 });
 export type AiConfig = __Infer<typeof AiConfig>;
 
-export const ApiKey = __t.object("ApiKey", {
+export const ApiKey = __t.object('ApiKey', {
   id: __t.string(),
   userId: __t.string(),
   name: __t.string(),
@@ -61,14 +61,14 @@ export const ApiKey = __t.object("ApiKey", {
 });
 export type ApiKey = __Infer<typeof ApiKey>;
 
-export const AppSetting = __t.object("AppSetting", {
+export const AppSetting = __t.object('AppSetting', {
   key: __t.string(),
   value: __t.string(),
   updatedAt: __t.u64(),
 });
 export type AppSetting = __Infer<typeof AppSetting>;
 
-export const Attachment = __t.object("Attachment", {
+export const Attachment = __t.object('Attachment', {
   id: __t.string(),
   pageId: __t.string(),
   filename: __t.string(),
@@ -80,7 +80,7 @@ export const Attachment = __t.object("Attachment", {
 });
 export type Attachment = __Infer<typeof Attachment>;
 
-export const AuditEvent = __t.object("AuditEvent", {
+export const AuditEvent = __t.object('AuditEvent', {
   id: __t.string(),
   eventType: __t.string(),
   actorId: __t.string(),
@@ -91,7 +91,7 @@ export const AuditEvent = __t.object("AuditEvent", {
 });
 export type AuditEvent = __Infer<typeof AuditEvent>;
 
-export const CollabSession = __t.object("CollabSession", {
+export const CollabSession = __t.object('CollabSession', {
   id: __t.string(),
   pageId: __t.string(),
   userId: __t.string(),
@@ -103,7 +103,7 @@ export const CollabSession = __t.object("CollabSession", {
 });
 export type CollabSession = __Infer<typeof CollabSession>;
 
-export const CollabUpdate = __t.object("CollabUpdate", {
+export const CollabUpdate = __t.object('CollabUpdate', {
   id: __t.string(),
   pageId: __t.string(),
   updateData: __t.string(),
@@ -112,7 +112,7 @@ export const CollabUpdate = __t.object("CollabUpdate", {
 });
 export type CollabUpdate = __Infer<typeof CollabUpdate>;
 
-export const Collection = __t.object("Collection", {
+export const Collection = __t.object('Collection', {
   id: __t.string(),
   name: __t.string(),
   slug: __t.string(),
@@ -127,7 +127,7 @@ export const Collection = __t.object("Collection", {
 });
 export type Collection = __Infer<typeof Collection>;
 
-export const CollectionGroupPermission = __t.object("CollectionGroupPermission", {
+export const CollectionGroupPermission = __t.object('CollectionGroupPermission', {
   id: __t.string(),
   collectionId: __t.string(),
   groupId: __t.string(),
@@ -136,7 +136,7 @@ export const CollectionGroupPermission = __t.object("CollectionGroupPermission",
 });
 export type CollectionGroupPermission = __Infer<typeof CollectionGroupPermission>;
 
-export const CollectionMember = __t.object("CollectionMember", {
+export const CollectionMember = __t.object('CollectionMember', {
   id: __t.string(),
   collectionId: __t.string(),
   userId: __t.string(),
@@ -146,7 +146,7 @@ export const CollectionMember = __t.object("CollectionMember", {
 });
 export type CollectionMember = __Infer<typeof CollectionMember>;
 
-export const CollectionSortRule = __t.object("CollectionSortRule", {
+export const CollectionSortRule = __t.object('CollectionSortRule', {
   collectionId: __t.string(),
   sortField: __t.string(),
   sortDirection: __t.string(),
@@ -156,7 +156,7 @@ export const CollectionSortRule = __t.object("CollectionSortRule", {
 });
 export type CollectionSortRule = __Infer<typeof CollectionSortRule>;
 
-export const Comment = __t.object("Comment", {
+export const Comment = __t.object('Comment', {
   id: __t.string(),
   pageId: __t.string(),
   parentCommentId: __t.string(),
@@ -169,7 +169,7 @@ export const Comment = __t.object("Comment", {
 });
 export type Comment = __Infer<typeof Comment>;
 
-export const CommentReaction = __t.object("CommentReaction", {
+export const CommentReaction = __t.object('CommentReaction', {
   id: __t.string(),
   commentId: __t.string(),
   userId: __t.string(),
@@ -178,7 +178,7 @@ export const CommentReaction = __t.object("CommentReaction", {
 });
 export type CommentReaction = __Infer<typeof CommentReaction>;
 
-export const DbBase = __t.object("DbBase", {
+export const DbBase = __t.object('DbBase', {
   id: __t.string(),
   pageId: __t.string(),
   title: __t.string(),
@@ -189,7 +189,7 @@ export const DbBase = __t.object("DbBase", {
 });
 export type DbBase = __Infer<typeof DbBase>;
 
-export const DbCell = __t.object("DbCell", {
+export const DbCell = __t.object('DbCell', {
   id: __t.string(),
   rowId: __t.string(),
   columnId: __t.string(),
@@ -199,7 +199,7 @@ export const DbCell = __t.object("DbCell", {
 });
 export type DbCell = __Infer<typeof DbCell>;
 
-export const DbColumn = __t.object("DbColumn", {
+export const DbColumn = __t.object('DbColumn', {
   id: __t.string(),
   baseId: __t.string(),
   name: __t.string(),
@@ -211,7 +211,7 @@ export const DbColumn = __t.object("DbColumn", {
 });
 export type DbColumn = __Infer<typeof DbColumn>;
 
-export const DbRow = __t.object("DbRow", {
+export const DbRow = __t.object('DbRow', {
   id: __t.string(),
   baseId: __t.string(),
   sortOrder: __t.u32(),
@@ -221,7 +221,7 @@ export const DbRow = __t.object("DbRow", {
 });
 export type DbRow = __Infer<typeof DbRow>;
 
-export const Favorite = __t.object("Favorite", {
+export const Favorite = __t.object('Favorite', {
   id: __t.string(),
   userId: __t.string(),
   pageId: __t.string(),
@@ -229,7 +229,7 @@ export const Favorite = __t.object("Favorite", {
 });
 export type Favorite = __Infer<typeof Favorite>;
 
-export const Group = __t.object("Group", {
+export const Group = __t.object('Group', {
   id: __t.string(),
   name: __t.string(),
   description: __t.string(),
@@ -239,7 +239,7 @@ export const Group = __t.object("Group", {
 });
 export type Group = __Infer<typeof Group>;
 
-export const GroupMember = __t.object("GroupMember", {
+export const GroupMember = __t.object('GroupMember', {
   id: __t.string(),
   groupId: __t.string(),
   userId: __t.string(),
@@ -249,7 +249,7 @@ export const GroupMember = __t.object("GroupMember", {
 });
 export type GroupMember = __Infer<typeof GroupMember>;
 
-export const Invitation = __t.object("Invitation", {
+export const Invitation = __t.object('Invitation', {
   id: __t.string(),
   email: __t.string(),
   invitedBy: __t.string(),
@@ -266,7 +266,7 @@ export const Invitation = __t.object("Invitation", {
 });
 export type Invitation = __Infer<typeof Invitation>;
 
-export const LdapProvider = __t.object("LdapProvider", {
+export const LdapProvider = __t.object('LdapProvider', {
   id: __t.string(),
   name: __t.string(),
   slug: __t.string(),
@@ -289,7 +289,7 @@ export const LdapProvider = __t.object("LdapProvider", {
 });
 export type LdapProvider = __Infer<typeof LdapProvider>;
 
-export const LdapUser = __t.object("LdapUser", {
+export const LdapUser = __t.object('LdapUser', {
   id: __t.string(),
   userId: __t.string(),
   ldapProviderId: __t.string(),
@@ -300,7 +300,7 @@ export const LdapUser = __t.object("LdapUser", {
 });
 export type LdapUser = __Infer<typeof LdapUser>;
 
-export const MfaBackupCode = __t.object("MfaBackupCode", {
+export const MfaBackupCode = __t.object('MfaBackupCode', {
   id: __t.string(),
   userId: __t.string(),
   codeHash: __t.string(),
@@ -309,7 +309,7 @@ export const MfaBackupCode = __t.object("MfaBackupCode", {
 });
 export type MfaBackupCode = __Infer<typeof MfaBackupCode>;
 
-export const MfaMethod = __t.object("MfaMethod", {
+export const MfaMethod = __t.object('MfaMethod', {
   id: __t.string(),
   userId: __t.string(),
   methodType: __t.string(),
@@ -320,7 +320,7 @@ export const MfaMethod = __t.object("MfaMethod", {
 });
 export type MfaMethod = __Infer<typeof MfaMethod>;
 
-export const Notification = __t.object("Notification", {
+export const Notification = __t.object('Notification', {
   id: __t.string(),
   userId: __t.string(),
   eventType: __t.string(),
@@ -334,7 +334,7 @@ export const Notification = __t.object("Notification", {
 });
 export type Notification = __Infer<typeof Notification>;
 
-export const OauthProvider = __t.object("OauthProvider", {
+export const OauthProvider = __t.object('OauthProvider', {
   id: __t.string(),
   name: __t.string(),
   slug: __t.string(),
@@ -355,7 +355,7 @@ export const OauthProvider = __t.object("OauthProvider", {
 });
 export type OauthProvider = __Infer<typeof OauthProvider>;
 
-export const OauthUser = __t.object("OauthUser", {
+export const OauthUser = __t.object('OauthUser', {
   id: __t.string(),
   userId: __t.string(),
   providerId: __t.string(),
@@ -371,7 +371,7 @@ export const OauthUser = __t.object("OauthUser", {
 });
 export type OauthUser = __Infer<typeof OauthUser>;
 
-export const OidcProvider = __t.object("OidcProvider", {
+export const OidcProvider = __t.object('OidcProvider', {
   id: __t.string(),
   name: __t.string(),
   slug: __t.string(),
@@ -386,7 +386,7 @@ export const OidcProvider = __t.object("OidcProvider", {
 });
 export type OidcProvider = __Infer<typeof OidcProvider>;
 
-export const Page = __t.object("Page", {
+export const Page = __t.object('Page', {
   id: __t.string(),
   title: __t.string(),
   slug: __t.string(),
@@ -412,7 +412,7 @@ export const Page = __t.object("Page", {
 });
 export type Page = __Infer<typeof Page>;
 
-export const PagePermission = __t.object("PagePermission", {
+export const PagePermission = __t.object('PagePermission', {
   id: __t.string(),
   pageId: __t.string(),
   userId: __t.string(),
@@ -422,7 +422,7 @@ export const PagePermission = __t.object("PagePermission", {
 });
 export type PagePermission = __Infer<typeof PagePermission>;
 
-export const PageRevision = __t.object("PageRevision", {
+export const PageRevision = __t.object('PageRevision', {
   id: __t.string(),
   pageId: __t.string(),
   title: __t.string(),
@@ -433,7 +433,7 @@ export const PageRevision = __t.object("PageRevision", {
 });
 export type PageRevision = __Infer<typeof PageRevision>;
 
-export const PageTag = __t.object("PageTag", {
+export const PageTag = __t.object('PageTag', {
   id: __t.string(),
   pageId: __t.string(),
   name: __t.string(),
@@ -441,7 +441,7 @@ export const PageTag = __t.object("PageTag", {
 });
 export type PageTag = __Infer<typeof PageTag>;
 
-export const PageView = __t.object("PageView", {
+export const PageView = __t.object('PageView', {
   id: __t.string(),
   pageId: __t.string(),
   userId: __t.string(),
@@ -450,7 +450,7 @@ export const PageView = __t.object("PageView", {
 });
 export type PageView = __Infer<typeof PageView>;
 
-export const PasskeyChallenge = __t.object("PasskeyChallenge", {
+export const PasskeyChallenge = __t.object('PasskeyChallenge', {
   challenge: __t.string(),
   userHandle: __t.string(),
   purpose: __t.string(),
@@ -459,7 +459,7 @@ export const PasskeyChallenge = __t.object("PasskeyChallenge", {
 });
 export type PasskeyChallenge = __Infer<typeof PasskeyChallenge>;
 
-export const PasskeyCredential = __t.object("PasskeyCredential", {
+export const PasskeyCredential = __t.object('PasskeyCredential', {
   id: __t.string(),
   userId: __t.string(),
   credentialId: __t.string(),
@@ -472,7 +472,7 @@ export const PasskeyCredential = __t.object("PasskeyCredential", {
 });
 export type PasskeyCredential = __Infer<typeof PasskeyCredential>;
 
-export const SamlProvider = __t.object("SamlProvider", {
+export const SamlProvider = __t.object('SamlProvider', {
   id: __t.string(),
   name: __t.string(),
   slug: __t.string(),
@@ -489,7 +489,7 @@ export const SamlProvider = __t.object("SamlProvider", {
 });
 export type SamlProvider = __Infer<typeof SamlProvider>;
 
-export const ScimEvent = __t.object("ScimEvent", {
+export const ScimEvent = __t.object('ScimEvent', {
   id: __t.string(),
   providerId: __t.string(),
   resourceType: __t.string(),
@@ -502,7 +502,7 @@ export const ScimEvent = __t.object("ScimEvent", {
 });
 export type ScimEvent = __Infer<typeof ScimEvent>;
 
-export const ScimProvider = __t.object("ScimProvider", {
+export const ScimProvider = __t.object('ScimProvider', {
   id: __t.string(),
   name: __t.string(),
   slug: __t.string(),
@@ -518,7 +518,7 @@ export const ScimProvider = __t.object("ScimProvider", {
 });
 export type ScimProvider = __Infer<typeof ScimProvider>;
 
-export const SearchResult = __t.object("SearchResult", {
+export const SearchResult = __t.object('SearchResult', {
   id: __t.string(),
   searchToken: __t.string(),
   pageId: __t.string(),
@@ -530,7 +530,7 @@ export const SearchResult = __t.object("SearchResult", {
 });
 export type SearchResult = __Infer<typeof SearchResult>;
 
-export const ShareLink = __t.object("ShareLink", {
+export const ShareLink = __t.object('ShareLink', {
   id: __t.string(),
   pageId: __t.string(),
   token: __t.string(),
@@ -544,7 +544,7 @@ export const ShareLink = __t.object("ShareLink", {
 });
 export type ShareLink = __Infer<typeof ShareLink>;
 
-export const SyncedBlock = __t.object("SyncedBlock", {
+export const SyncedBlock = __t.object('SyncedBlock', {
   id: __t.string(),
   title: __t.string(),
   content: __t.string(),
@@ -555,7 +555,7 @@ export const SyncedBlock = __t.object("SyncedBlock", {
 });
 export type SyncedBlock = __Infer<typeof SyncedBlock>;
 
-export const SyncedBlockRef = __t.object("SyncedBlockRef", {
+export const SyncedBlockRef = __t.object('SyncedBlockRef', {
   id: __t.string(),
   blockId: __t.string(),
   pageId: __t.string(),
@@ -564,7 +564,7 @@ export const SyncedBlockRef = __t.object("SyncedBlockRef", {
 });
 export type SyncedBlockRef = __Infer<typeof SyncedBlockRef>;
 
-export const User = __t.object("User", {
+export const User = __t.object('User', {
   id: __t.string(),
   name: __t.string(),
   email: __t.string(),
@@ -576,7 +576,7 @@ export const User = __t.object("User", {
 });
 export type User = __Infer<typeof User>;
 
-export const Watch = __t.object("Watch", {
+export const Watch = __t.object('Watch', {
   id: __t.string(),
   userId: __t.string(),
   targetType: __t.string(),
@@ -585,7 +585,7 @@ export const Watch = __t.object("Watch", {
 });
 export type Watch = __Infer<typeof Watch>;
 
-export const Webhook = __t.object("Webhook", {
+export const Webhook = __t.object('Webhook', {
   id: __t.string(),
   name: __t.string(),
   url: __t.string(),
@@ -598,7 +598,7 @@ export const Webhook = __t.object("Webhook", {
 });
 export type Webhook = __Infer<typeof Webhook>;
 
-export const WebhookEvent = __t.object("WebhookEvent", {
+export const WebhookEvent = __t.object('WebhookEvent', {
   id: __t.string(),
   webhookId: __t.string(),
   eventType: __t.string(),
@@ -611,4 +611,3 @@ export const WebhookEvent = __t.object("WebhookEvent", {
   sentAt: __t.u64(),
 });
 export type WebhookEvent = __Infer<typeof WebhookEvent>;
-
