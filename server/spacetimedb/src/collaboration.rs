@@ -1,6 +1,6 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Pure helpers (extracted for testability) ───────────────────────────────────
 
@@ -120,7 +120,10 @@ pub fn update_cursor_position(
 #[reducer]
 pub fn cleanup_stale_collab_sessions(ctx: &ReducerContext) -> Result<(), String> {
     let cutoff = stale_session_cutoff(now_ms(ctx));
-    let stale: Vec<String> = ctx.db.collab_session().iter()
+    let stale: Vec<String> = ctx
+        .db
+        .collab_session()
+        .iter()
         .filter(|s| s.last_seen_at < cutoff)
         .map(|s| s.id.clone())
         .collect();
@@ -136,7 +139,10 @@ pub fn cleanup_stale_collab_sessions(ctx: &ReducerContext) -> Result<(), String>
 #[reducer]
 pub fn cleanup_old_collab_updates(ctx: &ReducerContext) -> Result<(), String> {
     let cutoff = old_updates_cutoff(now_ms(ctx));
-    let stale: Vec<String> = ctx.db.collab_update().iter()
+    let stale: Vec<String> = ctx
+        .db
+        .collab_update()
+        .iter()
         .filter(|u| u.created_at < cutoff)
         .map(|u| u.id.clone())
         .collect();

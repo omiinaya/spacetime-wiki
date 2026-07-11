@@ -1,7 +1,6 @@
-use spacetimedb::*;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::SaltString};
-use sha2::{Digest, Sha256};
 use crate::*;
+use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use sha2::{Digest, Sha256};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -70,20 +69,30 @@ pub(crate) fn log_event(
 
 // ─── Helper: sort orders ────────────────────────────────────────────────────
 
-pub(crate) fn next_sort_order(ctx: &ReducerContext, collection_id: &str, parent_page_id: &str) -> u32 {
-    ctx.db.page().iter()
+pub(crate) fn next_sort_order(
+    ctx: &ReducerContext,
+    collection_id: &str,
+    parent_page_id: &str,
+) -> u32 {
+    ctx.db
+        .page()
+        .iter()
         .filter(|p| p.collection_id == collection_id && p.parent_page_id == parent_page_id)
         .map(|p| p.sort_order)
         .max()
-        .unwrap_or(0) + 1
+        .unwrap_or(0)
+        + 1
 }
 
 pub(crate) fn next_col_sort_order(ctx: &ReducerContext, parent_id: &str) -> u32 {
-    ctx.db.collection().iter()
+    ctx.db
+        .collection()
+        .iter()
         .filter(|c| c.parent_id == parent_id)
         .map(|c| c.sort_order)
         .max()
-        .unwrap_or(0) + 1
+        .unwrap_or(0)
+        + 1
 }
 
 /// Simple RFC 4648 base32 decoding (no padding required)
@@ -171,9 +180,12 @@ pub(crate) fn notify_page_watchers(
     message: &str,
     icon: &str,
 ) {
-    for watcher in ctx.db.watch().iter().filter(|w| {
-        w.target_type == "page" && w.target_id == page_id && w.user_id != actor_id
-    }) {
+    for watcher in ctx
+        .db
+        .watch()
+        .iter()
+        .filter(|w| w.target_type == "page" && w.target_id == page_id && w.user_id != actor_id)
+    {
         ctx.db.notification().insert(Notification {
             id: make_id("notif", ctx),
             user_id: watcher.user_id.clone(),
@@ -192,16 +204,22 @@ pub(crate) fn notify_page_watchers(
 // ─── Pure helper: slug generation ────────────────────────────────────────────
 
 pub(crate) fn make_slug(title: &str) -> String {
-    title.to_lowercase()
+    title
+        .to_lowercase()
         .replace(' ', "-")
-        .chars().filter(|c| c.is_alphanumeric() || *c == '-').collect()
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '-')
+        .collect()
 }
 
 // ─── Pure helper: extract text content (strip JSON tokens) ──────────────────
 
 pub(crate) fn extract_text_content(content: &str) -> String {
-    content.chars()
-        .filter(|c| !r#""{}[],:"#.contains(*c)).take(2000).collect()
+    content
+        .chars()
+        .filter(|c| !r#""{}[],:"#.contains(*c))
+        .take(2000)
+        .collect()
 }
 
 // ─── Pure helper: role validation ────────────────────────────────────────────
@@ -211,7 +229,11 @@ pub(crate) fn is_valid_user_role(role: &str) -> bool {
 }
 
 pub(crate) fn sanitize_user_role(role: &str) -> String {
-    if is_valid_user_role(role) { role.to_string() } else { "member".to_string() }
+    if is_valid_user_role(role) {
+        role.to_string()
+    } else {
+        "member".to_string()
+    }
 }
 
 pub(crate) fn is_valid_collection_role(role: &str) -> bool {
@@ -219,7 +241,11 @@ pub(crate) fn is_valid_collection_role(role: &str) -> bool {
 }
 
 pub(crate) fn sanitize_collection_role(role: &str) -> String {
-    if is_valid_collection_role(role) { role.to_string() } else { "viewer".to_string() }
+    if is_valid_collection_role(role) {
+        role.to_string()
+    } else {
+        "viewer".to_string()
+    }
 }
 
 // ─── Pure helper: expiry calculation ─────────────────────────────────────────
@@ -237,9 +263,15 @@ pub(crate) fn calc_expiry_ms(now: u64, expires_days: u32) -> u64 {
 pub(crate) fn make_comment_excerpt(user_id: &str, page_title: &str, body: &str) -> String {
     let excerpt: String = body.chars().take(80).collect();
     if excerpt.len() < body.len() {
-        format!("{} commented on \"{}\": \"{}...\"", user_id, page_title, excerpt)
+        format!(
+            "{} commented on \"{}\": \"{}...\"",
+            user_id, page_title, excerpt
+        )
     } else {
-        format!("{} commented on \"{}\": \"{}\"", user_id, page_title, excerpt)
+        format!(
+            "{} commented on \"{}\": \"{}\"",
+            user_id, page_title, excerpt
+        )
     }
 }
 
@@ -280,17 +312,27 @@ mod tests {
     fn test_hash_password_argon2_format() {
         let hash = hash_password("hello");
         // Argon2 PHC strings start with $argon2id$v=19$m=...
-        assert!(hash.starts_with("$argon2id$"), "Hash should be Argon2 PHC format, got: {}", hash);
+        assert!(
+            hash.starts_with("$argon2id$"),
+            "Hash should be Argon2 PHC format, got: {}",
+            hash
+        );
         // PHC string has 5 segments: $argon2id$v=19$m=...,t=...,p=...$<salt>$<hash>
         let parts: Vec<&str> = hash.split('$').collect();
         assert_eq!(parts.len(), 6, "PHC string should have 5 $ segments");
-        assert!(parts[3].starts_with("m="), "Should contain memory cost param");
+        assert!(
+            parts[3].starts_with("m="),
+            "Should contain memory cost param"
+        );
     }
 
     #[test]
     fn test_hash_password_empty() {
         let hash = hash_password("");
-        assert!(hash.starts_with("$argon2id$"), "Empty password should also produce Argon2 PHC");
+        assert!(
+            hash.starts_with("$argon2id$"),
+            "Empty password should also produce Argon2 PHC"
+        );
     }
 
     #[test]
@@ -300,18 +342,36 @@ mod tests {
 
     #[test]
     fn test_verify_password_argon2_roundtrip() {
-        let password = format!("test-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos());
+        let password = format!(
+            "test-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         let hash = hash_password(&password);
-        assert!(verify_password(&password, &hash), "Should verify correct password against Argon2 hash");
-        assert!(!verify_password("wrong-password", &hash), "Should reject wrong password against Argon2 hash");
+        assert!(
+            verify_password(&password, &hash),
+            "Should verify correct password against Argon2 hash"
+        );
+        assert!(
+            !verify_password("wrong-password", &hash),
+            "Should reject wrong password against Argon2 hash"
+        );
     }
 
     #[test]
     fn test_verify_password_sha256_backward_compat() {
         // Legacy SHA-256 hash format — must still work
         let legacy_hash = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
-        assert!(verify_password("hello", legacy_hash), "Should verify correct password against legacy SHA-256");
-        assert!(!verify_password("wrong", legacy_hash), "Should reject wrong password against legacy SHA-256");
+        assert!(
+            verify_password("hello", legacy_hash),
+            "Should verify correct password against legacy SHA-256"
+        );
+        assert!(
+            !verify_password("wrong", legacy_hash),
+            "Should reject wrong password against legacy SHA-256"
+        );
     }
 
     #[test]
@@ -529,14 +589,20 @@ mod tests {
         let long = "a".repeat(100);
         let result = make_comment_excerpt("user1", "My Page", &long);
         assert!(result.ends_with("...\""));
-        assert_eq!(result.chars().count(), "user1 commented on \"My Page\": \"".len() + 80 + "...\"".len());
+        assert_eq!(
+            result.chars().count(),
+            "user1 commented on \"My Page\": \"".len() + 80 + "...\"".len()
+        );
     }
 
     #[test]
     fn test_comment_excerpt_exactly_80() {
         let body = "x".repeat(80);
         let result = make_comment_excerpt("user1", "My Page", &body);
-        assert_eq!(result.len(), "user1 commented on \"My Page\": \"".len() + 80 + "\"".len());
+        assert_eq!(
+            result.len(),
+            "user1 commented on \"My Page\": \"".len() + 80 + "\"".len()
+        );
         assert!(!result.ends_with("...\""));
     }
 }

@@ -1,6 +1,8 @@
 """Collection CRUD endpoints."""
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from permissions import check_page_access
+
 from stdb_client import sql_query, call_reducer, map_collection
 from models import (
     CollectionResponse,
@@ -31,7 +33,7 @@ async def list_collections(
 
 
 @router.get("/{collection_id}", response_model=CollectionResponse)
-async def get_collection(collection_id: str):
+async def get_collection(request: Request, collection_id: str):
     """Get a single collection by ID."""
     rows = await sql_query("SELECT * FROM collection WHERE id = ?", collection_id)
     if not rows:

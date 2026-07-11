@@ -1,5 +1,5 @@
-use spacetimedb::*;
 use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Tags ────────────────────────────────────────────────────────────────────
 
@@ -13,7 +13,10 @@ pub fn add_tag(
 ) -> Result<(), String> {
     if ctx.db.page_tag().id().find(&id).is_none() {
         ctx.db.page_tag().insert(PageTag {
-            id, page_id, name: name.to_lowercase().trim().to_string(), value,
+            id,
+            page_id,
+            name: name.to_lowercase().trim().to_string(),
+            value,
         });
     }
     Ok(())

@@ -1,6 +1,6 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Pages ───────────────────────────────────────────────────────────────────
 
@@ -25,24 +25,55 @@ pub fn create_page(
             title: title.clone(),
             slug,
             content: content.clone(),
-            text_content, collection_id: collection_id.clone(), parent_page_id: parent_page_id.clone(),
-            status: "draft".into(), icon: String::new(), color: String::new(),
-            full_width: false, is_pinned: false, is_template: false, template_id: String::new(),
-            sort_order, created_by: created_by.clone(), updated_by: created_by.clone(),
-            created_at: now, updated_at: now, published_at: 0, deleted_at: 0,
+            text_content,
+            collection_id: collection_id.clone(),
+            parent_page_id: parent_page_id.clone(),
+            status: "draft".into(),
+            icon: String::new(),
+            color: String::new(),
+            full_width: false,
+            is_pinned: false,
+            is_template: false,
+            template_id: String::new(),
+            sort_order,
+            created_by: created_by.clone(),
+            updated_by: created_by.clone(),
+            created_at: now,
+            updated_at: now,
+            published_at: 0,
+            deleted_at: 0,
             direction: "ltr".into(),
         });
     }
 
     ctx.db.page_revision().insert(PageRevision {
-        id: make_id("rev", ctx), page_id: id.clone(), title: title.clone(), content: content.clone(),
-        edited_by: created_by.clone(), created_at: now, revision_number: 1,
+        id: make_id("rev", ctx),
+        page_id: id.clone(),
+        title: title.clone(),
+        content: content.clone(),
+        edited_by: created_by.clone(),
+        created_at: now,
+        revision_number: 1,
     });
 
-    log_event(ctx, "page.create", &created_by, &id, &title, &format!(r#"{{"collection_id":"{}","parent_page_id":"{}"}}"#, collection_id, parent_page_id));
+    log_event(
+        ctx,
+        "page.create",
+        &created_by,
+        &id,
+        &title,
+        &format!(
+            r#"{{"collection_id":"{}","parent_page_id":"{}"}}"#,
+            collection_id, parent_page_id
+        ),
+    );
     // Notify collection watchers about new page
     notify_collection_watchers_new_page(
-        ctx, &collection_id, &id, &created_by, &title,
+        ctx,
+        &collection_id,
+        &id,
+        &created_by,
+        &title,
         &format!("New page \"{}\" was created", title),
         "",
     );
@@ -57,7 +88,12 @@ pub fn update_page(
     content: String,
     updated_by: String,
 ) -> Result<(), String> {
-    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
+    let mut page = ctx
+        .db
+        .page()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Page not found".to_string())?;
     let slug = make_slug(&title);
     let text_content = extract_text_content(&content);
     let now = now_ms(ctx);
@@ -70,18 +106,32 @@ pub fn update_page(
     page.updated_at = now;
     ctx.db.page().id().update(page);
 
-    let max_rev = ctx.db.page_revision().iter()
+    let max_rev = ctx
+        .db
+        .page_revision()
+        .iter()
         .filter(|r| r.page_id == id)
-        .map(|r| r.revision_number).max().unwrap_or(0);
+        .map(|r| r.revision_number)
+        .max()
+        .unwrap_or(0);
     ctx.db.page_revision().insert(PageRevision {
-        id: make_id("rev", ctx), page_id: id.clone(), title: title.clone(), content: content.clone(),
-        edited_by: updated_by.clone(), created_at: now, revision_number: max_rev + 1,
+        id: make_id("rev", ctx),
+        page_id: id.clone(),
+        title: title.clone(),
+        content: content.clone(),
+        edited_by: updated_by.clone(),
+        created_at: now,
+        revision_number: max_rev + 1,
     });
 
     log_event(ctx, "page.update", &updated_by, &id, &title, r#"{}"#);
     // Notify page watchers about update
     notify_page_watchers(
-        ctx, &id, "page.update", &updated_by, &title,
+        ctx,
+        &id,
+        "page.update",
+        &updated_by,
+        &title,
         &format!("Page \"{}\" was updated", title),
         "",
     );
@@ -90,7 +140,12 @@ pub fn update_page(
 
 #[reducer]
 pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Result<(), String> {
-    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
+    let mut page = ctx
+        .db
+        .page()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Page not found".to_string())?;
     let now = now_ms(ctx);
     let valid_statuses = ["draft", "published", "archived", "deleted"];
     if !valid_statuses.contains(&status.as_str()) {
@@ -117,13 +172,25 @@ pub fn set_page_status(ctx: &ReducerContext, id: String, status: String) -> Resu
         "archived" => "page.archive",
         _ => "page.status_change",
     };
-    log_event(ctx, event_type, "", &id, &target_name, &format!(r#"{{"new_status":"{}"}}"#, status));
+    log_event(
+        ctx,
+        event_type,
+        "",
+        &id,
+        &target_name,
+        &format!(r#"{{"new_status":"{}"}}"#, status),
+    );
     Ok(())
 }
 
 #[reducer]
 pub fn restore_page(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let mut page = ctx.db.page().iter().find(|p| p.id == id && p.status == "deleted").ok_or_else(|| "Page not found or not in trash".to_string())?;
+    let mut page = ctx
+        .db
+        .page()
+        .iter()
+        .find(|p| p.id == id && p.status == "deleted")
+        .ok_or_else(|| "Page not found or not in trash".to_string())?;
     page.status = "draft".into();
     page.deleted_at = 0;
     page.updated_at = now_ms(ctx);
@@ -194,7 +261,10 @@ pub fn delete_page_permanent(ctx: &ReducerContext, id: String) -> Result<(), Str
 #[reducer]
 pub fn empty_trash(ctx: &ReducerContext) -> Result<(), String> {
     // Check retention setting
-    let retention_days = ctx.db.app_setting().iter()
+    let retention_days = ctx
+        .db
+        .app_setting()
+        .iter()
         .find(|s| s.key == "trash_retention_days")
         .map(|s| s.value.parse::<u64>().unwrap_or(0))
         .unwrap_or(0);
@@ -206,10 +276,11 @@ pub fn empty_trash(ctx: &ReducerContext) -> Result<(), String> {
         0
     };
 
-    let deleted_pages: Vec<String> = ctx.db.page().iter()
-        .filter(|p| {
-            p.status == "deleted" && (retention_days == 0 || p.deleted_at < cutoff)
-        })
+    let deleted_pages: Vec<String> = ctx
+        .db
+        .page()
+        .iter()
+        .filter(|p| p.status == "deleted" && (retention_days == 0 || p.deleted_at < cutoff))
         .map(|p| p.id.clone())
         .collect();
     for page_id in deleted_pages {
@@ -225,12 +296,20 @@ pub fn duplicate_page(
     id: String,
     created_by: String,
 ) -> Result<(), String> {
-    let page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
+    let page = ctx
+        .db
+        .page()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Page not found".to_string())?;
     create_page(
-        ctx, new_id,
+        ctx,
+        new_id,
         format!("{} (copy)", page.title),
         page.content,
-        page.collection_id, page.parent_page_id, created_by,
+        page.collection_id,
+        page.parent_page_id,
+        created_by,
     )
 }
 
@@ -241,7 +320,12 @@ pub fn move_page(
     new_collection_id: String,
     new_parent_page_id: String,
 ) -> Result<(), String> {
-    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
+    let mut page = ctx
+        .db
+        .page()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Page not found".to_string())?;
     page.collection_id = new_collection_id;
     page.parent_page_id = new_parent_page_id;
     page.updated_at = now_ms(ctx);
@@ -264,7 +348,12 @@ pub fn reorder_pages(ctx: &ReducerContext, ordered_ids: Vec<String>) -> Result<(
 
 #[reducer]
 pub fn set_page_icon(ctx: &ReducerContext, id: String, icon: String) -> Result<(), String> {
-    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
+    let mut page = ctx
+        .db
+        .page()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Page not found".to_string())?;
     page.icon = icon;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -272,8 +361,17 @@ pub fn set_page_icon(ctx: &ReducerContext, id: String, icon: String) -> Result<(
 }
 
 #[reducer]
-pub fn set_page_full_width(ctx: &ReducerContext, id: String, full_width: bool) -> Result<(), String> {
-    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
+pub fn set_page_full_width(
+    ctx: &ReducerContext,
+    id: String,
+    full_width: bool,
+) -> Result<(), String> {
+    let mut page = ctx
+        .db
+        .page()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Page not found".to_string())?;
     page.full_width = full_width;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -282,7 +380,12 @@ pub fn set_page_full_width(ctx: &ReducerContext, id: String, full_width: bool) -
 
 #[reducer]
 pub fn set_page_color(ctx: &ReducerContext, id: String, color: String) -> Result<(), String> {
-    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
+    let mut page = ctx
+        .db
+        .page()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Page not found".to_string())?;
     page.color = color;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -291,7 +394,12 @@ pub fn set_page_color(ctx: &ReducerContext, id: String, color: String) -> Result
 
 #[reducer]
 pub fn set_page_pinned(ctx: &ReducerContext, id: String, is_pinned: bool) -> Result<(), String> {
-    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
+    let mut page = ctx
+        .db
+        .page()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Page not found".to_string())?;
     page.is_pinned = is_pinned;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -301,11 +409,20 @@ pub fn set_page_pinned(ctx: &ReducerContext, id: String, is_pinned: bool) -> Res
 // ─── Page direction (RTL / bidirectional text) ─────────────────────────────
 
 #[reducer]
-pub fn set_page_direction(ctx: &ReducerContext, id: String, direction: String) -> Result<(), String> {
+pub fn set_page_direction(
+    ctx: &ReducerContext,
+    id: String,
+    direction: String,
+) -> Result<(), String> {
     if direction != "ltr" && direction != "rtl" {
         return Err("Direction must be 'ltr' or 'rtl'".into());
     }
-    let mut page = ctx.db.page().id().find(&id).ok_or_else(|| "Page not found".to_string())?;
+    let mut page = ctx
+        .db
+        .page()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Page not found".to_string())?;
     page.direction = direction;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);

@@ -853,7 +853,6 @@ pub struct OauthUser {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-
 #[allow(dead_code)]
 #[cfg(test)]
 fn default_group() -> Group {

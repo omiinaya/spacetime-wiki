@@ -1,4 +1,3 @@
-use spacetimedb::*;
 use crate::*;
 
 // ─── App Settings (key-value store) ──────────────────────────────────────────

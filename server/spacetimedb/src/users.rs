@@ -1,6 +1,6 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
@@ -21,21 +21,24 @@ pub fn register_user(
     let now = now_ms(ctx);
     let password_hash = hash_password(&password);
     ctx.db.user().insert(User {
-        id, name, email, password_hash,
+        id,
+        name,
+        email,
+        password_hash,
         role: role_clean,
         avatar_url: String::new(),
-        created_at: now, updated_at: now,
+        created_at: now,
+        updated_at: now,
     });
     Ok(())
 }
 
 #[reducer]
-pub fn login_user(
-    ctx: &ReducerContext,
-    email: String,
-    password: String,
-) -> Result<(), String> {
-    let found = ctx.db.user().iter()
+pub fn login_user(ctx: &ReducerContext, email: String, password: String) -> Result<(), String> {
+    let found = ctx
+        .db
+        .user()
+        .iter()
         .find(|u| u.email == email && verify_password(&password, &u.password_hash));
     if found.is_none() {
         return Err("Invalid email or password".into());
@@ -59,7 +62,12 @@ pub fn update_user_role(
     if !valid_roles.contains(&new_role.as_str()) {
         return Err("Invalid role. Must be admin, member, or viewer".into());
     }
-    let mut user = ctx.db.user().id().find(user_id).ok_or_else(|| "User not found".to_string())?;
+    let mut user = ctx
+        .db
+        .user()
+        .id()
+        .find(user_id)
+        .ok_or_else(|| "User not found".to_string())?;
     user.role = new_role;
     user.updated_at = now_ms(ctx);
     ctx.db.user().id().update(user);
@@ -78,7 +86,12 @@ pub fn update_user_avatar(
     if updater.is_none_or(|u| u.role != "admin") {
         return Err("Only admins can change user avatars".into());
     }
-    let mut user = ctx.db.user().id().find(user_id).ok_or_else(|| "User not found".to_string())?;
+    let mut user = ctx
+        .db
+        .user()
+        .id()
+        .find(user_id)
+        .ok_or_else(|| "User not found".to_string())?;
     user.avatar_url = avatar_url;
     user.updated_at = now_ms(ctx);
     ctx.db.user().id().update(user);
@@ -99,8 +112,14 @@ mod tests {
     #[test]
     fn test_password_hash_consistency() {
         let hash = crate::helpers::hash_password("testpass123");
-        assert!(hash.starts_with("$argon2id$"), "Hash should be Argon2 PHC format");
-        assert!(crate::helpers::verify_password("testpass123", &hash), "Should verify against own hash");
+        assert!(
+            hash.starts_with("$argon2id$"),
+            "Hash should be Argon2 PHC format"
+        );
+        assert!(
+            crate::helpers::verify_password("testpass123", &hash),
+            "Should verify against own hash"
+        );
     }
 
     #[test]

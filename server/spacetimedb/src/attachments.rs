@@ -1,6 +1,6 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Attachments ─────────────────────────────────────────────────────────────
 
@@ -17,7 +17,13 @@ pub fn add_attachment(
 ) -> Result<(), String> {
     if ctx.db.attachment().id().find(&id).is_none() {
         ctx.db.attachment().insert(Attachment {
-            id, page_id, filename, mime_type, size_bytes, storage_key, uploaded_by,
+            id,
+            page_id,
+            filename,
+            mime_type,
+            size_bytes,
+            storage_key,
+            uploaded_by,
             created_at: now_ms(ctx),
         });
     }

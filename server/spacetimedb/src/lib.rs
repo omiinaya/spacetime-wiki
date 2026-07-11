@@ -17,22 +17,22 @@ use spacetimedb::*;
 mod helpers;
 mod tables;
 mod users;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
 mod pages;
 pub(crate) use pages::*;
-mod comments;
-mod tags;
-mod favorites;
-mod attachments;
-mod templates;
 mod api_keys;
 mod app_settings;
-mod collection_members;
-mod share_links;
-mod permissions;
-mod sso;
+mod attachments;
 mod collaboration;
+mod collection_members;
+mod comments;
+mod favorites;
+mod permissions;
+mod share_links;
+mod sso;
+mod tags;
+mod templates;
 
 // ─── Init (bootstrap) ─────────────────────────────────────────────────────────
 
@@ -60,7 +60,14 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
         }
     }
 
-    log_event(ctx, "system.init", "system", "", "SpacetimeWiki initialized", r#"{}"#);
+    log_event(
+        ctx,
+        "system.init",
+        "system",
+        "",
+        "SpacetimeWiki initialized",
+        r#"{}"#,
+    );
     Ok(())
 }
 
@@ -82,14 +89,28 @@ pub fn create_collection(
     let sort_order = next_col_sort_order(ctx, &parent_id);
     if ctx.db.collection().id().find(&id).is_none() {
         ctx.db.collection().insert(Collection {
-            id: id.clone(), name: name.clone(), slug, description, parent_id, icon, color,
-            sort_order, created_by: created_by.clone(),
-            created_at: now, updated_at: now,
+            id: id.clone(),
+            name: name.clone(),
+            slug,
+            description,
+            parent_id,
+            icon,
+            color,
+            sort_order,
+            created_by: created_by.clone(),
+            created_at: now,
+            updated_at: now,
         });
     }
     // Creator gets admin access (idempotent — skip if already exists)
     let admin_member_id = make_id("cm", ctx);
-    if ctx.db.collection_member().id().find(&admin_member_id).is_none() {
+    if ctx
+        .db
+        .collection_member()
+        .id()
+        .find(&admin_member_id)
+        .is_none()
+    {
         ctx.db.collection_member().insert(CollectionMember {
             id: admin_member_id,
             collection_id: id.clone(),
@@ -113,7 +134,12 @@ pub fn update_collection(
     icon: String,
     color: String,
 ) -> Result<(), String> {
-    let mut col = ctx.db.collection().id().find(id).ok_or_else(|| "Collection not found".to_string())?;
+    let mut col = ctx
+        .db
+        .collection()
+        .id()
+        .find(id)
+        .ok_or_else(|| "Collection not found".to_string())?;
     col.name = name;
     col.slug = col.name.to_lowercase().replace(' ', "-");
     col.description = description;
@@ -156,7 +182,6 @@ pub fn reorder_collections(ctx: &ReducerContext, ordered_ids: Vec<String>) -> Re
 // sort_direction: "asc" | "desc"
 // auto_apply: if true, pages are automatically re-sorted when created/updated
 
-
 #[reducer]
 pub fn set_collection_sort_rule(
     ctx: &ReducerContext,
@@ -168,14 +193,20 @@ pub fn set_collection_sort_rule(
 ) -> Result<(), String> {
     let valid_fields = ["title", "created_at", "updated_at", "manual"];
     if !valid_fields.contains(&sort_field.as_str()) {
-        return Err("Invalid sort field. Must be one of: title, created_at, updated_at, manual".into());
+        return Err(
+            "Invalid sort field. Must be one of: title, created_at, updated_at, manual".into(),
+        );
     }
     let valid_dirs = ["asc", "desc"];
     if !valid_dirs.contains(&sort_direction.as_str()) {
         return Err("Invalid sort direction. Must be 'asc' or 'desc'".into());
     }
     let now = now_ms(ctx);
-    let existing = ctx.db.collection_sort_rule().iter().find(|r| r.collection_id == collection_id);
+    let existing = ctx
+        .db
+        .collection_sort_rule()
+        .iter()
+        .find(|r| r.collection_id == collection_id);
     if let Some(mut rule) = existing {
         rule.sort_field = sort_field;
         rule.sort_direction = sort_direction;
@@ -197,21 +228,36 @@ pub fn set_collection_sort_rule(
 }
 
 #[reducer]
-pub fn delete_collection_sort_rule(ctx: &ReducerContext, collection_id: String) -> Result<(), String> {
-    ctx.db.collection_sort_rule().collection_id().delete(&collection_id);
+pub fn delete_collection_sort_rule(
+    ctx: &ReducerContext,
+    collection_id: String,
+) -> Result<(), String> {
+    ctx.db
+        .collection_sort_rule()
+        .collection_id()
+        .delete(&collection_id);
     Ok(())
 }
 
 #[reducer]
-pub fn apply_collection_auto_sort(ctx: &ReducerContext, collection_id: String) -> Result<(), String> {
-    let rule = ctx.db.collection_sort_rule().iter()
+pub fn apply_collection_auto_sort(
+    ctx: &ReducerContext,
+    collection_id: String,
+) -> Result<(), String> {
+    let rule = ctx
+        .db
+        .collection_sort_rule()
+        .iter()
         .find(|r| r.collection_id == collection_id)
         .ok_or_else(|| "No sort rule configured for this collection".to_string())?;
     if rule.sort_field == "manual" {
         return Ok(()); // no-op for manual sort
     }
 
-    let mut pages: Vec<_> = ctx.db.page().iter()
+    let mut pages: Vec<_> = ctx
+        .db
+        .page()
+        .iter()
         .filter(|p| p.collection_id == collection_id && p.status != "deleted")
         .collect();
 
@@ -265,7 +311,7 @@ pub fn create_webhook(
     id: String,
     name: String,
     url: String,
-    events: String,  // JSON array, e.g. '["page.create","page.update","page.delete"]'
+    events: String, // JSON array, e.g. '["page.create","page.update","page.delete"]'
     secret: String,
     created_by: String,
 ) -> Result<(), String> {
@@ -310,7 +356,11 @@ pub fn update_webhook(
     if serde_json::from_str::<Vec<String>>(&events).is_err() {
         return Err("Events must be a JSON array of strings".into());
     }
-    let mut wh = ctx.db.webhook().id().find(&id)
+    let mut wh = ctx
+        .db
+        .webhook()
+        .id()
+        .find(&id)
         .ok_or_else(|| "Webhook not found".to_string())?;
     wh.name = name;
     wh.url = url;
@@ -364,9 +414,17 @@ pub fn mark_webhook_event_sent(
     response_code: u32,
     response_body: String,
 ) -> Result<(), String> {
-    let mut event = ctx.db.webhook_event().id().find(&id)
+    let mut event = ctx
+        .db
+        .webhook_event()
+        .id()
+        .find(&id)
         .ok_or_else(|| "Webhook event not found".to_string())?;
-    event.status = if (200..300).contains(&response_code) { "sent".to_string() } else { "failed".to_string() };
+    event.status = if (200..300).contains(&response_code) {
+        "sent".to_string()
+    } else {
+        "failed".to_string()
+    };
     event.response_code = response_code;
     event.response_body = response_body;
     event.sent_at = now_ms(ctx);
@@ -377,7 +435,10 @@ pub fn mark_webhook_event_sent(
 #[reducer]
 pub fn cleanup_webhook_events(ctx: &ReducerContext, older_than_ms: u64) -> Result<(), String> {
     let cutoff = now_ms(ctx) - older_than_ms;
-    let to_delete: Vec<String> = ctx.db.webhook_event().iter()
+    let to_delete: Vec<String> = ctx
+        .db
+        .webhook_event()
+        .iter()
         .filter(|e| e.created_at < cutoff)
         .map(|e| e.id.clone())
         .collect();
@@ -388,7 +449,6 @@ pub fn cleanup_webhook_events(ctx: &ReducerContext, older_than_ms: u64) -> Resul
 }
 
 // ─── Full-Text Search ──────────────────────────────────────────────────────────
-
 
 #[reducer]
 pub fn search_pages(
@@ -409,7 +469,10 @@ pub fn search_pages(
     }
 
     // Clean up any previous results for this token
-    let existing: Vec<String> = ctx.db.search_result().iter()
+    let existing: Vec<String> = ctx
+        .db
+        .search_result()
+        .iter()
         .filter(|r| r.search_token == search_token)
         .map(|r| r.id.clone())
         .collect();
@@ -419,7 +482,10 @@ pub fn search_pages(
 
     // Also clean up orphaned results older than 5 minutes
     let cutoff = now - 300_000;
-    let stale: Vec<String> = ctx.db.search_result().iter()
+    let stale: Vec<String> = ctx
+        .db
+        .search_result()
+        .iter()
         .filter(|r| r.created_at < cutoff)
         .map(|r| r.id.clone())
         .collect();
@@ -491,13 +557,15 @@ pub fn search_pages(
     }
 
     Ok(())
-
 }
 
 #[reducer]
 pub fn cleanup_search_results(ctx: &ReducerContext, older_than_ms: u64) -> Result<(), String> {
     let cutoff = now_ms(ctx) - older_than_ms;
-    let stale: Vec<String> = ctx.db.search_result().iter()
+    let stale: Vec<String> = ctx
+        .db
+        .search_result()
+        .iter()
         .filter(|r| r.created_at < cutoff)
         .map(|r| r.id.clone())
         .collect();
@@ -509,7 +577,6 @@ pub fn cleanup_search_results(ctx: &ReducerContext, older_than_ms: u64) -> Resul
 
 // ─── Page Analytics ───────────────────────────────────────────────────────────
 
-
 #[reducer]
 pub fn record_page_view(
     ctx: &ReducerContext,
@@ -519,11 +586,14 @@ pub fn record_page_view(
     let now = now_ms(ctx);
     // Deduplicate by page + viewer within the last 5 minutes to avoid spam
     let five_min_ago = now.saturating_sub(300_000);
-    let recent = ctx.db.page_view().iter()
+    let recent = ctx
+        .db
+        .page_view()
+        .iter()
         .filter(|v| v.page_id == page_id && v.viewer == viewer && v.viewed_at > five_min_ago)
         .count();
     if recent > 0 {
-        return Ok(());  // Already counted this viewer recently
+        return Ok(()); // Already counted this viewer recently
     }
     ctx.db.page_view().insert(PageView {
         id: make_id("pv", ctx),
@@ -538,7 +608,11 @@ pub fn record_page_view(
 // ─── Batch operations (for sidebar multi-select) ────────────────────────────
 
 #[reducer]
-pub fn batch_set_page_status(ctx: &ReducerContext, page_ids: Vec<String>, status: String) -> Result<(), String> {
+pub fn batch_set_page_status(
+    ctx: &ReducerContext,
+    page_ids: Vec<String>,
+    status: String,
+) -> Result<(), String> {
     let valid_statuses = ["draft", "published", "archived", "deleted"];
     if !valid_statuses.contains(&status.as_str()) {
         return Err("Invalid status".into());
@@ -597,7 +671,10 @@ pub fn batch_add_tag(
 ) -> Result<(), String> {
     for id in &page_ids {
         // Skip if tag already exists for this page
-        let exists = ctx.db.page_tag().iter()
+        let exists = ctx
+            .db
+            .page_tag()
+            .iter()
             .any(|t| t.page_id == *id && t.name == tag_name && t.value == tag_value);
         if !exists {
             ctx.db.page_tag().insert(PageTag {
@@ -612,9 +689,6 @@ pub fn batch_add_tag(
 }
 
 // ─── AI Assistant ─────────────────────────────────────���───────────────────────
-
-
-
 
 #[reducer]
 pub fn set_ai_config(ctx: &ReducerContext, key: String, value: String) -> Result<(), String> {
@@ -689,7 +763,12 @@ pub fn add_ai_chat_message(
 #[reducer]
 pub fn delete_ai_chat_session(ctx: &ReducerContext, id: String) -> Result<(), String> {
     // Delete all messages in the session
-    for msg in ctx.db.ai_chat_message().iter().filter(|m| m.session_id == id) {
+    for msg in ctx
+        .db
+        .ai_chat_message()
+        .iter()
+        .filter(|m| m.session_id == id)
+    {
         ctx.db.ai_chat_message().id().delete(&msg.id);
     }
     ctx.db.ai_chat_session().id().delete(&id);
@@ -707,8 +786,6 @@ pub fn delete_ai_chat_message(ctx: &ReducerContext, id: String) -> Result<(), St
 // SCIM 2.0 (RFC 7642-7644) — System for Cross-domain Identity Management.
 // Allows external IdPs (Okta, Azure AD, OneLogin) to auto-provision users
 // and groups into the wiki via a standard REST API.
-
-
 
 #[reducer]
 pub fn add_scim_provider(
@@ -737,12 +814,18 @@ pub fn add_scim_provider(
         return Err("Deprovision behavior must be 'deactivate' or 'delete'".into());
     }
     let valid_roles = ["admin", "member", "viewer"];
-    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    let role_clean = if valid_roles.contains(&default_role.as_str()) {
+        default_role
+    } else {
+        "member".into()
+    };
     let api_token_hash = hash_password(&api_token);
     let now = now_ms(ctx);
     if ctx.db.scim_provider().id().find(&id).is_none() {
         ctx.db.scim_provider().insert(ScimProvider {
-            id, name, slug,
+            id,
+            name,
+            slug,
             api_token_hash,
             is_active: true,
             default_role: role_clean,
@@ -777,7 +860,11 @@ pub fn update_scim_provider(
     if !valid_behaviors.contains(&deprovision_behavior.as_str()) {
         return Err("Deprovision behavior must be 'deactivate' or 'delete'".into());
     }
-    let mut provider = ctx.db.scim_provider().id().find(&id)
+    let mut provider = ctx
+        .db
+        .scim_provider()
+        .id()
+        .find(&id)
         .ok_or_else(|| "SCIM provider not found".to_string())?;
     provider.name = name;
     provider.slug = slug;
@@ -785,7 +872,11 @@ pub fn update_scim_provider(
         provider.api_token_hash = hash_password(&api_token);
     }
     let valid_roles = ["admin", "member", "viewer"];
-    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    let role_clean = if valid_roles.contains(&default_role.as_str()) {
+        default_role
+    } else {
+        "member".into()
+    };
     provider.default_role = role_clean;
     provider.auto_register = auto_register;
     provider.deprovision_behavior = deprovision_behavior;
@@ -803,7 +894,10 @@ pub fn delete_scim_provider(ctx: &ReducerContext, id: String) -> Result<(), Stri
         return Err("SCIM provider not found".into());
     }
     // Clean up events for this provider
-    let events: Vec<String> = ctx.db.scim_event().iter()
+    let events: Vec<String> = ctx
+        .db
+        .scim_event()
+        .iter()
         .filter(|e| e.provider_id == id)
         .map(|e| e.id.clone())
         .collect();
@@ -827,8 +921,14 @@ pub fn record_scim_event(
     detail: String,
 ) -> Result<(), String> {
     ctx.db.scim_event().insert(ScimEvent {
-        id, provider_id, resource_type, operation, external_id,
-        local_id, status, detail,
+        id,
+        provider_id,
+        resource_type,
+        operation,
+        external_id,
+        local_id,
+        status,
+        detail,
         created_at: now_ms(ctx),
     });
     Ok(())
@@ -858,10 +958,17 @@ pub fn scim_sync_user(
         return Ok(());
     }
     if !auto_register {
-        return Err(format!("User '{}' not found and auto_register is disabled", email));
+        return Err(format!(
+            "User '{}' not found and auto_register is disabled",
+            email
+        ));
     }
     let valid_roles = ["admin", "member", "viewer"];
-    let role_clean = if valid_roles.contains(&default_role.as_str()) { default_role } else { "member".into() };
+    let role_clean = if valid_roles.contains(&default_role.as_str()) {
+        default_role
+    } else {
+        "member".into()
+    };
     let user_id = make_id("scim_user", ctx);
     // Generate a random password for SCIM-provisioned users (they'll use SSO)
     let random_password = format!("scim_{:x}", now);
@@ -885,7 +992,11 @@ pub fn scim_deprovision_user(
     email: String,
     behavior: String,
 ) -> Result<(), String> {
-    let mut user = ctx.db.user().iter().find(|u| u.email == email)
+    let mut user = ctx
+        .db
+        .user()
+        .iter()
+        .find(|u| u.email == email)
         .ok_or_else(|| "User not found".to_string())?;
     let now = now_ms(ctx);
     if behavior == "delete" {
@@ -929,14 +1040,16 @@ pub fn scim_sync_group(
 }
 
 #[reducer]
-pub fn scim_deprovision_group(
-    ctx: &ReducerContext,
-    group_name: String,
-) -> Result<(), String> {
+pub fn scim_deprovision_group(ctx: &ReducerContext, group_name: String) -> Result<(), String> {
     let existing = ctx.db.group().iter().find(|g| g.name == group_name);
     if let Some(group) = existing {
         // Delete group memberships
-        for member in ctx.db.group_member().iter().filter(|m| m.group_id == group.id) {
+        for member in ctx
+            .db
+            .group_member()
+            .iter()
+            .filter(|m| m.group_id == group.id)
+        {
             ctx.db.group_member().id().delete(&member.id);
         }
         ctx.db.group().id().delete(&group.id);
@@ -949,8 +1062,6 @@ pub fn scim_deprovision_group(
 // WebAuthn (FIDO2/Passkeys) passwordless authentication.
 // Credentials are stored as COSE public keys verified by the API server.
 // Challenges are stored in STDB for the registration/authentication flow.
-
-
 
 #[reducer]
 pub fn store_passkey_credential(
@@ -971,7 +1082,10 @@ pub fn store_passkey_credential(
     }
     let now = now_ms(ctx);
     // Check for duplicate credential_id
-    let existing = ctx.db.passkey_credential().iter()
+    let existing = ctx
+        .db
+        .passkey_credential()
+        .iter()
         .find(|c| c.credential_id == credential_id);
     if let Some(mut cred) = existing {
         // Update counter and last_used (re-registration of same credential)
@@ -1009,11 +1123,14 @@ pub fn create_passkey_challenge(
     // Expire after 5 minutes
     let expires_at = now + 300_000;
     // Clean up any existing challenges for this user/purpose
-    let stale: Vec<String> = ctx.db.passkey_challenge().iter()
+    let stale: Vec<String> = ctx
+        .db
+        .passkey_challenge()
+        .iter()
         .filter(|c| {
             (purpose == "registration" && c.user_handle == user_handle && c.purpose == purpose)
-            || (purpose == "authentication" && c.purpose == purpose)
-            || c.expires_at < now
+                || (purpose == "authentication" && c.purpose == purpose)
+                || c.expires_at < now
         })
         .map(|c| c.challenge.clone())
         .collect();
@@ -1031,11 +1148,12 @@ pub fn create_passkey_challenge(
 }
 
 #[reducer]
-pub fn consume_passkey_challenge(
-    ctx: &ReducerContext,
-    challenge: String,
-) -> Result<(), String> {
-    let c = ctx.db.passkey_challenge().iter().find(|c| c.challenge == challenge)
+pub fn consume_passkey_challenge(ctx: &ReducerContext, challenge: String) -> Result<(), String> {
+    let c = ctx
+        .db
+        .passkey_challenge()
+        .iter()
+        .find(|c| c.challenge == challenge)
         .ok_or_else(|| "Challenge not found".to_string())?;
     let now = now_ms(ctx);
     if c.expires_at < now {
@@ -1052,7 +1170,11 @@ pub fn update_passkey_counter(
     credential_id: String,
     counter: u64,
 ) -> Result<(), String> {
-    let mut cred = ctx.db.passkey_credential().iter().find(|c| c.credential_id == credential_id)
+    let mut cred = ctx
+        .db
+        .passkey_credential()
+        .iter()
+        .find(|c| c.credential_id == credential_id)
         .ok_or_else(|| "Credential not found".to_string())?;
     let now = now_ms(ctx);
     cred.counter = counter;
@@ -1062,10 +1184,7 @@ pub fn update_passkey_counter(
 }
 
 #[reducer]
-pub fn delete_passkey_credential(
-    ctx: &ReducerContext,
-    id: String,
-) -> Result<(), String> {
+pub fn delete_passkey_credential(ctx: &ReducerContext, id: String) -> Result<(), String> {
     let found = ctx.db.passkey_credential().id().find(&id);
     if found.is_none() {
         return Err("Credential not found".into());
@@ -1073,10 +1192,6 @@ pub fn delete_passkey_credential(
     ctx.db.passkey_credential().id().delete(&id);
     Ok(())
 }
-
-
-
-
 
 #[reducer]
 pub fn create_db_base(
@@ -1117,7 +1232,16 @@ pub fn create_db_column(
     options: String,
     sort_order: u32,
 ) -> Result<(), String> {
-    let valid_types = ["text", "number", "select", "multi_select", "date", "checkbox", "user", "url"];
+    let valid_types = [
+        "text",
+        "number",
+        "select",
+        "multi_select",
+        "date",
+        "checkbox",
+        "user",
+        "url",
+    ];
     if !valid_types.contains(&field_type.as_str()) {
         return Err(format!("Invalid field_type '{}'. Must be one of: text, number, select, multi_select, date, checkbox, user, url", field_type));
     }
@@ -1170,7 +1294,11 @@ pub fn update_db_cell(
     value: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    let existing = ctx.db.db_cell().iter().find(|c| c.row_id == row_id && c.column_id == column_id);
+    let existing = ctx
+        .db
+        .db_cell()
+        .iter()
+        .find(|c| c.row_id == row_id && c.column_id == column_id);
     if let Some(mut cell) = existing {
         cell.value = value;
         cell.updated_at = now;
@@ -1201,7 +1329,11 @@ pub fn set_db_cell(
     value: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    let existing = ctx.db.db_cell().iter().find(|c| c.row_id == row_id && c.column_id == column_id);
+    let existing = ctx
+        .db
+        .db_cell()
+        .iter()
+        .find(|c| c.row_id == row_id && c.column_id == column_id);
     if let Some(mut cell) = existing {
         cell.value = value;
         cell.updated_at = now;
@@ -1274,7 +1406,6 @@ pub fn reorder_db_rows(
 // Admins can invite external users by email, granting limited access to specific
 // pages and/or collections. Invitations are accepted via a unique token link.
 
-
 #[reducer]
 pub fn create_invitation(
     ctx: &ReducerContext,
@@ -1297,7 +1428,10 @@ pub fn create_invitation(
         return Err("Only admins can create invitations".into());
     }
     // Check for existing pending invitation for this email
-    let existing = ctx.db.invitation().iter()
+    let existing = ctx
+        .db
+        .invitation()
+        .iter()
         .find(|i| i.email == email && i.status == "pending");
     if existing.is_some() {
         return Err("There is already a pending invitation for this email".into());
@@ -1306,17 +1440,19 @@ pub fn create_invitation(
         return Err("Token must be at least 16 characters".into());
     }
     let valid_roles = ["viewer", "member"];
-    let role_clean = if valid_roles.contains(&role.as_str()) { role } else { "viewer".into() };
+    let role_clean = if valid_roles.contains(&role.as_str()) {
+        role
+    } else {
+        "viewer".into()
+    };
 
     // Validate JSON arrays (must parse as Vec<String>)
-    if !page_ids.is_empty()
-        && serde_json::from_str::<Vec<String>>(&page_ids).is_err() {
-            return Err("page_ids must be a valid JSON array of strings or empty".into());
-        }
-    if !collection_ids.is_empty()
-        && serde_json::from_str::<Vec<String>>(&collection_ids).is_err() {
-            return Err("collection_ids must be a valid JSON array of strings or empty".into());
-        }
+    if !page_ids.is_empty() && serde_json::from_str::<Vec<String>>(&page_ids).is_err() {
+        return Err("page_ids must be a valid JSON array of strings or empty".into());
+    }
+    if !collection_ids.is_empty() && serde_json::from_str::<Vec<String>>(&collection_ids).is_err() {
+        return Err("collection_ids must be a valid JSON array of strings or empty".into());
+    }
 
     let now = now_ms(ctx);
     let expires_at = if expires_days > 0 {
@@ -1352,7 +1488,10 @@ pub fn accept_invitation(
     user_id: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
-    let invitation = ctx.db.invitation().iter()
+    let invitation = ctx
+        .db
+        .invitation()
+        .iter()
         .find(|i| i.token == token && i.status == "pending")
         .ok_or_else(|| "Invitation not found or already used".to_string())?;
     // Check expiry
@@ -1364,7 +1503,11 @@ pub fn accept_invitation(
         return Err("Invitation has expired".into());
     }
     // Verify the email matches
-    let user = ctx.db.user().id().find(user_id.clone())
+    let user = ctx
+        .db
+        .user()
+        .id()
+        .find(user_id.clone())
         .ok_or_else(|| "User not found".to_string())?;
     if user.email.to_lowercase() != invitation.email.to_lowercase() {
         return Err("This invitation was sent to a different email address".into());
@@ -1410,12 +1553,20 @@ pub fn accept_invitation(
 }
 
 #[reducer]
-pub fn revoke_invitation(ctx: &ReducerContext, id: String, revoked_by: String) -> Result<(), String> {
+pub fn revoke_invitation(
+    ctx: &ReducerContext,
+    id: String,
+    revoked_by: String,
+) -> Result<(), String> {
     let inviter = ctx.db.user().id().find(revoked_by.clone());
     if inviter.is_none_or(|u| u.role != "admin") {
         return Err("Only admins can revoke invitations".into());
     }
-    let mut inv = ctx.db.invitation().id().find(&id)
+    let mut inv = ctx
+        .db
+        .invitation()
+        .id()
+        .find(&id)
         .ok_or_else(|| "Invitation not found".to_string())?;
     if inv.status != "pending" {
         return Err("Can only revoke pending invitations".into());
@@ -1437,8 +1588,6 @@ pub fn record_invitation_view(ctx: &ReducerContext, token: String) -> Result<(),
 }
 
 // ─── Synced Blocks (P4) — edit once, update everywhere ──────────────────────────
-
-
 
 #[reducer]
 pub fn create_synced_block(
@@ -1491,7 +1640,12 @@ pub fn update_synced_block(
 #[reducer]
 pub fn delete_synced_block(ctx: &ReducerContext, id: String) -> Result<(), String> {
     // Delete all references first
-    for refe in ctx.db.synced_block_ref().iter().filter(|r| r.block_id == id) {
+    for refe in ctx
+        .db
+        .synced_block_ref()
+        .iter()
+        .filter(|r| r.block_id == id)
+    {
         ctx.db.synced_block_ref().id().delete(&refe.id);
     }
     ctx.db.synced_block().id().delete(&id);
@@ -1531,8 +1685,6 @@ pub fn remove_synced_block_ref(ctx: &ReducerContext, id: String) -> Result<(), S
 
 // ─── MFA / TOTP Authentication ───────────────────────────────────────────────
 
-
-
 #[reducer]
 pub fn enable_totp(
     ctx: &ReducerContext,
@@ -1554,7 +1706,10 @@ pub fn enable_totp(
 
     // Upsert: remove existing MFA method for this user first
     let user_id_clone = user_id.clone();
-    let existing: Vec<String> = ctx.db.mfa_method().iter()
+    let existing: Vec<String> = ctx
+        .db
+        .mfa_method()
+        .iter()
         .filter(|m| m.user_id == user_id)
         .map(|m| m.id.clone())
         .collect();
@@ -1576,7 +1731,10 @@ pub fn enable_totp(
     for code in &backup_codes {
         if !code.is_empty() {
             let code_hash = hash_password(code);
-            let bid = format!("mbc_{:x}", now_ms(ctx) + ctx.db.mfa_backup_code().iter().count() as u64);
+            let bid = format!(
+                "mbc_{:x}",
+                now_ms(ctx) + ctx.db.mfa_backup_code().iter().count() as u64
+            );
             ctx.db.mfa_backup_code().insert(MfaBackupCode {
                 id: bid,
                 user_id: user_id_clone.clone(),
@@ -1592,7 +1750,10 @@ pub fn enable_totp(
 
 #[reducer]
 pub fn disable_mfa(ctx: &ReducerContext, user_id: String) -> Result<(), String> {
-    let existing: Vec<String> = ctx.db.mfa_method().iter()
+    let existing: Vec<String> = ctx
+        .db
+        .mfa_method()
+        .iter()
         .filter(|m| m.user_id == user_id)
         .map(|m| m.id.clone())
         .collect();
@@ -1600,7 +1761,10 @@ pub fn disable_mfa(ctx: &ReducerContext, user_id: String) -> Result<(), String> 
         ctx.db.mfa_method().id().delete(eid);
     }
     // Also clean up backup codes
-    let codes: Vec<String> = ctx.db.mfa_backup_code().iter()
+    let codes: Vec<String> = ctx
+        .db
+        .mfa_backup_code()
+        .iter()
         .filter(|c| c.user_id == user_id)
         .map(|c| c.id.clone())
         .collect();
@@ -1611,12 +1775,12 @@ pub fn disable_mfa(ctx: &ReducerContext, user_id: String) -> Result<(), String> 
 }
 
 #[reducer]
-pub fn verify_totp(
-    ctx: &ReducerContext,
-    user_id: String,
-    code: u32,
-) -> Result<(), String> {
-    let method = ctx.db.mfa_method().iter().find(|m| m.user_id == user_id && m.is_enabled);
+pub fn verify_totp(ctx: &ReducerContext, user_id: String, code: u32) -> Result<(), String> {
+    let method = ctx
+        .db
+        .mfa_method()
+        .iter()
+        .find(|m| m.user_id == user_id && m.is_enabled);
     match method {
         None => Err("MFA not enabled for this user".into()),
         Some(m) => {
@@ -1648,7 +1812,10 @@ pub fn verify_mfa_backup_code(
     user_id: String,
     code: String,
 ) -> Result<(), String> {
-    let found = ctx.db.mfa_backup_code().iter()
+    let found = ctx
+        .db
+        .mfa_backup_code()
+        .iter()
         .find(|c| c.user_id == user_id && verify_password(&code, &c.code_hash) && !c.is_used);
     match found {
         None => Err("Invalid or already used backup code".into()),
@@ -1667,8 +1834,6 @@ pub fn verify_mfa_backup_code(
 // Allows users to watch pages and collections, receiving in-app notifications
 // when those watched items are updated by other users.
 
-
-
 #[reducer]
 pub fn toggle_watch(
     ctx: &ReducerContext,
@@ -1681,8 +1846,10 @@ pub fn toggle_watch(
         return Err("target_type must be 'page' or 'collection'".into());
     }
     // Check if watch already exists (toggle off)
-    let existing = ctx.db.watch().iter()
-        .find(|w| w.user_id == user_id && w.target_type == target_type && w.target_id == target_id);
+    let existing =
+        ctx.db.watch().iter().find(|w| {
+            w.user_id == user_id && w.target_type == target_type && w.target_id == target_id
+        });
     if let Some(w) = existing {
         ctx.db.watch().id().delete(&w.id);
         return Ok(());
@@ -1710,10 +1877,15 @@ pub fn create_notification(
     icon: String,
 ) -> Result<(), String> {
     let valid_events = [
-        "page.create", "page.update", "page.delete",
-        "page.publish", "page.archive",
-        "comment.create", "collection.create",
-        "collection.update", "collection.delete",
+        "page.create",
+        "page.update",
+        "page.delete",
+        "page.publish",
+        "page.archive",
+        "comment.create",
+        "collection.create",
+        "collection.update",
+        "collection.delete",
     ];
     if !valid_events.contains(&event_type.as_str()) {
         return Err("Invalid event type for notification".into());
@@ -1738,7 +1910,12 @@ pub fn create_notification(
 
 #[reducer]
 pub fn mark_notification_read(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let mut notif = ctx.db.notification().id().find(id).ok_or_else(|| "Notification not found".to_string())?;
+    let mut notif = ctx
+        .db
+        .notification()
+        .id()
+        .find(id)
+        .ok_or_else(|| "Notification not found".to_string())?;
     notif.is_read = true;
     ctx.db.notification().id().update(notif);
     Ok(())
@@ -1746,7 +1923,10 @@ pub fn mark_notification_read(ctx: &ReducerContext, id: String) -> Result<(), St
 
 #[reducer]
 pub fn mark_all_notifications_read(ctx: &ReducerContext, user_id: String) -> Result<(), String> {
-    let to_update: Vec<String> = ctx.db.notification().iter()
+    let to_update: Vec<String> = ctx
+        .db
+        .notification()
+        .iter()
         .filter(|n| n.user_id == user_id && !n.is_read)
         .map(|n| n.id.clone())
         .collect();
@@ -1767,7 +1947,10 @@ pub fn delete_notification(ctx: &ReducerContext, id: String) -> Result<(), Strin
 
 #[reducer]
 pub fn clear_all_notifications(ctx: &ReducerContext, user_id: String) -> Result<(), String> {
-    let to_delete: Vec<String> = ctx.db.notification().iter()
+    let to_delete: Vec<String> = ctx
+        .db
+        .notification()
+        .iter()
         .filter(|n| n.user_id == user_id)
         .map(|n| n.id.clone())
         .collect();
@@ -1784,7 +1967,6 @@ pub fn clear_all_notifications(ctx: &ReducerContext, user_id: String) -> Result<
 // the request. Approved requests automatically grant page-level viewer permission.
 // Denied requests record the decision for audit.
 
-
 #[reducer]
 pub fn create_access_request(
     ctx: &ReducerContext,
@@ -1794,15 +1976,26 @@ pub fn create_access_request(
     reason: String,
 ) -> Result<(), String> {
     // Check page exists
-    let page = ctx.db.page().id().find(&page_id).ok_or_else(|| "Page not found".to_string())?;
+    let page = ctx
+        .db
+        .page()
+        .id()
+        .find(&page_id)
+        .ok_or_else(|| "Page not found".to_string())?;
 
     // Check user exists
-    let user = ctx.db.user().id().find(&requester_id).ok_or_else(|| "User not found".to_string())?;
+    let user = ctx
+        .db
+        .user()
+        .id()
+        .find(&requester_id)
+        .ok_or_else(|| "User not found".to_string())?;
 
     // Check if user already has a pending request for this page
-    let existing = ctx.db.access_request().iter().find(|r| {
-        r.page_id == page_id && r.requester_id == requester_id && r.status == "pending"
-    });
+    let existing =
+        ctx.db.access_request().iter().find(|r| {
+            r.page_id == page_id && r.requester_id == requester_id && r.status == "pending"
+        });
     if existing.is_some() {
         return Err("You already have a pending access request for this page".into());
     }
@@ -1848,7 +2041,12 @@ pub fn create_access_request(
     }
 
     // Also notify all admins about the request
-    for admin in ctx.db.user().iter().filter(|u| u.role == "admin" && u.id != requester_id && u.id != page.created_by) {
+    for admin in ctx
+        .db
+        .user()
+        .iter()
+        .filter(|u| u.role == "admin" && u.id != requester_id && u.id != page.created_by)
+    {
         let _ = ctx.db.notification().insert(Notification {
             id: make_id("notif", ctx),
             user_id: admin.id.clone(),
@@ -1880,7 +2078,12 @@ pub fn approve_access_request(
     id: String,
     responder_id: String,
 ) -> Result<(), String> {
-    let request = ctx.db.access_request().id().find(&id).ok_or_else(|| "Access request not found".to_string())?;
+    let request = ctx
+        .db
+        .access_request()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Access request not found".to_string())?;
     if request.status != "pending" {
         return Err("Access request is not pending".into());
     }
@@ -1916,7 +2119,12 @@ pub fn approve_access_request(
         target_id: req_page_id.clone(),
         title: "Access Approved".to_string(),
         message: format!("Your request to access \"{}\" has been approved", {
-            ctx.db.page().id().find(&req_page_id).map(|p| p.title).unwrap_or_default()
+            ctx.db
+                .page()
+                .id()
+                .find(&req_page_id)
+                .map(|p| p.title)
+                .unwrap_or_default()
         }),
         actor_id: responder_id.clone(),
         icon: "✅".into(),
@@ -1924,7 +2132,14 @@ pub fn approve_access_request(
         created_at: now,
     });
 
-    log_event(ctx, "access_request.approve", &responder_id, &req_page_id, &req_id, r#"{}"#);
+    log_event(
+        ctx,
+        "access_request.approve",
+        &responder_id,
+        &req_page_id,
+        &req_id,
+        r#"{}"#,
+    );
     Ok(())
 }
 
@@ -1934,7 +2149,12 @@ pub fn deny_access_request(
     id: String,
     responder_id: String,
 ) -> Result<(), String> {
-    let request = ctx.db.access_request().id().find(&id).ok_or_else(|| "Access request not found".to_string())?;
+    let request = ctx
+        .db
+        .access_request()
+        .id()
+        .find(&id)
+        .ok_or_else(|| "Access request not found".to_string())?;
     if request.status != "pending" {
         return Err("Access request is not pending".into());
     }
@@ -1957,7 +2177,12 @@ pub fn deny_access_request(
         target_id: req_page_id.clone(),
         title: "Access Denied".to_string(),
         message: format!("Your request to access \"{}\" has been denied", {
-            ctx.db.page().id().find(&req_page_id).map(|p| p.title).unwrap_or_default()
+            ctx.db
+                .page()
+                .id()
+                .find(&req_page_id)
+                .map(|p| p.title)
+                .unwrap_or_default()
         }),
         actor_id: responder_id.clone(),
         icon: "❌".into(),
@@ -1965,7 +2190,14 @@ pub fn deny_access_request(
         created_at: now,
     });
 
-    log_event(ctx, "access_request.deny", &responder_id, &req_page_id, &req_id, r#"{}"#);
+    log_event(
+        ctx,
+        "access_request.deny",
+        &responder_id,
+        &req_page_id,
+        &req_id,
+        r#"{}"#,
+    );
     Ok(())
 }
 
@@ -1973,7 +2205,7 @@ pub fn deny_access_request(
 
 #[cfg(test)]
 mod tests {
-    
+
     // ─── Slug generation ──────────────────────────────────────────────────────
 
     #[test]
@@ -2025,7 +2257,11 @@ mod tests {
         let now = 1000u64;
         let published_at = 0u64;
         let status = "published";
-        let expected = if status == "published" && published_at == 0 { now } else { published_at };
+        let expected = if status == "published" && published_at == 0 {
+            now
+        } else {
+            published_at
+        };
         assert_eq!(expected, now);
     }
 
@@ -2134,7 +2370,11 @@ mod tests {
             "invitation.created",
         ];
         for event in &events {
-            assert!(event.contains('.'), "Event type '{}' must contain a dot", event);
+            assert!(
+                event.contains('.'),
+                "Event type '{}' must contain a dot",
+                event
+            );
         }
     }
 
@@ -2212,8 +2452,15 @@ mod tests {
     #[test]
     fn test_oauth_provider_type_values() {
         let valid = [
-            "slack", "discord", "github", "gitlab", "google",
-            "microsoft", "facebook", "twitter", "generic",
+            "slack",
+            "discord",
+            "github",
+            "gitlab",
+            "google",
+            "microsoft",
+            "facebook",
+            "twitter",
+            "generic",
         ];
         assert!(valid.contains(&"github"));
         assert!(valid.contains(&"google"));

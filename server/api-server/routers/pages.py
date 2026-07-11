@@ -2,6 +2,7 @@
 from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from permissions import check_page_access
 from stdb_client import (
     sql_query,
     call_reducer,
@@ -68,7 +69,7 @@ async def get_page(request: Request, page_id: str):
 
 
 @router.post("", response_model=PageCreateResponse)
-async def create_page(
+async def create_page(request: Request, 
     title: str,
     collection_id: str | None = None,
     content: str = "",
@@ -83,15 +84,17 @@ async def create_page(
 
 
 @router.put("/{page_id}", response_model=PageUpdateResponse)
-async def update_page(page_id: str, title: str | None = None, content: str | None = None):
+async def update_page(request: Request, page_id: str, title: str | None = None, content: str | None = None):
     """Update a page's title and/or content via reducer."""
+    await check_page_access(request, page_id, "editor")
     await call_reducer("update_page", [page_id, title or "", content or "", ""])
     return {"status": "updated"}
 
 
 @router.delete("/{page_id}", response_model=PageDeleteResponse)
-async def delete_page(page_id: str):
+async def delete_page(request: Request, page_id: str):
     """Soft-delete a page via reducer."""
+    await check_page_access(request, page_id, "admin")
     await call_reducer("set_page_status", [page_id, "deleted"])
     return {"status": "deleted"}
 
@@ -122,11 +125,13 @@ async def list_revisions(
 
 @router.get("/{page_id}/comments", response_model=PaginatedResponse)
 async def list_comments(
+    request: Request,
     page_id: str,
     offset: int = Query(0, ge=0, description="Zero-based offset"),
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List comments on a page."""
+    await check_page_access(request, page_id, "viewer")
     count_rows = await sql_query("SELECT COUNT(*) FROM comment WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM comment WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
@@ -139,8 +144,9 @@ async def list_comments(
 
 
 @router.post("/{page_id}/comments", response_model=CommentCreateResponse)
-async def create_comment(page_id: str, body: str, user_id: str = ""):
+async def create_comment(request: Request, page_id: str, body: str, user_id: str = ""):
     """Add a comment to a page."""
+    await check_page_access(request, page_id, "editor")
     result = await call_reducer("add_comment", [page_id, body, user_id])
     return result or {"status": "created"}
 
@@ -150,11 +156,13 @@ async def create_comment(page_id: str, body: str, user_id: str = ""):
 
 @router.get("/{page_id}/tags", response_model=PaginatedResponse)
 async def list_tags(
+    request: Request,
     page_id: str,
     offset: int = Query(0, ge=0, description="Zero-based offset"),
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List tags on a page."""
+    await check_page_access(request, page_id, "viewer")
     count_rows = await sql_query("SELECT COUNT(*) FROM page_tag WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM page_tag WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
@@ -167,8 +175,9 @@ async def list_tags(
 
 
 @router.post("/{page_id}/tags", response_model=TagCreateResponse)
-async def add_tag(page_id: str, name: str, value: str = ""):
+async def add_tag(request: Request, page_id: str, name: str, value: str = ""):
     """Add a tag to a page."""
+    await check_page_access(request, page_id, "editor")
     result = await call_reducer("add_page_tag", [page_id, name, value])
     return result or {"status": "created"}
 
@@ -178,11 +187,13 @@ async def add_tag(page_id: str, name: str, value: str = ""):
 
 @router.get("/{page_id}/attachments", response_model=PaginatedResponse)
 async def list_attachments(
+    request: Request,
     page_id: str,
     offset: int = Query(0, ge=0, description="Zero-based offset"),
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List attachments on a page."""
+    await check_page_access(request, page_id, "viewer")
     count_rows = await sql_query("SELECT COUNT(*) FROM attachment WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM attachment WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
@@ -199,11 +210,13 @@ async def list_attachments(
 
 @router.get("/{page_id}/share-links", response_model=PaginatedResponse)
 async def list_share_links(
+    request: Request,
     page_id: str,
     offset: int = Query(0, ge=0, description="Zero-based offset"),
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List share links for a page."""
+    await check_page_access(request, page_id, "viewer")
     count_rows = await sql_query("SELECT COUNT(*) FROM share_link WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM share_link WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
@@ -216,7 +229,8 @@ async def list_share_links(
 
 
 @router.post("/{page_id}/share-links", response_model=ShareLinkCreateResponse)
-async def create_share_link(page_id: str, expires_at: int = 0):
+async def create_share_link(request: Request, page_id: str, expires_at: int = 0):
     """Create a share link for a page."""
+    await check_page_access(request, page_id, "editor")
     result = await call_reducer("create_share_link", [page_id, expires_at])
     return result or {"status": "created"}

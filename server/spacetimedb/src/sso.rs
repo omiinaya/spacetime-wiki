@@ -1,13 +1,16 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Validation helpers (testable) ─────────────────────────────────────────
 
 /// Checks that a URL starts with http:// or https://
 pub(crate) fn validate_url(url: &str, field_name: &str) -> Result<(), String> {
     if !url.starts_with("http://") && !url.starts_with("https://") {
-        Err(format!("{} must start with http:// or https://", field_name))
+        Err(format!(
+            "{} must start with http:// or https://",
+            field_name
+        ))
     } else {
         Ok(())
     }
@@ -45,7 +48,11 @@ pub(crate) fn default_oauth_scope(provider_type: &str) -> &'static str {
 
 /// Default role if the provided role isn't valid, otherwise return it as-is
 pub(crate) fn sanitize_role(role: &str, valid_roles: &[&str], default: &str) -> String {
-    if valid_roles.contains(&role) { role.to_string() } else { default.to_string() }
+    if valid_roles.contains(&role) {
+        role.to_string()
+    } else {
+        default.to_string()
+    }
 }
 
 // ─── SAML 2.0 SSO ─────────────────────────────────────────────────────────────
@@ -69,10 +76,22 @@ pub fn add_saml_provider(
     let now = now_ms(ctx);
     if ctx.db.saml_provider().id().find(&id).is_none() {
         ctx.db.saml_provider().insert(SamlProvider {
-            id, name, slug, entity_id, sso_url,
+            id,
+            name,
+            slug,
+            entity_id,
+            sso_url,
             certificate,
-            name_id_format: if name_id_format.is_empty() { "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".into() } else { name_id_format },
-            attribute_mapping: if attribute_mapping.is_empty() { r#"{"email":"email","name":"name"}"#.into() } else { attribute_mapping },
+            name_id_format: if name_id_format.is_empty() {
+                "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".into()
+            } else {
+                name_id_format
+            },
+            attribute_mapping: if attribute_mapping.is_empty() {
+                r#"{"email":"email","name":"name"}"#.into()
+            } else {
+                attribute_mapping
+            },
             auto_register,
             is_active: true,
             created_by,
@@ -99,7 +118,12 @@ pub fn update_saml_provider(
 ) -> Result<(), String> {
     validate_not_empty(&entity_id, "Entity ID")?;
     validate_url(&sso_url, "SSO URL")?;
-    let mut provider = ctx.db.saml_provider().id().find(id).ok_or_else(|| "SAML provider not found".to_string())?;
+    let mut provider = ctx
+        .db
+        .saml_provider()
+        .id()
+        .find(id)
+        .ok_or_else(|| "SAML provider not found".to_string())?;
     provider.name = name;
     provider.slug = slug;
     provider.entity_id = entity_id;
@@ -107,8 +131,16 @@ pub fn update_saml_provider(
     if !certificate.is_empty() {
         provider.certificate = certificate;
     }
-    provider.name_id_format = if name_id_format.is_empty() { "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".into() } else { name_id_format };
-    provider.attribute_mapping = if attribute_mapping.is_empty() { r#"{"email":"email","name":"name"}"#.into() } else { attribute_mapping };
+    provider.name_id_format = if name_id_format.is_empty() {
+        "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".into()
+    } else {
+        name_id_format
+    };
+    provider.attribute_mapping = if attribute_mapping.is_empty() {
+        r#"{"email":"email","name":"name"}"#.into()
+    } else {
+        attribute_mapping
+    };
     provider.auto_register = auto_register;
     provider.is_active = is_active;
     provider.updated_at = now_ms(ctx);
@@ -144,9 +176,21 @@ pub fn add_oidc_provider(
     let now = now_ms(ctx);
     if ctx.db.oidc_provider().id().find(&id).is_none() {
         ctx.db.oidc_provider().insert(OidcProvider {
-            id, name, slug, issuer_url, client_id,
-            client_secret: if client_secret.is_empty() { String::new() } else { client_secret },
-            scopes: if scopes.is_empty() { "openid email profile".into() } else { scopes },
+            id,
+            name,
+            slug,
+            issuer_url,
+            client_id,
+            client_secret: if client_secret.is_empty() {
+                String::new()
+            } else {
+                client_secret
+            },
+            scopes: if scopes.is_empty() {
+                "openid email profile".into()
+            } else {
+                scopes
+            },
             is_active: true,
             created_by,
             created_at: now,
@@ -170,7 +214,12 @@ pub fn update_oidc_provider(
 ) -> Result<(), String> {
     validate_url(&issuer_url, "Issuer URL")?;
     validate_not_empty(&client_id, "Client ID")?;
-    let mut provider = ctx.db.oidc_provider().id().find(id).ok_or_else(|| "OIDC provider not found".to_string())?;
+    let mut provider = ctx
+        .db
+        .oidc_provider()
+        .id()
+        .find(id)
+        .ok_or_else(|| "OIDC provider not found".to_string())?;
     provider.name = name;
     provider.slug = slug;
     provider.issuer_url = issuer_url;
@@ -178,7 +227,11 @@ pub fn update_oidc_provider(
     if !client_secret.is_empty() {
         provider.client_secret = client_secret;
     }
-    provider.scopes = if scopes.is_empty() { "openid email profile".into() } else { scopes };
+    provider.scopes = if scopes.is_empty() {
+        "openid email profile".into()
+    } else {
+        scopes
+    };
     provider.is_active = is_active;
     provider.updated_at = now_ms(ctx);
     ctx.db.oidc_provider().id().update(provider);
@@ -224,12 +277,25 @@ pub fn add_ldap_provider(
     let now = now_ms(ctx);
     if ctx.db.ldap_provider().id().find(&id).is_none() {
         ctx.db.ldap_provider().insert(LdapProvider {
-            id, name, slug, host, port, is_secure,
-            bind_dn, bind_password, base_dn, user_filter,
-            username_attribute, email_attribute, name_attribute,
+            id,
+            name,
+            slug,
+            host,
+            port,
+            is_secure,
+            bind_dn,
+            bind_password,
+            base_dn,
+            user_filter,
+            username_attribute,
+            email_attribute,
+            name_attribute,
             default_role: role_clean,
-            auto_register, is_active: true,
-            created_by, created_at: now, updated_at: now,
+            auto_register,
+            is_active: true,
+            created_by,
+            created_at: now,
+            updated_at: now,
         });
     }
     Ok(())
@@ -257,7 +323,12 @@ pub fn update_ldap_provider(
 ) -> Result<(), String> {
     validate_not_empty(&host, "LDAP host")?;
     validate_not_empty(&base_dn, "Base DN")?;
-    let mut provider = ctx.db.ldap_provider().id().find(id).ok_or_else(|| "LDAP provider not found".to_string())?;
+    let mut provider = ctx
+        .db
+        .ldap_provider()
+        .id()
+        .find(id)
+        .ok_or_else(|| "LDAP provider not found".to_string())?;
     provider.name = name;
     provider.slug = slug;
     provider.host = host;
@@ -269,9 +340,21 @@ pub fn update_ldap_provider(
     }
     provider.base_dn = base_dn;
     provider.user_filter = user_filter;
-    provider.username_attribute = if username_attribute.is_empty() { "uid".into() } else { username_attribute };
-    provider.email_attribute = if email_attribute.is_empty() { "mail".into() } else { email_attribute };
-    provider.name_attribute = if name_attribute.is_empty() { "cn".into() } else { name_attribute };
+    provider.username_attribute = if username_attribute.is_empty() {
+        "uid".into()
+    } else {
+        username_attribute
+    };
+    provider.email_attribute = if email_attribute.is_empty() {
+        "mail".into()
+    } else {
+        email_attribute
+    };
+    provider.name_attribute = if name_attribute.is_empty() {
+        "cn".into()
+    } else {
+        name_attribute
+    };
     provider.default_role = sanitize_role(&default_role, &["admin", "member", "viewer"], "member");
     provider.auto_register = auto_register;
     provider.is_active = is_active;
@@ -287,7 +370,14 @@ pub fn delete_ldap_provider(ctx: &ReducerContext, id: String) -> Result<(), Stri
         return Err("LDAP provider not found".into());
     }
     // Also delete linked ldap_user records
-    for u in ctx.db.ldap_user().iter().filter(|u| u.ldap_provider_id == id).map(|u| u.id.clone()).collect::<Vec<_>>() {
+    for u in ctx
+        .db
+        .ldap_user()
+        .iter()
+        .filter(|u| u.ldap_provider_id == id)
+        .map(|u| u.id.clone())
+        .collect::<Vec<_>>()
+    {
         ctx.db.ldap_user().id().delete(&u);
     }
     ctx.db.ldap_provider().id().delete(&id);
@@ -306,8 +396,13 @@ pub fn link_ldap_user(
     let now = now_ms(ctx);
     if ctx.db.ldap_user().id().find(&id).is_none() {
         ctx.db.ldap_user().insert(LdapUser {
-            id, user_id, ldap_provider_id, dn, external_id,
-            last_synced_at: now, created_at: now,
+            id,
+            user_id,
+            ldap_provider_id,
+            dn,
+            external_id,
+            last_synced_at: now,
+            created_at: now,
         });
     }
     Ok(())
@@ -341,18 +436,36 @@ pub fn add_oauth_provider(
         return Err("authorize_url, token_url, and userinfo_url are required".into());
     }
     let role_clean = sanitize_role(&default_role, &["admin", "member", "viewer"], "member");
-    let scopes_clean = if scope.is_empty() { default_oauth_scope(&provider_type).into() } else { scope };
+    let scopes_clean = if scope.is_empty() {
+        default_oauth_scope(&provider_type).into()
+    } else {
+        scope
+    };
     let now = now_ms(ctx);
     let provider_type_clone = provider_type.clone();
     if ctx.db.oauth_provider().id().find(&id).is_none() {
         ctx.db.oauth_provider().insert(OauthProvider {
-            id, name, slug, provider_type,
-            authorize_url, token_url, userinfo_url,
-            scope: scopes_clean, client_id, client_secret,
-            icon: if icon.is_empty() { provider_type_clone.clone() } else { icon },
-            is_active: true, auto_register,
+            id,
+            name,
+            slug,
+            provider_type,
+            authorize_url,
+            token_url,
+            userinfo_url,
+            scope: scopes_clean,
+            client_id,
+            client_secret,
+            icon: if icon.is_empty() {
+                provider_type_clone.clone()
+            } else {
+                icon
+            },
+            is_active: true,
+            auto_register,
             default_role: role_clean,
-            created_by, created_at: now, updated_at: now,
+            created_by,
+            created_at: now,
+            updated_at: now,
         });
     }
     Ok(())
@@ -376,7 +489,12 @@ pub fn update_oauth_provider(
     default_role: String,
     is_active: bool,
 ) -> Result<(), String> {
-    let mut provider = ctx.db.oauth_provider().id().find(id).ok_or_else(|| "OAuth provider not found".to_string())?;
+    let mut provider = ctx
+        .db
+        .oauth_provider()
+        .id()
+        .find(id)
+        .ok_or_else(|| "OAuth provider not found".to_string())?;
     validate_oauth_provider_type(&provider_type)?;
     validate_not_empty(&name, "Provider name")?;
     validate_not_empty(&client_id, "Client ID")?;
@@ -393,7 +511,11 @@ pub fn update_oauth_provider(
     if !client_secret.is_empty() {
         provider.client_secret = client_secret;
     }
-    provider.icon = if icon.is_empty() { provider.provider_type.clone() } else { icon };
+    provider.icon = if icon.is_empty() {
+        provider.provider_type.clone()
+    } else {
+        icon
+    };
     provider.auto_register = auto_register;
     provider.default_role = sanitize_role(&default_role, &["admin", "member", "viewer"], "member");
     provider.is_active = is_active;
@@ -409,7 +531,10 @@ pub fn delete_oauth_provider(ctx: &ReducerContext, id: String) -> Result<(), Str
         return Err("OAuth provider not found".into());
     }
     // Remove linked OAuth user records
-    let linked: Vec<String> = ctx.db.oauth_user().iter()
+    let linked: Vec<String> = ctx
+        .db
+        .oauth_user()
+        .iter()
         .filter(|u| u.provider_id == id)
         .map(|u| u.id.clone())
         .collect();
@@ -442,9 +567,18 @@ pub fn link_oauth_user(
     let now = now_ms(ctx);
     if ctx.db.oauth_user().id().find(&id).is_none() {
         ctx.db.oauth_user().insert(OauthUser {
-            id, user_id, provider_id, external_id, external_username, external_email,
-            access_token, refresh_token, token_expires_at,
-            last_synced_at: now, created_at: now, updated_at: now,
+            id,
+            user_id,
+            provider_id,
+            external_id,
+            external_username,
+            external_email,
+            access_token,
+            refresh_token,
+            token_expires_at,
+            last_synced_at: now,
+            created_at: now,
+            updated_at: now,
         });
     }
     Ok(())
@@ -584,20 +718,41 @@ mod tests {
 
     #[test]
     fn test_sanitize_role_passes_valid() {
-        assert_eq!(sanitize_role("admin", &["admin", "member", "viewer"], "member"), "admin");
-        assert_eq!(sanitize_role("member", &["admin", "member", "viewer"], "member"), "member");
-        assert_eq!(sanitize_role("viewer", &["admin", "member", "viewer"], "member"), "viewer");
+        assert_eq!(
+            sanitize_role("admin", &["admin", "member", "viewer"], "member"),
+            "admin"
+        );
+        assert_eq!(
+            sanitize_role("member", &["admin", "member", "viewer"], "member"),
+            "member"
+        );
+        assert_eq!(
+            sanitize_role("viewer", &["admin", "member", "viewer"], "member"),
+            "viewer"
+        );
     }
 
     #[test]
     fn test_sanitize_role_defaults_on_invalid() {
-        assert_eq!(sanitize_role("editor", &["admin", "member", "viewer"], "member"), "member");
-        assert_eq!(sanitize_role("owner", &["admin", "member", "viewer"], "viewer"), "viewer");
-        assert_eq!(sanitize_role("superadmin", &["admin", "member", "viewer"], "viewer"), "viewer");
+        assert_eq!(
+            sanitize_role("editor", &["admin", "member", "viewer"], "member"),
+            "member"
+        );
+        assert_eq!(
+            sanitize_role("owner", &["admin", "member", "viewer"], "viewer"),
+            "viewer"
+        );
+        assert_eq!(
+            sanitize_role("superadmin", &["admin", "member", "viewer"], "viewer"),
+            "viewer"
+        );
     }
 
     #[test]
     fn test_sanitize_role_uses_custom_default() {
-        assert_eq!(sanitize_role("", &["admin", "member", "viewer"], "viewer"), "viewer");
+        assert_eq!(
+            sanitize_role("", &["admin", "member", "viewer"], "viewer"),
+            "viewer"
+        );
     }
 }
