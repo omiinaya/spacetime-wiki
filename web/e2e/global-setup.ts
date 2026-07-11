@@ -13,6 +13,11 @@
  *
  * The database name MUST be URL-safe — STDB 2.x rejects underscores in paths.
  * Both docker-compose and this fixture default to "spacetime-wiki".
+ *
+ * IMPORTANT: In CI mode, seeding is deferred to webServer (setup-e2e-deps.sh)
+ * because this globalSetup runs before webServer processes start. The
+ * setup-e2e-deps.sh script calls seed-e2e-data.py after the module has been
+ * published and the API server is healthy.
  */
 
 import type { FullConfig } from "@playwright/test";
@@ -66,7 +71,8 @@ async function stdbHealthCheck(): Promise<boolean> {
 
 async function globalSetup(_config: FullConfig): Promise<void> {
   // In CI, the webServer (setup-e2e-deps.sh) handles seeding after module
-  // publish + API server — short-circuit here to avoid racing with startup.
+  // publish + API server start — short-circuit here to avoid racing with
+  // startup (globalSetup runs before webServer processes).
   if (process.env.CI) {
     console.log("[e2e-setup] CI mode: seeding deferred to webServer (setup-e2e-deps.sh).");
     return;
@@ -85,7 +91,7 @@ async function globalSetup(_config: FullConfig): Promise<void> {
 
   // ── Check if seed data already exists ───────────────────────────────────
   const adminExists = await sqlExists(
-    "SELECT id FROM user WHERE email = 'admin@spacetimewiki.local'"
+    `SELECT id FROM "user" WHERE email = 'admin@spacetimewiki.local'`
   );
   if (adminExists) {
     console.log("[e2e-setup] Seed data already exists, skipping.");

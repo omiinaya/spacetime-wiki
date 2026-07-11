@@ -40,7 +40,7 @@ test.describe("Publicly shared page — anonymous access", () => {
   test("guest mode keeps home page accessible", async ({ page }) => {
     // Go to any page as guest
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Guest mode: home should still render
     await expect(page.getByText("Spacetime Wiki").first()).toBeVisible({ timeout: 10000 });

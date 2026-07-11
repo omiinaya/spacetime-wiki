@@ -230,7 +230,7 @@ async def import_notion(
                 page_ids_by_dir[child_key] = page_id
                 page_ids_by_dir[f"{entry['dir']}/{entry['name']}"] = page_id
                 created += 1
-            except Exception as e:
+            except (RuntimeError, ValueError, KeyError, OSError) as e:
                 logger.error("Failed to create page '%s': %s", entry["path"], e, exc_info=True)
                 errors.append(f"{entry['path']}: {e}")
 
@@ -374,7 +374,7 @@ async def import_confluence(
             if entry["meta_id"]:
                 page_ids_by_meta_id[entry["meta_id"]] = page_id
             created += 1
-        except Exception as e:
+        except (RuntimeError, ValueError, KeyError, OSError) as e:
             logger.error("Failed to create Confluence page '%s': %s", entry["path"], e, exc_info=True)
             errors.append(f"{entry['path']}: {e}")
 

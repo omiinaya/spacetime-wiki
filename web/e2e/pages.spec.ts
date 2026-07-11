@@ -4,7 +4,7 @@ import { signInAsAdmin } from "./helpers";
 test.describe("Page features", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
   });
 
   test("keyboard shortcuts button opens modal via sidebar click", async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe("Login page", () => {
 test.describe("New page creation flow", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
   });
 
   test("clicking New page in sidebar opens template picker, then Blank page navigates to /new", async ({ page }) => {

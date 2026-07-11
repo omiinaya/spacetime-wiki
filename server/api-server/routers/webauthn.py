@@ -211,7 +211,7 @@ async def register_complete(request: Request, body: dict):
         # Verify the challenge exists and consume it
         try:
             await call_reducer("consume_passkey_challenge", [challenge_b64])
-        except Exception as e:
+        except RuntimeError as e:
             logger.error("Challenge verification failed during registration: %s", e, exc_info=True)
             raise HTTPException(status_code=400, detail="Challenge verification failed.")
 
@@ -260,7 +260,7 @@ async def register_complete(request: Request, body: dict):
 
     except HTTPException:
         raise
-    except Exception as e:
+    except (RuntimeError, ValueError, TypeError, LookupError) as e:
         logger.error("WebAuthn registration failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
@@ -341,7 +341,7 @@ async def auth_complete(request: Request, body: dict):
         # Consume the challenge
         try:
             await call_reducer("consume_passkey_challenge", [challenge_b64])
-        except Exception as e:
+        except RuntimeError as e:
             logger.error("Challenge verification failed during auth: %s", e, exc_info=True)
             raise HTTPException(status_code=400, detail="Challenge verification failed.")
 
@@ -405,6 +405,6 @@ async def auth_complete(request: Request, body: dict):
 
     except HTTPException:
         raise
-    except Exception as e:
+    except (RuntimeError, ValueError, TypeError, LookupError) as e:
         logger.error("WebAuthn authentication failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")

@@ -22,11 +22,11 @@ export const ADMIN_PASSWORD = "admin123";
  */
 export async function signInAsAdmin(page: Page): Promise<void> {
   await page.goto("/login");
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("load");
 
   await page.getByLabel("Email").fill(ADMIN_EMAIL);
   await page.getByLabel("Password").fill(ADMIN_PASSWORD);
-  await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+  await page.locator("form").getByRole("button", { name: "Sign in", exact: true }).click();
 
   // Wait for redirect
   await expect(page).toHaveURL("/", { timeout: 20000 });
@@ -38,7 +38,7 @@ export async function signInAsAdmin(page: Page): Promise<void> {
  */
 export async function navigateToFirstPage(page: Page): Promise<string | null> {
   await page.goto("/");
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("load");
 
   // Try to find and click an existing page
   const pageEntries = page.locator("main button").filter({ hasText: /Updated/ });

@@ -62,7 +62,7 @@ async def server_lifespan(server: Server) -> AsyncIterator[dict[str, Any]]:
         rows = await sql_query("SELECT 1 AS ok")
         elapsed = time.monotonic() - start
         logger.info("STDB reachable (%d rows, %dms)", len(rows), int(elapsed * 1000))
-    except Exception as e:
+    except STDBError as e:
         logger.warning("STDB unreachable at startup: %s — will retry on first tool call", e, exc_info=True)
 
     yield {}
@@ -267,7 +267,7 @@ async def list_resources() -> list[Resource]:
 
     try:
         pages = await _with_concurrency(list_pages(limit=100))
-    except Exception as e:
+    except STDBError as e:
         logger.error(
             "Failed to list resources from STDB: %s (request_id=%s)", e, corr_id, exc_info=True,
         )
@@ -595,7 +595,7 @@ async def _handle_wiki_health(arguments: dict[str, Any]) -> list[TextContent]:
         rows = await sql_query("SELECT 1 AS ok")
         elapsed = time.monotonic() - start
         stdb_status = f"reachable ({len(rows)} rows, {int(elapsed * 1000)}ms)"
-    except Exception as e:
+    except STDBError as e:
         elapsed = time.monotonic() - start
         logger.warning("STDB health check failed: %s (%dms)", e, int(elapsed * 1000), exc_info=True)
         stdb_status = f"unreachable: {e} ({int(elapsed * 1000)}ms)"

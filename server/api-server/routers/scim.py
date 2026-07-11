@@ -46,7 +46,7 @@ async def _record_event(provider_id: str, resource_type: str, operation: str,
             event_id, provider_id, resource_type, operation,
             external_id, local_id, status, detail,
         ])
-    except Exception as e:
+    except RuntimeError as e:
         logger.error("Failed to record SCIM event: %s", e, exc_info=True)
 
 
@@ -309,7 +309,7 @@ async def create_user(request: Request):
         await call_reducer("scim_sync_user", [
             email, display_name, external_id, pid, default_role, True,
         ])
-    except Exception as e:
+    except RuntimeError as e:
         await _record_event(pid, "User", "POST", external_id, "", "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to create user: {e}")
 
@@ -345,7 +345,7 @@ async def update_user(request: Request, user_id: str):
         await call_reducer("scim_sync_user", [
             email, display_name, external_id, pid, "member", True,
         ])
-    except Exception as e:
+    except RuntimeError as e:
         await _record_event(pid, "User", "PUT", external_id, user_id, "error", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to update user: {e}")
 
