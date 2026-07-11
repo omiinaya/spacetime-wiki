@@ -368,3 +368,29 @@ describe('useImportExport', () => {
     expect(result.current.importing).toBe(false);
   });
 });
+
+it('handles Notion HTML import', async () => {
+  const { useImportExport } = await import('../hooks/useImportExport');
+  const { result } = renderHook(() => useImportExport(userId, onRefresh));
+
+  const htmlContent = '<h1>Test</h1><p>HTML content</p>';
+  const file = new File([htmlContent], 'notion_page.html', { type: 'text/html' });
+  const event = {
+    target: { files: [file], value: '' },
+  } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+  await act(async () => {
+    await result.current.handleImportNotion(event);
+  });
+
+  expect(api.pages.create).toHaveBeenCalledWith(
+    'notion_page',
+    expect.any(String),
+    '',
+    '',
+    'user-1',
+  );
+  expect(showToast).toHaveBeenCalledWith(
+    expect.objectContaining({ type: 'success', title: 'Imported' }),
+  );
+});
