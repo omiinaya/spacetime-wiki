@@ -12,6 +12,8 @@ Created as a local kanban board.
 | 2026-07-02 | P4 — Rust reducer integration tests | Created `server/tests/` with pytest-asyncio test suite (14 tests) exercising core reducers via STDB HTTP API. Added Dockerfile, docker-compose test service, and Docker-based runner. Added CI steps for `cargo test --lib` and `clippy`. |
 | 2026-07-05 | P3 — Fix E2E tests to work with fresh DB | Created `web/e2e/global-setup.ts` seed data fixture (creates admin user, Uncategorized collection, 3 sample pages). Added `globalSetup` to Playwright config. Fixed time regex in home.spec.ts to accept "just now"/"Xm ago". SHA: 924f0b1 |
 
+| 2026-07-11 | P5 — Error handling done ✅ | Full try/except + logging on all MCP tools/resources, STDB client with retry |
+| 2026-07-11 | P5 — Pagination done ✅ | `limit`/`offset` added to MCP list/search tools |
 ## 🔄 In Progress
 
 *(none)*
