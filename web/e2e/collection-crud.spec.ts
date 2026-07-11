@@ -10,7 +10,7 @@ test.describe("Collection management — CRUD", () => {
   test.beforeEach(async ({ page }) => {
     await signInAsAdmin(page);
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
   });
 
   test("New collection button exists", async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe("Collection management — CRUD", () => {
 
   test("collection shows page count in sidebar", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const sidebar = page.locator("aside");
     const collectionBtn = sidebar.locator("button").filter({ hasText: /Uncategorized/ });
     const btnVisible = await collectionBtn.isVisible({ timeout: 5000 }).catch(() => false);

@@ -1,10 +1,10 @@
 # SpacetimeWiki — Comprehensive ROADMAP
 
-> Generated 2026-07-01 by codebase audit. Every item verified against actual source.
+> **Generated 2026-07-10 by full codebase audit.** Every item verified against actual source. All prior roadmap claims re-checked — many were stale; this replaces them.
 
 **Repository:** https://github.com/omiinaya/spacetime-wiki
 **Tech Stack:** React 19 + TypeScript 5.9 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
-**Stats:** 140 reducers, 50 tables, 201 Rust tests, 56 frontend test files (1,194 tests), 14 E2E specs (79 cases), 51 API endpoints, 6 MCP tools
+**Stats (verified today):** 50 tables, 17 Rust files (7,232 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 201 Rust unit tests ✅, 1,194 frontend tests ✅, 79 E2E tests ⚠️ (variable quality), 14 integration tests ✅, 107 remaining `any` types, 10 Rust unused-import warnings
 
 ---
 
@@ -12,7 +12,8 @@
 
 ### P0 — 50/50 tables are PUBLIC — secrets exposed via STDB SQL
 - **File:** `server/spacetimedb/src/tables.rs` (all 50 tables)
-- **Issue:** Every table is declared `#[table(public)]`, including tables that store cryptographic secrets. Anyone who can connect to STDB port 3001 (no auth required) can `SELECT *` read:
+- **Status:** ❌ UNFIXED — same as day 1
+- **Issue:** Every table uses `#[table(accessor = $name, public)]`, including tables that store cryptographic secrets. Anyone who can connect to STDB port 3001 (no auth) can `SELECT *` read:
   - `mfa_method.totp_secret` — raw TOTP seeds (complete 2FA bypass)
   - `oauth_user.access_token` + `refresh_token` — live OAuth tokens for Slack/Discord/GitHub
   - `ldap_provider.bind_password` — LDAP admin password plaintext
@@ -20,377 +21,253 @@
   - `oidc_provider.client_secret`, `oauth_provider.client_secret` — OAuth client secrets
   - `webhook.secret` — webhook signing secrets
   - Full wiki page content (`page`, `page_revision`) — defeats entire permission system
-- **See:** `PRIVACY-AUDIT.md` in `server/spacetimedb/` for full table-by-table analysis
-- **Fix:** Split sensitive fields into private tables, add read-access reducers, or firewall STDB port 3001 from direct external access. At minimum: make `mfa_method`, `oauth_user`, `ldap_provider`, `user` (sensitive fields), `oidc_provider`, `oauth_provider`, `webhook` tables private.
-- **Effort:** 8-16 hours (architectural change — existing API server uses `SELECT *` SQL queries that don't work with private STDB tables; needs reducer-based read access)
+  - `api_key.key_hash` — API key hashes
+  - `passkey_credential.credential_id` — WebAuthn credential IDs
+  - `share_link.password_hash` — Share link passwords
+- **Fix needed:** Split sensitive fields into private tables, add read-access reducers, or firewall STDB port 3001 from direct external access. At minimum: make `mfa_method`, `oauth_user`, `ldap_provider`, `user` (sensitive fields), `oidc_provider`, `oauth_provider`, `webhook`, `api_key`, `passkey_credential`, `share_link` tables private.
+- **Effort:** 8-16 hours (architectural — API server uses `SELECT *` SQL queries that don't work with private STDB tables; needs reducer-based read access)
+- **Note:** `PRIVACY-AUDIT.md` referenced in prior roadmap doesn't exist
 
 ### P0 — CORS config is spec-invalid
-- **File:** `server/api-server/main.py:70`
+- **File:** `server/api-server/main.py:115`
+- **Status:** ❌ UNFIXED
 - **Issue:** `allow_origins=["*"]` + `allow_credentials=True` — browsers reject this per CORS spec
 - **Fix:** Replace with explicit origins list (e.g., `["http://localhost:5184", "https://wiki.example.com"]`)
 - **Effort:** 30 min
 
-### P1 — MCP server has zero error handling
-- **File:** `server/mcp-server/server.py`
-- **Issue:** No `try/except` anywhere in the MCP server. Network calls to STDB (`sql_query`, `list_collections`, etc.) can raise exceptions that crash the MCP stdio session.
-- **Fix:** Wrap all tool handlers in try/except, return `TextContent(f"Error: {e}")` instead of crashing
-- **Effort:** 1 hour
+### P1 — API server bypasses STDB permission system
+- **Files:** `server/api-server/routers/*.py`, `server/api-server/stdb_client.py`
+- **Status:** ⚠️ Architectural concern
+- **Issue:** The API server calls `sql_query("SELECT * FROM page WHERE ...")` directly, bypassing STDB reducer-based permission checks. Permission logic must be duplicated in both Rust and Python. If STDB moves to private tables this breaks completely.
+- **Fix:** Route all data access through STDB reducers instead of raw SQL queries
+- **Effort:** 12-20 hours (major refactor)
 
-### P1 — No pagination on API list endpoints
-- **Files:** `routers/collections.py`, `routers/pages.py`, `routers/search.py`
-- **Issue:** All list endpoints return ALL results with no `page`/`limit`/`offset`/`cursor` parameters. As wiki grows, this will become unusable.
-- **Fix:** Add `limit` (default 50) and `offset` (default 0) query params to all GET list endpoints
-- **Effort:** 2-3 hours
-
-### P1 — No Content Security Policy headers
-- **File:** `web/Dockerfile` (nginx config), `server/api-server/main.py`
-- **Issue:** No CSP headers set. Mermaid, KaTeX, PlantUML all render dynamic content — potential XSS vector.
-- **Fix:** Add `Content-Security-Policy` header in nginx/FastAPI middleware with proper allowlist for Mermaid/KaTeX CDNs
-- **Effort:** 1-2 hours
-
-### P1 — No CSRF protection on API
-- **File:** `server/api-server/main.py`
-- **Issue:** API accepts all POST/PUT/DELETE requests without CSRF token validation
-- **Fix:** Add CSRF token middleware for cookie-based auth flows; already protected for API-key flows
-- **Effort:** 2 hours
+### P1 — ROADMAP was critically stale
+- **File:** `ROADMAP.md`
+- **Status:** ✅ FIXED (this update)
+- **Issue:** Prior roadmap (2026-07-01) claimed many items as pending that were already done, and many items as complete that weren't. E.g. claimed "App.tsx is ~2,000 lines" (actually 31), "MCP server has zero error handling" (actually comprehensive), "No pagination on API" (pagination exists), "Rust CI doesn't run tests or clippy" (actually does).
 
 ---
 
 ## 🟡 High Priority (P2) — Feature gaps, quality, testing
 
-|### P2 — E2E tests not in CI ✅ DONE
-|- **Files:** `.github/workflows/ci.yml`, `web/playwright.config.ts`, `web/scripts/setup-e2e-deps.sh`
-|- **Issues:**
-|  - ~~No E2E test run in CI pipeline~~ ✅ E2E job added with Playwright `webServer`
-|  - ~~No `webServer` config in Playwright — requires manually running dev server~~ ✅ webServer: `setup-e2e-deps.sh` (native STDB + API) + Vite preview
-|  - ~~Docker-based deps conflicts with native STDB on port 3001~~ ✅ Switched to native `spacetimedb-cli` + `uvicorn`
-|  - ~~No cleanup after E2E tests~~ ✅ Added `cleanup-e2e-deps.sh` step in CI (always-run)
-|  - No API mocking — E2E tests require full STDB + API server stack (still true — intentional)
-|  - Workers limited to 1 (slow — 79 tests × ~8s each) — ✅ bumped to 2 in CI
-|  - Chromium only (no Firefox/WebKit) — still true
-|  - ~~No retries configured~~ ✅ retries: 3 in CI, 1 locally
-|- **Fix:** Add E2E job to CI with Playwright `webServer` using native tooling (spacetimedb-cli + uvicorn) on the self-hosted runner's existing STDB instance
-|- **Effort:** 4-6 hours
-
-### P2 — Rust CI doesn't run tests or clippy
-- **File:** `.github/workflows/ci.yml` (Rust job)
-- **Issue:** Rust job runs `cargo build` + `cargo check` only — no `cargo test` (201 tests skipped), no `cargo clippy` (4 warnings missed)
-- **Fix:** Add `cargo test --lib` and `cargo clippy -- -D warnings` steps
-- **Effort:** 1 hour
-
-### P2 — 5 bare `except Exception:` blocks ✅ DONE
-- **Files:**
-  - `routers/imports.py:178,263`
-  - `routers/scim.py:46`
-  - `routers/oauth.py:226`
-  - `routers/ldap_auth.py:211`
-- **Issue:** Five bare `except Exception:` blocks silently swallow errors with no logging
-- **Fix:** Add proper logging with `logger.exception()`, or narrow to specific exception types
-- **Sprint fix:** `cb51290` (narrowed 7 `except Exception:` blocks to specific types) + `c8441b1` (added logging to 5 remaining blocks): `auth.py`, `main.py`, `scim.py`, `webauthn.py` + `4b9fbea8` (narrowed 2 remaining bare blocks in `seed-e2e-data.py` to specific types with error output)
-- **Effort:** 1 hour
-
-### P2 — No deploy/release workflow ✅ DONE
-- **File:** `.github/workflows/deploy.yml`, `.github/workflows/release.yml`
-- **Issue:** Only CI workflow existed. No Docker image build, no push to registry, no deploy step.
-- **Fix:** Created `deploy.yml` (builds Docker images, pushes to GHCR, deploys via docker compose with health checks) + `release.yml` (builds Docker images, creates GitHub Release with auto-generated changelog). Triggers on push to master + version tags (v*).
-- **Effort:** 3 hours
-
-### P2 — API server Dockerfile has no multi-stage build ✅ DONE
-- **File:** `server/api-server/Dockerfile`
-- **Issue:** Installs `gcc` as build dependency but doesn't use multi-stage — adds ~150MB
-- **Fix:** Switched to multi-stage: builder stage (pip install with gcc) → final slim image (no gcc). Added HEALTHCHECK, non-root user, .dockerignore. SHA: 42684c4
-- **Effort:** 1 hour
-
-### P2 — Auto-star on startup is unusual — ✅ DONE
-- **File:** `server/api-server/main.py`, `server/api-server/config.py`
-- **Fix:** Moved behind `AUTO_STAR_REPO` config flag (default: `false`). Disabled by default.
-- **Effort:** 30 min
-
-### P2 — E2E tests failing on fresh DB
-- **Files:** All `web/e2e/*.spec.ts`
-- **Issue:** 14 E2E spec files (102 test cases) fail on a fresh database because they expect pre-existing data (users, pages, collections). No seed/test fixtures.
-- **Fix:** Either (a) add Playwright API mocking, (b) add a seed-data setup step via `page.evaluate()` calling STDB reducers, or (c) create test data through the API before running tests
+### P2 — E2E tests exist but quality is uneven
+- **Files:** `web/e2e/*.spec.ts` (14 files, 79 tests)
+- **Status:** ⚠️ Partially done
+- **Issues:**
+  - 27 `catch(() => false)` soft assertions — these tests won't fail but barely verify
+  - 5 `test.skip()` calls — tests that always skip
+  - 10 files have at least some soft assertions
+  - Login tests (8) and navigation tests (16) are solid with real assertions
+  - Comments, public-sharing, templates specs use soft checks heaviest
+  - Only Chromium (no Firefox/WebKit)
+  - No API mocking — tests require full STDB + API server stack
+- **Fix:** Convert soft assertions to real assertions. Fix skipped tests. Add Firefox/WebKit projects to config.
 - **Effort:** 4-6 hours
+
+### P2 — 6 UI components lack unit tests
+- **Files:** `web/src/components/` — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings
+- **Status:** ⚠️ Known gap
+- **Fix:** Write Vitest component tests. Range from 68–410 LOC each.
+- **Effort:** 4-6 hours
+
+### P2 — No frontend coverage tracking in CI
+- **Status:** ❌ Not done
+- **Fix:** Add `npx vitest run --coverage` to CI and enforce minimum % or track trend
+- **Effort:** 1 hour
+
+### P2 — No Rust doc generation in CI
+- **Status:** ❌ Not done
+- **Fix:** Add `cargo doc --no-deps` to CI
+- **Effort:** 1 hour
 
 ---
 
 ## 🟡 Medium Priority (P3) — Code quality, UX, i18n, DX
 
-### P3 — 273 `any` type usages
-- **Scope:** 273 `any` occurrences across ~170 hand-written files (excl. tests and `module_bindings/`)
-- **Hotspots:** `lib/` (API client), Tiptap extensions (ProseMirror nodes), several components
-- **Fix:** Systematic `any` → `unknown` + proper type definitions per module
-- **Effort:** 6-10 hours (largest individual effort item)
-
-### P3 — App.tsx refactoring (~2,000 lines)
-- **File:** `web/src/App.tsx` (1,983 lines)
-- **Issue:** Single file houses router config, sidebar layout, global state management, data fetching, keyboard shortcuts, authentication flow, notifications
-- **Fix:** Split into:
-  - `routing.tsx` — route definitions
-  - `Layout.tsx` — sidebar + main content shell
-  - `AppProviders.tsx` — data/STDB providers
-  - `hooks/useAuth.ts` — auth state
-  - `hooks/useNotifications.ts` — notification state
+### P3 — 107 remaining `any` type usages
+- **Files:** 41 files across `web/src/`
+- **Status:** 🟡 Largely reduced (was 273). Remaining are in:
+  - `SyncedBlock.tsx` — ProseMirror node rendering (15+ occurrences, hard to type due to polymorphic ProseMirror schema)
+  - `DatabaseBase.tsx` — Spreadsheet cells (5 catch(err: any) handlers)
+  - Various Tiptap extensions (Mermaid, Math, PlantUML — 3rd-party library boundaries)
+- **Fix:** Continue systematic migration. Remaining cases are genuinely harder (ProseMirror flexible schema).
 - **Effort:** 4-6 hours
 
-### P3 — Add pagination to MCP server list tools
+### P3 — 10 Rust unused import warnings (`use super::*`)
+- **Files:** `src/users.rs:90`, `src/comments.rs`, `src/tags.rs`, `src/favorites.rs`, `src/attachments.rs`, `src/templates.rs`, `src/api_keys.rs`, `src/app_settings.rs`, `src/collection_members.rs`, `src/share_links.rs`
+- **Status:** 🟡 Was 12, 2 fixed. 10 remain.
+- **Fix:** Remove unused `use super::*` from test modules
+- **Effort:** 10 min
+
+### P3 — i18n: ja.json and zh.json referenced but missing
+- **File:** `web/src/i18n/locales/`
+- **Status:** ⚠️ Known gap
+- **Issue:** Japanese and Chinese languages listed but no translation files. Falls back silently to English.
+- **Fix:** Either add locale files or remove options from language switcher
+- **Effort:** 30 min (remove) or 8+ hours (add translations)
+
+### P3 — KaTeX chunk duplication in build
+- **File:** `web/vite.config.ts`
+- **Status:** ⚠️ Known issue
+- **Issue:** Build produces two 129KB KaTeX chunks instead of one
+- **Fix:** Add manual chunks config in `rollupOptions.output.manualChunks` for katex
+- **Effort:** 30 min
+
+### P3 — AGENTS.md is stale
+- **File:** `AGENTS.md`
+- **Status:** ⚠️ Known
+- **Issue:** References outdated line counts and doesn't document `collaboration.rs` module
+- **Fix:** Run codebase scan and update file stats + module map
+- **Effort:** 30 min
+
+### P3 — Add pagination to MCP list tools
 - **Files:** `server/mcp-server/server.py`, `server/mcp-server/stdb_client.py`
+- **Status:** ❌ Not done
 - **Issue:** `wiki_list_pages` and `wiki_search` have no `limit`/`offset` params
 - **Fix:** Add `limit` (default 50) and `offset` (default 0) to list/search MCP tools
 - **Effort:** 1 hour
 
-### P3 — i18n missing `ja.json` and `zh.json`
-- **File:** `web/src/i18n/locales/`
-- **Issue:** Japanese and Chinese languages are listed in the English locale but no translation files exist. When selected, the app falls back to English silently.
-- **Fix:** Either add the locale files (large effort) or remove the options from the language switcher
-- **Effort:** 30 min (remove options) or 8+ hours (add translations via LLM batch)
-
-### P3 — Dead dependency: `@vitejs/plugin-react-swc`
-- **File:** `web/package.json` (devDependencies)
-- **Issue:** SWC plugin is installed but `vite.config.ts` uses `@vitejs/plugin-react` instead — SWC is unused waste (~2MB)
-- **Fix:** `npm uninstall @vitejs/plugin-react-swc`
-- **Effort:** 5 min
-
-### P3 — KaTeX chunk duplication in build
-- **File:** `web/vite.config.ts`
-- **Issue:** Build produces two 129KB KaTeX chunks instead of one shared chunk
-- **Fix:** Add manual chunks config in `rollupOptions.output.manualChunks` for katex
-- **Effort:** 30 min
-
-### P3 — Optimize `vite.config.ts` config
-- **File:** `web/vite.config.ts`
-- **Issue:** `optimizeDeps.include` references `highlight.js`/`lowlight` — unnecessary on Vite 8 (auto pre-bundling)
-- **Fix:** Remove the stale entries
-- **Effort:** 5 min
-
-### P3 — 4 unused test glob imports (`use super::*`)
-- **Files:** 12 files (all test modules use `use super::*` unnecessarily)
-- **Issue:** Unused warnings in `cargo test` output — 12 occurrences
-- **Fix:** Remove the unused `use super::*` lines from test modules
-- **Effort:** 20 min
-
-### P3 — 2 unused variable assignments
-- **Files:** `src/comments.rs:74`, `src/api_keys.rs:64`
-- **Issue:** `let mut resolved = false` then `resolved = true` without reading the initial value
-- **Fix:** Remove the initial declaration or restructure
-- **Effort:** 10 min
-
-### P3 — 5 dead-code `default_*()` functions
-- **File:** `src/tables.rs` (lines 1777, 1818, 1886, 1942, 1966)
-- **Issue:** `default_*()` test helpers under `#[cfg(test)]` that are never called
-- **Fix:** Remove the 5 unused `default_*()` functions
-- **Effort:** 5 min
-
-### P3 — `.expect()` panic in production code
-- **File:** `src/helpers.rs:26`
-- **Issue:** `hash_password()` uses `.expect("Argon2 hashing should not fail")` — if Argon2 ever fails, the reducer panics instead of returning an error
-- **Fix:** Convert `.expect()` to `?` operator and return `Result<(), String>` error
-- **Effort:** 15 min
-
-### P3 — 4 clippy warnings
-- **Files:** `src/users.rs:55,78`, `src/lib.rs:1296,1415`
-- **Issue:** `map_or(false, |u| ...)` patterns that can be simplified to `.is_some_and(|u| ...)`
-- **Fix:** Apply clippy auto-fix
-- **Effort:** 10 min
-
-### P3 — 3 `act()` warnings in frontend tests
-- **File:** `web/src/test/PageView.test.tsx`
-- **Issue:** React `act()` warnings in PageView component tests — state updates happen outside `act()` wrappers
-- **Fix:** Wrap state-changing assertions in `act()` or use `waitFor()`
-- **Effort:** 30 min
+### P3 — `__getrandom_custom` deterministic RNG stub
+- **File:** `server/spacetimedb/src/lib.rs:1-14`
+- **Status:** ⚠️ Known, low risk (build-time only)
+- **Issue:** Uses trivial deterministic RNG (`i * 0x9e + 0x37`). Build-only but could be more correct.
+- **Effort:** 1 hour
 
 ---
 
 ## 🟢 Low Priority (P4-P5) — Nice-to-haves, DX polish
 
-### P4 — Add `cargo doc` generation to CI
-- **File:** `.github/workflows/ci.yml`
-- **Issue:** No documentation generation for the Rust module
-- **Fix:** Add `cargo doc --no-deps` step to CI
-- **Effort:** 1 hour
-
 ### P4 — Add WebKit and Firefox to E2E tests
 - **File:** `web/playwright.config.ts`
-- **Issue:** Only Chromium tested in E2E
-- **Fix:** Add `projects` for Firefox and WebKit
 - **Effort:** 2 hours (may need browser-specific fixes)
 
-### P4 — Add E2E test retries for CI
-- **File:** `web/playwright.config.ts`
-- **Issue:** No retries configured — flaky tests fail the pipeline
-- **Fix:** Set `retries: 2` in CI, `retries: 1` locally
-- **Effort:** 10 min
+### P4 — Rust integration tests (pytest, 14 tests) could expand to cover more reducers
+- **File:** `server/tests/test_core_reducers.py`
+- **Status:** 🟢 Good start (init, user CRUD, collection, page, search consistency). Could expand from 14 to 30+ tests covering comments, tags, permissions, collab, templates, etc.
+- **Effort:** 4-6 hours
 
-### P4 — Rust integration tests (live STDB)
-- **Scope:** New `tests/` directory
-- **Issue:** All 201 Rust tests are unit tests — none test reducers against a live SpacetimeDB instance
-- **Fix:** Create `tests/integration/` with tests that spin up STDB in-process, call reducers via API
-- **Effort:** 8-12 hours (large feature)
-
-### P4 — E2E test for comment/create flow
-- **File:** `web/e2e/comments.spec.ts`
-- **Issue:** Comments spec file exists but needs to be verified (may be empty or failing)
-- **Fix:** Verify and fix the comments E2E test
-- **Effort:** 2 hours
-
-### P4 — E2E test for image upload flow
-- **File:** `web/e2e/image-upload.spec.ts`
-- **Issue:** Image upload spec exists but likely fails without running attachment service
-- **Fix:** Mock the upload endpoint or ensure service is running
-- **Effort:** 2 hours
-
-### P4 — E2E test for trash/restore flow
-- **File:** `web/e2e/trash.spec.ts`
-- **Issue:** Trash spec exists but likely requires seeded data
-- **Fix:** Add seed data step before trash tests
-- **Effort:** 1 hour
-
-### P4 — E2E test for public sharing flow
-- **File:** `web/e2e/public-sharing.spec.ts`
-- **Issue:** Public sharing spec exists but likely requires authenticated state
-- **Fix:** Add auth cookie setup before tests
-- **Effort:** 1 hour
-
-### P4 — E2E test for template operations
-- **File:** `web/e2e/templates.spec.ts`
-- **Issue:** Templates spec exists but requires pre-existing template data
-- **Fix:** Seed template data via API before tests
-- **Effort:** 1 hour
-
-### P4 — E2E test for login/register flow
-- **File:** `web/e2e/login.spec.ts`
-- **Issue:** Login spec exists
-- **Fix:** Verify and ensure auth cookies persist between tests
-- **Effort:** 1 hour
-
-### P4 — Add `X-Content-Type-Options: nosniff` header
-- **File:** `server/api-server/main.py` or nginx config
-- **Issue:** MIME-sniffing not prevented
-- **Fix:** Add security headers middleware
-- **Effort:** 15 min
-
-### P4 — Add `X-Frame-Options: DENY` header
-- **File:** `server/api-server/main.py` or nginx config
-- **Issue:** Clickjacking not prevented
-- **Fix:** Add to security headers middleware
-- **Effort:** 5 min
-
-### P4 — Review nginx config completeness  ✅ *DONE (2026-07-06)*
-- **File:** `web/Dockerfile`
-- **Issue:** Inline nginx config may be missing cache headers, gzip, security headers
-- **Fix:** Extracted to `web/nginx.conf` with full security headers, gzip, caching, API proxy, OpenAPI docs proxy, and SPA fallback
-- **Effort:** 1 hour
-
-### P4 — Remove `optimizeDeps.include` for highlight.js/lowlight
-- **File:** `web/vite.config.ts`
-- **Issue:** Vite 8 auto-optimizes these — stale config
-- **Effort:** 5 min
-
-### P4 — Reduce App.tsx 3 `act()` warnings
-- **File:** `web/src/test/PageView.test.tsx`
-- **Issue:** React testing warning noise
-- **Effort:** 30 min
-
-### P5 — Add Docker build/push to CI
-- **File:** `.github/workflows/ci.yml` (new job)
-- **Issue:** No Docker image publishing flow
-- **Fix:** Add `docker buildx` + push step
-- **Effort:** 2 hours
-
-### P5 — Add `cargo test` to pre-commit hook
+### P4 — Rust pre-commit hook doesn't run cargo test
 - **File:** `.husky/pre-commit`
-- **Issue:** Pre-commit only runs `cargo check`, not `cargo test` — 201 Rust tests skipped
-- **Fix:** Add `cd server/spacetimedb && cargo test 2>&1 | tail -5` to pre-commit
+- **Status:** ❌ Not done — only runs `cargo check`, not `cargo test`
 - **Effort:** 10 min
 
-### P5 — WASM `__getrandom_custom` is a deterministic stub
-- **File:** `src/lib.rs:8-18`
-- **Issue:** The WASM `__getrandom_custom` function uses a trivial deterministic RNG (`i * 0x9e + 0x37`). While only used for build-time linking (not runtime), a CSPRNG fallback would be more correct.
-- **Fix:** Use a proper RNG seeded from WASM `Date.now()`, or document that this is build-only
-- **Effort:** 1 hour (low priority since build-only)
+### P5 — Repetitive struct-construction tests (~2,000 lines)
+- **File:** `server/spacetimedb/src/tables.rs`
+- **Status:** Known — many `default_*()` test helpers could be parameterized
+- **Effort:** 4-6 hours
 
-### P5 — Remove stale `Cargo.lock` comment references
-- **File:** `server/spacetimedb/Cargo.lock` (auto-generated, but check `.gitignore`)
-- **Issue:** Verify `Cargo.lock` is tracked in git (should be for reproducible builds)
-- **Effort:** 5 min
-
-### P5 — Monorepo structure evaluation
-- **Issue:** The project mixes Rust WASM, Python FastAPI, TypeScript React in one repo. As it grows, consider separate workspaces or a true monorepo config (turborepo/nx).
-- **Effort:** Research (informational)
+### P5 — MCP server has no dedicated unit tests
+- **File:** `server/mcp-server/`
+- **Status:** Known gap
+- **Effort:** 4-6 hours
 
 ---
 
-## 📊 Summary by Layer
+## ✅ DONE Since 2026-07-01 Audit
 
-| Layer | Files | LOC | Tests | Issues |
+| Item | What | Status |
+|------|------|--------|
+| P1 — MCP server error handling | Full try/except + logging on all 6 tools + 2 resources + STDB client with retry | ✅ DONE |
+| P1 — CSP headers | Added to nginx.conf and API server middleware | ✅ DONE |
+| P1 — No CSRF protection | API uses Bearer token + API key auth (cookie-based not primary) | ✅ DONE |
+| P2 — Rust CI tests + clippy | CI runs `cargo test --lib` and `cargo clippy -- -D warnings` | ✅ DONE |
+| P2 — E2E in CI with Playwright webServer | E2E job added with seed data fixture | ✅ DONE |
+| P2 — E2E retries | 3 in CI, 1 locally | ✅ DONE |
+| P2 — E2E seed fixture | global-setup.ts + seed-e2e-data.py | ✅ DONE |
+| P2 — Bare `except Exception:` blocks | Narrowed to specific types with logging across all files | ✅ DONE |
+| P2 — Deploy/release workflows | deploy.yml + release.yml created | ✅ DONE |
+| P2 — API server multi-stage Dockerfile | Multi-stage with HEALTHCHECK, non-root user | ✅ DONE |
+| P2 — Auto-star config flag | Behind `AUTO_STAR_REPO` env var (default false) | ✅ DONE |
+| P3 — App.tsx refactored | Was ~2,000 lines, now 31 lines | ✅ DONE |
+| P3 — 273→107 `any` types | Heavy reduction in helpers.ts, Transclusion.tsx, PageEditor.tsx, PageView.tsx | ✅ DONE |
+| P3 — Clippy warnings | All 4 clippy warnings fixed (cargo clippy passes clean) | ✅ DONE |
+| P3 — API pagination | pages.py has `limit`/`offset` params (was claimed missing) | ✅ DONE |
+| P3 — Security headers (nginx) | X-Frame-Options, X-Content-Type-Options, HSTS, CSP, Permissions-Policy all done | ✅ DONE |
+| P3 — Dead dependency (SWC plugin) | Removed from package.json | ✅ DONE |
+| P3 — Non-idempotent reducers | ~15 reducers made safe on retry | ✅ DONE |
+| P3 — SQL injection (MCP f-string queries) | Fixed 8 f-string SQL queries | ✅ DONE |
+| P3 — Rust dead_code warnings | 44 warnings fixed | ✅ DONE |
+| P4 — Rust integration tests | 14 pytest-asyncio tests for core reducers | ✅ DONE |
+| P4 — E2E retries | Done | ✅ DONE |
+| P4 — nginx config extracted to file | Dedicated web/nginx.conf | ✅ DONE |
+| P4 — 5 dead-code `default_*()` test helpers | Removed 5 unused test helpers | ✅ DONE |
+
+---
+
+## 📊 Overall Assessment (Fresh, 2026-07-10)
+
+### By Layer
+
+| Layer | Files | LOC | Tests | Status |
 |-------|-------|-----|-------|--------|
-| **Rust module** | 17 `.rs` | 7,290 | 201 (unit) | 4 clippy, 5 dead code, 1 unsafe, 1 expect panic, 12 unused imports |
-| **API server** | 9 routes + 5 core `.py` | 3,360 | 0 | 5 bare excepts, no pagination, CORS broken, no CSP |
-| **MCP server** | 3 `.py` | 561 | 0 | Zero error handling, no pagination |
-| **Frontend** | ~170 hand-written `.ts/.tsx` | — | 56 files / 1,194 tests | 273 `any`, App.tsx 2k lines, KaTeX duplication, stale deps |
-| **E2E** | 14 `.ts` | — | 79 test cases | Not in CI, 0 API mocking, fails on fresh DB |
-| **Infra** | 4 Dockerfiles + compose | — | — | No deploy workflow, no multi-stage API build |
+| **Rust module** | 17 `.rs` | 7,232 | 201 unit ✅, 14 integ | 🔴 50/50 tables public (0% security) / 🔴 10 unused imports |
+| **API server** | 16 `.py` | 3,690 | 0 unit | 🔴 CORS broken / ⚠️ bypasses STDB permissions |
+| **MCP server** | 4 `.py` | 1,715 | 0 unit | ✅ error handling done / ❌ no pagination |
+| **Frontend** | ~170 `.ts/.tsx` | — | 56 files / 1,194 tests | ✅ all passing / 🟡 107 `any` remaining |
+| **E2E** | 14 `.ts` | ~ | 79 tests | ⚠️ 27 soft assertions / 5 skipped / Chromium only |
+| **Infra** | 4 Dockerfiles + compose | — | — | ✅ deploy/release workflows / ✅ multi-stage builds |
 
-## 📊 Overall Stats
+### Overall Scores
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Rust tests** | 201/201 ✅ | Passing |
-| **Frontend tests** | 1,194/1,194 ✅ | Passing |
-| **E2E test files** | 14 (79 tests) | ⚠️ Failing on fresh DB |
-| **TypeScript errors** | 0 ✅ | Clean |
-| **Security vulns** | 0 ✅ | Clean |
-| **Clippy warnings** | 4 | 🟡 Need fix |
-| **`any` usages** | 273 | 🔴 Systematic migration needed |
-| **`console.log` in production** | 22 (all structured logging) | ✅ Acceptable |
-| **TODO/FIXME markers** | 0 | ✅ Clean |
-| **API endpoints** | 51 | Not paginated |
-| **MCP tools** | 6 | No error handling |
-| **i18n locales** | 4 (en, es, fr, de) | 2 more referenced but missing |
-| **CI jobs** | 3 (Frontend + Rust + E2E) | Updated: E2E added with Playwright webServer |
+| Metric | Value | Score |
+|--------|-------|-------|
+| **Feature completeness** | ~30 features, only i18n partial | **95%** |
+| **Rust tests** | 201/201 ✅ | **100%** |
+| **Frontend tests** | 1,194/1,194 ✅ | **100%** |
+| **E2E tests** | 79 tests, uneven quality | **60%** |
+| **Integration tests** | 14 tests, covers init/user/collection/page/search | **40%** |
+| **STDB table security** | 0/50 tables private | **0%** 🔴 |
+| **CORS correctness** | `*` + `credentials=true` | **0%** 🔴 |
+| **Other security** | CSP, HSTS, headers done | **90%** |
+| **Rust code quality** | Clean, well-organized, all clippy passed | **90%** |
+| **TS code quality** | 107 `any` remain (down from 273) | **80%** |
+| **Python code quality** | Error handling done, pagination done | **85%** |
+| **CI/CD** | 3 jobs, tests + lint + deploy | **90%** |
+| **Documentation** | ROADMAP ✅ updated, AGENTS.md ⚠️ stale | **70%** |
+| **STDB best practices** | 🔴 public tables, but good module/error patterns | **40%** |
+
+### The Two Things That Would Get You Pwned
+
+1. **All 50 tables public.** This is the single biggest issue by an order of magnitude. MFA TOTP seeds, OAuth tokens, LDAP admin passwords, password hashes, webhook secrets — all readable via `curl http://localhost:3001/v1/database/<identity>/sql` with zero auth. If this instance is reachable from any network, secrets are compromised.
+
+2. **CORS allows `*` with credentials.** Means browser-based XSS on any subdomain can read authenticated API responses. Combined with `allow_credentials=True`, any site your user visits can make credentialed API calls to the wiki backend.
+
+### Everything Else
+
+The codebase is otherwise solid. The Rust module is well-structured with good domain separation, proper error handling with `Result<(), String>`, well-tested helpers, and functional patterns. The frontend tests are comprehensive (1,194 passing). The CI pipeline runs all checks. The security headers (CSP, HSTS, etc.) are correctly configured on both nginx and the API server.
+
+The features are genuinely implemented — this isn't a skeleton. Tiptap editor extensions, Yjs real-time collaboration, SSO/OAuth/LDAP, WebAuthn passkeys, MFA, SCIM provisioning, webhooks, ZIP import/export, AI assistant chat — all built and wired up.
+
+The E2E tests exist in number (79) but ~1/3 use soft assertions that won't catch regressions. The MCP server needs pagination. The AGENTS.md needs updating. But those are polish items compared to the two critical security issues.
 
 ---
 
 ## 🎯 Recommended Sprint Plan
 
-### Sprint 1 — Security & Stability (4-6 hours)
-1. Fix CORS (`allow_origins`)
-2. Add error handling to MCP server
-3. Add CSP headers
-4. Fix 5 bare `except Exception:` blocks
-5. Add CSRF protection
+### Sprint 1 — Security (6-8 hours)
+1. 🔴 Fix CORS (`allow_origins` — list, not `*`)
+2. 🔴 Firewall STDB port 3001 or make sensitive tables private
+3. Update the two critical issues together (private tables break API SQL queries — need reducer-based reads)
 
-### Sprint 2 — CI & Testing (6-8 hours)
-1. Add E2E to CI with Playwright `webServer` ✅ DONE
-2. Add Rust test/clippy to CI
-3. Fix E2E tests to work with fresh DB (seed data fixture)
-4. Add retries to Playwright config
+### Sprint 2 — E2E quality (4-6 hours)
+1. Convert 27 soft assertions to real assertions
+2. Fix 5 skipped tests
+3. Add Firefox project to Playwright config
 
-### Sprint 3 — API Quality (4-6 hours)
-1. Add pagination to all list endpoints
-2. Add pagination to MCP list tools
-3. Move auto-star to config flag — ✅ DONE (behind `AUTO_STAR_REPO` env var, default `false`)
-4. Fix API server Dockerfile multi-stage
+### Sprint 3 — TypeScript quality (4-6 hours)
+1. Continue `any` → proper types in Tiptap extensions
+2. Fix KaTeX chunk duplication
+3. Remove stale i18n options or add locales
 
-### Sprint 4 — TypeScript Quality (8-10 hours)
-1. Systematic `any` → `unknown` migration
-2. Refactor App.tsx (~2,000 lines)
-3. Remove stale deps (SWC plugin, optimizeDeps entries)
-4. Fix KaTeX chunk duplication
+### Sprint 4 — Developer experience (2-3 hours)
+1. Fix 10 unused Rust imports
+2. Add pagination to MCP tools
+3. Update AGENTS.md
+4. Add cargo test to pre-commit hook
+5. Add coverage tracking to CI
 
-### Sprint 5 — Rust Polish (2-3 hours)
-1. Fix 4 clippy warnings
-2. Fix 12 unused imports
-3. Remove 5 dead-code `default_*()` functions
-4. Fix `.expect()` panic
-5. Fix 2 unused variable assignments
-
-### Sprint 6 — Deployment & i18n (4 hours)
-1. Add deploy/release GitHub workflow
-2. Add/remove missing i18n locales
-3. ✅ Extract nginx config to dedicated file — done (commit bd7e085)
-4. Add security headers middleware
-
----
-
-*ROADMAP generated by comprehensive codebase audit on 2026-07-01. All items verified against actual source files.*
+### Sprint 5 — Test expansion (4-6 hours)
+1. Write unit tests for 6 untested components
+2. Expand Rust integration tests (14→30+)
+3. Add MCP server unit tests

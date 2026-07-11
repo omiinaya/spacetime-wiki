@@ -44,7 +44,7 @@ def call_reducer(reducer: str, args: list) -> bool:
         body = e.read().decode("utf-8", errors="replace")[:200]
         print(f"  [seed]  {reducer}: HTTP {e.code} — {body}", file=sys.stderr)
         return False
-    except Exception as e:
+    except (urllib.error.URLError, OSError) as e:
         print(f"  [seed]  {reducer}: {e}", file=sys.stderr)
         return False
 

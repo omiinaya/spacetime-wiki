@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     stdb_host: str = os.getenv("STDB_HOST", "192.168.1.10:3001")
     stdb_database: str = os.getenv(
         "STDB_DATABASE",
-        "c200926c025aa06e282de1bbe461b13f618ae8958f6e2e57bad445abcf27a502",
+        "spacetime-wiki",
     )
     api_port: int = int(os.getenv("API_PORT", "8711"))
     api_key_header: str = "X-API-Key"

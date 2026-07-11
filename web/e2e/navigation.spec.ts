@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Sidebar navigation", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
   });
 
   test("shows sidebar with app title", async ({ page }) => {
@@ -90,7 +90,7 @@ test.describe("Sidebar navigation", () => {
 test.describe("Import buttons", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
   });
 
   test("sidebar has Import buttons", async ({ page }) => {

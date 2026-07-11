@@ -43,7 +43,7 @@ def _validate_config() -> None:
 STDB_HOST: str = os.getenv("STDB_HOST", "192.168.1.10:3001")
 STDB_DATABASE: str = os.getenv(
     "STDB_DATABASE",
-    "c200926c025aa06e282de1bbe461b13f618ae8958f6e2e57bad445abcf27a502",
+    "spacetime-wiki",
 )
 MCP_SERVER_NAME: str = os.getenv("MCP_SERVER_NAME", "spacetime-wiki-mcp")
 

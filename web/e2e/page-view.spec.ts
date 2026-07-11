@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Page view", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     // Navigate to first available page or create one
     const firstPage = page.locator("main button").filter({ hasText: /Updated/ }).first();
     const hasPage = await firstPage.isVisible({ timeout: 5000 }).catch(() => false);
