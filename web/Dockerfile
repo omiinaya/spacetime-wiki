@@ -16,14 +16,17 @@ ARG VITE_API_BASE
 
 RUN npm run build
 
-# ─── Serve stage ─────────────────────────────────────────────────────────────
-FROM nginx:1.27-alpine
+# ─── Serve stage with Node runtime ──────────────────────────────────────────
+FROM node:22-alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
 
-# Custom nginx config with API proxy and security headers
-RUN rm /etc/nginx/conf.d/default.conf
-COPY nginx.conf /etc/nginx/conf.d/spacetime-wiki.conf
+RUN npm install -g serve
 
 EXPOSE 5184
-CMD ["nginx", "-g", "daemon off;"]
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "const http=require('http');http.get('http://localhost:5184',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+
+CMD ["serve", "dist", "-l", "5184"]
