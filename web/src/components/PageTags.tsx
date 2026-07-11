@@ -55,7 +55,7 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
     api.tags.list(pageId).then(() => {
       // We need a query to get all distinct tag names
       // Use generic STDB query
-      fetch(`http://192.168.1.10:3001/v1/database/c2003d19339f9932811b3d54bf9b15e18ae48a47a8c8b7135a47367faa03481e/sql`, {
+      fetch(`http://${import.meta.env.VITE_STDB_HOST || "localhost:3001"}/v1/database/${import.meta.env.VITE_STDB_DB || "spacetime-wiki"}/sql`, {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
         body: "SELECT DISTINCT name FROM page_tag",

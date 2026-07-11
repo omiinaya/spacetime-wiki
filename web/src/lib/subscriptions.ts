@@ -15,8 +15,8 @@
 
 import { useState, useEffect, useRef } from "react";
 
-const STDB_HOST = import.meta.env.VITE_STDB_HOST || "192.168.1.10:3001";
-const DB_ID = import.meta.env.VITE_STDB_DB || "c2000df40a4560c4985121fce5ab36ba57e4d170e4fa08a5f00c85880b5102f0";
+const STDB_HOST = import.meta.env.VITE_STDB_HOST || "localhost:3001";
+const DB_ID = import.meta.env.VITE_STDB_DB || "spacetime-wiki";
 const WS_URL = `ws://${STDB_HOST}/v1/database/${DB_ID}/subscribe`;
 
 // ─── Types ───────────────────────────────────────────────────────────────────

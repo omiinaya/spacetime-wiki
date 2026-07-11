@@ -46,7 +46,7 @@ test.describe("Registration flow", () => {
 
   test("can register a new user with valid credentials", async ({ page }) => {
     const testEmail = `e2e_test_${Date.now()}@example.com`;
-    const testPassword = "TestPass123!";
+    const testPassword = process.env.TEST_PASSWORD || "";
 
     await page.getByRole("button", { name: "Register" }).click();
     await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();

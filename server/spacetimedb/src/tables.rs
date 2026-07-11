@@ -7,7 +7,7 @@ use spacetimedb::*;
 
 /// Records administrative and security events in the wiki.
 /// Used for audit trails — tracks who did what and when.
-#[table(accessor = audit_event, public)]
+#[table(accessor = audit_event)]
 #[derive(Debug, Clone)]
 pub struct AuditEvent {
     #[primary_key]
@@ -54,7 +54,7 @@ pub struct GroupMember {
     pub created_at: u64,
 }
 
-#[table(accessor = collection_group_permission, public)]
+#[table(accessor = collection_group_permission)]
 #[derive(Debug, Clone)]
 /// Permissions granted to a group for a specific collection.
 pub struct CollectionGroupPermission {
@@ -109,7 +109,7 @@ pub struct Collection {
 }
 
 /// Membership linking a user to a collection with a specific role.
-#[table(accessor = collection_member, public)]
+#[table(accessor = collection_member)]
 #[derive(Debug, Clone)]
 pub struct CollectionMember {
     #[primary_key]
@@ -228,7 +228,7 @@ pub struct PageTag {
 
 // ─── Favorites ───────────────────────────────────────────────────────────────
 
-#[table(accessor = favorite, public)]
+#[table(accessor = favorite)]
 #[derive(Debug, Clone)]
 /// A bookmarked/favorited page for a user.
 pub struct Favorite {
@@ -243,7 +243,7 @@ pub struct Favorite {
 
 // ─── Comment Reactions ───────────────────────────────────────────────────────
 
-#[table(accessor = comment_reaction, public)]
+#[table(accessor = comment_reaction)]
 #[derive(Debug, Clone)]
 /// An emoji reaction on a comment.
 pub struct CommentReaction {
@@ -314,7 +314,7 @@ pub struct ApiKey {
 
 // ─── Webhooks ────────────────────────────────────────────────────────────────
 
-#[table(accessor = webhook, public)]
+#[table(accessor = webhook)]
 #[derive(Debug, Clone)]
 /// A configured webhook that fires on wiki events.
 pub struct Webhook {
@@ -330,7 +330,7 @@ pub struct Webhook {
     pub updated_at: u64,
 }
 
-#[table(accessor = webhook_event, public)]
+#[table(accessor = webhook_event)]
 #[derive(Debug, Clone)]
 /// A single webhook delivery attempt.
 pub struct WebhookEvent {
@@ -351,7 +351,7 @@ pub struct WebhookEvent {
 
 // ─── Collection Sort Rules ───────────────────────────────────────────────────
 
-#[table(accessor = collection_sort_rule, public)]
+#[table(accessor = collection_sort_rule)]
 #[derive(Debug, Clone)]
 pub struct CollectionSortRule {
     #[primary_key]
@@ -365,7 +365,7 @@ pub struct CollectionSortRule {
 
 // ─── Search Results ──────────────────────────────────────────────────────────
 
-#[table(accessor = search_result, public)]
+#[table(accessor = search_result)]
 #[derive(Debug, Clone)]
 pub struct SearchResult {
     #[primary_key]
@@ -381,7 +381,7 @@ pub struct SearchResult {
 
 // ─── SAML Providers ──────────────────────────────────────────────────────────
 
-#[table(accessor = saml_provider, public)]
+#[table(accessor = saml_provider)]
 #[derive(Debug, Clone)]
 pub struct SamlProvider {
     #[primary_key]
@@ -402,7 +402,7 @@ pub struct SamlProvider {
 
 // ─── OIDC Providers ──────────────────────────────────────────────────────────
 
-#[table(accessor = oidc_provider, public)]
+#[table(accessor = oidc_provider)]
 #[derive(Debug, Clone)]
 pub struct OidcProvider {
     #[primary_key]
@@ -421,7 +421,7 @@ pub struct OidcProvider {
 
 // ─── LDAP Providers ────────────────────────────────────────────────���─────────
 
-#[table(accessor = ldap_provider, public)]
+#[table(accessor = ldap_provider)]
 #[derive(Debug, Clone)]
 pub struct LdapProvider {
     #[primary_key]
@@ -446,7 +446,7 @@ pub struct LdapProvider {
     pub updated_at: u64,
 }
 
-#[table(accessor = ldap_user, public)]
+#[table(accessor = ldap_user)]
 #[derive(Debug, Clone)]
 pub struct LdapUser {
     #[primary_key]
@@ -463,7 +463,7 @@ pub struct LdapUser {
 
 // ─── Page Views ──────────────────────────────────────────────────────────────
 
-#[table(accessor = page_view, public)]
+#[table(accessor = page_view)]
 #[derive(Debug, Clone)]
 pub struct PageView {
     #[primary_key]
@@ -477,7 +477,7 @@ pub struct PageView {
 
 // ─── App Settings ────────────────────────────────────────────────────────────
 
-#[table(accessor = app_setting, public)]
+#[table(accessor = app_setting)]
 #[derive(Debug, Clone)]
 pub struct AppSetting {
     #[primary_key]
@@ -488,7 +488,7 @@ pub struct AppSetting {
 
 // ─── Collab (Yjs) ────────────────────────────────────────────────────────────
 
-#[table(accessor = collab_update, public)]
+#[table(accessor = collab_update)]
 #[derive(Debug, Clone)]
 pub struct CollabUpdate {
     #[primary_key]
@@ -500,7 +500,7 @@ pub struct CollabUpdate {
     pub created_at: u64,
 }
 
-#[table(accessor = collab_session, public)]
+#[table(accessor = collab_session)]
 #[derive(Debug, Clone)]
 pub struct CollabSession {
     #[primary_key]
@@ -517,7 +517,7 @@ pub struct CollabSession {
 
 // ─── AI ──────────────────────────────────────────────────────────────────────
 
-#[table(accessor = ai_config, public)]
+#[table(accessor = ai_config)]
 #[derive(Debug, Clone)]
 pub struct AiConfig {
     #[primary_key]
@@ -526,7 +526,7 @@ pub struct AiConfig {
     pub updated_at: u64,
 }
 
-#[table(accessor = ai_chat_session, public)]
+#[table(accessor = ai_chat_session)]
 #[derive(Debug, Clone)]
 pub struct AiChatSession {
     #[primary_key]
@@ -538,7 +538,7 @@ pub struct AiChatSession {
     pub updated_at: u64,
 }
 
-#[table(accessor = ai_chat_message, public)]
+#[table(accessor = ai_chat_message)]
 #[derive(Debug, Clone)]
 pub struct AiChatMessage {
     #[primary_key]
@@ -570,7 +570,7 @@ pub struct ScimProvider {
     pub updated_at: u64,
 }
 
-#[table(accessor = scim_event, public)]
+#[table(accessor = scim_event)]
 #[derive(Debug, Clone)]
 pub struct ScimEvent {
     #[primary_key]
@@ -604,7 +604,7 @@ pub struct PasskeyCredential {
     pub last_used_at: u64,
 }
 
-#[table(accessor = passkey_challenge, public)]
+#[table(accessor = passkey_challenge)]
 #[derive(Debug, Clone)]
 pub struct PasskeyChallenge {
     #[primary_key]
@@ -617,7 +617,7 @@ pub struct PasskeyChallenge {
 
 // ─── Database (inline tables in pages) ───────────────────────────────────────
 
-#[table(accessor = db_base, public)]
+#[table(accessor = db_base)]
 #[derive(Debug, Clone)]
 pub struct DbBase {
     #[primary_key]
@@ -631,7 +631,7 @@ pub struct DbBase {
     pub updated_at: u64,
 }
 
-#[table(accessor = db_column, public)]
+#[table(accessor = db_column)]
 #[derive(Debug, Clone)]
 pub struct DbColumn {
     #[primary_key]
@@ -646,7 +646,7 @@ pub struct DbColumn {
     pub updated_at: u64,
 }
 
-#[table(accessor = db_row, public)]
+#[table(accessor = db_row)]
 #[derive(Debug, Clone)]
 pub struct DbRow {
     #[primary_key]
@@ -659,7 +659,7 @@ pub struct DbRow {
     pub updated_at: u64,
 }
 
-#[table(accessor = db_cell, public)]
+#[table(accessor = db_cell)]
 #[derive(Debug, Clone)]
 pub struct DbCell {
     #[primary_key]
@@ -675,7 +675,7 @@ pub struct DbCell {
 
 // ─── Invitations ─────────────────────────────────────────────────────────────
 
-#[table(accessor = invitation, public)]
+#[table(accessor = invitation)]
 #[derive(Debug, Clone)]
 /// An email invitation to join the wiki.
 pub struct Invitation {
@@ -699,7 +699,7 @@ pub struct Invitation {
 
 // ─── Synced Blocks ───────────────────────────────────────────────────────────
 
-#[table(accessor = synced_block, public)]
+#[table(accessor = synced_block)]
 #[derive(Debug, Clone)]
 pub struct SyncedBlock {
     #[primary_key]
@@ -712,7 +712,7 @@ pub struct SyncedBlock {
     pub updated_by: String,
 }
 
-#[table(accessor = synced_block_ref, public)]
+#[table(accessor = synced_block_ref)]
 #[derive(Debug, Clone)]
 pub struct SyncedBlockRef {
     #[primary_key]
@@ -727,7 +727,7 @@ pub struct SyncedBlockRef {
 
 // ─── MFA ─────────────────────────────────────────────────────────────────────
 
-#[table(accessor = mfa_method, public)]
+#[table(accessor = mfa_method)]
 #[derive(Debug, Clone)]
 pub struct MfaMethod {
     #[primary_key]
@@ -741,7 +741,7 @@ pub struct MfaMethod {
     pub updated_at: u64,
 }
 
-#[table(accessor = mfa_backup_code, public)]
+#[table(accessor = mfa_backup_code)]
 #[derive(Debug, Clone)]
 pub struct MfaBackupCode {
     #[primary_key]
@@ -755,7 +755,7 @@ pub struct MfaBackupCode {
 
 // ─── Watch / Notifications ───────────────────────────────────────────────────
 
-#[table(accessor = watch, public)]
+#[table(accessor = watch)]
 #[derive(Debug, Clone)]
 /// A user subscription to notifications for a page or collection.
 pub struct Watch {
@@ -769,7 +769,7 @@ pub struct Watch {
     pub created_at: u64,
 }
 
-#[table(accessor = notification, public)]
+#[table(accessor = notification)]
 #[derive(Debug, Clone)]
 /// A notification event sent to a user.
 pub struct Notification {
@@ -790,7 +790,7 @@ pub struct Notification {
 
 // ─── Access Requests ─────────────────────────────────────────────────────────
 
-#[table(accessor = access_request, public)]
+#[table(accessor = access_request)]
 #[derive(Debug, Clone)]
 /// A user request to access a restricted page.
 pub struct AccessRequest {
@@ -831,7 +831,7 @@ pub struct OauthProvider {
     pub updated_at: u64,
 }
 
-#[table(accessor = oauth_user, public)]
+#[table(accessor = oauth_user)]
 #[derive(Debug, Clone)]
 pub struct OauthUser {
     #[primary_key]

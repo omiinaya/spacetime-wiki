@@ -34,7 +34,7 @@ import { WebhookSettings } from "../components/WebhookSettings";
 const sampleWebhooks = [
   {
     id: "wh1", name: "Slack Notifier", url: "https://hooks.slack.com/xxx",
-    events: JSON.stringify(["page.create", "page.update"]), secret: "whsec_test123",
+    events: JSON.stringify(["page.create", "page.update"]), secret: process.env.WEBHOOK_SECRET || "",
     is_active: true, created_at: 1000, created_by: "u1",
   },
   {
