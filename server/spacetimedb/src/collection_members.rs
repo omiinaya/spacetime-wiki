@@ -52,7 +52,6 @@ pub fn remove_collection_member(ctx: &ReducerContext, id: String) -> Result<(), 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_add_collection_member_with_valid_role() {

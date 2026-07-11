@@ -27,7 +27,6 @@ pub fn remove_tag(ctx: &ReducerContext, id: String) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_add_tag_lowercases_name() {

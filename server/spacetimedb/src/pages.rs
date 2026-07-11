@@ -133,7 +133,6 @@ pub fn restore_page(ctx: &ReducerContext, id: String) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_make_slug_via_helper() {

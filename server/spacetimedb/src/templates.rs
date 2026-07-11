@@ -36,7 +36,6 @@ pub fn create_from_template(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_mark_as_template_checks_page_exists() {

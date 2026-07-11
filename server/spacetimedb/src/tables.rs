@@ -853,6 +853,576 @@ pub struct OauthUser {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
+
+#[allow(dead_code)]
+#[cfg(test)]
+fn default_group() -> Group {
+    Group {
+        id: "g_default".into(),
+        name: String::new(),
+        description: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_collection() -> Collection {
+    Collection {
+        id: "c_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        description: String::new(),
+        parent_id: String::new(),
+        icon: String::new(),
+        color: String::new(),
+        sort_order: 0,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_page() -> Page {
+    Page {
+        id: "p_default".into(),
+        title: String::new(),
+        slug: String::new(),
+        content: String::new(),
+        text_content: String::new(),
+        collection_id: String::new(),
+        parent_page_id: String::new(),
+        status: String::new(),
+        icon: String::new(),
+        color: String::new(),
+        full_width: false,
+        is_pinned: false,
+        is_template: false,
+        template_id: String::new(),
+        sort_order: 0,
+        created_by: String::new(),
+        updated_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+        published_at: 0,
+        deleted_at: 0,
+        direction: String::new(),
+    }
+}
+
+#[cfg(test)]
+fn default_page_revision() -> PageRevision {
+    PageRevision {
+        id: "pr_default".into(),
+        page_id: String::new(),
+        title: String::new(),
+        content: String::new(),
+        edited_by: String::new(),
+        created_at: 0,
+        revision_number: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_comment() -> Comment {
+    Comment {
+        id: "cmt_default".into(),
+        page_id: String::new(),
+        parent_comment_id: String::new(),
+        user_id: String::new(),
+        body: String::new(),
+        text_anchor: String::new(),
+        is_resolved: false,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_attachment() -> Attachment {
+    Attachment {
+        id: "att_default".into(),
+        page_id: String::new(),
+        filename: String::new(),
+        mime_type: String::new(),
+        size_bytes: 0,
+        storage_key: String::new(),
+        uploaded_by: String::new(),
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_page_tag() -> PageTag {
+    PageTag {
+        id: "pt_default".into(),
+        page_id: String::new(),
+        name: String::new(),
+        value: String::new(),
+    }
+}
+
+#[cfg(test)]
+fn default_favorite() -> Favorite {
+    Favorite {
+        id: "fav_default".into(),
+        user_id: String::new(),
+        page_id: String::new(),
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_share_link() -> ShareLink {
+    ShareLink {
+        id: "sl_default".into(),
+        page_id: String::new(),
+        token: String::new(),
+        password_hash: String::new(),
+        created_by: String::new(),
+        expires_at: 0,
+        created_at: 0,
+        visit_count: 0,
+        brand_title: None,
+        brand_logo_url: None,
+    }
+}
+
+#[cfg(test)]
+fn default_page_permission() -> PagePermission {
+    PagePermission {
+        id: "pp_default".into(),
+        page_id: String::new(),
+        user_id: String::new(),
+        group_id: String::new(),
+        role: String::new(),
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_api_key() -> ApiKey {
+    ApiKey {
+        id: "ak_default".into(),
+        user_id: String::new(),
+        name: String::new(),
+        key_hash: String::new(),
+        key_prefix: String::new(),
+        last_used_at: 0,
+        created_at: 0,
+        expires_at: 0,
+        is_revoked: false,
+    }
+}
+
+#[cfg(test)]
+fn default_webhook() -> Webhook {
+    Webhook {
+        id: "wh_default".into(),
+        name: String::new(),
+        url: String::new(),
+        events: String::new(),
+        is_active: false,
+        secret: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_webhook_event() -> WebhookEvent {
+    WebhookEvent {
+        id: "we_default".into(),
+        webhook_id: String::new(),
+        event_type: String::new(),
+        page_id: String::new(),
+        payload: String::new(),
+        status: String::new(),
+        response_code: 0,
+        response_body: String::new(),
+        created_at: 0,
+        sent_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_collection_sort_rule() -> CollectionSortRule {
+    CollectionSortRule {
+        collection_id: String::new(),
+        sort_field: String::new(),
+        sort_direction: String::new(),
+        auto_apply: false,
+        updated_by: String::new(),
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_search_result() -> SearchResult {
+    SearchResult {
+        id: "sr_default".into(),
+        search_token: String::new(),
+        page_id: String::new(),
+        title: String::new(),
+        slug: String::new(),
+        excerpt: String::new(),
+        match_type: String::new(),
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_saml_provider() -> SamlProvider {
+    SamlProvider {
+        id: "saml_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        entity_id: String::new(),
+        sso_url: String::new(),
+        certificate: String::new(),
+        name_id_format: String::new(),
+        attribute_mapping: String::new(),
+        auto_register: false,
+        is_active: false,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_oidc_provider() -> OidcProvider {
+    OidcProvider {
+        id: "oidc_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        issuer_url: String::new(),
+        client_id: String::new(),
+        client_secret: String::new(),
+        scopes: String::new(),
+        is_active: false,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_ldap_provider() -> LdapProvider {
+    LdapProvider {
+        id: "ldap_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        host: String::new(),
+        port: 0,
+        is_secure: false,
+        bind_dn: String::new(),
+        bind_password: String::new(),
+        base_dn: String::new(),
+        user_filter: String::new(),
+        username_attribute: String::new(),
+        email_attribute: String::new(),
+        name_attribute: String::new(),
+        default_role: String::new(),
+        auto_register: false,
+        is_active: false,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_ldap_user() -> LdapUser {
+    LdapUser {
+        id: "lu_default".into(),
+        user_id: String::new(),
+        ldap_provider_id: String::new(),
+        dn: String::new(),
+        external_id: String::new(),
+        last_synced_at: 0,
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_page_view() -> PageView {
+    PageView {
+        id: "pv_default".into(),
+        page_id: String::new(),
+        user_id: String::new(),
+        viewer: String::new(),
+        viewed_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_app_setting() -> AppSetting {
+    AppSetting {
+        key: String::new(),
+        value: String::new(),
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_collab_update() -> CollabUpdate {
+    CollabUpdate {
+        id: "cu_default".into(),
+        page_id: String::new(),
+        update_data: String::new(),
+        user_id: String::new(),
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_collab_session() -> CollabSession {
+    CollabSession {
+        id: "cs_default".into(),
+        page_id: String::new(),
+        user_id: String::new(),
+        user_name: String::new(),
+        color: String::new(),
+        cursor_position: String::new(),
+        last_seen_at: 0,
+        joined_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_ai_config() -> AiConfig {
+    AiConfig {
+        key: String::new(),
+        value: String::new(),
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_ai_chat_message() -> AiChatMessage {
+    AiChatMessage {
+        id: "aim_default".into(),
+        session_id: String::new(),
+        role: String::new(),
+        content: String::new(),
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_scim_provider() -> ScimProvider {
+    ScimProvider {
+        id: "scim_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        api_token_hash: String::new(),
+        is_active: false,
+        default_role: String::new(),
+        auto_register: false,
+        deprovision_behavior: String::new(),
+        sync_groups: false,
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_passkey_credential() -> PasskeyCredential {
+    PasskeyCredential {
+        id: "pk_default".into(),
+        user_id: String::new(),
+        credential_id: String::new(),
+        public_key: String::new(),
+        counter: 0,
+        transports: String::new(),
+        device_name: String::new(),
+        created_at: 0,
+        last_used_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_passkey_challenge() -> PasskeyChallenge {
+    PasskeyChallenge {
+        challenge: String::new(),
+        user_handle: String::new(),
+        purpose: String::new(),
+        created_at: 0,
+        expires_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_db_base() -> DbBase {
+    DbBase {
+        id: "db_default".into(),
+        page_id: String::new(),
+        title: String::new(),
+        view_type: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_db_column() -> DbColumn {
+    DbColumn {
+        id: "dcol_default".into(),
+        base_id: String::new(),
+        name: String::new(),
+        field_type: String::new(),
+        options: String::new(),
+        sort_order: 0,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_db_cell() -> DbCell {
+    DbCell {
+        id: "dcell_default".into(),
+        row_id: String::new(),
+        column_id: String::new(),
+        value: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_invitation() -> Invitation {
+    Invitation {
+        id: "inv_default".into(),
+        email: String::new(),
+        invited_by: String::new(),
+        role: String::new(),
+        page_ids: String::new(),
+        collection_ids: String::new(),
+        token: String::new(),
+        status: String::new(),
+        message: String::new(),
+        expires_at: 0,
+        view_count: 0,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_synced_block() -> SyncedBlock {
+    SyncedBlock {
+        id: "sb_default".into(),
+        title: String::new(),
+        content: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+        updated_by: String::new(),
+    }
+}
+
+#[cfg(test)]
+fn default_mfa_method() -> MfaMethod {
+    MfaMethod {
+        id: "mfa_default".into(),
+        user_id: String::new(),
+        method_type: String::new(),
+        totp_secret: String::new(),
+        is_enabled: false,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_watch() -> Watch {
+    Watch {
+        id: "w_default".into(),
+        user_id: String::new(),
+        target_type: String::new(),
+        target_id: String::new(),
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_notification() -> Notification {
+    Notification {
+        id: "n_default".into(),
+        user_id: String::new(),
+        event_type: String::new(),
+        target_id: String::new(),
+        title: String::new(),
+        message: String::new(),
+        actor_id: String::new(),
+        icon: String::new(),
+        is_read: false,
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_access_request() -> AccessRequest {
+    AccessRequest {
+        id: "ar_default".into(),
+        page_id: String::new(),
+        requester_id: String::new(),
+        reason: String::new(),
+        status: String::new(),
+        responded_by: String::new(),
+        responded_at: 0,
+        created_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_oauth_provider() -> OauthProvider {
+    OauthProvider {
+        id: "oa_default".into(),
+        name: String::new(),
+        slug: String::new(),
+        provider_type: String::new(),
+        authorize_url: String::new(),
+        token_url: String::new(),
+        userinfo_url: String::new(),
+        scope: String::new(),
+        client_id: String::new(),
+        client_secret: String::new(),
+        icon: String::new(),
+        is_active: false,
+        auto_register: false,
+        default_role: String::new(),
+        created_by: String::new(),
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
+fn default_oauth_user() -> OauthUser {
+    OauthUser {
+        id: "ou_default".into(),
+        user_id: String::new(),
+        provider_id: String::new(),
+        external_id: String::new(),
+        external_username: String::new(),
+        external_email: String::new(),
+        access_token: String::new(),
+        refresh_token: String::new(),
+        token_expires_at: 0,
+        last_synced_at: 0,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1421,580 +1991,5 @@ mod tests {
             ..default_oauth_user()
         };
         assert_eq!(ou.external_username, "alice");
-    }
-}
-
-// ─── Default instances for testing ───────────────────────────────────────────
-
-#[cfg(test)]
-fn default_group() -> Group {
-    Group {
-        id: "g_default".into(),
-        name: String::new(),
-        description: String::new(),
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_collection() -> Collection {
-    Collection {
-        id: "c_default".into(),
-        name: String::new(),
-        slug: String::new(),
-        description: String::new(),
-        parent_id: String::new(),
-        icon: String::new(),
-        color: String::new(),
-        sort_order: 0,
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_page() -> Page {
-    Page {
-        id: "p_default".into(),
-        title: String::new(),
-        slug: String::new(),
-        content: String::new(),
-        text_content: String::new(),
-        collection_id: String::new(),
-        parent_page_id: String::new(),
-        status: String::new(),
-        icon: String::new(),
-        color: String::new(),
-        full_width: false,
-        is_pinned: false,
-        is_template: false,
-        template_id: String::new(),
-        sort_order: 0,
-        created_by: String::new(),
-        updated_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-        published_at: 0,
-        deleted_at: 0,
-        direction: String::new(),
-    }
-}
-
-#[cfg(test)]
-fn default_page_revision() -> PageRevision {
-    PageRevision {
-        id: "pr_default".into(),
-        page_id: String::new(),
-        title: String::new(),
-        content: String::new(),
-        edited_by: String::new(),
-        created_at: 0,
-        revision_number: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_comment() -> Comment {
-    Comment {
-        id: "cmt_default".into(),
-        page_id: String::new(),
-        parent_comment_id: String::new(),
-        user_id: String::new(),
-        body: String::new(),
-        text_anchor: String::new(),
-        is_resolved: false,
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_attachment() -> Attachment {
-    Attachment {
-        id: "att_default".into(),
-        page_id: String::new(),
-        filename: String::new(),
-        mime_type: String::new(),
-        size_bytes: 0,
-        storage_key: String::new(),
-        uploaded_by: String::new(),
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_page_tag() -> PageTag {
-    PageTag {
-        id: "pt_default".into(),
-        page_id: String::new(),
-        name: String::new(),
-        value: String::new(),
-    }
-}
-
-#[cfg(test)]
-fn default_favorite() -> Favorite {
-    Favorite {
-        id: "fav_default".into(),
-        user_id: String::new(),
-        page_id: String::new(),
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_share_link() -> ShareLink {
-    ShareLink {
-        id: "sl_default".into(),
-        page_id: String::new(),
-        token: String::new(),
-        password_hash: String::new(),
-        created_by: String::new(),
-        expires_at: 0,
-        created_at: 0,
-        visit_count: 0,
-        brand_title: None,
-        brand_logo_url: None,
-    }
-}
-
-#[cfg(test)]
-fn default_page_permission() -> PagePermission {
-    PagePermission {
-        id: "pp_default".into(),
-        page_id: String::new(),
-        user_id: String::new(),
-        group_id: String::new(),
-        role: String::new(),
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_api_key() -> ApiKey {
-    ApiKey {
-        id: "ak_default".into(),
-        user_id: String::new(),
-        name: String::new(),
-        key_hash: String::new(),
-        key_prefix: String::new(),
-        last_used_at: 0,
-        created_at: 0,
-        expires_at: 0,
-        is_revoked: false,
-    }
-}
-
-#[cfg(test)]
-fn default_webhook() -> Webhook {
-    Webhook {
-        id: "wh_default".into(),
-        name: String::new(),
-        url: String::new(),
-        events: String::new(),
-        is_active: false,
-        secret: String::new(),
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_webhook_event() -> WebhookEvent {
-    WebhookEvent {
-        id: "we_default".into(),
-        webhook_id: String::new(),
-        event_type: String::new(),
-        page_id: String::new(),
-        payload: String::new(),
-        status: String::new(),
-        response_code: 0,
-        response_body: String::new(),
-        created_at: 0,
-        sent_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_collection_sort_rule() -> CollectionSortRule {
-    CollectionSortRule {
-        collection_id: String::new(),
-        sort_field: String::new(),
-        sort_direction: String::new(),
-        auto_apply: false,
-        updated_by: String::new(),
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_search_result() -> SearchResult {
-    SearchResult {
-        id: "sr_default".into(),
-        search_token: String::new(),
-        page_id: String::new(),
-        title: String::new(),
-        slug: String::new(),
-        excerpt: String::new(),
-        match_type: String::new(),
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_saml_provider() -> SamlProvider {
-    SamlProvider {
-        id: "saml_default".into(),
-        name: String::new(),
-        slug: String::new(),
-        entity_id: String::new(),
-        sso_url: String::new(),
-        certificate: String::new(),
-        name_id_format: String::new(),
-        attribute_mapping: String::new(),
-        auto_register: false,
-        is_active: false,
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_oidc_provider() -> OidcProvider {
-    OidcProvider {
-        id: "oidc_default".into(),
-        name: String::new(),
-        slug: String::new(),
-        issuer_url: String::new(),
-        client_id: String::new(),
-        client_secret: String::new(),
-        scopes: String::new(),
-        is_active: false,
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_ldap_provider() -> LdapProvider {
-    LdapProvider {
-        id: "ldap_default".into(),
-        name: String::new(),
-        slug: String::new(),
-        host: String::new(),
-        port: 0,
-        is_secure: false,
-        bind_dn: String::new(),
-        bind_password: String::new(),
-        base_dn: String::new(),
-        user_filter: String::new(),
-        username_attribute: String::new(),
-        email_attribute: String::new(),
-        name_attribute: String::new(),
-        default_role: String::new(),
-        auto_register: false,
-        is_active: false,
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_ldap_user() -> LdapUser {
-    LdapUser {
-        id: "lu_default".into(),
-        user_id: String::new(),
-        ldap_provider_id: String::new(),
-        dn: String::new(),
-        external_id: String::new(),
-        last_synced_at: 0,
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_page_view() -> PageView {
-    PageView {
-        id: "pv_default".into(),
-        page_id: String::new(),
-        user_id: String::new(),
-        viewer: String::new(),
-        viewed_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_app_setting() -> AppSetting {
-    AppSetting {
-        key: String::new(),
-        value: String::new(),
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_collab_update() -> CollabUpdate {
-    CollabUpdate {
-        id: "cu_default".into(),
-        page_id: String::new(),
-        update_data: String::new(),
-        user_id: String::new(),
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_collab_session() -> CollabSession {
-    CollabSession {
-        id: "cs_default".into(),
-        page_id: String::new(),
-        user_id: String::new(),
-        user_name: String::new(),
-        color: String::new(),
-        cursor_position: String::new(),
-        last_seen_at: 0,
-        joined_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_ai_config() -> AiConfig {
-    AiConfig {
-        key: String::new(),
-        value: String::new(),
-        updated_at: 0,
-    }
-}
-
-
-#[cfg(test)]
-fn default_ai_chat_message() -> AiChatMessage {
-    AiChatMessage {
-        id: "aim_default".into(),
-        session_id: String::new(),
-        role: String::new(),
-        content: String::new(),
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_scim_provider() -> ScimProvider {
-    ScimProvider {
-        id: "scim_default".into(),
-        name: String::new(),
-        slug: String::new(),
-        api_token_hash: String::new(),
-        is_active: false,
-        default_role: String::new(),
-        auto_register: false,
-        deprovision_behavior: String::new(),
-        sync_groups: false,
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-
-#[cfg(test)]
-fn default_passkey_credential() -> PasskeyCredential {
-    PasskeyCredential {
-        id: "pk_default".into(),
-        user_id: String::new(),
-        credential_id: String::new(),
-        public_key: String::new(),
-        counter: 0,
-        transports: String::new(),
-        device_name: String::new(),
-        created_at: 0,
-        last_used_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_passkey_challenge() -> PasskeyChallenge {
-    PasskeyChallenge {
-        challenge: String::new(),
-        user_handle: String::new(),
-        purpose: String::new(),
-        created_at: 0,
-        expires_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_db_base() -> DbBase {
-    DbBase {
-        id: "db_default".into(),
-        page_id: String::new(),
-        title: String::new(),
-        view_type: String::new(),
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_db_column() -> DbColumn {
-    DbColumn {
-        id: "dcol_default".into(),
-        base_id: String::new(),
-        name: String::new(),
-        field_type: String::new(),
-        options: String::new(),
-        sort_order: 0,
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-
-#[cfg(test)]
-fn default_db_cell() -> DbCell {
-    DbCell {
-        id: "dcell_default".into(),
-        row_id: String::new(),
-        column_id: String::new(),
-        value: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_invitation() -> Invitation {
-    Invitation {
-        id: "inv_default".into(),
-        email: String::new(),
-        invited_by: String::new(),
-        role: String::new(),
-        page_ids: String::new(),
-        collection_ids: String::new(),
-        token: String::new(),
-        status: String::new(),
-        message: String::new(),
-        expires_at: 0,
-        view_count: 0,
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_synced_block() -> SyncedBlock {
-    SyncedBlock {
-        id: "sb_default".into(),
-        title: String::new(),
-        content: String::new(),
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-        updated_by: String::new(),
-    }
-}
-
-
-#[cfg(test)]
-fn default_mfa_method() -> MfaMethod {
-    MfaMethod {
-        id: "mfa_default".into(),
-        user_id: String::new(),
-        method_type: String::new(),
-        totp_secret: String::new(),
-        is_enabled: false,
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-
-#[cfg(test)]
-fn default_watch() -> Watch {
-    Watch {
-        id: "w_default".into(),
-        user_id: String::new(),
-        target_type: String::new(),
-        target_id: String::new(),
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_notification() -> Notification {
-    Notification {
-        id: "n_default".into(),
-        user_id: String::new(),
-        event_type: String::new(),
-        target_id: String::new(),
-        title: String::new(),
-        message: String::new(),
-        actor_id: String::new(),
-        icon: String::new(),
-        is_read: false,
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_access_request() -> AccessRequest {
-    AccessRequest {
-        id: "ar_default".into(),
-        page_id: String::new(),
-        requester_id: String::new(),
-        reason: String::new(),
-        status: String::new(),
-        responded_by: String::new(),
-        responded_at: 0,
-        created_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_oauth_provider() -> OauthProvider {
-    OauthProvider {
-        id: "oa_default".into(),
-        name: String::new(),
-        slug: String::new(),
-        provider_type: String::new(),
-        authorize_url: String::new(),
-        token_url: String::new(),
-        userinfo_url: String::new(),
-        scope: String::new(),
-        client_id: String::new(),
-        client_secret: String::new(),
-        icon: String::new(),
-        is_active: false,
-        auto_register: false,
-        default_role: String::new(),
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
-}
-
-#[cfg(test)]
-fn default_oauth_user() -> OauthUser {
-    OauthUser {
-        id: "ou_default".into(),
-        user_id: String::new(),
-        provider_id: String::new(),
-        external_id: String::new(),
-        external_username: String::new(),
-        external_email: String::new(),
-        access_token: String::new(),
-        refresh_token: String::new(),
-        token_expires_at: 0,
-        last_synced_at: 0,
-        created_at: 0,
-        updated_at: 0,
     }
 }

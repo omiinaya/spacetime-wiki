@@ -57,7 +57,6 @@ pub fn purge_expired_trash(ctx: &ReducerContext) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_set_app_setting_upsert() {
