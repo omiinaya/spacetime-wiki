@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     rate_limit: str = os.getenv("RATE_LIMIT", "100/minute")
     auto_star_repo: bool = os.getenv("AUTO_STAR_REPO", "false").lower() in ("1", "true", "yes")
     debug: bool = os.getenv("DEBUG", "true").lower() in ("1", "true", "yes", "")
+    cors_origins: list[str] = os.getenv("CORS_ORIGINS", "http://localhost:5184,https://wiki.example.com").split(",")
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
