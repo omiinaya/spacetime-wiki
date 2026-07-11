@@ -11,6 +11,13 @@ export default defineConfig({
     css: true,
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist"],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/test/**', 'src/**/*.d.ts', 'src/module_bindings/**'],
+      reportsDirectory: './coverage',
+    },
   },
   resolve: {
     alias: {
