@@ -4,7 +4,7 @@
 
 **Repository:** https://github.com/omiinaya/spacetime-wiki
 **Tech Stack:** React 19 + TypeScript 5.9 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
-**Stats (verified today):** 50 tables, 17 Rust files (7,232 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 201 Rust unit tests ✅, 1,194 frontend tests ✅, 79 E2E tests ⚠️ (variable quality), 14 integration tests ✅, 107 remaining `any` types, 10 Rust unused-import warnings
+**Stats (verified today):** 50 tables, 17 Rust files (7,232 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 201 Rust unit tests ✅, 1,194 frontend tests ✅, 79 E2E tests ⚠️ (variable quality), 14 integration tests ✅, 106 remaining `any` types, 10 Rust unused-import warnings
 
 ---
 
@@ -74,7 +74,7 @@
 
 ## 🟡 Medium Priority (P3) — Code quality, UX, i18n, DX
 
-### P3 — 107 remaining `any` type usages
+### P3 — 106 remaining `any` type usages
 - **Files:** 41 files across `web/src/`
 - **Status:** 🟡 Largely reduced (was 273). Remaining are in:
   - `SyncedBlock.tsx` — ProseMirror node rendering (15+ occurrences, hard to type due to polymorphic ProseMirror schema)
@@ -169,7 +169,7 @@
 | P2 — API server multi-stage Dockerfile | Multi-stage with HEALTHCHECK, non-root user | ✅ DONE |
 | P2 — Auto-star config flag | Behind `AUTO_STAR_REPO` env var (default false) | ✅ DONE |
 | P3 — App.tsx refactored | Was ~2,000 lines, now 31 lines | ✅ DONE |
-| P3 — 273→107 `any` types | Heavy reduction in helpers.ts, Transclusion.tsx, PageEditor.tsx, PageView.tsx | ✅ DONE |
+| P3 — 273→106 `any` types | Heavy reduction in helpers.ts, Transclusion.tsx, PageEditor.tsx, PageView.tsx | ✅ DONE |
 | P3 — Clippy warnings | All 4 clippy warnings fixed (cargo clippy passes clean) | ✅ DONE |
 | P3 — API pagination | pages.py has `limit`/`offset` params (was claimed missing) | ✅ DONE |
 | P3 — Security headers (nginx) | X-Frame-Options, X-Content-Type-Options, HSTS, CSP, Permissions-Policy all done | ✅ DONE |
@@ -193,7 +193,7 @@
 | **Rust module** | 17 `.rs` | 7,232 | 201 unit ✅, 14 integ | 🟡 35/50 tables private, 15 remain public for SQL queries / 🔴 10 unused imports |
 | **API server** | 16 `.py` | 3,690 | 0 unit | 🔴 CORS broken / ⚠️ bypasses STDB permissions |
 | **MCP server** | 4 `.py` | 1,715 | 0 unit | ✅ error handling done / ✅ pagination done |
-| **Frontend** | ~170 `.ts/.tsx` | — | 56 files / 1,194 tests | ✅ all passing / 🟡 107 `any` remaining |
+| **Frontend** | ~170 `.ts/.tsx` | — | 56 files / 1,194 tests | ✅ all passing / 🟡 106 `any` remaining |
 | **E2E** | 14 `.ts` | ~ | 79 tests | ⚠️ 27 soft assertions / 5 skipped / Chromium only |
 | **Infra** | 4 Dockerfiles + compose | — | — | ✅ deploy/release workflows / ✅ multi-stage builds |
 
@@ -210,7 +210,7 @@
 | **CORS correctness** | No `*` — env var defaults to specific origins | **100%** ✅ |
 | **Other security** | CSP, HSTS, headers done | **90%** |
 | **Rust code quality** | Clean, well-organized, all clippy passed | **90%** |
-| **TS code quality** | 107 `any` remain (down from 273) | **80%** |
+| **TS code quality** | 106 `any` remain (down from 273) | **80%** |
 | **Python code quality** | Error handling done, pagination done | **85%** |
 | **CI/CD** | 3 jobs, tests + lint + deploy | **100%** |
 | **Documentation** | ROADMAP ✅ updated, AGENTS.md ✅ updated | **85%** |
