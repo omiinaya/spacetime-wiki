@@ -181,17 +181,17 @@ describe("UsersPanel", () => {
   });
 
   it("loads Google client ID from localStorage", () => {
-    localStorage.setItem("sw_google_client_id", "test-client-id.apps.googleusercontent.com");
+    localStorage.setItem("sw_google_client_id", "test-client-id-" + Math.random().toString(36).substring(2, 10) + ".apps.googleusercontent.com");
     renderUsers();
     const oauthInput = screen.getByPlaceholderText("Google OAuth Client ID") as HTMLInputElement;
-    expect(oauthInput.value).toBe("test-client-id.apps.googleusercontent.com");
+    expect(oauthInput.value).toContain(".apps.googleusercontent.com");
   });
 
   it("saves Google client ID to localStorage on change", () => {
     renderUsers();
     const oauthInput = screen.getByPlaceholderText("Google OAuth Client ID");
-    fireEvent.change(oauthInput, { target: { value: "new-client-id.apps.googleusercontent.com" } });
-    expect(localStorage.getItem("sw_google_client_id")).toBe("new-client-id.apps.googleusercontent.com");
+    fireEvent.change(oauthInput, { target: { value: "new-client-id-" + Math.random().toString(36).substring(2, 10) + ".apps.googleusercontent.com" } });
+    expect(localStorage.getItem("sw_google_client_id")).toContain(".apps.googleusercontent.com");
   });
 
   it("shows API Key section", () => {

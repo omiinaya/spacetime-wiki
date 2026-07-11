@@ -53,8 +53,7 @@ pub fn resolve_comment(ctx: &ReducerContext, id: String) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
+    
     #[test]
     fn test_add_comment_uses_helpers() {
         assert!(crate::helpers::make_comment_excerpt("u", "p", "hello").contains("hello"));
