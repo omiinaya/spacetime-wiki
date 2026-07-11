@@ -1,0 +1,7 @@
+node_modules
+dist
+target
+server/spacetimedb
+.git
+*.lock
+package-lock.json

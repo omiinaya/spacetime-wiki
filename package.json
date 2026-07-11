@@ -6,10 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
-    "lint": "cd web && npm run lint",
-    "lint:fix": "cd web && npm run lint:fix",
-    "format": "cd web && npm run format",
-    "format:check": "cd web && npm run format:check"
+    "lint": "eslint . --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern target --ignore-pattern server/spacetimedb --ignore-pattern .git",
+    "lint:fix": "eslint . --fix --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern target --ignore-pattern server/spacetimedb --ignore-pattern .git",
+    "format": "prettier --write '**/*.{ts,tsx,js,jsx,json,css,md}' --ignore-path .prettierignore",
+    "format:check": "prettier --check '**/*.{ts,tsx,js,jsx,json,css,md}' --ignore-path .prettierignore"
   },
   "lint-staged": {
     "web/src/**/*.{ts,tsx,js,jsx,json,css,md}": [
@@ -30,7 +30,13 @@
   },
   "homepage": "https://github.com/omiinaya/spacetime-wiki#readme",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.7.0",
+    "eslint-plugin-prettier": "^5.5.6",
+    "globals": "^17.7.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.8"
+    "lint-staged": "^17.0.8",
+    "prettier": "^3.9.5",
+    "typescript-eslint": "^8.63.0"
   }
 }
