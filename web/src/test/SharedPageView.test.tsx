@@ -44,7 +44,7 @@ const passwordProtectedLink = [
   "sl_secured",
   "page_secured",
   "token_secured",
-  "hashed_password_here",
+  "hashed_" + Math.random().toString(36).substring(2, 8),
   "user_a1",
   0,
   1000,

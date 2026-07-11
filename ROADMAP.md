@@ -121,7 +121,7 @@
 - **Fix:** Run codebase scan and update file stats + module map
 - **Effort:** 30 min
 
-### P3 — Add pagination to MCP list tools
+### P3 — Add pagination to MCP list tools ✅ DONE
 - **Files:** `server/mcp-server/server.py`, `server/mcp-server/stdb_client.py`
 - **Status:** ❌ Not done
 - **Issue:** `wiki_list_pages` and `wiki_search` have no `limit`/`offset` params
@@ -203,7 +203,7 @@
 |-------|-------|-----|-------|--------|
 | **Rust module** | 17 `.rs` | 7,232 | 201 unit ✅, 14 integ | 🔴 50/50 tables public (0% security) / 🔴 10 unused imports |
 | **API server** | 16 `.py` | 3,690 | 0 unit | 🔴 CORS broken / ⚠️ bypasses STDB permissions |
-| **MCP server** | 4 `.py` | 1,715 | 0 unit | ✅ error handling done / ❌ no pagination |
+| **MCP server** | 4 `.py` | 1,715 | 0 unit | ✅ error handling done / ✅ pagination done |
 | **Frontend** | ~170 `.ts/.tsx` | — | 56 files / 1,194 tests | ✅ all passing / 🟡 107 `any` remaining |
 | **E2E** | 14 `.ts` | ~ | 79 tests | ⚠️ 27 soft assertions / 5 skipped / Chromium only |
 | **Infra** | 4 Dockerfiles + compose | — | — | ✅ deploy/release workflows / ✅ multi-stage builds |
@@ -239,7 +239,7 @@ The codebase is otherwise solid. The Rust module is well-structured with good do
 
 The features are genuinely implemented — this isn't a skeleton. Tiptap editor extensions, Yjs real-time collaboration, SSO/OAuth/LDAP, WebAuthn passkeys, MFA, SCIM provisioning, webhooks, ZIP import/export, AI assistant chat — all built and wired up.
 
-The E2E tests exist in number (79) but ~1/3 use soft assertions that won't catch regressions. The MCP server needs pagination. The AGENTS.md needs updating. But those are polish items compared to the two critical security issues.
+The E2E tests exist in number (79) but ~1/3 use soft assertions that won't catch regressions. The MCP server already has pagination on all list/search tools. The AGENTS.md needs updating. But those are polish items compared to the two critical security issues.
 
 ---
 
@@ -262,7 +262,7 @@ The E2E tests exist in number (79) but ~1/3 use soft assertions that won't catch
 
 ### Sprint 4 — Developer experience (2-3 hours)
 1. Fix 10 unused Rust imports
-2. Add pagination to MCP tools
+2. Add pagination to MCP tools ✅ done
 3. Update AGENTS.md
 4. Add cargo test to pre-commit hook
 5. Add coverage tracking to CI

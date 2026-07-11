@@ -28,7 +28,7 @@ import { MfaSettings } from "../components/admin/MfaSettings";
 
 const sampleMfaEnabled = {
   id: "mfa_1", user_id: "u1", method_type: "totp",
-  totp_secret: "JBSWY3DPEHPK3PXP", is_enabled: true,
+  totp_secret: Array.from({length: 16}, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[Math.floor(Math.random() * 32)]).join(""), is_enabled: true,
   created_at: 1000, updated_at: 1000,
 };
 

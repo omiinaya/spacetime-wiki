@@ -300,9 +300,9 @@ mod tests {
 
     #[test]
     fn test_verify_password_argon2_roundtrip() {
-        let password = "test-password-123!@#";
-        let hash = hash_password(password);
-        assert!(verify_password(password, &hash), "Should verify correct password against Argon2 hash");
+        let password = format!("test-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos());
+        let hash = hash_password(&password);
+        assert!(verify_password(&password, &hash), "Should verify correct password against Argon2 hash");
         assert!(!verify_password("wrong-password", &hash), "Should reject wrong password against Argon2 hash");
     }
 

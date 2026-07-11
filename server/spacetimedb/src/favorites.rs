@@ -25,8 +25,7 @@ pub fn toggle_favorite(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
+    
     #[test]
     fn test_toggle_favorite_adds_when_not_exists() {
         let storage: Vec<(String, String)> = vec![];
