@@ -1,6 +1,6 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── API Keys ────────────────────────────────────────────────────────────────
 
@@ -34,7 +34,12 @@ pub fn create_api_key(
 
 #[reducer]
 pub fn revoke_api_key(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let mut key = ctx.db.api_key().id().find(id).ok_or_else(|| "API key not found".to_string())?;
+    let mut key = ctx
+        .db
+        .api_key()
+        .id()
+        .find(id)
+        .ok_or_else(|| "API key not found".to_string())?;
     key.is_revoked = true;
     ctx.db.api_key().id().update(key);
     Ok(())
@@ -42,7 +47,12 @@ pub fn revoke_api_key(ctx: &ReducerContext, id: String) -> Result<(), String> {
 
 #[reducer]
 pub fn update_api_key_usage(ctx: &ReducerContext, id: String) -> Result<(), String> {
-    let mut key = ctx.db.api_key().id().find(id).ok_or_else(|| "API key not found".to_string())?;
+    let mut key = ctx
+        .db
+        .api_key()
+        .id()
+        .find(id)
+        .ok_or_else(|| "API key not found".to_string())?;
     key.last_used_at = now_ms(ctx);
     ctx.db.api_key().id().update(key);
     Ok(())

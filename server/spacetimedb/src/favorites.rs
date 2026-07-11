@@ -1,6 +1,6 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Favorites ───────────────────────────────────────────────────────────────
 
@@ -11,13 +11,19 @@ pub fn toggle_favorite(
     user_id: String,
     page_id: String,
 ) -> Result<(), String> {
-    let existing = ctx.db.favorite().iter()
+    let existing = ctx
+        .db
+        .favorite()
+        .iter()
         .find(|f| f.user_id == user_id && f.page_id == page_id);
     if let Some(fav) = existing {
         ctx.db.favorite().id().delete(&fav.id);
     } else {
         ctx.db.favorite().insert(Favorite {
-            id, user_id, page_id, created_at: now_ms(ctx),
+            id,
+            user_id,
+            page_id,
+            created_at: now_ms(ctx),
         });
     }
     Ok(())
@@ -25,7 +31,7 @@ pub fn toggle_favorite(
 
 #[cfg(test)]
 mod tests {
-    
+
     #[test]
     fn test_toggle_favorite_adds_when_not_exists() {
         let storage: Vec<(String, String)> = vec![];

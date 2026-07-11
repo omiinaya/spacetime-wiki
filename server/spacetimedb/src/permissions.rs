@@ -1,6 +1,6 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Groups ───────────────────────────────────────────────────────────────────
 
@@ -45,7 +45,12 @@ pub fn update_group(
     name: String,
     description: String,
 ) -> Result<(), String> {
-    let mut group = ctx.db.group().id().find(id).ok_or_else(|| "Group not found".to_string())?;
+    let mut group = ctx
+        .db
+        .group()
+        .id()
+        .find(id)
+        .ok_or_else(|| "Group not found".to_string())?;
     group.name = name;
     group.description = description;
     group.updated_at = now_ms(ctx);
@@ -60,7 +65,12 @@ pub fn delete_group(ctx: &ReducerContext, id: String) -> Result<(), String> {
         ctx.db.group_member().id().delete(&member.id);
     }
     // Remove all collection permissions for this group
-    for perm in ctx.db.collection_group_permission().iter().filter(|p| p.group_id == id) {
+    for perm in ctx
+        .db
+        .collection_group_permission()
+        .iter()
+        .filter(|p| p.group_id == id)
+    {
         ctx.db.collection_group_permission().id().delete(&perm.id);
     }
     ctx.db.group().id().delete(&id);
@@ -77,14 +87,20 @@ pub fn add_group_member(
     added_by: String,
 ) -> Result<(), String> {
     let user_exists = ctx.db.user().iter().any(|u| u.id == user_id);
-    let already_member = ctx.db.group_member().iter()
+    let already_member = ctx
+        .db
+        .group_member()
+        .iter()
         .any(|m| m.group_id == group_id && m.user_id == user_id);
-    is_valid_group_member_add(user_exists, already_member)
-        .map_err(|e| e.to_string())?;
+    is_valid_group_member_add(user_exists, already_member).map_err(|e| e.to_string())?;
     let role_clean = normalize_group_role(&role);
     if ctx.db.group_member().id().find(&id).is_none() {
         ctx.db.group_member().insert(GroupMember {
-            id, group_id, user_id, role: role_clean, added_by,
+            id,
+            group_id,
+            user_id,
+            role: role_clean,
+            added_by,
             created_at: now_ms(ctx),
         });
     }
@@ -100,7 +116,12 @@ pub fn update_group_member_role(
     if !valid_group_role(&new_role) {
         return Err("Invalid role. Must be admin or member".into());
     }
-    let mut member = ctx.db.group_member().id().find(id).ok_or_else(|| "Group member not found".to_string())?;
+    let mut member = ctx
+        .db
+        .group_member()
+        .id()
+        .find(id)
+        .ok_or_else(|| "Group member not found".to_string())?;
     member.role = new_role;
     ctx.db.group_member().id().update(member);
     Ok(())
@@ -122,7 +143,10 @@ pub fn set_collection_group_permission(
     group_id: String,
     role: String,
 ) -> Result<(), String> {
-    let existing = ctx.db.collection_group_permission().iter()
+    let existing = ctx
+        .db
+        .collection_group_permission()
+        .iter()
         .find(|p| p.collection_id == collection_id && p.group_id == group_id);
     if let Some(perm) = existing {
         let mut p = perm;
@@ -131,10 +155,15 @@ pub fn set_collection_group_permission(
         return Ok(());
     }
     let role_clean = normalize_collection_permission_role(&role);
-    ctx.db.collection_group_permission().insert(CollectionGroupPermission {
-        id, collection_id, group_id, role: role_clean,
-        created_at: now_ms(ctx),
-    });
+    ctx.db
+        .collection_group_permission()
+        .insert(CollectionGroupPermission {
+            id,
+            collection_id,
+            group_id,
+            role: role_clean,
+            created_at: now_ms(ctx),
+        });
     Ok(())
 }
 
@@ -162,9 +191,17 @@ pub fn set_page_permission(
     let role_clean = normalize_page_permission_role(&role);
 
     let existing = ctx.db.page_permission().iter().find(|p| {
-        p.page_id == page_id &&
-        (if !user_id.is_empty() { p.user_id == user_id } else { false }) &&
-        (if !group_id.is_empty() { p.group_id == group_id } else { false })
+        p.page_id == page_id
+            && (if !user_id.is_empty() {
+                p.user_id == user_id
+            } else {
+                false
+            })
+            && (if !group_id.is_empty() {
+                p.group_id == group_id
+            } else {
+                false
+            })
     });
 
     if let Some(perm) = existing {
@@ -206,18 +243,33 @@ pub fn valid_page_permission_role(role: &str) -> bool {
 }
 
 pub fn normalize_group_role(role: &str) -> String {
-    if valid_group_role(role) { role.to_string() } else { "member".to_string() }
+    if valid_group_role(role) {
+        role.to_string()
+    } else {
+        "member".to_string()
+    }
 }
 
 pub fn normalize_collection_permission_role(role: &str) -> String {
-    if valid_collection_permission_role(role) { role.to_string() } else { "viewer".to_string() }
+    if valid_collection_permission_role(role) {
+        role.to_string()
+    } else {
+        "viewer".to_string()
+    }
 }
 
 pub fn normalize_page_permission_role(role: &str) -> String {
-    if valid_page_permission_role(role) { role.to_string() } else { "viewer".to_string() }
+    if valid_page_permission_role(role) {
+        role.to_string()
+    } else {
+        "viewer".to_string()
+    }
 }
 
-pub fn is_valid_group_member_add(user_exists: bool, already_member: bool) -> Result<(), &'static str> {
+pub fn is_valid_group_member_add(
+    user_exists: bool,
+    already_member: bool,
+) -> Result<(), &'static str> {
     if !user_exists {
         return Err("User not found");
     }
@@ -342,7 +394,10 @@ mod tests {
     fn test_is_valid_group_member_add_rejects_duplicate() {
         let result = is_valid_group_member_add(true, true);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "User is already a member of this group");
+        assert_eq!(
+            result.unwrap_err(),
+            "User is already a member of this group"
+        );
     }
 
     #[test]

@@ -1,11 +1,15 @@
-use spacetimedb::*;
 use crate::*;
 
 // ─── Templates ──────────────────────────────────────────────────────────────
 
 #[reducer]
 pub fn mark_as_template(ctx: &ReducerContext, id: String, is_template: bool) -> Result<(), String> {
-    let mut page = ctx.db.page().id().find(id).ok_or_else(|| "Page not found".to_string())?;
+    let mut page = ctx
+        .db
+        .page()
+        .id()
+        .find(id)
+        .ok_or_else(|| "Page not found".to_string())?;
     page.is_template = is_template;
     page.updated_at = now_ms(ctx);
     ctx.db.page().id().update(page);
@@ -21,10 +25,20 @@ pub fn create_from_template(
     collection_id: String,
     created_by: String,
 ) -> Result<(), String> {
-    let template = ctx.db.page().iter().find(|p| p.id == template_id && p.is_template).ok_or_else(|| "Template not found".to_string())?;
+    let template = ctx
+        .db
+        .page()
+        .iter()
+        .find(|p| p.id == template_id && p.is_template)
+        .ok_or_else(|| "Template not found".to_string())?;
     create_page(
-        ctx, new_id.clone(), title, template.content,
-        collection_id, String::new(), created_by,
+        ctx,
+        new_id.clone(),
+        title,
+        template.content,
+        collection_id,
+        String::new(),
+        created_by,
     )?;
     // Mark which template was used
     if let Some(mut new_page) = ctx.db.page().id().find(new_id) {

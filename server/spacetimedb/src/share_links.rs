@@ -1,6 +1,6 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Share Links ─────────────────────────────────────────────────────────────
 
@@ -27,8 +27,14 @@ pub fn create_share_link(
     };
     if ctx.db.share_link().id().find(&id).is_none() {
         ctx.db.share_link().insert(ShareLink {
-            id, page_id, token, password_hash, created_by,
-            expires_at, created_at: now, visit_count: 0,
+            id,
+            page_id,
+            token,
+            password_hash,
+            created_by,
+            expires_at,
+            created_at: now,
+            visit_count: 0,
             brand_title: None,
             brand_logo_url: None,
         });
@@ -49,7 +55,12 @@ pub fn update_share_branding(
     brand_title: Option<String>,
     brand_logo_url: Option<String>,
 ) -> Result<(), String> {
-    let mut share = ctx.db.share_link().id().find(&share_id).ok_or_else(|| "Share link not found".to_string())?;
+    let mut share = ctx
+        .db
+        .share_link()
+        .id()
+        .find(&share_id)
+        .ok_or_else(|| "Share link not found".to_string())?;
     share.brand_title = brand_title;
     share.brand_logo_url = brand_logo_url;
     ctx.db.share_link().id().update(share);
@@ -62,15 +73,19 @@ pub fn verify_share_password(
     token: String,
     password: String,
 ) -> Result<(), String> {
-    let share = ctx.db.share_link().iter().find(|s| s.token == token).ok_or_else(|| "Invalid share link".to_string())?;
+    let share = ctx
+        .db
+        .share_link()
+        .iter()
+        .find(|s| s.token == token)
+        .ok_or_else(|| "Invalid share link".to_string())?;
     let now = now_ms(ctx);
     if share.expires_at > 0 && now > share.expires_at {
         return Err("Share link has expired".into());
     }
-    if !share.password_hash.is_empty()
-        && !verify_password(&password, &share.password_hash) {
-            return Err("Incorrect password".into());
-        }
+    if !share.password_hash.is_empty() && !verify_password(&password, &share.password_hash) {
+        return Err("Incorrect password".into());
+    }
     // Increment visit count
     let mut share_mut = share;
     share_mut.visit_count += 1;
@@ -80,7 +95,12 @@ pub fn verify_share_password(
 
 #[reducer]
 pub fn visit_share_link(ctx: &ReducerContext, token: String) -> Result<(), String> {
-    let share = ctx.db.share_link().iter().find(|s| s.token == token).ok_or_else(|| "Invalid share link".to_string())?;
+    let share = ctx
+        .db
+        .share_link()
+        .iter()
+        .find(|s| s.token == token)
+        .ok_or_else(|| "Invalid share link".to_string())?;
     let now = now_ms(ctx);
     if share.expires_at > 0 && now > share.expires_at {
         return Err("Share link has expired".into());
@@ -96,7 +116,7 @@ pub fn visit_share_link(ctx: &ReducerContext, token: String) -> Result<(), Strin
 
 #[cfg(test)]
 mod tests {
-    
+
     #[test]
     fn test_create_share_link_expiry() {
         let now = 5000u64;
@@ -108,7 +128,10 @@ mod tests {
     fn test_create_share_link_password_hashing() {
         let password = "secret123";
         let hash = crate::helpers::hash_password(password);
-        assert!(hash.starts_with("$argon2id$"), "Hash should be Argon2 PHC format");
+        assert!(
+            hash.starts_with("$argon2id$"),
+            "Hash should be Argon2 PHC format"
+        );
         let empty_password = "";
         assert!(empty_password.is_empty());
     }

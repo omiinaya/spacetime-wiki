@@ -1,6 +1,6 @@
-use spacetimedb::*;
-use crate::tables::*;
 use crate::helpers::*;
+use crate::tables::*;
+use spacetimedb::*;
 
 // ─── Collection Members ──────────────────────────────────────────────────────
 
@@ -13,7 +13,10 @@ pub fn add_collection_member(
     role: String,
     added_by: String,
 ) -> Result<(), String> {
-    let existing = ctx.db.collection_member().iter()
+    let existing = ctx
+        .db
+        .collection_member()
+        .iter()
         .find(|m| m.collection_id == collection_id && m.user_id == user_id);
     if existing.is_some() {
         return Err("User is already a member of this collection".into());
@@ -21,7 +24,11 @@ pub fn add_collection_member(
     let role_clean = sanitize_collection_role(&role);
     if ctx.db.collection_member().id().find(&id).is_none() {
         ctx.db.collection_member().insert(CollectionMember {
-            id, collection_id, user_id, role: role_clean, added_by,
+            id,
+            collection_id,
+            user_id,
+            role: role_clean,
+            added_by,
             created_at: now_ms(ctx),
         });
     }
@@ -38,7 +45,12 @@ pub fn update_collection_member_role(
     if !valid_roles.contains(&new_role.as_str()) {
         return Err("Invalid role. Must be admin, editor, or viewer".into());
     }
-    let mut member = ctx.db.collection_member().id().find(id).ok_or_else(|| "Member not found".to_string())?;
+    let mut member = ctx
+        .db
+        .collection_member()
+        .id()
+        .find(id)
+        .ok_or_else(|| "Member not found".to_string())?;
     member.role = new_role;
     ctx.db.collection_member().id().update(member);
     Ok(())
@@ -65,7 +77,10 @@ mod tests {
 
     #[test]
     fn test_add_collection_member_with_invalid_role_defaults_to_viewer() {
-        assert_eq!(crate::helpers::sanitize_collection_role("unknown"), "viewer");
+        assert_eq!(
+            crate::helpers::sanitize_collection_role("unknown"),
+            "viewer"
+        );
         assert_eq!(crate::helpers::sanitize_collection_role("member"), "viewer");
         assert_eq!(crate::helpers::sanitize_collection_role(""), "viewer");
     }
