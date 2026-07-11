@@ -262,7 +262,7 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | Metric | Count |
 |--------|-------|
 | **STDB Reducers** | 140 (67 in `lib.rs`, 73 across 14 module files) |
-| **STDB Tables** | 50 (all `#[table(public)])` |
+| **STDB Tables** | 50 (35 private, 15 remain public for SQL queries) |
 | **Rust Tests** | 201 unit (Rust) + 14 integration (Python) |
 | **Frontend Test Files** | 56 |
 | **Frontend Tests** | 1,194 (Vitest) |
