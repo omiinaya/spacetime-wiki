@@ -1,5 +1,5 @@
 """Collection CRUD endpoints."""
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from stdb_client import sql_query, call_reducer, map_collection
 from models import (

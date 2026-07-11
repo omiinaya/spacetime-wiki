@@ -19,6 +19,19 @@ class Settings(BaseSettings):
     debug: bool = os.getenv("DEBUG", "true").lower() in ("1", "true", "yes", "")
     cors_origins: list[str] = os.getenv("CORS_ORIGINS", "http://localhost:5184,https://wiki.example.com").split(",")
 
+    @property
+    def cors_origins_safe(self) -> list[str]:
+        """Return validated CORS origins, preventing wildcard with credentials."""
+        origins = self.cors_origins
+        if "*" in origins:
+            import warnings
+            warnings.warn(
+                "CORS_ORIGINS contains \* which is unsafe with allow_credentials=True. "
+                "Falling back to specific origins."
+            )
+            return ["http://localhost:5184", "http://localhost:8711", "https://wiki.example.com"]
+        return origins
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 

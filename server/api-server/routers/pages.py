@@ -1,6 +1,6 @@
 """Page CRUD endpoints."""
 from typing import Annotated
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from stdb_client import (
     sql_query,
@@ -58,7 +58,8 @@ async def list_pages(
 
 
 @router.get("/{page_id}", response_model=PageResponse)
-async def get_page(page_id: str):
+async def get_page(request: Request, page_id: str):
+    await check_page_access(request, page_id, "viewer")
     """Get a single page by ID."""
     rows = await sql_query("SELECT * FROM page WHERE id = ?", page_id)
     if not rows:
