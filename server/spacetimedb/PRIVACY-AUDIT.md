@@ -1,12 +1,12 @@
 # Privacy Audit — Public Table Data Exposure
 
 **Date:** 2026-07-05
-**Audit scope:** All 50 `#[table(public)]` tables in `tables.rs`
+**Audit scope:** Originally all 50 #[table(public)] tables in tables.rs. **As of current: 35 now private, 15 remain public.**
+
 **Method:** Source code review of field-level sensitivity
 
 ## Summary
-
-**50 of 50 tables** are declared `public`. That means every field in every table is readable by any SpacetimeDB client that can connect to the database — there is no row-level or field-level access control at the STDB layer. Authentication and authorization are handled entirely in the API server (FastAPI) and frontend. Anyone who can connect to the STDB port (3001) directly can bypass all application-level permissions and read everything.
+**35 of 50 tables** are now private (15 remain public for API SQL queries).
 
 ### Why this matters
 
