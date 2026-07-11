@@ -23,14 +23,24 @@ class Settings(BaseSettings):
     def cors_origins_safe(self) -> list[str]:
         """Return validated CORS origins, preventing wildcard with credentials."""
         origins = self.cors_origins
-        if "*" in origins:
-            import warnings
-            warnings.warn(
-                "CORS_ORIGINS contains \* which is unsafe with allow_credentials=True. "
-                "Falling back to specific origins."
-            )
-            return ["http://localhost:5184", "http://localhost:8711", "https://wiki.example.com"]
-        return origins
+        unsafe = False
+        validated = []
+        for o in origins:
+            o = o.strip()
+            if not o:
+                continue
+            if "*" in o:
+                unsafe = True
+                import warnings
+                warnings.warn(
+                    f"CORS_ORIGINS contains wildcard pattern {o!r} which is unsafe "
+                    "with allow_credentials=True. Removing it."
+                )
+            else:
+                validated.append(o)
+        if unsafe and not validated:
+            validated = ["http://localhost:5184", "http://localhost:8711", "https://wiki.example.com"]
+        return validated
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
