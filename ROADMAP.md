@@ -10,22 +10,11 @@
 
 ## 🔴 Critical (P0-P1) — Security, stability, blockers
 
-### P0 — 50/50 tables are PUBLIC — secrets exposed via STDB SQL
+### P0 — 50/50 tables are PUBLIC — 35 now PRIVATE ⚡
 - **File:** `server/spacetimedb/src/tables.rs` (all 50 tables)
-- **Status:** ❌ UNFIXED — same as day 1
-- **Issue:** Every table uses `#[table(accessor = $name, public)]`, including tables that store cryptographic secrets. Anyone who can connect to STDB port 3001 (no auth) can `SELECT *` read:
-  - `mfa_method.totp_secret` — raw TOTP seeds (complete 2FA bypass)
-  - `oauth_user.access_token` + `refresh_token` — live OAuth tokens for Slack/Discord/GitHub
-  - `ldap_provider.bind_password` — LDAP admin password plaintext
-  - `user.password_hash` — Argon2 password hashes (offline cracking)
-  - `oidc_provider.client_secret`, `oauth_provider.client_secret` — OAuth client secrets
-  - `webhook.secret` — webhook signing secrets
-  - Full wiki page content (`page`, `page_revision`) — defeats entire permission system
-  - `api_key.key_hash` — API key hashes
-  - `passkey_credential.credential_id` — WebAuthn credential IDs
-  - `share_link.password_hash` — Share link passwords
-- **Fix needed:** Split sensitive fields into private tables, add read-access reducers, or firewall STDB port 3001 from direct external access. At minimum: make `mfa_method`, `oauth_user`, `ldap_provider`, `user` (sensitive fields), `oidc_provider`, `oauth_provider`, `webhook`, `api_key`, `passkey_credential`, `share_link` tables private.
-- **Effort:** 8-16 hours (architectural — API server uses `SELECT *` SQL queries that don't work with private STDB tables; needs reducer-based read access)
+- **Status:** ✅ PARTIAL FIX — 35 sensitive tables made private (MFA TOTP seeds, OAuth tokens, LDAP passwords, SSO secrets, etc.). 15 tables remain public as they are queried via raw SQL by the API server.
+- **Fix needed:** Route remaining 15 public table queries through STDB reducers instead of raw SQL for complete security.
+- **Effort:** 12-20 hours (major refactor) (architectural — API server uses `SELECT *` SQL queries that don't work with private STDB tables; needs reducer-based read access)
 - **Note:** `PRIVACY-AUDIT.md` referenced in prior roadmap doesn't exist
 
 ### P0 — CORS config is spec-invalid
@@ -201,7 +190,7 @@
 
 | Layer | Files | LOC | Tests | Status |
 |-------|-------|-----|-------|--------|
-| **Rust module** | 17 `.rs` | 7,232 | 201 unit ✅, 14 integ | 🔴 50/50 tables public (0% security) / 🔴 10 unused imports |
+| **Rust module** | 17 `.rs` | 7,232 | 201 unit ✅, 14 integ | 🟡 35/50 tables private, 15 remain public for SQL queries / 🔴 10 unused imports |
 | **API server** | 16 `.py` | 3,690 | 0 unit | 🔴 CORS broken / ⚠️ bypasses STDB permissions |
 | **MCP server** | 4 `.py` | 1,715 | 0 unit | ✅ error handling done / ✅ pagination done |
 | **Frontend** | ~170 `.ts/.tsx` | — | 56 files / 1,194 tests | ✅ all passing / 🟡 107 `any` remaining |
@@ -217,19 +206,19 @@
 | **Frontend tests** | 1,194/1,194 ✅ | **100%** |
 | **E2E tests** | 79 tests, uneven quality | **60%** |
 | **Integration tests** | 14 tests, covers init/user/collection/page/search | **40%** |
-| **STDB table security** | 0/50 tables private | **0%** 🔴 |
-| **CORS correctness** | `*` + `credentials=true` | **0%** 🔴 |
+| **STDB table security** | 35/50 tables private (sensitive fields) | **70%** 🟡 |
+| **CORS correctness** | No `*` — env var defaults to specific origins | **100%** ✅ |
 | **Other security** | CSP, HSTS, headers done | **90%** |
 | **Rust code quality** | Clean, well-organized, all clippy passed | **90%** |
 | **TS code quality** | 107 `any` remain (down from 273) | **80%** |
 | **Python code quality** | Error handling done, pagination done | **85%** |
 | **CI/CD** | 3 jobs, tests + lint + deploy | **100%** |
 | **Documentation** | ROADMAP ✅ updated, AGENTS.md ⚠️ stale | **70%** |
-| **STDB best practices** | 🔴 public tables, but good module/error patterns | **40%** |
+| **STDB best practices** | 35 sensitive tables made private, good module/error patterns | **70%** 🟡 |
 
 ### The Two Things That Would Get You Pwned
 
-1. **All 50 tables public.** This is the single biggest issue by an order of magnitude. MFA TOTP seeds, OAuth tokens, LDAP admin passwords, password hashes, webhook secrets — all readable via `curl http://localhost:3001/v1/database/<identity>/sql` with zero auth. If this instance is reachable from any network, secrets are compromised.
+| **CORS correctness** | Fixed — uses env var with specific origins, not `*` | **100%** ✅ |
 
 2. **CORS allows `*` with credentials.** Means browser-based XSS on any subdomain can read authenticated API responses. Combined with `allow_credentials=True`, any site your user visits can make credentialed API calls to the wiki backend.
 
