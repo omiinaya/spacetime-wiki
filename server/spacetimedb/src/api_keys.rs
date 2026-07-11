@@ -50,7 +50,6 @@ pub fn update_api_key_usage(ctx: &ReducerContext, id: String) -> Result<(), Stri
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_create_api_key_expiry() {

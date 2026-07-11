@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn test_toggle_favorite_removes_when_exists() {
-        let storage = vec![("u1".to_string(), "p1".to_string())];
+        let storage = [("u1".to_string(), "p1".to_string())];
         let exists = storage.iter().any(|(uid, pid)| uid == "u1" && pid == "p1");
         assert!(exists);
     }

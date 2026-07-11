@@ -26,7 +26,6 @@ pub fn add_attachment(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_add_attachment_stores_fields() {

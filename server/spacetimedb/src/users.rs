@@ -87,7 +87,6 @@ pub fn update_user_avatar(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_register_user_validates_roles() {
