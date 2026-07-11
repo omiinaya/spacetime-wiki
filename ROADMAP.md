@@ -213,7 +213,7 @@
 | **TS code quality** | 107 `any` remain (down from 273) | **80%** |
 | **Python code quality** | Error handling done, pagination done | **85%** |
 | **CI/CD** | 3 jobs, tests + lint + deploy | **100%** |
-| **Documentation** | ROADMAP ✅ updated, AGENTS.md ⚠️ stale | **70%** |
+| **Documentation** | ROADMAP ✅ updated, AGENTS.md ✅ updated | **85%** |
 | **STDB best practices** | 35 sensitive tables made private, good module/error patterns | **70%** 🟡 |
 
 ### The Two Things That Would Get You Pwned
