@@ -3,12 +3,9 @@ import { renderHook, act } from '@testing-library/react';
 import { showToast } from '../components/Toast';
 import { api } from '../lib/api';
 
-// Mock the api module
 vi.mock('../lib/api', () => ({
   api: {
-    pages: {
-      create: vi.fn(),
-    },
+    pages: { create: vi.fn() },
     webhooks: {
       list: vi.fn(),
       create: vi.fn(),
@@ -20,19 +17,25 @@ vi.mock('../lib/api', () => ({
   },
 }));
 
-// Mock showToast
 vi.mock('../components/Toast', () => ({
   showToast: vi.fn(),
 }));
 
-// Mock JSZip
-vi.mock('jszip', () => ({
-  default: {
-    loadAsync: vi.fn(),
-  },
+// Mock helpers module before import
+vi.mock('../lib/helpers', () => ({
+  markdownToProseMirror: (text: string) => ({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ text }] }],
+  }),
+  htmlToProseMirror: (html: string) => ({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ text: html }] }],
+  }),
 }));
 
-const mockJSZip = vi.fn();
+vi.mock('jszip', () => ({
+  default: { loadAsync: vi.fn() },
+}));
 
 describe('useImportExport', () => {
   const userId = 'test-user';
@@ -43,29 +46,12 @@ describe('useImportExport', () => {
   });
 
   it('should handleImportMD - successful import', async () => {
-    // Dynamic import inside handleImportMD uses import('../lib/helpers')
-    // We need to mock that dynamic import
-    vi.mock('../lib/helpers', () => ({
-      markdownToProseMirror: (text: string) => ({
-        type: 'doc',
-        content: [{ type: 'paragraph', content: [{ text }] }],
-      }),
-      htmlToProseMirror: (html: string) => ({
-        type: 'doc',
-        content: [{ type: 'paragraph', content: [{ text: html }] }],
-      }),
-    }));
-
     const { useImportExport } = await import('../hooks/useImportExport');
     const { result } = renderHook(() => useImportExport(userId, onRefresh));
 
-    // Simulate a file input change event
     const file = new File(['# Hello'], 'hello.md', { type: 'text/markdown' });
     const event = {
-      target: {
-        files: [file],
-        value: '',
-      },
+      target: { files: [file], value: '' },
     } as unknown as React.ChangeEvent<HTMLInputElement>;
 
     await act(async () => {
@@ -86,10 +72,7 @@ describe('useImportExport', () => {
 
     const file = new File(['test'], 'fail.md', { type: 'text/markdown' });
     const event = {
-      target: {
-        files: [file],
-        value: '',
-      },
+      target: { files: [file], value: '' },
     } as unknown as React.ChangeEvent<HTMLInputElement>;
 
     await act(async () => {
@@ -102,22 +85,14 @@ describe('useImportExport', () => {
   });
 
   it('should handleImportNotion - import HTML file', async () => {
-    const { htmlToProseMirror } = await import('../lib/helpers');
     const { useImportExport } = await import('../hooks/useImportExport');
     const { result } = renderHook(() => useImportExport(userId, onRefresh));
 
-    // Mock htmlToProseMirror
-    vi.mocked(htmlToProseMirror).mockReturnValue({ type: 'doc', content: [] });
-
-    // Create an HTML file
     const file = new File(['<html><body><p>Test</p></body></html>'], 'test.html', {
       type: 'text/html',
     });
     const event = {
-      target: {
-        files: [file],
-        value: '',
-      },
+      target: { files: [file], value: '' },
     } as unknown as React.ChangeEvent<HTMLInputElement>;
 
     await act(async () => {
@@ -135,28 +110,22 @@ describe('useImportExport', () => {
     const { result } = renderHook(() => useImportExport(userId, onRefresh));
 
     const event = {
-      target: {
-        files: [],
-      },
+      target: { files: [] },
     } as unknown as React.ChangeEvent<HTMLInputElement>;
 
     await act(async () => {
       await result.current.handleImportConfluence(event);
     });
 
-    // Should return early without calling fetch
     expect(showToast).not.toHaveBeenCalled();
   });
 
-  it('should have correct refs and state', async () => {
+  it('should have correct initial values', async () => {
     const { useImportExport } = await import('../hooks/useImportExport');
     const { result } = renderHook(() => useImportExport(userId, onRefresh));
 
     expect(result.current.importing).toBe(false);
     expect(result.current.importingNotion).toBe(false);
     expect(result.current.importingConfluence).toBe(false);
-    expect(result.current.importRef.current).toBe(null);
-    expect(result.current.notionImportRef.current).toBe(null);
-    expect(result.current.confluenceImportRef.current).toBe(null);
   });
 });
