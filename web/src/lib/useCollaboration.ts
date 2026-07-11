@@ -25,9 +25,9 @@ interface UseCollabResult {
   /** The STDB-backed Yjs provider (for cursor updates) */
   provider: YjsStdbProvider;
   /** Tiptap Collaboration extension config – spread into extensions array */
-  collaborationExtension: any;
+  collaborationExtension: unknown;
   /** Tiptap CollaborationCursor extension config – spread into extensions array */
-  collaborationCursorExtension: any;
+  collaborationCursorExtension: unknown;
   /** Other users currently editing this page */
   remoteUsers: RemoteUser[];
   /** Whether collaboration is active */
@@ -88,8 +88,8 @@ export function useCollaboration(
       return;
     }
     const others = sessions
-      .filter((s: any) => s.user_id !== userId)
-      .map((s: any) => ({
+      .filter((s: unknown) => s.user_id !== userId)
+      .map((s: unknown) => ({
         userId: s.user_id,
         userName: s.user_name,
         color: s.color,
@@ -108,7 +108,7 @@ export function useCollaboration(
   // Build CollaborationCursor extension config (v3 API)
   // Uses the provider's awareness if available, otherwise provides minimal noop
   const collaborationCursorExtension = CollaborationCursor.configure({
-    provider: providerRef.current as any,
+    provider: providerRef.current as unknown,
     user: {
       name: userName || "Unknown",
       color: userId ? getColorForUser(userId) : "#4A90D9",
@@ -117,7 +117,7 @@ export function useCollaboration(
 
   return {
     ydoc,
-    provider: providerRef.current as any,
+    provider: providerRef.current as unknown,
     collaborationExtension,
     collaborationCursorExtension,
     remoteUsers,

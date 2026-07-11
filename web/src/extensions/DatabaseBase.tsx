@@ -7,7 +7,7 @@ import { api, DbBase, DbColumn, DbRow, DbCell } from "../lib/api";
 // ─── Options ─────────────────────────────────────────────────────────────────
 
 export interface DatabaseBaseOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module "@tiptap/core" {
@@ -208,7 +208,7 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
       // Load all cells
       const allCells = await api.databases.cells.listForBase(baseId);
       setCells(allCells);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(String(err));
     }
     setLoading(false);
@@ -237,7 +237,7 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
         }
         return [...prev, { id: "", row_id: rowId, column_id: colId, value, created_at: Date.now(), updated_at: Date.now() }];
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(String(err));
     }
     setEditingCell(null);
@@ -252,7 +252,7 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
       const newRowId = await api.databases.rows.create(baseId, rows.length, "editor");
       // Reload to get fresh data
       await loadData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(String(err));
     }
   };
@@ -264,7 +264,7 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
       await api.databases.rows.delete(rowId);
       setRows(prev => prev.filter(r => r.id !== rowId));
       setCells(prev => prev.filter(c => c.row_id !== rowId));
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(String(err));
     }
   };
@@ -279,7 +279,7 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
       setNewColumnType("text");
       setAddingColumn(false);
       await loadData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(String(err));
     }
   };

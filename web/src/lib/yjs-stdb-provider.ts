@@ -43,7 +43,7 @@ export class YjsStdbProvider {
   private color: string;
   private broadcastDebounce: ReturnType<typeof setTimeout> | null = null;
   private destroyed = false;
-  private updateHandler: ((update: Uint8Array, origin: any) => void) | null = null;
+  private updateHandler: ((update: Uint8Array, origin: unknown) => void) | null = null;
 
   constructor(pageId: string, userId: string, userName: string) {
     this.doc = new Y.Doc();
@@ -79,7 +79,7 @@ export class YjsStdbProvider {
     }
 
     // 4. Register observer to broadcast local edits
-    this.updateHandler = (update: Uint8Array, origin: any) => {
+    this.updateHandler = (update: Uint8Array, origin: unknown) => {
       if (origin === this || origin === "remote") return; // ignore own broadcasts and remote updates
       this.scheduleBroadcast(update);
     };

@@ -128,7 +128,7 @@ export function OAuthSettings({ userId }: { userId: string | null }) {
       }
       setDialogOpen(false);
       await loadProviders();
-    } catch (err: any) { setError(`Failed to save: ${err.message || err}`); }
+    } catch (err: unknown) { setError(`Failed to save: ${err.message || err}`); }
   };
 
   // Provider icon helper

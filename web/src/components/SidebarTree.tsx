@@ -118,8 +118,8 @@ export function SidebarTree({
           </div>
           {expanded && (
             <>
-              {(col as any).children.length > 0 && renderColTree((col as any).children as any, depth + 1)}
-              {colPages.slice(0, pageLimits[col.id] || PAGE_LIMIT).map((page: any) => (
+              {(col as unknown).children.length > 0 && renderColTree((col as unknown).children as unknown, depth + 1)}
+              {colPages.slice(0, pageLimits[col.id] || PAGE_LIMIT).map((page: unknown) => (
                 <div key={page.id} draggable onDragStart={(e) => handleDragStart(e, page.id)}
                   onDragOver={(e) => handleDragOver(e, page.id)} onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDropOnPage(e, page.id)} onDragEnd={handleDragEnd}
@@ -215,7 +215,7 @@ export function SidebarTree({
                   <Hash className="h-3.5 w-3.5" /> Uncategorized
                   <span className="text-[10px] text-muted-foreground/50 ml-auto">{pagesByCollection["uncategorized"].length}</span>
                 </button>
-                {expandedCollections.has("uncategorized") && pagesByCollection["uncategorized"].slice(0, pageLimits["uncategorized"] || PAGE_LIMIT).map((page: any) => (
+                {expandedCollections.has("uncategorized") && pagesByCollection["uncategorized"].slice(0, pageLimits["uncategorized"] || PAGE_LIMIT).map((page: unknown) => (
                   <div key={page.id} draggable onDragStart={(e) => handleDragStart(e, page.id)}
                     onDragOver={(e) => handleDragOver(e, page.id)} onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDropOnPage(e, page.id)} onDragEnd={handleDragEnd}

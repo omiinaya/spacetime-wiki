@@ -102,7 +102,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
 
       setPageId(link.page_id);
       setLoading(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(String(err));
       setLoading(false);
     }
@@ -140,7 +140,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
         setError("Share link disappeared");
       }
       setPasswordRequired(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setPasswordError(String(err));
     }
   };

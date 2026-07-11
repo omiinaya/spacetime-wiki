@@ -1,7 +1,7 @@
 import { Node, mergeAttributes, wrappingInputRule } from "@tiptap/core";
 
 export interface DetailsOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module "@tiptap/core" {

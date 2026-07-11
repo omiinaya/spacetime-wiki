@@ -387,7 +387,7 @@ export function getAllProviders(): EmbedProvider[] {
 // ─── Options ──────────────────────────────────────────────────────────────────
 
 export interface RichEmbedOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
   width: number;
   height: number;
 }
@@ -522,7 +522,7 @@ export const RichEmbed = Node.create<RichEmbedOptions>({
       setRichEmbed:
         (options) =>
         ({ commands }) => {
-          const attrs: Record<string, any> = { ...options };
+          const attrs: Record<string, unknown> = { ...options };
           if (!options.provider && options.src) {
             const info = buildEmbedUrl(options.src);
             if (info) {

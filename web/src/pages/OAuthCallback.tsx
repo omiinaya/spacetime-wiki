@@ -50,7 +50,7 @@ export default function OAuthCallback() {
         } else {
           throw new Error("No user returned from authentication");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         setStatus(`Error: ${err.message || err}`);
       }
     })();

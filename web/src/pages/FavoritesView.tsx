@@ -22,7 +22,7 @@ export default function FavoritesView() {
         if (!userId) { setLoading(false); return; }
 
         const rows = await api.favorites.list(userId);
-        const favPageIds = new Set((rows as any[][] || []).map((r: any) => String(r[2])));
+        const favPageIds = new Set((rows as unknown[][] || []).map((r: unknown) => String(r[2])));
         if (cancelled) return;
         const allPages = await api.pages.list();
         if (cancelled) return;

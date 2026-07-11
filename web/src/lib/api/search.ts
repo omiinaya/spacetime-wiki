@@ -13,7 +13,7 @@ export interface SearchResult {
     match_type: string;
   }>;
   query: string;
-  filters: any;
+  filters: unknown;
   total: number;
 }
 

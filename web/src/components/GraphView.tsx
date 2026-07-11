@@ -39,7 +39,7 @@ export default function GraphView() {
   const navigate = useNavigate();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const simulationRef = useRef<any>(null);
+  const simulationRef = useRef<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
@@ -128,7 +128,7 @@ export default function GraphView() {
 
         setGraphNodes(gNodes);
         setGraphLinks(gLinks);
-      } catch (e: any) {
+      } catch (e: unknown) {
         setError(e.message || "Failed to load graph data");
       } finally {
         setLoading(false);
@@ -196,8 +196,8 @@ export default function GraphView() {
       .on("dblclick", (_e, d) => { if (!d.isCollection) navigate(`/page/${d.id}`); });
 
     sim.on("tick", () => {
-      linkEls.attr("x1", d => (d.source as any).x).attr("y1", d => (d.source as any).y)
-        .attr("x2", d => (d.target as any).x).attr("y2", d => (d.target as any).y);
+      linkEls.attr("x1", d => (d.source as unknown).x).attr("y1", d => (d.source as unknown).y)
+        .attr("x2", d => (d.target as unknown).x).attr("y2", d => (d.target as unknown).y);
       nodeEls.attr("transform", d => `translate(${d.x},${d.y})`);
     });
 

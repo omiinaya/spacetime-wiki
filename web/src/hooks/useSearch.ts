@@ -74,7 +74,7 @@ export function useSearch(
     ];
 
     for (const p of patterns) {
-      clean = clean.replace(p.regex, p.apply as any);
+      clean = clean.replace(p.regex, p.apply as unknown);
     }
 
     clean = clean.replace(/\s+/g, " ").trim();

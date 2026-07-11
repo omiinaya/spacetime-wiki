@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from "react";
 // ─── Lazy katex loader ───────────────────────────────────────────────────────
 // Dynamically import katex (129K) only when a math node is rendered for the
 // first time. This avoids adding katex to the initial bundle.
-let _katex: any = null;
+let _katex: unknown = null;
 let _katexPromise: Promise<void> | null = null;
 
 function ensureKatex(): Promise<void> {
@@ -122,7 +122,7 @@ const MathInlineNodeView: React.FC<NodeViewProps> = ({ node }) => {
 // ─── Inline Math Node ($...$) ─────────────────────────────────────────────────
 
 export interface MathInlineOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module "@tiptap/core" {
@@ -347,7 +347,7 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
 // ─── Block Math Node ($$...$$) ────────────────────────────────────────────────
 
 export interface MathBlockOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module "@tiptap/core" {

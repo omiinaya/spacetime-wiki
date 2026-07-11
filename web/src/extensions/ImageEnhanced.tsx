@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 // ─── Image node options ───────────────────────────────────────────────────────
 
 export interface ImageEnhancedOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
   inline: boolean;
   allowBase64: boolean;
   onImageUpload?: (file: File) => Promise<string>;
@@ -296,7 +296,7 @@ export const ImageEnhanced = Node.create<ImageEnhancedOptions>({
     else justifyClass = " flex justify-center";
 
     // Children array
-    const children: any[] = [
+    const children: unknown[] = [
       [
         "div",
         { class: "relative inline-block" + justifyClass, style: `max-width:100%;` },

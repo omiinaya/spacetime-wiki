@@ -4,7 +4,7 @@ import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import { api, SyncedBlock as SyncedBlockType } from "../lib/api";
 
 export interface SyncedBlockOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module "@tiptap/core" {
@@ -105,34 +105,34 @@ export const SyncedBlockExtension = Node.create<SyncedBlockOptions>({
 /**
  * Recursively render ProseMirror JSON node tree as HTML elements.
  */
-function renderProseMirrorContent(node: any): any[] {
+function renderProseMirrorContent(node: unknown): unknown[] {
   if (!node) return [];
   if (node.type === "doc" && node.content) {
-    return node.content.flatMap((c: any) => renderProseMirrorContent(c));
+    return node.content.flatMap((c: unknown) => renderProseMirrorContent(c));
   }
   if (node.type === "paragraph") {
-    const children = node.content?.flatMap((c: any) => renderProseMirrorContent(c)) || [];
+    const children = node.content?.flatMap((c: unknown) => renderProseMirrorContent(c)) || [];
     return [["p", {}, ...children]];
   }
   if (node.type === "heading") {
     const level = node.attrs?.level || 1;
-    const children = node.content?.flatMap((c: any) => renderProseMirrorContent(c)) || [];
+    const children = node.content?.flatMap((c: unknown) => renderProseMirrorContent(c)) || [];
     return [[`h${level}`, {}, ...children]];
   }
   if (node.type === "bulletList") {
-    const items = node.content?.flatMap((c: any) => renderProseMirrorContent(c)) || [];
+    const items = node.content?.flatMap((c: unknown) => renderProseMirrorContent(c)) || [];
     return [["ul", {}, ...items]];
   }
   if (node.type === "orderedList") {
-    const items = node.content?.flatMap((c: any) => renderProseMirrorContent(c)) || [];
+    const items = node.content?.flatMap((c: unknown) => renderProseMirrorContent(c)) || [];
     return [["ol", {}, ...items]];
   }
   if (node.type === "listItem") {
-    const children = node.content?.flatMap((c: any) => renderProseMirrorContent(c)) || [];
+    const children = node.content?.flatMap((c: unknown) => renderProseMirrorContent(c)) || [];
     return [["li", {}, ...children]];
   }
   if (node.type === "text") {
-    let text: any = node.text || "";
+    let text: string = node.text || "";
     if (node.marks) {
       for (const mark of node.marks) {
         if (mark.type === "bold") text = ["strong", {}, text];
@@ -152,11 +152,11 @@ function renderProseMirrorContent(node: any): any[] {
     return [["pre", {}, ["code", { class: lang }, code]]];
   }
   if (node.type === "blockquote") {
-    const children = node.content?.flatMap((c: any) => renderProseMirrorContent(c)) || [];
+    const children = node.content?.flatMap((c: unknown) => renderProseMirrorContent(c)) || [];
     return [["blockquote", {}, ...children]];
   }
   // Fallback: render as div
-  const fallback = node.content?.flatMap((c: any) => renderProseMirrorContent(c)) || [];
+  const fallback = node.content?.flatMap((c: unknown) => renderProseMirrorContent(c)) || [];
   return [["div", {}, ...fallback]];
 }
 
@@ -164,7 +164,7 @@ function renderProseMirrorContent(node: any): any[] {
  * SyncedBlockNodeView — React component that displays synced block content
  * and fetches the latest content from STDB if not provided.
  */
-const SyncedBlockNodeView: React.FC<{ node: any }> = ({ node }) => {
+const SyncedBlockNodeView: React.FC<{ node: unknown }> = ({ node }) => {
   const [blockData, setBlockData] = useState<SyncedBlockType | null>(null);
   const [loading, setLoading] = useState(!node.attrs.content);
 

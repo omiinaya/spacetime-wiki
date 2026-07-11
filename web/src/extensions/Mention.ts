@@ -1,9 +1,9 @@
 import { Node, mergeAttributes } from "@tiptap/core";
 
 export interface MentionOptions {
-  HTMLAttributes: Record<string, any>;
-  renderLabel: (props: { node: any }) => string;
-  suggestion?: any;
+  HTMLAttributes: Record<string, unknown>;
+  renderLabel: (props: { node: unknown }) => string;
+  suggestion?: unknown;
 }
 
 declare module "@tiptap/core" {

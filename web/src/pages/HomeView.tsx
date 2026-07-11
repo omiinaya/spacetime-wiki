@@ -16,13 +16,13 @@ export default function HomeView() {
     api.pages.list().then((pages) => {
       setRecentPages(
         pages
-          .filter((p: any) => p.status === "published" || p.status === "draft")
-          .sort((a: any, b: any) => b.updated_at - a.updated_at)
+          .filter((p: unknown) => p.status === "published" || p.status === "draft")
+          .sort((a: unknown, b: unknown) => b.updated_at - a.updated_at)
           .slice(0, 10),
       );
     });
     api.analytics.getTrending(5).then(async (trending) => {
-      const enriched = await Promise.all(trending.map(async (t: any) => {
+      const enriched = await Promise.all(trending.map(async (t: unknown) => {
         try {
           const p = await api.pages.get(t.page_id);
           return { ...t, title: p?.title || "Unknown", icon: p?.icon || "" };
@@ -30,7 +30,7 @@ export default function HomeView() {
           return { ...t, title: "Unknown", icon: "" };
         }
       }));
-      setTrendingPages(enriched.filter((t: any) => t.title !== "Unknown"));
+      setTrendingPages(enriched.filter((t: unknown) => t.title !== "Unknown"));
     }).catch(() => {});
   }, []);
 

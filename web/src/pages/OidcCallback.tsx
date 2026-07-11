@@ -87,7 +87,7 @@ export default function OidcCallback() {
           localStorage.setItem("sw_user_id", id);
         }
         navigate("/", { replace: true });
-      } catch (err: any) {
+      } catch (err: unknown) {
         setStatus(`Error: ${err.message || err}`);
       }
     })();

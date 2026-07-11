@@ -87,7 +87,7 @@ export function MfaSettings({ userId }: { userId: string | null }) {
       setSetupOpen(false);
       await loadMfa();
       setTimeout(() => setStatus(""), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(`Failed to enable MFA: ${err.message || err}`);
       setStatus("");
     }

@@ -241,8 +241,8 @@ export function useAppLayout() {
   // ─── Load favorites ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!userId) { setFavoritePages([]); return; }
-    api.favorites.list(userId).then((rows: any) => {
-      const favPageIds = new Set((rows as any[][] || []).map((r: any) => String(r[2])));
+    api.favorites.list(userId).then((rows: unknown) => {
+      const favPageIds = new Set((rows as unknown[][] || []).map((r: unknown) => String(r[2])));
       api.pages.list().then(allPages => {
         setFavoritePages(allPages.filter(p => favPageIds.has(p.id)));
       });
@@ -555,7 +555,7 @@ export function useAppLayout() {
             limit: 100,
           });
           if (result.data && result.data.length > 0) {
-            const pageIds = result.data.map((r: any) => r.page_id);
+            const pageIds = result.data.map((r: unknown) => r.page_id);
             const allPages = await api.pages.list();
             setPages(allPages.filter((p: Page) => pageIds.includes(p.id)));
           } else {
