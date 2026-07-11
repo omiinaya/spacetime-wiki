@@ -111,10 +111,11 @@ distclean: clean ## Clean everything including node_modules
 # ── Pre-commit (matches .husky/pre-commit) ────────────────────────────────────
 
 .PHONY: pre-commit
-pre-commit: ## Run pre-commit checks: tsc + tests + cargo check
+pre-commit: ## Run pre-commit checks: tsc + tests + cargo check + cargo test
 	cd $(WEB_DIR) && npx tsc --noEmit
 	cd $(WEB_DIR) && npm test
 	cd $(SPACETIMEDB_DIR) && cargo check
+	cd $(SPACETIMEDB_DIR) && cargo test --lib 2>&1 | tail -10
 	@echo "pre-commit checks passed."
 
 # ── Agent-Friendly Targets ────────────────────────────────────────────────

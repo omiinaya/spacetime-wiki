@@ -43,6 +43,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Coverage report
+        run: npx vitest run --coverage
+
   rust:
     name: Rust (SpacetimeDB module)
     runs-on: [self-hosted, ubuntu-latest]
@@ -91,7 +94,7 @@ jobs:
         working-directory: web
 
     env:
-      CI: "true"
+      CI: 'true'
       STDB_HOST: localhost:3001
       STDB_DATABASE: spacetime-wiki
       VITE_STDB_HOST: localhost:3001

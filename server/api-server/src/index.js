@@ -21,7 +21,12 @@ export const stdbConfig = {
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:5184", "http://localhost:3002", "http://127.0.0.1:5184", "https://wiki.example.com"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-API-Key", "Accept", "Origin", "X-Requested-With"],
+  credentials: true,
+}));
 app.use(express.json({ limit: '50mb' }));
 
 // Health check (no auth required)
