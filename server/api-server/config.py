@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    stdb_host: str = os.getenv("STDB_HOST", "127.0.0.1:3001")
+    stdb_host: str = os.getenv("STDB_HOST", "localhost:3001")
     stdb_database: str = os.getenv(
         "STDB_DATABASE",
         "spacetime-wiki",

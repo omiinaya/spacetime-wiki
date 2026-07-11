@@ -14,7 +14,7 @@ import { expect } from "@playwright/test";
 
 /** Default admin credentials from global seed */
 export const ADMIN_EMAIL = "admin@spacetimewiki.local";
-export const ADMIN_PASSWORD = "admin123";
+export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 
 /**
  * Sign in as the admin user. Navigates to /login, fills credentials,

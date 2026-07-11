@@ -40,7 +40,7 @@ def _validate_config() -> None:
 
 # ─── Config values ──────────────────────────────────────────────────────────
 
-STDB_HOST: str = os.getenv("STDB_HOST", "127.0.0.1:3001")
+STDB_HOST: str = os.getenv("STDB_HOST", "localhost:3001")
 STDB_DATABASE: str = os.getenv(
     "STDB_DATABASE",
     "spacetime-wiki",

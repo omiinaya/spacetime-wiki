@@ -96,7 +96,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
       // No password — load the page directly
       // Record visit
       await fetch(
-        `http://127.0.0.1:3001/v1/database/c20000000000000000000000000000000000000000000000000000000000000000/call/visit_share_link`,
+        `http://${import.meta.env.VITE_STDB_HOST || "localhost:3001"}/v1/database/${import.meta.env.VITE_STDB_DB || "spacetime-wiki"}/call/visit_share_link`,
         { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify([tok]) }
       ).catch(() => {});
 
@@ -112,7 +112,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
     if (!token || !password) return;
     try {
       const res = await fetch(
-        `http://127.0.0.1:3001/v1/database/c20000000000000000000000000000000000000000000000000000000000000000/call/verify_share_password`,
+        `http://${import.meta.env.VITE_STDB_HOST || "localhost:3001"}/v1/database/${import.meta.env.VITE_STDB_DB || "spacetime-wiki"}/call/verify_share_password`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

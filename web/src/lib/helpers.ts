@@ -2,8 +2,8 @@ import { api } from "./api";
 import type { PMNode, PMTextNode, PMDoc, PMBlockNode } from "./prosemirror-types";
 
 export async function callReducerLocal(reducer: string, args: unknown[]) {
-  const DB_ID = "c20000000000000000000000000000000000000000000000000000000000000000";
-  await fetch(`http://127.0.0.1:3001/v1/database/${DB_ID}/call/${reducer}`, {
+  const DB_ID = import.meta.env.VITE_STDB_DB || "spacetime-wiki";
+  await fetch(`http://${import.meta.env.VITE_STDB_HOST || "localhost:3001"}/v1/database/${DB_ID}/call/${reducer}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(args),
   });
 }

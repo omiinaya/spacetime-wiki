@@ -7,8 +7,8 @@ import { SpacetimeDBProvider } from "spacetimedb/react";
 import { DbConnection } from "./module_bindings";
 
 // SpacetimeDB connection configuration
-const STDB_HOST = import.meta.env.VITE_STDB_HOST || "127.0.0.1:3001";
-const STDB_DB = import.meta.env.VITE_STDB_DB || "c20000000000000000000000000000000000000000000000000000000000000000";
+const STDB_HOST = import.meta.env.VITE_STDB_HOST || "localhost:3001";
+const STDB_DB = import.meta.env.VITE_STDB_DB || import.meta.env.VITE_STDB_DB || "spacetime-wiki";
 const STDB_TOKEN = import.meta.env.VITE_STDB_TOKEN || undefined;
 
 const connectionBuilder = DbConnection.builder()

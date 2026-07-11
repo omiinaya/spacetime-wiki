@@ -10,12 +10,12 @@ import attachmentsRouter from './routes/attachments.js';
 import usersRouter from './routes/users.js';
 
 const PORT = parseInt(process.env.API_PORT || '3002');
-const STDB_HOST = process.env.STDB_HOST || '127.0.0.1:3001';
+const STDB_HOST = process.env.STDB_HOST || 'localhost:3001';
 
 // Make STDB config available to route modules
 export const stdbConfig = {
   host: STDB_HOST,
-  dbId: process.env.STDB_DB_ID || 'c20000000000000000000000000000000000000000000000000000000000000000',
+  dbId: process.env.STDB_DB_ID || 'spacetime-wiki',
 };
 
 const app = express();
