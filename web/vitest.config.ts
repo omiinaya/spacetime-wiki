@@ -13,7 +13,7 @@ export default defineConfig({
     exclude: ["node_modules", "dist"],
     coverage: {
       provider: 'v8',
-      reporter: ['text'],
+      reporter: ['text-summary', 'text'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/test/**', 'src/**/*.d.ts', 'src/module_bindings/**'],
           },
