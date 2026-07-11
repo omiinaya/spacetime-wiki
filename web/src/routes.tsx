@@ -1,23 +1,23 @@
-import { Route, Routes, Navigate } from "react-router-dom";
-import React from "react";
+import { Route, Routes, Navigate } from 'react-router-dom';
+import React from 'react';
 
 // Route-level page components — eagerly loaded for instant navigation
-import PermalinkRedirect from "./pages/PermalinkRedirect";
-import GoogleCallback from "./pages/GoogleCallback";
-import OAuthCallback from "./pages/OAuthCallback";
-import OidcCallback from "./pages/OidcCallback";
-import SamlCallback from "./pages/SamlCallback";
+import PermalinkRedirect from './pages/PermalinkRedirect';
+import GoogleCallback from './pages/GoogleCallback';
+import OAuthCallback from './pages/OAuthCallback';
+import OidcCallback from './pages/OidcCallback';
+import SamlCallback from './pages/SamlCallback';
 
-const HomeView = React.lazy(() => import("./pages/HomeView"));
-const ActivityView = React.lazy(() => import("./pages/ActivityView"));
-const FavoritesView = React.lazy(() => import("./pages/FavoritesView"));
-const PageViewWrapper = React.lazy(() => import("./pages/PageViewWrapper"));
-const SlugView = React.lazy(() => import("./pages/SlugView"));
-const LoginView = React.lazy(() => import("./pages/LoginView"));
+const HomeView = React.lazy(() => import('./pages/HomeView'));
+const ActivityView = React.lazy(() => import('./pages/ActivityView'));
+const FavoritesView = React.lazy(() => import('./pages/FavoritesView'));
+const PageViewWrapper = React.lazy(() => import('./pages/PageViewWrapper'));
+const SlugView = React.lazy(() => import('./pages/SlugView'));
+const LoginView = React.lazy(() => import('./pages/LoginView'));
 const PageEditor = React.lazy(() =>
-  import("./pages/PageEditor").then((m) => ({ default: m.PageEditor })),
+  import('./pages/PageEditor').then((m) => ({ default: m.PageEditor })),
 );
-const GraphView = React.lazy(() => import("./components/GraphView"));
+const GraphView = React.lazy(() => import('./components/GraphView'));
 
 export const RouteFallback = () => (
   <div className="flex items-center justify-center h-full">

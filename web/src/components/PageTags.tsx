@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { X, Plus, Loader2 } from "lucide-react";
-import { api, PageTag } from "../lib/api";
-import { cn } from "../lib/utils";
+import { useState, useEffect, useRef } from 'react';
+import { X, Plus, Loader2 } from 'lucide-react';
+import { api, PageTag } from '../lib/api';
+import { cn } from '../lib/utils';
 
 interface Props {
   pageId: string;
@@ -10,20 +10,20 @@ interface Props {
 }
 
 const TAG_COLORS = [
-  "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  "bg-green-500/10 text-green-400 border-green-500/20",
-  "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  "bg-orange-500/10 text-orange-400 border-orange-500/20",
-  "bg-pink-500/10 text-pink-400 border-pink-500/20",
-  "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-  "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  "bg-red-500/10 text-red-400 border-red-500/20",
+  'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  'bg-green-500/10 text-green-400 border-green-500/20',
+  'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  'bg-pink-500/10 text-pink-400 border-pink-500/20',
+  'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+  'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  'bg-red-500/10 text-red-400 border-red-500/20',
 ];
 
 function tagColor(name: string): string {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
-    hash = ((hash << 5) - hash) + name.charCodeAt(i);
+    hash = (hash << 5) - hash + name.charCodeAt(i);
     hash |= 0;
   }
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
@@ -33,7 +33,7 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
   const [tags, setTags] = useState<PageTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -41,10 +41,13 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
   useEffect(() => {
     if (!pageId) return;
     setLoading(true);
-    api.tags.list(pageId).then((rows) => {
-      setTags(rows);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    api.tags
+      .list(pageId)
+      .then((rows) => {
+        setTags(rows);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [pageId]);
 
   // Load all tags for autocomplete
@@ -55,11 +58,14 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
     api.tags.list(pageId).then(() => {
       // We need a query to get all distinct tag names
       // Use generic STDB query
-      fetch(`http://${import.meta.env.VITE_STDB_HOST || "localhost:3001"}/v1/database/${import.meta.env.VITE_STDB_DB || "spacetime-wiki"}/sql`, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: "SELECT DISTINCT name FROM page_tag",
-      })
+      fetch(
+        `http://${import.meta.env.VITE_STDB_HOST || 'localhost:3001'}/v1/database/${import.meta.env.VITE_STDB_DB || 'spacetime-wiki'}/sql`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: 'SELECT DISTINCT name FROM page_tag',
+        },
+      )
         .then((res) => res.json())
         .then((data) => {
           const names = ((data[0]?.rows || []) as unknown[][]).map((r) => String(r[0]));
@@ -76,25 +82,27 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
       return;
     }
     const q = inputValue.toLowerCase();
-    const existingNames = tags.map(t => t.name.toLowerCase());
+    const existingNames = tags.map((t) => t.name.toLowerCase());
     setSuggestions(
-      allTags.filter(
-        (name) => name.toLowerCase().includes(q) && !existingNames.includes(name.toLowerCase())
-      ).slice(0, 5)
+      allTags
+        .filter(
+          (name) => name.toLowerCase().includes(q) && !existingNames.includes(name.toLowerCase()),
+        )
+        .slice(0, 5),
     );
   }, [inputValue, allTags, tags]);
 
   const addTag = async (name: string) => {
     const clean = name.trim().toLowerCase();
-    if (!clean || tags.some(t => t.name === clean)) return;
+    if (!clean || tags.some((t) => t.name === clean)) return;
     try {
-      await api.tags.add(pageId, clean, "");
+      await api.tags.add(pageId, clean, '');
       const updated = await api.tags.list(pageId);
       setTags(updated);
     } catch (e) {
-      console.error("Failed to add tag:", e);
+      console.error('Failed to add tag:', e);
     }
-    setInputValue("");
+    setInputValue('');
     setSuggestions([]);
     setAdding(false);
   };
@@ -102,23 +110,23 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
   const removeTag = async (tagId: string) => {
     try {
       await api.tags.remove(tagId);
-      setTags(prev => prev.filter(t => t.id !== tagId));
+      setTags((prev) => prev.filter((t) => t.id !== tagId));
     } catch (e) {
-      console.error("Failed to remove tag:", e);
+      console.error('Failed to remove tag:', e);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       if (suggestions.length > 0) {
         addTag(suggestions[0]);
       } else if (inputValue.trim()) {
         addTag(inputValue);
       }
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       setAdding(false);
-      setInputValue("");
+      setInputValue('');
     }
   };
 
@@ -130,7 +138,7 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
         <span
           key={tag.id}
           className={cn(
-            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border",
+            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border',
             tagColor(tag.name),
           )}
         >
@@ -155,7 +163,12 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onBlur={() => setTimeout(() => { setAdding(false); setInputValue(""); }, 200)}
+                onBlur={() =>
+                  setTimeout(() => {
+                    setAdding(false);
+                    setInputValue('');
+                  }, 200)
+                }
                 placeholder="Add tag..."
                 autoFocus
                 className="h-6 w-28 px-2 rounded-full border border-border bg-[#0a0a0a] text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:ring-1 focus:ring-primary/50"
@@ -165,7 +178,10 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
                   {suggestions.map((name) => (
                     <button
                       key={name}
-                      onMouseDown={(e) => { e.preventDefault(); addTag(name); }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        addTag(name);
+                      }}
                       className="w-full px-3 py-1 text-xs text-left text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     >
                       {name}

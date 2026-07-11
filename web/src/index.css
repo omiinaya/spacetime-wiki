@@ -85,8 +85,13 @@ html.light-theme .prose-invert {
 }
 
 body {
-  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-family:
+    'Inter',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: oklch(var(--background));
@@ -161,7 +166,7 @@ body {
   padding: 0.15em 0.4em;
   border-radius: 0.25rem;
   font-size: 0.9em;
-  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 .ProseMirror pre {
@@ -196,18 +201,18 @@ body {
 }
 
 /* Task list */
-.ProseMirror ul[data-type="taskList"] {
+.ProseMirror ul[data-type='taskList'] {
   list-style: none;
   padding-left: 0;
 }
 
-.ProseMirror ul[data-type="taskList"] li {
+.ProseMirror ul[data-type='taskList'] li {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
 }
 
-.ProseMirror ul[data-type="taskList"] li label {
+.ProseMirror ul[data-type='taskList'] li label {
   margin-top: 0.2em;
 }
 
@@ -221,11 +226,11 @@ body {
 }
 
 /* Reading mode (non-editable) */
-.ProseMirror[contenteditable="false"] {
+.ProseMirror[contenteditable='false'] {
   cursor: default;
 }
 
-.ProseMirror[contenteditable="false"] p.is-editor-empty:first-child::before {
+.ProseMirror[contenteditable='false'] p.is-editor-empty:first-child::before {
   content: none;
 }
 
@@ -269,18 +274,33 @@ body {
 
 /* Table of Contents */
 @media print {
-  body { background: white; color: black; }
-  .no-print { display: none !important; }
+  body {
+    background: white;
+    color: black;
+  }
+  .no-print {
+    display: none !important;
+  }
 
   /* Hide sidebar, header bar, and all non-content UI */
-  aside, nav, header, footer, .h-12, .h-14,
-  [class*="sticky"],[class*="bg-sidebar"],
-  button, input, textarea, select {
+  aside,
+  nav,
+  header,
+  footer,
+  .h-12,
+  .h-14,
+  [class*='sticky'],
+  [class*='bg-sidebar'],
+  button,
+  input,
+  textarea,
+  select {
     display: none !important;
   }
 
   /* Show the page content + title only */
-  .page-content, .ProseMirror {
+  .page-content,
+  .ProseMirror {
     display: block !important;
   }
 
@@ -292,24 +312,51 @@ body {
     color: black !important;
   }
 
-  .ProseMirror h1 { font-size: 18pt !important; }
-  .ProseMirror h2 { font-size: 16pt !important; }
-  .ProseMirror h3 { font-size: 14pt !important; }
+  .ProseMirror h1 {
+    font-size: 18pt !important;
+  }
+  .ProseMirror h2 {
+    font-size: 16pt !important;
+  }
+  .ProseMirror h3 {
+    font-size: 14pt !important;
+  }
 
-  .ProseMirror img { max-width: 100% !important; page-break-inside: avoid; }
-  .ProseMirror pre { page-break-inside: avoid; white-space: pre-wrap !important; }
-  .ProseMirror table { page-break-inside: avoid; }
-  .ProseMirror tr { page-break-inside: avoid; }
+  .ProseMirror img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+  .ProseMirror pre {
+    page-break-inside: avoid;
+    white-space: pre-wrap !important;
+  }
+  .ProseMirror table {
+    page-break-inside: avoid;
+  }
+  .ProseMirror tr {
+    page-break-inside: avoid;
+  }
 
-  a { color: black !important; text-decoration: underline; }
+  a {
+    color: black !important;
+    text-decoration: underline;
+  }
 }
 
 /* Responsive: safe-area for notched phones */
 @supports (padding: env(safe-area-inset-top)) {
-  .safe-top { padding-top: env(safe-area-inset-top); }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-  .safe-left { padding-left: env(safe-area-inset-left); }
-  .safe-right { padding-right: env(safe-area-inset-right); }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
 }
 
 /* Touch-friendly tap targets */
@@ -457,4 +504,3 @@ html.light-theme .rich-embed-iframe {
     color: #666 !important;
   }
 }
-

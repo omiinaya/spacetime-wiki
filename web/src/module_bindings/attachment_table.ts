@@ -8,15 +8,15 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
-  pageId: __t.string().name("page_id"),
+  pageId: __t.string().name('page_id'),
   filename: __t.string(),
-  mimeType: __t.string().name("mime_type"),
-  sizeBytes: __t.u64().name("size_bytes"),
-  storageKey: __t.string().name("storage_key"),
-  uploadedBy: __t.string().name("uploaded_by"),
-  createdAt: __t.u64().name("created_at"),
+  mimeType: __t.string().name('mime_type'),
+  sizeBytes: __t.u64().name('size_bytes'),
+  storageKey: __t.string().name('storage_key'),
+  uploadedBy: __t.string().name('uploaded_by'),
+  createdAt: __t.u64().name('created_at'),
 });

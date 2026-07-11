@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: ISC
 
-import type { Page } from "./types";
-import { tableQuery } from "./client";
-import { mapPage } from "./mappers";
-import { getPage } from "./pages";
+import type { Page } from './types';
+import { tableQuery } from './client';
+import { mapPage } from './mappers';
+import { getPage } from './pages';
 
 /**
  * Find a page by ID or slug. Tries ID first, then slug.
@@ -18,7 +18,9 @@ async function resolvePageRef(ref: string): Promise<Page | null> {
     if (rows.length > 0) {
       return rows[0];
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return null;
 }
 
@@ -36,7 +38,7 @@ async function resolvePageRef(ref: string): Promise<Page | null> {
  * Returns the resolved content tree (or the original if no transclusions found).
  */
 export async function resolveTransclusions(doc: unknown): Promise<unknown> {
-  if (!doc || typeof doc !== "object") return doc;
+  if (!doc || typeof doc !== 'object') return doc;
   const obj = doc as Record<string, unknown>;
 
   // TRANSCLUSION_REGEX matches {{@<identifier>}} where identifier is
@@ -45,12 +47,12 @@ export async function resolveTransclusions(doc: unknown): Promise<unknown> {
 
   // Walk content array, looking for text nodes with transclusion patterns
   async function walkNode(node: unknown): Promise<unknown> {
-    if (!node || typeof node !== "object") return node;
+    if (!node || typeof node !== 'object') return node;
     const n = node as Record<string, unknown>;
 
-    if (n.type === "text" && typeof n.text === "string") {
+    if (n.type === 'text' && typeof n.text === 'string') {
       const text = n.text as string;
-      if (!text.includes("{{@")) return node; // fast path
+      if (!text.includes('{{@')) return node; // fast path
 
       const parts: unknown[] = [];
       let lastIndex = 0;
@@ -64,7 +66,7 @@ export async function resolveTransclusions(doc: unknown): Promise<unknown> {
         if (match.index > lastIndex) {
           const before = text.slice(lastIndex, match.index);
           if (before) {
-            parts.push({ type: "text", text: before });
+            parts.push({ type: 'text', text: before });
           }
         }
 
@@ -74,15 +76,26 @@ export async function resolveTransclusions(doc: unknown): Promise<unknown> {
         if (referencedPage) {
           let parsedContent: unknown = null;
           try {
-            parsedContent = JSON.parse(referencedPage.content || "{}");
+            parsedContent = JSON.parse(referencedPage.content || '{}');
           } catch {
-            parsedContent = { type: "doc", content: [
-              { type: "paragraph", content: [{ type: "text", text: `[Page "${referencedPage.title}" — content could not be parsed]` }] }
-            ]};
+            parsedContent = {
+              type: 'doc',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [
+                    {
+                      type: 'text',
+                      text: `[Page "${referencedPage.title}" — content could not be parsed]`,
+                    },
+                  ],
+                },
+              ],
+            };
           }
 
           parts.push({
-            type: "transclusion",
+            type: 'transclusion',
             attrs: {
               pageId: referencedPage.id,
               pageTitle: referencedPage.title,
@@ -92,7 +105,7 @@ export async function resolveTransclusions(doc: unknown): Promise<unknown> {
         } else {
           // Page not found — show a placeholder text
           parts.push({
-            type: "text",
+            type: 'text',
             text: `[Page not found: ${ref}]`,
           });
         }
@@ -104,7 +117,7 @@ export async function resolveTransclusions(doc: unknown): Promise<unknown> {
       if (lastIndex < text.length) {
         const remaining = text.slice(lastIndex);
         if (remaining) {
-          parts.push({ type: "text", text: remaining });
+          parts.push({ type: 'text', text: remaining });
         }
       }
 
@@ -113,7 +126,7 @@ export async function resolveTransclusions(doc: unknown): Promise<unknown> {
       // Multiple parts — return a virtual paragraph wrapping all parts
       // (Tiptap doc model won't accept bare array where a single node is expected,
       //  but since this runs before editor.setContent, the parent walker handles it)
-      return { type: "paragraph", content: parts };
+      return { type: 'paragraph', content: parts };
     }
 
     // Recurse into content array

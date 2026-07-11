@@ -31,1074 +31,1265 @@ import {
   type RemoteModule as __RemoteModule,
   type SubscriptionEventContextInterface as __SubscriptionEventContextInterface,
   type SubscriptionHandleImpl as __SubscriptionHandleImpl,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 // Import all reducer arg schemas
-import AcceptInvitationReducer from "./accept_invitation_reducer";
-import AddAiChatMessageReducer from "./add_ai_chat_message_reducer";
-import AddAttachmentReducer from "./add_attachment_reducer";
-import AddCollectionMemberReducer from "./add_collection_member_reducer";
-import AddCommentReducer from "./add_comment_reducer";
-import AddCommentReactionReducer from "./add_comment_reaction_reducer";
-import AddGroupMemberReducer from "./add_group_member_reducer";
-import AddLdapProviderReducer from "./add_ldap_provider_reducer";
-import AddOauthProviderReducer from "./add_oauth_provider_reducer";
-import AddOidcProviderReducer from "./add_oidc_provider_reducer";
-import AddSamlProviderReducer from "./add_saml_provider_reducer";
-import AddScimProviderReducer from "./add_scim_provider_reducer";
-import AddSyncedBlockRefReducer from "./add_synced_block_ref_reducer";
-import AddTagReducer from "./add_tag_reducer";
-import ApplyCollectionAutoSortReducer from "./apply_collection_auto_sort_reducer";
-import ApproveAccessRequestReducer from "./approve_access_request_reducer";
-import BatchAddTagReducer from "./batch_add_tag_reducer";
-import BatchDeletePagesReducer from "./batch_delete_pages_reducer";
-import BatchMovePagesReducer from "./batch_move_pages_reducer";
-import BatchSetPageStatusReducer from "./batch_set_page_status_reducer";
-import BroadcastYjsUpdateReducer from "./broadcast_yjs_update_reducer";
-import CleanupOldCollabUpdatesReducer from "./cleanup_old_collab_updates_reducer";
-import CleanupSearchResultsReducer from "./cleanup_search_results_reducer";
-import CleanupStaleCollabSessionsReducer from "./cleanup_stale_collab_sessions_reducer";
-import CleanupWebhookEventsReducer from "./cleanup_webhook_events_reducer";
-import ClearAllNotificationsReducer from "./clear_all_notifications_reducer";
-import ConsumePasskeyChallengeReducer from "./consume_passkey_challenge_reducer";
-import CreateAccessRequestReducer from "./create_access_request_reducer";
-import CreateAiChatSessionReducer from "./create_ai_chat_session_reducer";
-import CreateApiKeyReducer from "./create_api_key_reducer";
-import CreateCollectionReducer from "./create_collection_reducer";
-import CreateDbBaseReducer from "./create_db_base_reducer";
-import CreateDbColumnReducer from "./create_db_column_reducer";
-import CreateDbRowReducer from "./create_db_row_reducer";
-import CreateFromTemplateReducer from "./create_from_template_reducer";
-import CreateGroupReducer from "./create_group_reducer";
-import CreateInvitationReducer from "./create_invitation_reducer";
-import CreateNotificationReducer from "./create_notification_reducer";
-import CreatePageReducer from "./create_page_reducer";
-import CreatePasskeyChallengeReducer from "./create_passkey_challenge_reducer";
-import CreateShareLinkReducer from "./create_share_link_reducer";
-import CreateSyncedBlockReducer from "./create_synced_block_reducer";
-import DeleteAiChatMessageReducer from "./delete_ai_chat_message_reducer";
-import DeleteAiChatSessionReducer from "./delete_ai_chat_session_reducer";
-import DeleteAttachmentReducer from "./delete_attachment_reducer";
-import DeleteCollectionReducer from "./delete_collection_reducer";
-import DeleteCollectionSortRuleReducer from "./delete_collection_sort_rule_reducer";
-import DeleteCommentReducer from "./delete_comment_reducer";
-import DeleteDbBaseReducer from "./delete_db_base_reducer";
-import DeleteDbRowReducer from "./delete_db_row_reducer";
-import DeleteGroupReducer from "./delete_group_reducer";
-import DeleteLdapProviderReducer from "./delete_ldap_provider_reducer";
-import DeleteNotificationReducer from "./delete_notification_reducer";
-import DeleteOauthProviderReducer from "./delete_oauth_provider_reducer";
-import DeleteOidcProviderReducer from "./delete_oidc_provider_reducer";
-import DeletePagePermanentReducer from "./delete_page_permanent_reducer";
-import DeletePasskeyCredentialReducer from "./delete_passkey_credential_reducer";
-import DeleteSamlProviderReducer from "./delete_saml_provider_reducer";
-import DeleteScimProviderReducer from "./delete_scim_provider_reducer";
-import DeleteShareLinkReducer from "./delete_share_link_reducer";
-import DeleteSyncedBlockReducer from "./delete_synced_block_reducer";
-import DeleteWebhookReducer from "./delete_webhook_reducer";
-import DenyAccessRequestReducer from "./deny_access_request_reducer";
-import DisableMfaReducer from "./disable_mfa_reducer";
-import DuplicatePageReducer from "./duplicate_page_reducer";
-import EmptyTrashReducer from "./empty_trash_reducer";
-import EnableTotpReducer from "./enable_totp_reducer";
-import FireWebhookEventReducer from "./fire_webhook_event_reducer";
-import JoinCollabSessionReducer from "./join_collab_session_reducer";
-import LeaveCollabSessionReducer from "./leave_collab_session_reducer";
-import LinkLdapUserReducer from "./link_ldap_user_reducer";
-import LinkOauthUserReducer from "./link_oauth_user_reducer";
-import LoginUserReducer from "./login_user_reducer";
-import MarkAllNotificationsReadReducer from "./mark_all_notifications_read_reducer";
-import MarkAsTemplateReducer from "./mark_as_template_reducer";
-import MarkNotificationReadReducer from "./mark_notification_read_reducer";
-import MarkWebhookEventSentReducer from "./mark_webhook_event_sent_reducer";
-import MovePageReducer from "./move_page_reducer";
-import PurgeExpiredTrashReducer from "./purge_expired_trash_reducer";
-import RecordInvitationViewReducer from "./record_invitation_view_reducer";
-import RecordPageViewReducer from "./record_page_view_reducer";
-import RecordScimEventReducer from "./record_scim_event_reducer";
-import RegisterUserReducer from "./register_user_reducer";
-import RemoveCollectionGroupPermissionReducer from "./remove_collection_group_permission_reducer";
-import RemoveCollectionMemberReducer from "./remove_collection_member_reducer";
-import RemoveGroupMemberReducer from "./remove_group_member_reducer";
-import RemovePagePermissionReducer from "./remove_page_permission_reducer";
-import RemoveSyncedBlockRefReducer from "./remove_synced_block_ref_reducer";
-import RemoveTagReducer from "./remove_tag_reducer";
-import ReorderCollectionsReducer from "./reorder_collections_reducer";
-import ReorderDbRowsReducer from "./reorder_db_rows_reducer";
-import ReorderPagesReducer from "./reorder_pages_reducer";
-import ResolveCommentReducer from "./resolve_comment_reducer";
-import RestorePageReducer from "./restore_page_reducer";
-import RevokeApiKeyReducer from "./revoke_api_key_reducer";
-import RevokeInvitationReducer from "./revoke_invitation_reducer";
-import ScimDeprovisionGroupReducer from "./scim_deprovision_group_reducer";
-import ScimDeprovisionUserReducer from "./scim_deprovision_user_reducer";
-import ScimSyncGroupReducer from "./scim_sync_group_reducer";
-import ScimSyncUserReducer from "./scim_sync_user_reducer";
-import SearchPagesReducer from "./search_pages_reducer";
-import SetAiConfigReducer from "./set_ai_config_reducer";
-import SetAppSettingReducer from "./set_app_setting_reducer";
-import SetCollectionGroupPermissionReducer from "./set_collection_group_permission_reducer";
-import SetCollectionSortRuleReducer from "./set_collection_sort_rule_reducer";
-import SetDbCellReducer from "./set_db_cell_reducer";
-import SetPageColorReducer from "./set_page_color_reducer";
-import SetPageDirectionReducer from "./set_page_direction_reducer";
-import SetPageFullWidthReducer from "./set_page_full_width_reducer";
-import SetPageIconReducer from "./set_page_icon_reducer";
-import SetPagePermissionReducer from "./set_page_permission_reducer";
-import SetPagePinnedReducer from "./set_page_pinned_reducer";
-import SetPageStatusReducer from "./set_page_status_reducer";
-import StorePasskeyCredentialReducer from "./store_passkey_credential_reducer";
-import ToggleFavoriteReducer from "./toggle_favorite_reducer";
-import ToggleWatchReducer from "./toggle_watch_reducer";
-import UnlinkOauthUserReducer from "./unlink_oauth_user_reducer";
-import UpdateApiKeyUsageReducer from "./update_api_key_usage_reducer";
-import UpdateCollectionReducer from "./update_collection_reducer";
-import UpdateCollectionMemberRoleReducer from "./update_collection_member_role_reducer";
-import UpdateCursorPositionReducer from "./update_cursor_position_reducer";
-import UpdateDbCellReducer from "./update_db_cell_reducer";
-import UpdateGroupReducer from "./update_group_reducer";
-import UpdateGroupMemberRoleReducer from "./update_group_member_role_reducer";
-import UpdateLdapProviderReducer from "./update_ldap_provider_reducer";
-import UpdateOauthProviderReducer from "./update_oauth_provider_reducer";
-import UpdateOidcProviderReducer from "./update_oidc_provider_reducer";
-import UpdatePageReducer from "./update_page_reducer";
-import UpdatePasskeyCounterReducer from "./update_passkey_counter_reducer";
-import UpdateSamlProviderReducer from "./update_saml_provider_reducer";
-import UpdateScimProviderReducer from "./update_scim_provider_reducer";
-import UpdateShareBrandingReducer from "./update_share_branding_reducer";
-import UpdateSyncedBlockReducer from "./update_synced_block_reducer";
-import UpdateUserAvatarReducer from "./update_user_avatar_reducer";
-import UpdateUserRoleReducer from "./update_user_role_reducer";
-import UpdateWebhookReducer from "./update_webhook_reducer";
-import VerifyMfaBackupCodeReducer from "./verify_mfa_backup_code_reducer";
-import VerifySharePasswordReducer from "./verify_share_password_reducer";
-import VerifyTotpReducer from "./verify_totp_reducer";
-import VisitShareLinkReducer from "./visit_share_link_reducer";
+import AcceptInvitationReducer from './accept_invitation_reducer';
+import AddAiChatMessageReducer from './add_ai_chat_message_reducer';
+import AddAttachmentReducer from './add_attachment_reducer';
+import AddCollectionMemberReducer from './add_collection_member_reducer';
+import AddCommentReducer from './add_comment_reducer';
+import AddCommentReactionReducer from './add_comment_reaction_reducer';
+import AddGroupMemberReducer from './add_group_member_reducer';
+import AddLdapProviderReducer from './add_ldap_provider_reducer';
+import AddOauthProviderReducer from './add_oauth_provider_reducer';
+import AddOidcProviderReducer from './add_oidc_provider_reducer';
+import AddSamlProviderReducer from './add_saml_provider_reducer';
+import AddScimProviderReducer from './add_scim_provider_reducer';
+import AddSyncedBlockRefReducer from './add_synced_block_ref_reducer';
+import AddTagReducer from './add_tag_reducer';
+import ApplyCollectionAutoSortReducer from './apply_collection_auto_sort_reducer';
+import ApproveAccessRequestReducer from './approve_access_request_reducer';
+import BatchAddTagReducer from './batch_add_tag_reducer';
+import BatchDeletePagesReducer from './batch_delete_pages_reducer';
+import BatchMovePagesReducer from './batch_move_pages_reducer';
+import BatchSetPageStatusReducer from './batch_set_page_status_reducer';
+import BroadcastYjsUpdateReducer from './broadcast_yjs_update_reducer';
+import CleanupOldCollabUpdatesReducer from './cleanup_old_collab_updates_reducer';
+import CleanupSearchResultsReducer from './cleanup_search_results_reducer';
+import CleanupStaleCollabSessionsReducer from './cleanup_stale_collab_sessions_reducer';
+import CleanupWebhookEventsReducer from './cleanup_webhook_events_reducer';
+import ClearAllNotificationsReducer from './clear_all_notifications_reducer';
+import ConsumePasskeyChallengeReducer from './consume_passkey_challenge_reducer';
+import CreateAccessRequestReducer from './create_access_request_reducer';
+import CreateAiChatSessionReducer from './create_ai_chat_session_reducer';
+import CreateApiKeyReducer from './create_api_key_reducer';
+import CreateCollectionReducer from './create_collection_reducer';
+import CreateDbBaseReducer from './create_db_base_reducer';
+import CreateDbColumnReducer from './create_db_column_reducer';
+import CreateDbRowReducer from './create_db_row_reducer';
+import CreateFromTemplateReducer from './create_from_template_reducer';
+import CreateGroupReducer from './create_group_reducer';
+import CreateInvitationReducer from './create_invitation_reducer';
+import CreateNotificationReducer from './create_notification_reducer';
+import CreatePageReducer from './create_page_reducer';
+import CreatePasskeyChallengeReducer from './create_passkey_challenge_reducer';
+import CreateShareLinkReducer from './create_share_link_reducer';
+import CreateSyncedBlockReducer from './create_synced_block_reducer';
+import DeleteAiChatMessageReducer from './delete_ai_chat_message_reducer';
+import DeleteAiChatSessionReducer from './delete_ai_chat_session_reducer';
+import DeleteAttachmentReducer from './delete_attachment_reducer';
+import DeleteCollectionReducer from './delete_collection_reducer';
+import DeleteCollectionSortRuleReducer from './delete_collection_sort_rule_reducer';
+import DeleteCommentReducer from './delete_comment_reducer';
+import DeleteDbBaseReducer from './delete_db_base_reducer';
+import DeleteDbRowReducer from './delete_db_row_reducer';
+import DeleteGroupReducer from './delete_group_reducer';
+import DeleteLdapProviderReducer from './delete_ldap_provider_reducer';
+import DeleteNotificationReducer from './delete_notification_reducer';
+import DeleteOauthProviderReducer from './delete_oauth_provider_reducer';
+import DeleteOidcProviderReducer from './delete_oidc_provider_reducer';
+import DeletePagePermanentReducer from './delete_page_permanent_reducer';
+import DeletePasskeyCredentialReducer from './delete_passkey_credential_reducer';
+import DeleteSamlProviderReducer from './delete_saml_provider_reducer';
+import DeleteScimProviderReducer from './delete_scim_provider_reducer';
+import DeleteShareLinkReducer from './delete_share_link_reducer';
+import DeleteSyncedBlockReducer from './delete_synced_block_reducer';
+import DeleteWebhookReducer from './delete_webhook_reducer';
+import DenyAccessRequestReducer from './deny_access_request_reducer';
+import DisableMfaReducer from './disable_mfa_reducer';
+import DuplicatePageReducer from './duplicate_page_reducer';
+import EmptyTrashReducer from './empty_trash_reducer';
+import EnableTotpReducer from './enable_totp_reducer';
+import FireWebhookEventReducer from './fire_webhook_event_reducer';
+import JoinCollabSessionReducer from './join_collab_session_reducer';
+import LeaveCollabSessionReducer from './leave_collab_session_reducer';
+import LinkLdapUserReducer from './link_ldap_user_reducer';
+import LinkOauthUserReducer from './link_oauth_user_reducer';
+import LoginUserReducer from './login_user_reducer';
+import MarkAllNotificationsReadReducer from './mark_all_notifications_read_reducer';
+import MarkAsTemplateReducer from './mark_as_template_reducer';
+import MarkNotificationReadReducer from './mark_notification_read_reducer';
+import MarkWebhookEventSentReducer from './mark_webhook_event_sent_reducer';
+import MovePageReducer from './move_page_reducer';
+import PurgeExpiredTrashReducer from './purge_expired_trash_reducer';
+import RecordInvitationViewReducer from './record_invitation_view_reducer';
+import RecordPageViewReducer from './record_page_view_reducer';
+import RecordScimEventReducer from './record_scim_event_reducer';
+import RegisterUserReducer from './register_user_reducer';
+import RemoveCollectionGroupPermissionReducer from './remove_collection_group_permission_reducer';
+import RemoveCollectionMemberReducer from './remove_collection_member_reducer';
+import RemoveGroupMemberReducer from './remove_group_member_reducer';
+import RemovePagePermissionReducer from './remove_page_permission_reducer';
+import RemoveSyncedBlockRefReducer from './remove_synced_block_ref_reducer';
+import RemoveTagReducer from './remove_tag_reducer';
+import ReorderCollectionsReducer from './reorder_collections_reducer';
+import ReorderDbRowsReducer from './reorder_db_rows_reducer';
+import ReorderPagesReducer from './reorder_pages_reducer';
+import ResolveCommentReducer from './resolve_comment_reducer';
+import RestorePageReducer from './restore_page_reducer';
+import RevokeApiKeyReducer from './revoke_api_key_reducer';
+import RevokeInvitationReducer from './revoke_invitation_reducer';
+import ScimDeprovisionGroupReducer from './scim_deprovision_group_reducer';
+import ScimDeprovisionUserReducer from './scim_deprovision_user_reducer';
+import ScimSyncGroupReducer from './scim_sync_group_reducer';
+import ScimSyncUserReducer from './scim_sync_user_reducer';
+import SearchPagesReducer from './search_pages_reducer';
+import SetAiConfigReducer from './set_ai_config_reducer';
+import SetAppSettingReducer from './set_app_setting_reducer';
+import SetCollectionGroupPermissionReducer from './set_collection_group_permission_reducer';
+import SetCollectionSortRuleReducer from './set_collection_sort_rule_reducer';
+import SetDbCellReducer from './set_db_cell_reducer';
+import SetPageColorReducer from './set_page_color_reducer';
+import SetPageDirectionReducer from './set_page_direction_reducer';
+import SetPageFullWidthReducer from './set_page_full_width_reducer';
+import SetPageIconReducer from './set_page_icon_reducer';
+import SetPagePermissionReducer from './set_page_permission_reducer';
+import SetPagePinnedReducer from './set_page_pinned_reducer';
+import SetPageStatusReducer from './set_page_status_reducer';
+import StorePasskeyCredentialReducer from './store_passkey_credential_reducer';
+import ToggleFavoriteReducer from './toggle_favorite_reducer';
+import ToggleWatchReducer from './toggle_watch_reducer';
+import UnlinkOauthUserReducer from './unlink_oauth_user_reducer';
+import UpdateApiKeyUsageReducer from './update_api_key_usage_reducer';
+import UpdateCollectionReducer from './update_collection_reducer';
+import UpdateCollectionMemberRoleReducer from './update_collection_member_role_reducer';
+import UpdateCursorPositionReducer from './update_cursor_position_reducer';
+import UpdateDbCellReducer from './update_db_cell_reducer';
+import UpdateGroupReducer from './update_group_reducer';
+import UpdateGroupMemberRoleReducer from './update_group_member_role_reducer';
+import UpdateLdapProviderReducer from './update_ldap_provider_reducer';
+import UpdateOauthProviderReducer from './update_oauth_provider_reducer';
+import UpdateOidcProviderReducer from './update_oidc_provider_reducer';
+import UpdatePageReducer from './update_page_reducer';
+import UpdatePasskeyCounterReducer from './update_passkey_counter_reducer';
+import UpdateSamlProviderReducer from './update_saml_provider_reducer';
+import UpdateScimProviderReducer from './update_scim_provider_reducer';
+import UpdateShareBrandingReducer from './update_share_branding_reducer';
+import UpdateSyncedBlockReducer from './update_synced_block_reducer';
+import UpdateUserAvatarReducer from './update_user_avatar_reducer';
+import UpdateUserRoleReducer from './update_user_role_reducer';
+import UpdateWebhookReducer from './update_webhook_reducer';
+import VerifyMfaBackupCodeReducer from './verify_mfa_backup_code_reducer';
+import VerifySharePasswordReducer from './verify_share_password_reducer';
+import VerifyTotpReducer from './verify_totp_reducer';
+import VisitShareLinkReducer from './visit_share_link_reducer';
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
-import AccessRequestRow from "./access_request_table";
-import AiChatMessageRow from "./ai_chat_message_table";
-import AiChatSessionRow from "./ai_chat_session_table";
-import AiConfigRow from "./ai_config_table";
-import ApiKeyRow from "./api_key_table";
-import AppSettingRow from "./app_setting_table";
-import AttachmentRow from "./attachment_table";
-import AuditEventRow from "./audit_event_table";
-import CollabSessionRow from "./collab_session_table";
-import CollabUpdateRow from "./collab_update_table";
-import CollectionRow from "./collection_table";
-import CollectionGroupPermissionRow from "./collection_group_permission_table";
-import CollectionMemberRow from "./collection_member_table";
-import CollectionSortRuleRow from "./collection_sort_rule_table";
-import CommentRow from "./comment_table";
-import CommentReactionRow from "./comment_reaction_table";
-import DbBaseRow from "./db_base_table";
-import DbCellRow from "./db_cell_table";
-import DbColumnRow from "./db_column_table";
-import DbRowRow from "./db_row_table";
-import FavoriteRow from "./favorite_table";
-import GroupRow from "./group_table";
-import GroupMemberRow from "./group_member_table";
-import InvitationRow from "./invitation_table";
-import LdapProviderRow from "./ldap_provider_table";
-import LdapUserRow from "./ldap_user_table";
-import MfaBackupCodeRow from "./mfa_backup_code_table";
-import MfaMethodRow from "./mfa_method_table";
-import NotificationRow from "./notification_table";
-import OauthProviderRow from "./oauth_provider_table";
-import OauthUserRow from "./oauth_user_table";
-import OidcProviderRow from "./oidc_provider_table";
-import PageRow from "./page_table";
-import PagePermissionRow from "./page_permission_table";
-import PageRevisionRow from "./page_revision_table";
-import PageTagRow from "./page_tag_table";
-import PageViewRow from "./page_view_table";
-import PasskeyChallengeRow from "./passkey_challenge_table";
-import PasskeyCredentialRow from "./passkey_credential_table";
-import SamlProviderRow from "./saml_provider_table";
-import ScimEventRow from "./scim_event_table";
-import ScimProviderRow from "./scim_provider_table";
-import SearchResultRow from "./search_result_table";
-import ShareLinkRow from "./share_link_table";
-import SyncedBlockRow from "./synced_block_table";
-import SyncedBlockRefRow from "./synced_block_ref_table";
-import UserRow from "./user_table";
-import WatchRow from "./watch_table";
-import WebhookRow from "./webhook_table";
-import WebhookEventRow from "./webhook_event_table";
+import AccessRequestRow from './access_request_table';
+import AiChatMessageRow from './ai_chat_message_table';
+import AiChatSessionRow from './ai_chat_session_table';
+import AiConfigRow from './ai_config_table';
+import ApiKeyRow from './api_key_table';
+import AppSettingRow from './app_setting_table';
+import AttachmentRow from './attachment_table';
+import AuditEventRow from './audit_event_table';
+import CollabSessionRow from './collab_session_table';
+import CollabUpdateRow from './collab_update_table';
+import CollectionRow from './collection_table';
+import CollectionGroupPermissionRow from './collection_group_permission_table';
+import CollectionMemberRow from './collection_member_table';
+import CollectionSortRuleRow from './collection_sort_rule_table';
+import CommentRow from './comment_table';
+import CommentReactionRow from './comment_reaction_table';
+import DbBaseRow from './db_base_table';
+import DbCellRow from './db_cell_table';
+import DbColumnRow from './db_column_table';
+import DbRowRow from './db_row_table';
+import FavoriteRow from './favorite_table';
+import GroupRow from './group_table';
+import GroupMemberRow from './group_member_table';
+import InvitationRow from './invitation_table';
+import LdapProviderRow from './ldap_provider_table';
+import LdapUserRow from './ldap_user_table';
+import MfaBackupCodeRow from './mfa_backup_code_table';
+import MfaMethodRow from './mfa_method_table';
+import NotificationRow from './notification_table';
+import OauthProviderRow from './oauth_provider_table';
+import OauthUserRow from './oauth_user_table';
+import OidcProviderRow from './oidc_provider_table';
+import PageRow from './page_table';
+import PagePermissionRow from './page_permission_table';
+import PageRevisionRow from './page_revision_table';
+import PageTagRow from './page_tag_table';
+import PageViewRow from './page_view_table';
+import PasskeyChallengeRow from './passkey_challenge_table';
+import PasskeyCredentialRow from './passkey_credential_table';
+import SamlProviderRow from './saml_provider_table';
+import ScimEventRow from './scim_event_table';
+import ScimProviderRow from './scim_provider_table';
+import SearchResultRow from './search_result_table';
+import ShareLinkRow from './share_link_table';
+import SyncedBlockRow from './synced_block_table';
+import SyncedBlockRefRow from './synced_block_ref_table';
+import UserRow from './user_table';
+import WatchRow from './watch_table';
+import WebhookRow from './webhook_table';
+import WebhookEventRow from './webhook_event_table';
 
 /** Type-only namespace exports for generated type groups. */
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
-  access_request: __table({
-    name: 'access_request',
-    indexes: [
-      { accessor: 'id', name: 'access_request_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'access_request_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'access_request_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, AccessRequestRow),
-  ai_chat_message: __table({
-    name: 'ai_chat_message',
-    indexes: [
-      { accessor: 'id', name: 'ai_chat_message_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'session_id', name: 'ai_chat_message_session_id_idx_btree', algorithm: 'btree', columns: [
-        'sessionId',
-      ] },
-    ],
-    constraints: [
-      { name: 'ai_chat_message_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, AiChatMessageRow),
-  ai_chat_session: __table({
-    name: 'ai_chat_session',
-    indexes: [
-      { accessor: 'id', name: 'ai_chat_session_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'ai_chat_session_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, AiChatSessionRow),
-  ai_config: __table({
-    name: 'ai_config',
-    indexes: [
-      { accessor: 'key', name: 'ai_config_key_idx_btree', algorithm: 'btree', columns: [
-        'key',
-      ] },
-    ],
-    constraints: [
-      { name: 'ai_config_key_key', constraint: 'unique', columns: ['key'] },
-    ],
-  }, AiConfigRow),
-  api_key: __table({
-    name: 'api_key',
-    indexes: [
-      { accessor: 'id', name: 'api_key_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'user_id', name: 'api_key_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'api_key_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, ApiKeyRow),
-  app_setting: __table({
-    name: 'app_setting',
-    indexes: [
-      { accessor: 'key', name: 'app_setting_key_idx_btree', algorithm: 'btree', columns: [
-        'key',
-      ] },
-    ],
-    constraints: [
-      { name: 'app_setting_key_key', constraint: 'unique', columns: ['key'] },
-    ],
-  }, AppSettingRow),
-  attachment: __table({
-    name: 'attachment',
-    indexes: [
-      { accessor: 'id', name: 'attachment_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'attachment_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'attachment_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, AttachmentRow),
-  audit_event: __table({
-    name: 'audit_event',
-    indexes: [
-      { accessor: 'actor_id', name: 'audit_event_actor_id_idx_btree', algorithm: 'btree', columns: [
-        'actorId',
-      ] },
-      { accessor: 'created_at', name: 'audit_event_created_at_idx_btree', algorithm: 'btree', columns: [
-        'createdAt',
-      ] },
-      { accessor: 'event_type', name: 'audit_event_event_type_idx_btree', algorithm: 'btree', columns: [
-        'eventType',
-      ] },
-      { accessor: 'id', name: 'audit_event_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'audit_event_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, AuditEventRow),
-  collab_session: __table({
-    name: 'collab_session',
-    indexes: [
-      { accessor: 'id', name: 'collab_session_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'collab_session_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'collab_session_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, CollabSessionRow),
-  collab_update: __table({
-    name: 'collab_update',
-    indexes: [
-      { accessor: 'id', name: 'collab_update_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'collab_update_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'collab_update_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, CollabUpdateRow),
-  collection: __table({
-    name: 'collection',
-    indexes: [
-      { accessor: 'created_by', name: 'collection_created_by_idx_btree', algorithm: 'btree', columns: [
-        'createdBy',
-      ] },
-      { accessor: 'id', name: 'collection_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'slug', name: 'collection_slug_idx_btree', algorithm: 'btree', columns: [
-        'slug',
-      ] },
-    ],
-    constraints: [
-      { name: 'collection_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, CollectionRow),
-  collection_group_permission: __table({
-    name: 'collection_group_permission',
-    indexes: [
-      { accessor: 'collection_id', name: 'collection_group_permission_collection_id_idx_btree', algorithm: 'btree', columns: [
-        'collectionId',
-      ] },
-      { accessor: 'id', name: 'collection_group_permission_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'collection_group_permission_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, CollectionGroupPermissionRow),
-  collection_member: __table({
-    name: 'collection_member',
-    indexes: [
-      { accessor: 'collection_id', name: 'collection_member_collection_id_idx_btree', algorithm: 'btree', columns: [
-        'collectionId',
-      ] },
-      { accessor: 'id', name: 'collection_member_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'user_id', name: 'collection_member_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'collection_member_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, CollectionMemberRow),
-  collection_sort_rule: __table({
-    name: 'collection_sort_rule',
-    indexes: [
-      { accessor: 'collection_id', name: 'collection_sort_rule_collection_id_idx_btree', algorithm: 'btree', columns: [
-        'collectionId',
-      ] },
-    ],
-    constraints: [
-      { name: 'collection_sort_rule_collection_id_key', constraint: 'unique', columns: ['collectionId'] },
-    ],
-  }, CollectionSortRuleRow),
-  comment: __table({
-    name: 'comment',
-    indexes: [
-      { accessor: 'id', name: 'comment_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'comment_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'comment_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, CommentRow),
-  comment_reaction: __table({
-    name: 'comment_reaction',
-    indexes: [
-      { accessor: 'comment_id', name: 'comment_reaction_comment_id_idx_btree', algorithm: 'btree', columns: [
-        'commentId',
-      ] },
-      { accessor: 'id', name: 'comment_reaction_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'comment_reaction_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, CommentReactionRow),
-  db_base: __table({
-    name: 'db_base',
-    indexes: [
-      { accessor: 'id', name: 'db_base_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'db_base_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'db_base_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, DbBaseRow),
-  db_cell: __table({
-    name: 'db_cell',
-    indexes: [
-      { accessor: 'column_id', name: 'db_cell_column_id_idx_btree', algorithm: 'btree', columns: [
-        'columnId',
-      ] },
-      { accessor: 'id', name: 'db_cell_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'row_id', name: 'db_cell_row_id_idx_btree', algorithm: 'btree', columns: [
-        'rowId',
-      ] },
-    ],
-    constraints: [
-      { name: 'db_cell_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, DbCellRow),
-  db_column: __table({
-    name: 'db_column',
-    indexes: [
-      { accessor: 'base_id', name: 'db_column_base_id_idx_btree', algorithm: 'btree', columns: [
-        'baseId',
-      ] },
-      { accessor: 'id', name: 'db_column_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'db_column_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, DbColumnRow),
-  db_row: __table({
-    name: 'db_row',
-    indexes: [
-      { accessor: 'base_id', name: 'db_row_base_id_idx_btree', algorithm: 'btree', columns: [
-        'baseId',
-      ] },
-      { accessor: 'id', name: 'db_row_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'db_row_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, DbRowRow),
-  favorite: __table({
-    name: 'favorite',
-    indexes: [
-      { accessor: 'id', name: 'favorite_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'favorite_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-      { accessor: 'user_id', name: 'favorite_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'favorite_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, FavoriteRow),
-  group: __table({
-    name: 'group',
-    indexes: [
-      { accessor: 'id', name: 'group_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'group_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, GroupRow),
-  group_member: __table({
-    name: 'group_member',
-    indexes: [
-      { accessor: 'group_id', name: 'group_member_group_id_idx_btree', algorithm: 'btree', columns: [
-        'groupId',
-      ] },
-      { accessor: 'id', name: 'group_member_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'user_id', name: 'group_member_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'group_member_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, GroupMemberRow),
-  invitation: __table({
-    name: 'invitation',
-    indexes: [
-      { accessor: 'email', name: 'invitation_email_idx_btree', algorithm: 'btree', columns: [
-        'email',
-      ] },
-      { accessor: 'id', name: 'invitation_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'token', name: 'invitation_token_idx_btree', algorithm: 'btree', columns: [
-        'token',
-      ] },
-    ],
-    constraints: [
-      { name: 'invitation_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, InvitationRow),
-  ldap_provider: __table({
-    name: 'ldap_provider',
-    indexes: [
-      { accessor: 'id', name: 'ldap_provider_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'ldap_provider_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, LdapProviderRow),
-  ldap_user: __table({
-    name: 'ldap_user',
-    indexes: [
-      { accessor: 'id', name: 'ldap_user_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'ldap_provider_id', name: 'ldap_user_ldap_provider_id_idx_btree', algorithm: 'btree', columns: [
-        'ldapProviderId',
-      ] },
-      { accessor: 'user_id', name: 'ldap_user_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'ldap_user_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, LdapUserRow),
-  mfa_backup_code: __table({
-    name: 'mfa_backup_code',
-    indexes: [
-      { accessor: 'id', name: 'mfa_backup_code_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'user_id', name: 'mfa_backup_code_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'mfa_backup_code_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, MfaBackupCodeRow),
-  mfa_method: __table({
-    name: 'mfa_method',
-    indexes: [
-      { accessor: 'id', name: 'mfa_method_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'user_id', name: 'mfa_method_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'mfa_method_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, MfaMethodRow),
-  notification: __table({
-    name: 'notification',
-    indexes: [
-      { accessor: 'created_at', name: 'notification_created_at_idx_btree', algorithm: 'btree', columns: [
-        'createdAt',
-      ] },
-      { accessor: 'id', name: 'notification_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'user_id', name: 'notification_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'notification_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, NotificationRow),
-  oauth_provider: __table({
-    name: 'oauth_provider',
-    indexes: [
-      { accessor: 'id', name: 'oauth_provider_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'oauth_provider_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, OauthProviderRow),
-  oauth_user: __table({
-    name: 'oauth_user',
-    indexes: [
-      { accessor: 'id', name: 'oauth_user_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'provider_id', name: 'oauth_user_provider_id_idx_btree', algorithm: 'btree', columns: [
-        'providerId',
-      ] },
-      { accessor: 'user_id', name: 'oauth_user_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'oauth_user_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, OauthUserRow),
-  oidc_provider: __table({
-    name: 'oidc_provider',
-    indexes: [
-      { accessor: 'id', name: 'oidc_provider_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'oidc_provider_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, OidcProviderRow),
-  page: __table({
-    name: 'page',
-    indexes: [
-      { accessor: 'collection_id', name: 'page_collection_id_idx_btree', algorithm: 'btree', columns: [
-        'collectionId',
-      ] },
-      { accessor: 'created_by', name: 'page_created_by_idx_btree', algorithm: 'btree', columns: [
-        'createdBy',
-      ] },
-      { accessor: 'id', name: 'page_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'updated_at', name: 'page_updated_at_idx_btree', algorithm: 'btree', columns: [
-        'updatedAt',
-      ] },
-    ],
-    constraints: [
-      { name: 'page_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, PageRow),
-  page_permission: __table({
-    name: 'page_permission',
-    indexes: [
-      { accessor: 'id', name: 'page_permission_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'page_permission_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'page_permission_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, PagePermissionRow),
-  page_revision: __table({
-    name: 'page_revision',
-    indexes: [
-      { accessor: 'id', name: 'page_revision_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'page_revision_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'page_revision_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, PageRevisionRow),
-  page_tag: __table({
-    name: 'page_tag',
-    indexes: [
-      { accessor: 'id', name: 'page_tag_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'name', name: 'page_tag_name_idx_btree', algorithm: 'btree', columns: [
-        'name',
-      ] },
-      { accessor: 'page_id', name: 'page_tag_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'page_tag_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, PageTagRow),
-  page_view: __table({
-    name: 'page_view',
-    indexes: [
-      { accessor: 'id', name: 'page_view_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'page_view_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'page_view_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, PageViewRow),
-  passkey_challenge: __table({
-    name: 'passkey_challenge',
-    indexes: [
-      { accessor: 'challenge', name: 'passkey_challenge_challenge_idx_btree', algorithm: 'btree', columns: [
-        'challenge',
-      ] },
-    ],
-    constraints: [
-      { name: 'passkey_challenge_challenge_key', constraint: 'unique', columns: ['challenge'] },
-    ],
-  }, PasskeyChallengeRow),
-  passkey_credential: __table({
-    name: 'passkey_credential',
-    indexes: [
-      { accessor: 'id', name: 'passkey_credential_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'user_id', name: 'passkey_credential_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'passkey_credential_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, PasskeyCredentialRow),
-  saml_provider: __table({
-    name: 'saml_provider',
-    indexes: [
-      { accessor: 'id', name: 'saml_provider_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'saml_provider_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, SamlProviderRow),
-  scim_event: __table({
-    name: 'scim_event',
-    indexes: [
-      { accessor: 'id', name: 'scim_event_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'provider_id', name: 'scim_event_provider_id_idx_btree', algorithm: 'btree', columns: [
-        'providerId',
-      ] },
-    ],
-    constraints: [
-      { name: 'scim_event_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, ScimEventRow),
-  scim_provider: __table({
-    name: 'scim_provider',
-    indexes: [
-      { accessor: 'id', name: 'scim_provider_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'scim_provider_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, ScimProviderRow),
-  search_result: __table({
-    name: 'search_result',
-    indexes: [
-      { accessor: 'id', name: 'search_result_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'search_result_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, SearchResultRow),
-  share_link: __table({
-    name: 'share_link',
-    indexes: [
-      { accessor: 'id', name: 'share_link_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'share_link_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-      { accessor: 'token', name: 'share_link_token_idx_btree', algorithm: 'btree', columns: [
-        'token',
-      ] },
-    ],
-    constraints: [
-      { name: 'share_link_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, ShareLinkRow),
-  synced_block: __table({
-    name: 'synced_block',
-    indexes: [
-      { accessor: 'id', name: 'synced_block_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'synced_block_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, SyncedBlockRow),
-  synced_block_ref: __table({
-    name: 'synced_block_ref',
-    indexes: [
-      { accessor: 'block_id', name: 'synced_block_ref_block_id_idx_btree', algorithm: 'btree', columns: [
-        'blockId',
-      ] },
-      { accessor: 'id', name: 'synced_block_ref_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'page_id', name: 'synced_block_ref_page_id_idx_btree', algorithm: 'btree', columns: [
-        'pageId',
-      ] },
-    ],
-    constraints: [
-      { name: 'synced_block_ref_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, SyncedBlockRefRow),
-  user: __table({
-    name: 'user',
-    indexes: [
-      { accessor: 'email', name: 'user_email_idx_btree', algorithm: 'btree', columns: [
-        'email',
-      ] },
-      { accessor: 'id', name: 'user_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'user_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, UserRow),
-  watch: __table({
-    name: 'watch',
-    indexes: [
-      { accessor: 'id', name: 'watch_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'target_id', name: 'watch_target_id_idx_btree', algorithm: 'btree', columns: [
-        'targetId',
-      ] },
-      { accessor: 'user_id', name: 'watch_user_id_idx_btree', algorithm: 'btree', columns: [
-        'userId',
-      ] },
-    ],
-    constraints: [
-      { name: 'watch_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, WatchRow),
-  webhook: __table({
-    name: 'webhook',
-    indexes: [
-      { accessor: 'id', name: 'webhook_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-    ],
-    constraints: [
-      { name: 'webhook_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, WebhookRow),
-  webhook_event: __table({
-    name: 'webhook_event',
-    indexes: [
-      { accessor: 'id', name: 'webhook_event_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'status', name: 'webhook_event_status_idx_btree', algorithm: 'btree', columns: [
-        'status',
-      ] },
-      { accessor: 'webhook_id', name: 'webhook_event_webhook_id_idx_btree', algorithm: 'btree', columns: [
-        'webhookId',
-      ] },
-    ],
-    constraints: [
-      { name: 'webhook_event_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, WebhookEventRow),
+  access_request: __table(
+    {
+      name: 'access_request',
+      indexes: [
+        {
+          accessor: 'id',
+          name: 'access_request_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+        {
+          accessor: 'page_id',
+          name: 'access_request_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'access_request_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    AccessRequestRow,
+  ),
+  ai_chat_message: __table(
+    {
+      name: 'ai_chat_message',
+      indexes: [
+        {
+          accessor: 'id',
+          name: 'ai_chat_message_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+        {
+          accessor: 'session_id',
+          name: 'ai_chat_message_session_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['sessionId'],
+        },
+      ],
+      constraints: [{ name: 'ai_chat_message_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    AiChatMessageRow,
+  ),
+  ai_chat_session: __table(
+    {
+      name: 'ai_chat_session',
+      indexes: [
+        {
+          accessor: 'id',
+          name: 'ai_chat_session_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+      ],
+      constraints: [{ name: 'ai_chat_session_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    AiChatSessionRow,
+  ),
+  ai_config: __table(
+    {
+      name: 'ai_config',
+      indexes: [
+        { accessor: 'key', name: 'ai_config_key_idx_btree', algorithm: 'btree', columns: ['key'] },
+      ],
+      constraints: [{ name: 'ai_config_key_key', constraint: 'unique', columns: ['key'] }],
+    },
+    AiConfigRow,
+  ),
+  api_key: __table(
+    {
+      name: 'api_key',
+      indexes: [
+        { accessor: 'id', name: 'api_key_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'user_id',
+          name: 'api_key_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'api_key_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    ApiKeyRow,
+  ),
+  app_setting: __table(
+    {
+      name: 'app_setting',
+      indexes: [
+        {
+          accessor: 'key',
+          name: 'app_setting_key_idx_btree',
+          algorithm: 'btree',
+          columns: ['key'],
+        },
+      ],
+      constraints: [{ name: 'app_setting_key_key', constraint: 'unique', columns: ['key'] }],
+    },
+    AppSettingRow,
+  ),
+  attachment: __table(
+    {
+      name: 'attachment',
+      indexes: [
+        { accessor: 'id', name: 'attachment_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'page_id',
+          name: 'attachment_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'attachment_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    AttachmentRow,
+  ),
+  audit_event: __table(
+    {
+      name: 'audit_event',
+      indexes: [
+        {
+          accessor: 'actor_id',
+          name: 'audit_event_actor_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['actorId'],
+        },
+        {
+          accessor: 'created_at',
+          name: 'audit_event_created_at_idx_btree',
+          algorithm: 'btree',
+          columns: ['createdAt'],
+        },
+        {
+          accessor: 'event_type',
+          name: 'audit_event_event_type_idx_btree',
+          algorithm: 'btree',
+          columns: ['eventType'],
+        },
+        { accessor: 'id', name: 'audit_event_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'audit_event_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    AuditEventRow,
+  ),
+  collab_session: __table(
+    {
+      name: 'collab_session',
+      indexes: [
+        {
+          accessor: 'id',
+          name: 'collab_session_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+        {
+          accessor: 'page_id',
+          name: 'collab_session_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'collab_session_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    CollabSessionRow,
+  ),
+  collab_update: __table(
+    {
+      name: 'collab_update',
+      indexes: [
+        { accessor: 'id', name: 'collab_update_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'page_id',
+          name: 'collab_update_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'collab_update_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    CollabUpdateRow,
+  ),
+  collection: __table(
+    {
+      name: 'collection',
+      indexes: [
+        {
+          accessor: 'created_by',
+          name: 'collection_created_by_idx_btree',
+          algorithm: 'btree',
+          columns: ['createdBy'],
+        },
+        { accessor: 'id', name: 'collection_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'slug',
+          name: 'collection_slug_idx_btree',
+          algorithm: 'btree',
+          columns: ['slug'],
+        },
+      ],
+      constraints: [{ name: 'collection_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    CollectionRow,
+  ),
+  collection_group_permission: __table(
+    {
+      name: 'collection_group_permission',
+      indexes: [
+        {
+          accessor: 'collection_id',
+          name: 'collection_group_permission_collection_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['collectionId'],
+        },
+        {
+          accessor: 'id',
+          name: 'collection_group_permission_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+      ],
+      constraints: [
+        { name: 'collection_group_permission_id_key', constraint: 'unique', columns: ['id'] },
+      ],
+    },
+    CollectionGroupPermissionRow,
+  ),
+  collection_member: __table(
+    {
+      name: 'collection_member',
+      indexes: [
+        {
+          accessor: 'collection_id',
+          name: 'collection_member_collection_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['collectionId'],
+        },
+        {
+          accessor: 'id',
+          name: 'collection_member_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+        {
+          accessor: 'user_id',
+          name: 'collection_member_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'collection_member_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    CollectionMemberRow,
+  ),
+  collection_sort_rule: __table(
+    {
+      name: 'collection_sort_rule',
+      indexes: [
+        {
+          accessor: 'collection_id',
+          name: 'collection_sort_rule_collection_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['collectionId'],
+        },
+      ],
+      constraints: [
+        {
+          name: 'collection_sort_rule_collection_id_key',
+          constraint: 'unique',
+          columns: ['collectionId'],
+        },
+      ],
+    },
+    CollectionSortRuleRow,
+  ),
+  comment: __table(
+    {
+      name: 'comment',
+      indexes: [
+        { accessor: 'id', name: 'comment_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'page_id',
+          name: 'comment_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'comment_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    CommentRow,
+  ),
+  comment_reaction: __table(
+    {
+      name: 'comment_reaction',
+      indexes: [
+        {
+          accessor: 'comment_id',
+          name: 'comment_reaction_comment_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['commentId'],
+        },
+        {
+          accessor: 'id',
+          name: 'comment_reaction_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+      ],
+      constraints: [{ name: 'comment_reaction_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    CommentReactionRow,
+  ),
+  db_base: __table(
+    {
+      name: 'db_base',
+      indexes: [
+        { accessor: 'id', name: 'db_base_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'page_id',
+          name: 'db_base_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'db_base_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    DbBaseRow,
+  ),
+  db_cell: __table(
+    {
+      name: 'db_cell',
+      indexes: [
+        {
+          accessor: 'column_id',
+          name: 'db_cell_column_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['columnId'],
+        },
+        { accessor: 'id', name: 'db_cell_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'row_id',
+          name: 'db_cell_row_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['rowId'],
+        },
+      ],
+      constraints: [{ name: 'db_cell_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    DbCellRow,
+  ),
+  db_column: __table(
+    {
+      name: 'db_column',
+      indexes: [
+        {
+          accessor: 'base_id',
+          name: 'db_column_base_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['baseId'],
+        },
+        { accessor: 'id', name: 'db_column_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'db_column_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    DbColumnRow,
+  ),
+  db_row: __table(
+    {
+      name: 'db_row',
+      indexes: [
+        {
+          accessor: 'base_id',
+          name: 'db_row_base_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['baseId'],
+        },
+        { accessor: 'id', name: 'db_row_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'db_row_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    DbRowRow,
+  ),
+  favorite: __table(
+    {
+      name: 'favorite',
+      indexes: [
+        { accessor: 'id', name: 'favorite_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'page_id',
+          name: 'favorite_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+        {
+          accessor: 'user_id',
+          name: 'favorite_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'favorite_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    FavoriteRow,
+  ),
+  group: __table(
+    {
+      name: 'group',
+      indexes: [
+        { accessor: 'id', name: 'group_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'group_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    GroupRow,
+  ),
+  group_member: __table(
+    {
+      name: 'group_member',
+      indexes: [
+        {
+          accessor: 'group_id',
+          name: 'group_member_group_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['groupId'],
+        },
+        { accessor: 'id', name: 'group_member_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'user_id',
+          name: 'group_member_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'group_member_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    GroupMemberRow,
+  ),
+  invitation: __table(
+    {
+      name: 'invitation',
+      indexes: [
+        {
+          accessor: 'email',
+          name: 'invitation_email_idx_btree',
+          algorithm: 'btree',
+          columns: ['email'],
+        },
+        { accessor: 'id', name: 'invitation_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'token',
+          name: 'invitation_token_idx_btree',
+          algorithm: 'btree',
+          columns: ['token'],
+        },
+      ],
+      constraints: [{ name: 'invitation_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    InvitationRow,
+  ),
+  ldap_provider: __table(
+    {
+      name: 'ldap_provider',
+      indexes: [
+        { accessor: 'id', name: 'ldap_provider_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'ldap_provider_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    LdapProviderRow,
+  ),
+  ldap_user: __table(
+    {
+      name: 'ldap_user',
+      indexes: [
+        { accessor: 'id', name: 'ldap_user_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'ldap_provider_id',
+          name: 'ldap_user_ldap_provider_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['ldapProviderId'],
+        },
+        {
+          accessor: 'user_id',
+          name: 'ldap_user_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'ldap_user_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    LdapUserRow,
+  ),
+  mfa_backup_code: __table(
+    {
+      name: 'mfa_backup_code',
+      indexes: [
+        {
+          accessor: 'id',
+          name: 'mfa_backup_code_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+        {
+          accessor: 'user_id',
+          name: 'mfa_backup_code_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'mfa_backup_code_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    MfaBackupCodeRow,
+  ),
+  mfa_method: __table(
+    {
+      name: 'mfa_method',
+      indexes: [
+        { accessor: 'id', name: 'mfa_method_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'user_id',
+          name: 'mfa_method_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'mfa_method_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    MfaMethodRow,
+  ),
+  notification: __table(
+    {
+      name: 'notification',
+      indexes: [
+        {
+          accessor: 'created_at',
+          name: 'notification_created_at_idx_btree',
+          algorithm: 'btree',
+          columns: ['createdAt'],
+        },
+        { accessor: 'id', name: 'notification_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'user_id',
+          name: 'notification_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'notification_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    NotificationRow,
+  ),
+  oauth_provider: __table(
+    {
+      name: 'oauth_provider',
+      indexes: [
+        {
+          accessor: 'id',
+          name: 'oauth_provider_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+      ],
+      constraints: [{ name: 'oauth_provider_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    OauthProviderRow,
+  ),
+  oauth_user: __table(
+    {
+      name: 'oauth_user',
+      indexes: [
+        { accessor: 'id', name: 'oauth_user_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'provider_id',
+          name: 'oauth_user_provider_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['providerId'],
+        },
+        {
+          accessor: 'user_id',
+          name: 'oauth_user_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'oauth_user_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    OauthUserRow,
+  ),
+  oidc_provider: __table(
+    {
+      name: 'oidc_provider',
+      indexes: [
+        { accessor: 'id', name: 'oidc_provider_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'oidc_provider_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    OidcProviderRow,
+  ),
+  page: __table(
+    {
+      name: 'page',
+      indexes: [
+        {
+          accessor: 'collection_id',
+          name: 'page_collection_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['collectionId'],
+        },
+        {
+          accessor: 'created_by',
+          name: 'page_created_by_idx_btree',
+          algorithm: 'btree',
+          columns: ['createdBy'],
+        },
+        { accessor: 'id', name: 'page_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'updated_at',
+          name: 'page_updated_at_idx_btree',
+          algorithm: 'btree',
+          columns: ['updatedAt'],
+        },
+      ],
+      constraints: [{ name: 'page_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    PageRow,
+  ),
+  page_permission: __table(
+    {
+      name: 'page_permission',
+      indexes: [
+        {
+          accessor: 'id',
+          name: 'page_permission_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+        {
+          accessor: 'page_id',
+          name: 'page_permission_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'page_permission_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    PagePermissionRow,
+  ),
+  page_revision: __table(
+    {
+      name: 'page_revision',
+      indexes: [
+        { accessor: 'id', name: 'page_revision_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'page_id',
+          name: 'page_revision_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'page_revision_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    PageRevisionRow,
+  ),
+  page_tag: __table(
+    {
+      name: 'page_tag',
+      indexes: [
+        { accessor: 'id', name: 'page_tag_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'name',
+          name: 'page_tag_name_idx_btree',
+          algorithm: 'btree',
+          columns: ['name'],
+        },
+        {
+          accessor: 'page_id',
+          name: 'page_tag_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'page_tag_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    PageTagRow,
+  ),
+  page_view: __table(
+    {
+      name: 'page_view',
+      indexes: [
+        { accessor: 'id', name: 'page_view_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'page_id',
+          name: 'page_view_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'page_view_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    PageViewRow,
+  ),
+  passkey_challenge: __table(
+    {
+      name: 'passkey_challenge',
+      indexes: [
+        {
+          accessor: 'challenge',
+          name: 'passkey_challenge_challenge_idx_btree',
+          algorithm: 'btree',
+          columns: ['challenge'],
+        },
+      ],
+      constraints: [
+        { name: 'passkey_challenge_challenge_key', constraint: 'unique', columns: ['challenge'] },
+      ],
+    },
+    PasskeyChallengeRow,
+  ),
+  passkey_credential: __table(
+    {
+      name: 'passkey_credential',
+      indexes: [
+        {
+          accessor: 'id',
+          name: 'passkey_credential_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+        {
+          accessor: 'user_id',
+          name: 'passkey_credential_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'passkey_credential_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    PasskeyCredentialRow,
+  ),
+  saml_provider: __table(
+    {
+      name: 'saml_provider',
+      indexes: [
+        { accessor: 'id', name: 'saml_provider_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'saml_provider_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    SamlProviderRow,
+  ),
+  scim_event: __table(
+    {
+      name: 'scim_event',
+      indexes: [
+        { accessor: 'id', name: 'scim_event_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'provider_id',
+          name: 'scim_event_provider_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['providerId'],
+        },
+      ],
+      constraints: [{ name: 'scim_event_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    ScimEventRow,
+  ),
+  scim_provider: __table(
+    {
+      name: 'scim_provider',
+      indexes: [
+        { accessor: 'id', name: 'scim_provider_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'scim_provider_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    ScimProviderRow,
+  ),
+  search_result: __table(
+    {
+      name: 'search_result',
+      indexes: [
+        { accessor: 'id', name: 'search_result_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'search_result_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    SearchResultRow,
+  ),
+  share_link: __table(
+    {
+      name: 'share_link',
+      indexes: [
+        { accessor: 'id', name: 'share_link_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'page_id',
+          name: 'share_link_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+        {
+          accessor: 'token',
+          name: 'share_link_token_idx_btree',
+          algorithm: 'btree',
+          columns: ['token'],
+        },
+      ],
+      constraints: [{ name: 'share_link_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    ShareLinkRow,
+  ),
+  synced_block: __table(
+    {
+      name: 'synced_block',
+      indexes: [
+        { accessor: 'id', name: 'synced_block_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'synced_block_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    SyncedBlockRow,
+  ),
+  synced_block_ref: __table(
+    {
+      name: 'synced_block_ref',
+      indexes: [
+        {
+          accessor: 'block_id',
+          name: 'synced_block_ref_block_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['blockId'],
+        },
+        {
+          accessor: 'id',
+          name: 'synced_block_ref_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['id'],
+        },
+        {
+          accessor: 'page_id',
+          name: 'synced_block_ref_page_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['pageId'],
+        },
+      ],
+      constraints: [{ name: 'synced_block_ref_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    SyncedBlockRefRow,
+  ),
+  user: __table(
+    {
+      name: 'user',
+      indexes: [
+        { accessor: 'email', name: 'user_email_idx_btree', algorithm: 'btree', columns: ['email'] },
+        { accessor: 'id', name: 'user_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'user_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    UserRow,
+  ),
+  watch: __table(
+    {
+      name: 'watch',
+      indexes: [
+        { accessor: 'id', name: 'watch_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'target_id',
+          name: 'watch_target_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['targetId'],
+        },
+        {
+          accessor: 'user_id',
+          name: 'watch_user_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['userId'],
+        },
+      ],
+      constraints: [{ name: 'watch_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    WatchRow,
+  ),
+  webhook: __table(
+    {
+      name: 'webhook',
+      indexes: [
+        { accessor: 'id', name: 'webhook_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+      ],
+      constraints: [{ name: 'webhook_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    WebhookRow,
+  ),
+  webhook_event: __table(
+    {
+      name: 'webhook_event',
+      indexes: [
+        { accessor: 'id', name: 'webhook_event_id_idx_btree', algorithm: 'btree', columns: ['id'] },
+        {
+          accessor: 'status',
+          name: 'webhook_event_status_idx_btree',
+          algorithm: 'btree',
+          columns: ['status'],
+        },
+        {
+          accessor: 'webhook_id',
+          name: 'webhook_event_webhook_id_idx_btree',
+          algorithm: 'btree',
+          columns: ['webhookId'],
+        },
+      ],
+      constraints: [{ name: 'webhook_event_id_key', constraint: 'unique', columns: ['id'] }],
+    },
+    WebhookEventRow,
+  ),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
-  __reducerSchema("accept_invitation", AcceptInvitationReducer),
-  __reducerSchema("add_ai_chat_message", AddAiChatMessageReducer),
-  __reducerSchema("add_attachment", AddAttachmentReducer),
-  __reducerSchema("add_collection_member", AddCollectionMemberReducer),
-  __reducerSchema("add_comment", AddCommentReducer),
-  __reducerSchema("add_comment_reaction", AddCommentReactionReducer),
-  __reducerSchema("add_group_member", AddGroupMemberReducer),
-  __reducerSchema("add_ldap_provider", AddLdapProviderReducer),
-  __reducerSchema("add_oauth_provider", AddOauthProviderReducer),
-  __reducerSchema("add_oidc_provider", AddOidcProviderReducer),
-  __reducerSchema("add_saml_provider", AddSamlProviderReducer),
-  __reducerSchema("add_scim_provider", AddScimProviderReducer),
-  __reducerSchema("add_synced_block_ref", AddSyncedBlockRefReducer),
-  __reducerSchema("add_tag", AddTagReducer),
-  __reducerSchema("apply_collection_auto_sort", ApplyCollectionAutoSortReducer),
-  __reducerSchema("approve_access_request", ApproveAccessRequestReducer),
-  __reducerSchema("batch_add_tag", BatchAddTagReducer),
-  __reducerSchema("batch_delete_pages", BatchDeletePagesReducer),
-  __reducerSchema("batch_move_pages", BatchMovePagesReducer),
-  __reducerSchema("batch_set_page_status", BatchSetPageStatusReducer),
-  __reducerSchema("broadcast_yjs_update", BroadcastYjsUpdateReducer),
-  __reducerSchema("cleanup_old_collab_updates", CleanupOldCollabUpdatesReducer),
-  __reducerSchema("cleanup_search_results", CleanupSearchResultsReducer),
-  __reducerSchema("cleanup_stale_collab_sessions", CleanupStaleCollabSessionsReducer),
-  __reducerSchema("cleanup_webhook_events", CleanupWebhookEventsReducer),
-  __reducerSchema("clear_all_notifications", ClearAllNotificationsReducer),
-  __reducerSchema("consume_passkey_challenge", ConsumePasskeyChallengeReducer),
-  __reducerSchema("create_access_request", CreateAccessRequestReducer),
-  __reducerSchema("create_ai_chat_session", CreateAiChatSessionReducer),
-  __reducerSchema("create_api_key", CreateApiKeyReducer),
-  __reducerSchema("create_collection", CreateCollectionReducer),
-  __reducerSchema("create_db_base", CreateDbBaseReducer),
-  __reducerSchema("create_db_column", CreateDbColumnReducer),
-  __reducerSchema("create_db_row", CreateDbRowReducer),
-  __reducerSchema("create_from_template", CreateFromTemplateReducer),
-  __reducerSchema("create_group", CreateGroupReducer),
-  __reducerSchema("create_invitation", CreateInvitationReducer),
-  __reducerSchema("create_notification", CreateNotificationReducer),
-  __reducerSchema("create_page", CreatePageReducer),
-  __reducerSchema("create_passkey_challenge", CreatePasskeyChallengeReducer),
-  __reducerSchema("create_share_link", CreateShareLinkReducer),
-  __reducerSchema("create_synced_block", CreateSyncedBlockReducer),
-  __reducerSchema("delete_ai_chat_message", DeleteAiChatMessageReducer),
-  __reducerSchema("delete_ai_chat_session", DeleteAiChatSessionReducer),
-  __reducerSchema("delete_attachment", DeleteAttachmentReducer),
-  __reducerSchema("delete_collection", DeleteCollectionReducer),
-  __reducerSchema("delete_collection_sort_rule", DeleteCollectionSortRuleReducer),
-  __reducerSchema("delete_comment", DeleteCommentReducer),
-  __reducerSchema("delete_db_base", DeleteDbBaseReducer),
-  __reducerSchema("delete_db_row", DeleteDbRowReducer),
-  __reducerSchema("delete_group", DeleteGroupReducer),
-  __reducerSchema("delete_ldap_provider", DeleteLdapProviderReducer),
-  __reducerSchema("delete_notification", DeleteNotificationReducer),
-  __reducerSchema("delete_oauth_provider", DeleteOauthProviderReducer),
-  __reducerSchema("delete_oidc_provider", DeleteOidcProviderReducer),
-  __reducerSchema("delete_page_permanent", DeletePagePermanentReducer),
-  __reducerSchema("delete_passkey_credential", DeletePasskeyCredentialReducer),
-  __reducerSchema("delete_saml_provider", DeleteSamlProviderReducer),
-  __reducerSchema("delete_scim_provider", DeleteScimProviderReducer),
-  __reducerSchema("delete_share_link", DeleteShareLinkReducer),
-  __reducerSchema("delete_synced_block", DeleteSyncedBlockReducer),
-  __reducerSchema("delete_webhook", DeleteWebhookReducer),
-  __reducerSchema("deny_access_request", DenyAccessRequestReducer),
-  __reducerSchema("disable_mfa", DisableMfaReducer),
-  __reducerSchema("duplicate_page", DuplicatePageReducer),
-  __reducerSchema("empty_trash", EmptyTrashReducer),
-  __reducerSchema("enable_totp", EnableTotpReducer),
-  __reducerSchema("fire_webhook_event", FireWebhookEventReducer),
-  __reducerSchema("join_collab_session", JoinCollabSessionReducer),
-  __reducerSchema("leave_collab_session", LeaveCollabSessionReducer),
-  __reducerSchema("link_ldap_user", LinkLdapUserReducer),
-  __reducerSchema("link_oauth_user", LinkOauthUserReducer),
-  __reducerSchema("login_user", LoginUserReducer),
-  __reducerSchema("mark_all_notifications_read", MarkAllNotificationsReadReducer),
-  __reducerSchema("mark_as_template", MarkAsTemplateReducer),
-  __reducerSchema("mark_notification_read", MarkNotificationReadReducer),
-  __reducerSchema("mark_webhook_event_sent", MarkWebhookEventSentReducer),
-  __reducerSchema("move_page", MovePageReducer),
-  __reducerSchema("purge_expired_trash", PurgeExpiredTrashReducer),
-  __reducerSchema("record_invitation_view", RecordInvitationViewReducer),
-  __reducerSchema("record_page_view", RecordPageViewReducer),
-  __reducerSchema("record_scim_event", RecordScimEventReducer),
-  __reducerSchema("register_user", RegisterUserReducer),
-  __reducerSchema("remove_collection_group_permission", RemoveCollectionGroupPermissionReducer),
-  __reducerSchema("remove_collection_member", RemoveCollectionMemberReducer),
-  __reducerSchema("remove_group_member", RemoveGroupMemberReducer),
-  __reducerSchema("remove_page_permission", RemovePagePermissionReducer),
-  __reducerSchema("remove_synced_block_ref", RemoveSyncedBlockRefReducer),
-  __reducerSchema("remove_tag", RemoveTagReducer),
-  __reducerSchema("reorder_collections", ReorderCollectionsReducer),
-  __reducerSchema("reorder_db_rows", ReorderDbRowsReducer),
-  __reducerSchema("reorder_pages", ReorderPagesReducer),
-  __reducerSchema("resolve_comment", ResolveCommentReducer),
-  __reducerSchema("restore_page", RestorePageReducer),
-  __reducerSchema("revoke_api_key", RevokeApiKeyReducer),
-  __reducerSchema("revoke_invitation", RevokeInvitationReducer),
-  __reducerSchema("scim_deprovision_group", ScimDeprovisionGroupReducer),
-  __reducerSchema("scim_deprovision_user", ScimDeprovisionUserReducer),
-  __reducerSchema("scim_sync_group", ScimSyncGroupReducer),
-  __reducerSchema("scim_sync_user", ScimSyncUserReducer),
-  __reducerSchema("search_pages", SearchPagesReducer),
-  __reducerSchema("set_ai_config", SetAiConfigReducer),
-  __reducerSchema("set_app_setting", SetAppSettingReducer),
-  __reducerSchema("set_collection_group_permission", SetCollectionGroupPermissionReducer),
-  __reducerSchema("set_collection_sort_rule", SetCollectionSortRuleReducer),
-  __reducerSchema("set_db_cell", SetDbCellReducer),
-  __reducerSchema("set_page_color", SetPageColorReducer),
-  __reducerSchema("set_page_direction", SetPageDirectionReducer),
-  __reducerSchema("set_page_full_width", SetPageFullWidthReducer),
-  __reducerSchema("set_page_icon", SetPageIconReducer),
-  __reducerSchema("set_page_permission", SetPagePermissionReducer),
-  __reducerSchema("set_page_pinned", SetPagePinnedReducer),
-  __reducerSchema("set_page_status", SetPageStatusReducer),
-  __reducerSchema("store_passkey_credential", StorePasskeyCredentialReducer),
-  __reducerSchema("toggle_favorite", ToggleFavoriteReducer),
-  __reducerSchema("toggle_watch", ToggleWatchReducer),
-  __reducerSchema("unlink_oauth_user", UnlinkOauthUserReducer),
-  __reducerSchema("update_api_key_usage", UpdateApiKeyUsageReducer),
-  __reducerSchema("update_collection", UpdateCollectionReducer),
-  __reducerSchema("update_collection_member_role", UpdateCollectionMemberRoleReducer),
-  __reducerSchema("update_cursor_position", UpdateCursorPositionReducer),
-  __reducerSchema("update_db_cell", UpdateDbCellReducer),
-  __reducerSchema("update_group", UpdateGroupReducer),
-  __reducerSchema("update_group_member_role", UpdateGroupMemberRoleReducer),
-  __reducerSchema("update_ldap_provider", UpdateLdapProviderReducer),
-  __reducerSchema("update_oauth_provider", UpdateOauthProviderReducer),
-  __reducerSchema("update_oidc_provider", UpdateOidcProviderReducer),
-  __reducerSchema("update_page", UpdatePageReducer),
-  __reducerSchema("update_passkey_counter", UpdatePasskeyCounterReducer),
-  __reducerSchema("update_saml_provider", UpdateSamlProviderReducer),
-  __reducerSchema("update_scim_provider", UpdateScimProviderReducer),
-  __reducerSchema("update_share_branding", UpdateShareBrandingReducer),
-  __reducerSchema("update_synced_block", UpdateSyncedBlockReducer),
-  __reducerSchema("update_user_avatar", UpdateUserAvatarReducer),
-  __reducerSchema("update_user_role", UpdateUserRoleReducer),
-  __reducerSchema("update_webhook", UpdateWebhookReducer),
-  __reducerSchema("verify_mfa_backup_code", VerifyMfaBackupCodeReducer),
-  __reducerSchema("verify_share_password", VerifySharePasswordReducer),
-  __reducerSchema("verify_totp", VerifyTotpReducer),
-  __reducerSchema("visit_share_link", VisitShareLinkReducer),
+  __reducerSchema('accept_invitation', AcceptInvitationReducer),
+  __reducerSchema('add_ai_chat_message', AddAiChatMessageReducer),
+  __reducerSchema('add_attachment', AddAttachmentReducer),
+  __reducerSchema('add_collection_member', AddCollectionMemberReducer),
+  __reducerSchema('add_comment', AddCommentReducer),
+  __reducerSchema('add_comment_reaction', AddCommentReactionReducer),
+  __reducerSchema('add_group_member', AddGroupMemberReducer),
+  __reducerSchema('add_ldap_provider', AddLdapProviderReducer),
+  __reducerSchema('add_oauth_provider', AddOauthProviderReducer),
+  __reducerSchema('add_oidc_provider', AddOidcProviderReducer),
+  __reducerSchema('add_saml_provider', AddSamlProviderReducer),
+  __reducerSchema('add_scim_provider', AddScimProviderReducer),
+  __reducerSchema('add_synced_block_ref', AddSyncedBlockRefReducer),
+  __reducerSchema('add_tag', AddTagReducer),
+  __reducerSchema('apply_collection_auto_sort', ApplyCollectionAutoSortReducer),
+  __reducerSchema('approve_access_request', ApproveAccessRequestReducer),
+  __reducerSchema('batch_add_tag', BatchAddTagReducer),
+  __reducerSchema('batch_delete_pages', BatchDeletePagesReducer),
+  __reducerSchema('batch_move_pages', BatchMovePagesReducer),
+  __reducerSchema('batch_set_page_status', BatchSetPageStatusReducer),
+  __reducerSchema('broadcast_yjs_update', BroadcastYjsUpdateReducer),
+  __reducerSchema('cleanup_old_collab_updates', CleanupOldCollabUpdatesReducer),
+  __reducerSchema('cleanup_search_results', CleanupSearchResultsReducer),
+  __reducerSchema('cleanup_stale_collab_sessions', CleanupStaleCollabSessionsReducer),
+  __reducerSchema('cleanup_webhook_events', CleanupWebhookEventsReducer),
+  __reducerSchema('clear_all_notifications', ClearAllNotificationsReducer),
+  __reducerSchema('consume_passkey_challenge', ConsumePasskeyChallengeReducer),
+  __reducerSchema('create_access_request', CreateAccessRequestReducer),
+  __reducerSchema('create_ai_chat_session', CreateAiChatSessionReducer),
+  __reducerSchema('create_api_key', CreateApiKeyReducer),
+  __reducerSchema('create_collection', CreateCollectionReducer),
+  __reducerSchema('create_db_base', CreateDbBaseReducer),
+  __reducerSchema('create_db_column', CreateDbColumnReducer),
+  __reducerSchema('create_db_row', CreateDbRowReducer),
+  __reducerSchema('create_from_template', CreateFromTemplateReducer),
+  __reducerSchema('create_group', CreateGroupReducer),
+  __reducerSchema('create_invitation', CreateInvitationReducer),
+  __reducerSchema('create_notification', CreateNotificationReducer),
+  __reducerSchema('create_page', CreatePageReducer),
+  __reducerSchema('create_passkey_challenge', CreatePasskeyChallengeReducer),
+  __reducerSchema('create_share_link', CreateShareLinkReducer),
+  __reducerSchema('create_synced_block', CreateSyncedBlockReducer),
+  __reducerSchema('delete_ai_chat_message', DeleteAiChatMessageReducer),
+  __reducerSchema('delete_ai_chat_session', DeleteAiChatSessionReducer),
+  __reducerSchema('delete_attachment', DeleteAttachmentReducer),
+  __reducerSchema('delete_collection', DeleteCollectionReducer),
+  __reducerSchema('delete_collection_sort_rule', DeleteCollectionSortRuleReducer),
+  __reducerSchema('delete_comment', DeleteCommentReducer),
+  __reducerSchema('delete_db_base', DeleteDbBaseReducer),
+  __reducerSchema('delete_db_row', DeleteDbRowReducer),
+  __reducerSchema('delete_group', DeleteGroupReducer),
+  __reducerSchema('delete_ldap_provider', DeleteLdapProviderReducer),
+  __reducerSchema('delete_notification', DeleteNotificationReducer),
+  __reducerSchema('delete_oauth_provider', DeleteOauthProviderReducer),
+  __reducerSchema('delete_oidc_provider', DeleteOidcProviderReducer),
+  __reducerSchema('delete_page_permanent', DeletePagePermanentReducer),
+  __reducerSchema('delete_passkey_credential', DeletePasskeyCredentialReducer),
+  __reducerSchema('delete_saml_provider', DeleteSamlProviderReducer),
+  __reducerSchema('delete_scim_provider', DeleteScimProviderReducer),
+  __reducerSchema('delete_share_link', DeleteShareLinkReducer),
+  __reducerSchema('delete_synced_block', DeleteSyncedBlockReducer),
+  __reducerSchema('delete_webhook', DeleteWebhookReducer),
+  __reducerSchema('deny_access_request', DenyAccessRequestReducer),
+  __reducerSchema('disable_mfa', DisableMfaReducer),
+  __reducerSchema('duplicate_page', DuplicatePageReducer),
+  __reducerSchema('empty_trash', EmptyTrashReducer),
+  __reducerSchema('enable_totp', EnableTotpReducer),
+  __reducerSchema('fire_webhook_event', FireWebhookEventReducer),
+  __reducerSchema('join_collab_session', JoinCollabSessionReducer),
+  __reducerSchema('leave_collab_session', LeaveCollabSessionReducer),
+  __reducerSchema('link_ldap_user', LinkLdapUserReducer),
+  __reducerSchema('link_oauth_user', LinkOauthUserReducer),
+  __reducerSchema('login_user', LoginUserReducer),
+  __reducerSchema('mark_all_notifications_read', MarkAllNotificationsReadReducer),
+  __reducerSchema('mark_as_template', MarkAsTemplateReducer),
+  __reducerSchema('mark_notification_read', MarkNotificationReadReducer),
+  __reducerSchema('mark_webhook_event_sent', MarkWebhookEventSentReducer),
+  __reducerSchema('move_page', MovePageReducer),
+  __reducerSchema('purge_expired_trash', PurgeExpiredTrashReducer),
+  __reducerSchema('record_invitation_view', RecordInvitationViewReducer),
+  __reducerSchema('record_page_view', RecordPageViewReducer),
+  __reducerSchema('record_scim_event', RecordScimEventReducer),
+  __reducerSchema('register_user', RegisterUserReducer),
+  __reducerSchema('remove_collection_group_permission', RemoveCollectionGroupPermissionReducer),
+  __reducerSchema('remove_collection_member', RemoveCollectionMemberReducer),
+  __reducerSchema('remove_group_member', RemoveGroupMemberReducer),
+  __reducerSchema('remove_page_permission', RemovePagePermissionReducer),
+  __reducerSchema('remove_synced_block_ref', RemoveSyncedBlockRefReducer),
+  __reducerSchema('remove_tag', RemoveTagReducer),
+  __reducerSchema('reorder_collections', ReorderCollectionsReducer),
+  __reducerSchema('reorder_db_rows', ReorderDbRowsReducer),
+  __reducerSchema('reorder_pages', ReorderPagesReducer),
+  __reducerSchema('resolve_comment', ResolveCommentReducer),
+  __reducerSchema('restore_page', RestorePageReducer),
+  __reducerSchema('revoke_api_key', RevokeApiKeyReducer),
+  __reducerSchema('revoke_invitation', RevokeInvitationReducer),
+  __reducerSchema('scim_deprovision_group', ScimDeprovisionGroupReducer),
+  __reducerSchema('scim_deprovision_user', ScimDeprovisionUserReducer),
+  __reducerSchema('scim_sync_group', ScimSyncGroupReducer),
+  __reducerSchema('scim_sync_user', ScimSyncUserReducer),
+  __reducerSchema('search_pages', SearchPagesReducer),
+  __reducerSchema('set_ai_config', SetAiConfigReducer),
+  __reducerSchema('set_app_setting', SetAppSettingReducer),
+  __reducerSchema('set_collection_group_permission', SetCollectionGroupPermissionReducer),
+  __reducerSchema('set_collection_sort_rule', SetCollectionSortRuleReducer),
+  __reducerSchema('set_db_cell', SetDbCellReducer),
+  __reducerSchema('set_page_color', SetPageColorReducer),
+  __reducerSchema('set_page_direction', SetPageDirectionReducer),
+  __reducerSchema('set_page_full_width', SetPageFullWidthReducer),
+  __reducerSchema('set_page_icon', SetPageIconReducer),
+  __reducerSchema('set_page_permission', SetPagePermissionReducer),
+  __reducerSchema('set_page_pinned', SetPagePinnedReducer),
+  __reducerSchema('set_page_status', SetPageStatusReducer),
+  __reducerSchema('store_passkey_credential', StorePasskeyCredentialReducer),
+  __reducerSchema('toggle_favorite', ToggleFavoriteReducer),
+  __reducerSchema('toggle_watch', ToggleWatchReducer),
+  __reducerSchema('unlink_oauth_user', UnlinkOauthUserReducer),
+  __reducerSchema('update_api_key_usage', UpdateApiKeyUsageReducer),
+  __reducerSchema('update_collection', UpdateCollectionReducer),
+  __reducerSchema('update_collection_member_role', UpdateCollectionMemberRoleReducer),
+  __reducerSchema('update_cursor_position', UpdateCursorPositionReducer),
+  __reducerSchema('update_db_cell', UpdateDbCellReducer),
+  __reducerSchema('update_group', UpdateGroupReducer),
+  __reducerSchema('update_group_member_role', UpdateGroupMemberRoleReducer),
+  __reducerSchema('update_ldap_provider', UpdateLdapProviderReducer),
+  __reducerSchema('update_oauth_provider', UpdateOauthProviderReducer),
+  __reducerSchema('update_oidc_provider', UpdateOidcProviderReducer),
+  __reducerSchema('update_page', UpdatePageReducer),
+  __reducerSchema('update_passkey_counter', UpdatePasskeyCounterReducer),
+  __reducerSchema('update_saml_provider', UpdateSamlProviderReducer),
+  __reducerSchema('update_scim_provider', UpdateScimProviderReducer),
+  __reducerSchema('update_share_branding', UpdateShareBrandingReducer),
+  __reducerSchema('update_synced_block', UpdateSyncedBlockReducer),
+  __reducerSchema('update_user_avatar', UpdateUserAvatarReducer),
+  __reducerSchema('update_user_role', UpdateUserRoleReducer),
+  __reducerSchema('update_webhook', UpdateWebhookReducer),
+  __reducerSchema('verify_mfa_backup_code', VerifyMfaBackupCodeReducer),
+  __reducerSchema('verify_share_password', VerifySharePasswordReducer),
+  __reducerSchema('verify_totp', VerifyTotpReducer),
+  __reducerSchema('visit_share_link', VisitShareLinkReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
-const proceduresSchema = __procedures(
-);
+const proceduresSchema = __procedures();
 
 /** The remote SpacetimeDB module schema, both runtime and type information. */
 const REMOTE_MODULE = {
   versionInfo: {
-    cliVersion: "2.4.1" as const,
+    cliVersion: '2.4.1' as const,
   },
   tables: tablesSchema.schemaType.tables,
   reducers: reducersSchema.reducersType.reducers,
@@ -1110,7 +1301,9 @@ const REMOTE_MODULE = {
 >;
 
 /** The tables available in this remote SpacetimeDB module. Each table reference doubles as a query builder. */
-export const tables: __QueryBuilder<typeof tablesSchema.schemaType> = __makeQueryBuilder(tablesSchema.schemaType);
+export const tables: __QueryBuilder<typeof tablesSchema.schemaType> = __makeQueryBuilder(
+  tablesSchema.schemaType,
+);
 
 /** The reducers available in this remote SpacetimeDB module. */
 export const reducers = __convertToAccessorMap(reducersSchema.reducersType.reducers);
@@ -1139,7 +1332,10 @@ export class DbConnectionBuilder extends __DbConnectionBuilder<DbConnection> {}
 export class DbConnection extends __DbConnectionImpl<typeof REMOTE_MODULE> {
   /** Creates a new {@link DbConnectionBuilder} to configure and connect to the remote SpacetimeDB instance. */
   static builder = (): DbConnectionBuilder => {
-    return new DbConnectionBuilder(REMOTE_MODULE, (config: __DbConnectionConfig<typeof REMOTE_MODULE>) => new DbConnection(config));
+    return new DbConnectionBuilder(
+      REMOTE_MODULE,
+      (config: __DbConnectionConfig<typeof REMOTE_MODULE>) => new DbConnection(config),
+    );
   };
 
   /** Creates a new {@link SubscriptionBuilder} to configure a subscription to the remote SpacetimeDB instance. */
@@ -1147,4 +1343,3 @@ export class DbConnection extends __DbConnectionImpl<typeof REMOTE_MODULE> {
     return new SubscriptionBuilder(this);
   };
 }
-

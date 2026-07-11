@@ -1,43 +1,41 @@
-import { useState, useEffect } from "react";
-import JSZip from "jszip";
-import { api, Page, Collection } from "../../lib/api";
-import { useToast } from "../Toast";
-import { tiptapToMarkdown, tiptapToHTML } from "../../lib/helpers";
-import { FileText, Download, Loader2 } from "lucide-react";
+import { useState, useEffect } from 'react';
+import JSZip from 'jszip';
+import { api, Page, Collection } from '../../lib/api';
+import { useToast } from '../Toast';
+import { tiptapToMarkdown, tiptapToHTML } from '../../lib/helpers';
+import { FileText, Download, Loader2 } from 'lucide-react';
 
 export function BulkExport() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [allPages, setAllPages] = useState<Page[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [selectedColId, setSelectedColId] = useState<string>("__all");
-  const [exportFormat, setExportFormat] = useState<"md" | "html" | "pdf">("md");
+  const [selectedColId, setSelectedColId] = useState<string>('__all');
+  const [exportFormat, setExportFormat] = useState<'md' | 'html' | 'pdf'>('md');
 
   useEffect(() => {
     (async () => {
       try {
-        const [pages, cols] = await Promise.all([
-          api.pages.list(),
-          api.collections.list(),
-        ]);
+        const [pages, cols] = await Promise.all([api.pages.list(), api.collections.list()]);
         setAllPages(pages);
         setCollections(cols);
       } catch (e) {
-        console.error("Failed to load data for export:", e);
+        console.error('Failed to load data for export:', e);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  const filteredPages = selectedColId === "__all"
-    ? allPages
-    : allPages.filter((p) => p.collection_id === selectedColId);
+  const filteredPages =
+    selectedColId === '__all'
+      ? allPages
+      : allPages.filter((p) => p.collection_id === selectedColId);
 
   const handleBulkExport = async () => {
     setExporting(true);
     try {
-      if (exportFormat === "pdf") {
+      if (exportFormat === 'pdf') {
         // Generate a print-ready HTML document with all pages
         let pdfHtml = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Wiki Export</title>
@@ -73,22 +71,24 @@ export function BulkExport() {
   </div>`;
         for (let i = 0; i < filteredPages.length; i++) {
           const page = filteredPages[i];
-          const safeTitle = page.title || "Untitled";
-          let contentHtml = "";
+          const safeTitle = page.title || 'Untitled';
+          let contentHtml = '';
           try {
-            const json = JSON.parse(page.content || "{}");
+            const json = JSON.parse(page.content || '{}');
             contentHtml = tiptapToHTML(json);
-          } catch { contentHtml = `<p>${page.content || ""}</p>`; }
-          const colName = collections.find(c => c.id === page.collection_id)?.name || "";
-          pdfHtml += `<div class="${i > 0 ? "page-break" : ""}">
-            <div class="page-header"><h1>${safeTitle}</h1>${colName ? `<span style="color:#888;font-size:0.9em">📁 ${colName}</span>` : ""}</div>
+          } catch {
+            contentHtml = `<p>${page.content || ''}</p>`;
+          }
+          const colName = collections.find((c) => c.id === page.collection_id)?.name || '';
+          pdfHtml += `<div class="${i > 0 ? 'page-break' : ''}">
+            <div class="page-header"><h1>${safeTitle}</h1>${colName ? `<span style="color:#888;font-size:0.9em">📁 ${colName}</span>` : ''}</div>
             ${contentHtml}
-            <div class="page-footer">Updated ${new Date(page.updated_at).toLocaleDateString()} | v${page.id.slice(0,8)}</div>
+            <div class="page-footer">Updated ${new Date(page.updated_at).toLocaleDateString()} | v${page.id.slice(0, 8)}</div>
           </div>`;
         }
         pdfHtml += `</body></html>`;
         // Open in new window for print/PDF save
-        const win = window.open("", "_blank");
+        const win = window.open('', '_blank');
         if (win) {
           win.document.write(pdfHtml);
           win.document.close();
@@ -102,10 +102,11 @@ export function BulkExport() {
       let exported = 0;
 
       for (const page of filteredPages) {
-        const safeName = page.title.replace(/[^a-z0-9]/gi, "_").slice(0, 64) || page.id.slice(0, 12);
+        const safeName =
+          page.title.replace(/[^a-z0-9]/gi, '_').slice(0, 64) || page.id.slice(0, 12);
         try {
-          const json = JSON.parse(page.content || "{}");
-          if (exportFormat === "md") {
+          const json = JSON.parse(page.content || '{}');
+          if (exportFormat === 'md') {
             const md = tiptapToMarkdown(json);
             zip.file(`${safeName}/${safeName}.md`, md);
           } else {
@@ -116,63 +117,86 @@ export function BulkExport() {
             zip.file(`${safeName}/${safeName}.html`, fullHtml);
           }
         } catch {
-          zip.file(`${safeName}/${safeName}.txt`, page.content || "");
+          zip.file(`${safeName}/${safeName}.txt`, page.content || '');
         }
 
         try {
           const atts = await api.attachments.list(page.id);
           for (const att of atts as unknown[]) {
-            const filename = att[2] || "file";
-            const base64Data = att[5] || "";
+            const filename = att[2] || 'file';
+            const base64Data = att[5] || '';
             if (base64Data) {
               zip.file(`${safeName}/attachments/${filename}`, base64Data, { base64: true });
             }
           }
-        } catch { /* no attachments */ }
+        } catch {
+          /* no attachments */
+        }
 
-        zip.file(`${safeName}/${safeName}.meta.json`, JSON.stringify({
-          title: page.title, slug: page.slug, icon: page.icon,
-          color: page.color, status: page.status,
-          collection_id: page.collection_id,
-          created_at: page.created_at, updated_at: page.updated_at,
-        }, null, 2));
+        zip.file(
+          `${safeName}/${safeName}.meta.json`,
+          JSON.stringify(
+            {
+              title: page.title,
+              slug: page.slug,
+              icon: page.icon,
+              color: page.color,
+              status: page.status,
+              collection_id: page.collection_id,
+              created_at: page.created_at,
+              updated_at: page.updated_at,
+            },
+            null,
+            2,
+          ),
+        );
 
         exported++;
       }
 
       const indexEntries = filteredPages.map((p) => ({
-        title: p.title, slug: p.slug, status: p.status,
-        collection: collections.find((c) => c.id === p.collection_id)?.name || "",
+        title: p.title,
+        slug: p.slug,
+        status: p.status,
+        collection: collections.find((c) => c.id === p.collection_id)?.name || '',
         updated_at: p.updated_at,
       }));
-      zip.file("index.json", JSON.stringify(indexEntries, null, 2));
+      zip.file('index.json', JSON.stringify(indexEntries, null, 2));
 
-      const blob = await zip.generateAsync({ type: "blob" });
+      const blob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = `wiki-export-${new Date().toISOString().slice(0, 10)}.zip`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Bulk export failed:", err);
+      console.error('Bulk export failed:', err);
     } finally {
       setExporting(false);
     }
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Export Wiki Pages</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Export Wiki Pages
+        </p>
       </div>
 
       <div>
-        <label className="text-[10px] text-muted-foreground/60 font-medium mb-1 block">Collection</label>
+        <label className="text-[10px] text-muted-foreground/60 font-medium mb-1 block">
+          Collection
+        </label>
         <select
           value={selectedColId}
           onChange={(e) => setSelectedColId(e.target.value)}
@@ -181,41 +205,50 @@ export function BulkExport() {
           <option value="__all">All collections ({allPages.length} pages)</option>
           {collections.map((c) => {
             const count = allPages.filter((p) => p.collection_id === c.id).length;
-            return <option key={c.id} value={c.id}>{c.icon || "📁"} {c.name} ({count})</option>;
+            return (
+              <option key={c.id} value={c.id}>
+                {c.icon || '📁'} {c.name} ({count})
+              </option>
+            );
           })}
-          <option value="uncategorized">Uncategorized ({allPages.filter((p) => !p.collection_id || p.collection_id === "").length})</option>
+          <option value="uncategorized">
+            Uncategorized (
+            {allPages.filter((p) => !p.collection_id || p.collection_id === '').length})
+          </option>
         </select>
       </div>
 
       <div>
-        <label className="text-[10px] text-muted-foreground/60 font-medium mb-1 block">Format</label>
+        <label className="text-[10px] text-muted-foreground/60 font-medium mb-1 block">
+          Format
+        </label>
         <div className="flex gap-2">
           <button
-            onClick={() => setExportFormat("md")}
+            onClick={() => setExportFormat('md')}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              exportFormat === "md"
-                ? "bg-primary/10 text-primary border border-primary/20"
-                : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+              exportFormat === 'md'
+                ? 'bg-primary/10 text-primary border border-primary/20'
+                : 'border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
             }`}
           >
             Markdown
           </button>
           <button
-            onClick={() => setExportFormat("html")}
+            onClick={() => setExportFormat('html')}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              exportFormat === "html"
-                ? "bg-primary/10 text-primary border border-primary/20"
-                : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+              exportFormat === 'html'
+                ? 'bg-primary/10 text-primary border border-primary/20'
+                : 'border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
             }`}
           >
             HTML
           </button>
           <button
-            onClick={() => setExportFormat("pdf")}
+            onClick={() => setExportFormat('pdf')}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              exportFormat === "pdf"
-                ? "bg-primary/10 text-primary border border-primary/20"
-                : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+              exportFormat === 'pdf'
+                ? 'bg-primary/10 text-primary border border-primary/20'
+                : 'border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
             }`}
           >
             PDF
@@ -226,9 +259,15 @@ export function BulkExport() {
       <div className="p-3 rounded-md border border-border bg-muted/10">
         <p className="text-xs text-muted-foreground">
           Exporting <strong className="text-foreground">{filteredPages.length} pages</strong>
-          {exportFormat === "md" ? " as Markdown" : " as HTML"}
-          {selectedColId !== "__all" && (
-            <> from <strong className="text-foreground">{collections.find((c) => c.id === selectedColId)?.name || "Uncategorized"}</strong></>
+          {exportFormat === 'md' ? ' as Markdown' : ' as HTML'}
+          {selectedColId !== '__all' && (
+            <>
+              {' '}
+              from{' '}
+              <strong className="text-foreground">
+                {collections.find((c) => c.id === selectedColId)?.name || 'Uncategorized'}
+              </strong>
+            </>
           )}
         </p>
         <div className="mt-2 max-h-32 overflow-y-auto space-y-0.5">
@@ -237,12 +276,16 @@ export function BulkExport() {
               <FileText className="h-3 w-3 shrink-0" />
               <span className="truncate">{p.title}</span>
               {p.collection_id && (
-                <span className="text-muted-foreground/40 shrink-0">{collections.find((c) => c.id === p.collection_id)?.name}</span>
+                <span className="text-muted-foreground/40 shrink-0">
+                  {collections.find((c) => c.id === p.collection_id)?.name}
+                </span>
               )}
             </div>
           ))}
           {filteredPages.length > 20 && (
-            <p className="text-[10px] text-muted-foreground/50 pt-1">...and {filteredPages.length - 20} more</p>
+            <p className="text-[10px] text-muted-foreground/50 pt-1">
+              ...and {filteredPages.length - 20} more
+            </p>
           )}
         </div>
       </div>
@@ -253,9 +296,13 @@ export function BulkExport() {
         className="w-full h-9 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
       >
         {exporting ? (
-          <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Exporting...</>
+          <>
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Exporting...
+          </>
         ) : (
-          <><Download className="h-3.5 w-3.5" /> Export ZIP ({filteredPages.length} pages)</>
+          <>
+            <Download className="h-3.5 w-3.5" /> Export ZIP ({filteredPages.length} pages)
+          </>
         )}
       </button>
     </div>

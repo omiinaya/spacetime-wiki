@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from "@tiptap/core";
+import { Node, mergeAttributes } from '@tiptap/core';
 
 // ─── Provider Types ──────────────────────────────────────────────────────────
 
@@ -26,33 +26,36 @@ export interface EmbedProvider {
 const EMBED_PROVIDERS: EmbedProvider[] = [
   // ── Video ──
   {
-    id: "youtube",
-    name: "YouTube",
-    icon: "▶️",
-    urlPattern: /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    id: 'youtube',
+    name: 'YouTube',
+    icon: '▶️',
+    urlPattern:
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
     embedUrl: (url) => {
-      const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      const m = url.match(
+        /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+      );
       return m ? `https://www.youtube.com/embed/${m[1]}` : null;
     },
     iframe: true,
-    allow: "accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture",
+    allow: 'accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture',
   },
   {
-    id: "vimeo",
-    name: "Vimeo",
-    icon: "🎥",
+    id: 'vimeo',
+    name: 'Vimeo',
+    icon: '🎥',
     urlPattern: /vimeo\.com\/(\d+)/,
     embedUrl: (url) => {
       const m = url.match(/vimeo\.com\/(\d+)/);
       return m ? `https://player.vimeo.com/video/${m[1]}` : null;
     },
     iframe: true,
-    allow: "autoplay;fullscreen;picture-in-picture",
+    allow: 'autoplay;fullscreen;picture-in-picture',
   },
   {
-    id: "loom",
-    name: "Loom",
-    icon: "🎬",
+    id: 'loom',
+    name: 'Loom',
+    icon: '🎬',
     urlPattern: /loom\.com\/(?:share\/|embed\/)([a-f0-9]+)/,
     embedUrl: (url) => {
       const m = url.match(/loom\.com\/(?:share\/|embed\/)([a-f0-9]+)/);
@@ -61,9 +64,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     iframe: true,
   },
   {
-    id: "twitch",
-    name: "Twitch",
-    icon: "📺",
+    id: 'twitch',
+    name: 'Twitch',
+    icon: '📺',
     urlPattern: /twitch\.tv\/(?:videos\/)?(\d+|[a-zA-Z0-9_]+)/,
     embedUrl: (url) => {
       const m = url.match(/twitch\.tv\/(?:videos\/)?(\d+|[a-zA-Z0-9_]+)/);
@@ -72,9 +75,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     iframe: true,
   },
   {
-    id: "dailymotion",
-    name: "Dailymotion",
-    icon: "🎞️",
+    id: 'dailymotion',
+    name: 'Dailymotion',
+    icon: '🎞️',
     urlPattern: /dailymotion\.com\/(?:video\/|embed\/)([a-zA-Z0-9]+)/,
     embedUrl: (url) => {
       const m = url.match(/dailymotion\.com\/(?:video\/|embed\/)([a-zA-Z0-9]+)/);
@@ -85,20 +88,22 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
 
   // ── Presentation / Design ──
   {
-    id: "figma",
-    name: "Figma",
-    icon: "🖌️",
+    id: 'figma',
+    name: 'Figma',
+    icon: '🖌️',
     urlPattern: /figma\.com\/(?:file|proto)\/([a-zA-Z0-9]+)/,
     embedUrl: (url) => {
       const m = url.match(/figma\.com\/(?:file|proto)\/([a-zA-Z0-9]+)/);
-      return m ? `https://www.figma.com/embed?embed_host=spacetime-wiki&url=${encodeURIComponent(url)}` : null;
+      return m
+        ? `https://www.figma.com/embed?embed_host=spacetime-wiki&url=${encodeURIComponent(url)}`
+        : null;
     },
     iframe: true,
   },
   {
-    id: "codepen",
-    name: "CodePen",
-    icon: "✏️",
+    id: 'codepen',
+    name: 'CodePen',
+    icon: '✏️',
     urlPattern: /codepen\.io\/(\w+)\/pen\/(\w+)/,
     embedUrl: (url) => {
       const m = url.match(/codepen\.io\/(\w+)\/pen\/(\w+)/);
@@ -107,20 +112,22 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     iframe: true,
   },
   {
-    id: "codesandbox",
-    name: "CodeSandbox",
-    icon: "🛝",
+    id: 'codesandbox',
+    name: 'CodeSandbox',
+    icon: '🛝',
     urlPattern: /codesandbox\.io\/(?:s\/|embed\/)([a-zA-Z0-9_-]+)/,
     embedUrl: (url) => {
       const m = url.match(/codesandbox\.io\/(?:s\/|embed\/)([a-zA-Z0-9_-]+)/);
-      return m ? `https://codesandbox.io/embed/${m[1]}?fontsize=14&hidenavigation=1&theme=dark` : null;
+      return m
+        ? `https://codesandbox.io/embed/${m[1]}?fontsize=14&hidenavigation=1&theme=dark`
+        : null;
     },
     iframe: true,
   },
   {
-    id: "jsfiddle",
-    name: "JSFiddle",
-    icon: "🎻",
+    id: 'jsfiddle',
+    name: 'JSFiddle',
+    icon: '🎻',
     urlPattern: /jsfiddle\.net\/(\w+)\/(\w+)/,
     embedUrl: (url) => {
       const m = url.match(/jsfiddle\.net\/(\w+)\/(\w+)/);
@@ -129,9 +136,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     iframe: true,
   },
   {
-    id: "replit",
-    name: "Replit",
-    icon: "🔄",
+    id: 'replit',
+    name: 'Replit',
+    icon: '🔄',
     urlPattern: /replit\.com\/@(\w+)\/(\w+)/,
     embedUrl: (url) => {
       const m = url.match(/replit\.com\/@(\w+)\/(\w+)/);
@@ -142,9 +149,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
 
   // ── Docs / Productivity ──
   {
-    id: "googledocs",
-    name: "Google Docs",
-    icon: "📝",
+    id: 'googledocs',
+    name: 'Google Docs',
+    icon: '📝',
     urlPattern: /docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/,
     embedUrl: (url) => {
       const m = url.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/);
@@ -153,9 +160,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     iframe: true,
   },
   {
-    id: "googleslides",
-    name: "Google Slides",
-    icon: "📽️",
+    id: 'googleslides',
+    name: 'Google Slides',
+    icon: '📽️',
     urlPattern: /docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/,
     embedUrl: (url) => {
       const m = url.match(/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/);
@@ -164,9 +171,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     iframe: true,
   },
   {
-    id: "googlesheets",
-    name: "Google Sheets",
-    icon: "📊",
+    id: 'googlesheets',
+    name: 'Google Sheets',
+    icon: '📊',
     urlPattern: /docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/,
     embedUrl: (url) => {
       const m = url.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
@@ -175,9 +182,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     iframe: true,
   },
   {
-    id: "notion",
-    name: "Notion",
-    icon: "📋",
+    id: 'notion',
+    name: 'Notion',
+    icon: '📋',
     urlPattern: /notion\.(?:so|site)\/(?:[a-zA-Z0-9_-]+\/)?([a-f0-9]+)/,
     embedUrl: (url) => {
       const m = url.match(/notion\.(?:so|site)\/(?:[a-zA-Z0-9_-]+\/)?([a-f0-9]+)/);
@@ -186,9 +193,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     richCard: true,
   },
   {
-    id: "canva",
-    name: "Canva",
-    icon: "🎨",
+    id: 'canva',
+    name: 'Canva',
+    icon: '🎨',
     urlPattern: /canva\.com\/design\/([a-zA-Z0-9_-]+)/,
     embedUrl: (url) => {
       const m = url.match(/canva\.com\/design\/([a-zA-Z0-9_-]+)/);
@@ -197,9 +204,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     iframe: true,
   },
   {
-    id: "miro",
-    name: "Miro",
-    icon: "🔵",
+    id: 'miro',
+    name: 'Miro',
+    icon: '🔵',
     urlPattern: /miro\.com\/app\/board\/([a-zA-Z0-9_-]+)/,
     embedUrl: (url) => {
       const m = url.match(/miro\.com\/app\/board\/([a-zA-Z0-9_-]+)/);
@@ -208,9 +215,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     iframe: true,
   },
   {
-    id: "excalidraw",
-    name: "Excalidraw",
-    icon: "✏️",
+    id: 'excalidraw',
+    name: 'Excalidraw',
+    icon: '✏️',
     urlPattern: /excalidraw\.com\/#?json=([a-zA-Z0-9_-]+)/,
     embedUrl: (url) => {
       const m = url.match(/excalidraw\.com\/#?json=([a-zA-Z0-9_-]+)/);
@@ -221,9 +228,9 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
 
   // ── Developer / Code ──
   {
-    id: "gist",
-    name: "GitHub Gist",
-    icon: "💡",
+    id: 'gist',
+    name: 'GitHub Gist',
+    icon: '💡',
     urlPattern: /gist\.github\.com\/(\w+)\/([a-f0-9]+)/,
     embedUrl: (url) => {
       const m = url.match(/gist\.github\.com\/(\w+)\/([a-f0-9]+)/);
@@ -232,33 +239,33 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     richCard: true,
   },
   {
-    id: "github",
-    name: "GitHub",
-    icon: "🐙",
+    id: 'github',
+    name: 'GitHub',
+    icon: '🐙',
     urlPattern: /github\.com\/([\w.-]+)\/([\w.-]+)/,
     embedUrl: () => null,
     richCard: true,
   },
   {
-    id: "gitlab",
-    name: "GitLab",
-    icon: "🦊",
+    id: 'gitlab',
+    name: 'GitLab',
+    icon: '🦊',
     urlPattern: /gitlab\.com\/([\w.-]+)\/([\w.-]+)/,
     embedUrl: () => null,
     richCard: true,
   },
   {
-    id: "npm",
-    name: "npm",
-    icon: "📦",
+    id: 'npm',
+    name: 'npm',
+    icon: '📦',
     urlPattern: /npmjs\.com\/package\/([\w.-]+)/,
     embedUrl: (url) => null,
     richCard: true,
   },
   {
-    id: "stackblitz",
-    name: "StackBlitz",
-    icon: "⚡",
+    id: 'stackblitz',
+    name: 'StackBlitz',
+    icon: '⚡',
     urlPattern: /stackblitz\.com\/(?:edit\/|github\/)?([\w.-]+)/,
     embedUrl: (url) => {
       const m = url.match(/stackblitz\.com\/(?:edit\/|github\/)?([\w.-]+)/);
@@ -269,46 +276,48 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
 
   // ── Social / Embed ──
   {
-    id: "twitter",
-    name: "X (Twitter)",
-    icon: "🐦",
+    id: 'twitter',
+    name: 'X (Twitter)',
+    icon: '🐦',
     urlPattern: /(?:twitter\.com|x\.com)\/\w+\/status\/(\d+)/,
     embedUrl: () => null,
     richCard: true,
   },
   {
-    id: "bluesky",
-    name: "Bluesky",
-    icon: "🦋",
+    id: 'bluesky',
+    name: 'Bluesky',
+    icon: '🦋',
     urlPattern: /bsky\.app\/profile\/([\w.]+)\/post\/([\w]+)/,
     embedUrl: () => null,
     richCard: true,
   },
   {
-    id: "reddit",
-    name: "Reddit",
-    icon: "👽",
+    id: 'reddit',
+    name: 'Reddit',
+    icon: '👽',
     urlPattern: /reddit\.com\/r\/\w+\/comments\/(\w+)/,
     embedUrl: (url) => {
       const m = url.match(/reddit\.com\/r\/\w+\/comments\/(\w+)/);
-      return m ? `https://www.redditmedia.com/${url.match(/reddit\.com(\/.+)/)?.[1]}?ref=share&ref_source=embed` : null;
+      return m
+        ? `https://www.redditmedia.com/${url.match(/reddit\.com(\/.+)/)?.[1]}?ref=share&ref_source=embed`
+        : null;
     },
     iframe: true,
   },
 
   // ── Maps / Geo ──
   {
-    id: "googlemaps",
-    name: "Google Maps",
-    icon: "🗺️",
+    id: 'googlemaps',
+    name: 'Google Maps',
+    icon: '🗺️',
     urlPattern: /google\.com\/maps\/embed\?pb=([!a-zA-Z0-9!]+)/,
     embedUrl: (url) => url,
     iframe: true,
   },
   {
-    id: "openstreetmap",
-    name: "OpenStreetMap",
-    icon: "🌍",
+    id: 'openstreetmap',
+    name: 'OpenStreetMap',
+    icon: '🌍',
     urlPattern: /openstreetmap\.org\/#map=(\d+\/[\d.-]+\/[\d.-]+)/,
     embedUrl: (url) => {
       const m = url.match(/#map=(\d+\/[\d.-]+\/[\d.-]+)/);
@@ -319,28 +328,30 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
 
   // ── Audio ──
   {
-    id: "spotify",
-    name: "Spotify",
-    icon: "🎵",
+    id: 'spotify',
+    name: 'Spotify',
+    icon: '🎵',
     urlPattern: /(?:open\.spotify\.com\/(?:track|album|playlist|episode|show)\/([a-zA-Z0-9]+))/,
     embedUrl: (url) => {
-      const m = url.match(/(?:open\.spotify\.com\/(track|album|playlist|episode|show)\/([a-zA-Z0-9]+))/);
+      const m = url.match(
+        /(?:open\.spotify\.com\/(track|album|playlist|episode|show)\/([a-zA-Z0-9]+))/,
+      );
       return m ? `https://open.spotify.com/embed/${m[1]}/${m[2]}` : null;
     },
     iframe: true,
   },
   {
-    id: "soundcloud",
-    name: "SoundCloud",
-    icon: "🎧",
+    id: 'soundcloud',
+    name: 'SoundCloud',
+    icon: '🎧',
     urlPattern: /soundcloud\.com\/([\w-]+)\/([\w-]+)/,
     embedUrl: () => null,
     richCard: true,
   },
   {
-    id: "applepodcasts",
-    name: "Apple Podcasts",
-    icon: "🎙️",
+    id: 'applepodcasts',
+    name: 'Apple Podcasts',
+    icon: '🎙️',
     urlPattern: /podcasts\.apple\.com\/(\w+)\/podcast\/([\w-]+)\/id(\d+)/,
     embedUrl: (url) => {
       const m = url.match(/id(\d+)/);
@@ -370,7 +381,9 @@ export function detectEmbedProvider(url: string): EmbedProvider | null {
   return null;
 }
 
-export function buildEmbedUrl(url: string): { provider: EmbedProvider; embedSrc: string | null } | null {
+export function buildEmbedUrl(
+  url: string,
+): { provider: EmbedProvider; embedSrc: string | null } | null {
   for (const provider of UNIQUE_PROVIDERS) {
     const embedSrc = provider.embedUrl(url);
     if (embedSrc || provider.richCard) {
@@ -392,7 +405,7 @@ export interface RichEmbedOptions {
   height: number;
 }
 
-declare module "@tiptap/core" {
+declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     richEmbed: {
       setRichEmbed: (options: { src: string; provider?: string; embedSrc?: string }) => ReturnType;
@@ -403,9 +416,9 @@ declare module "@tiptap/core" {
 // ─── Extension ────────────────────────────────────────────────────────────────
 
 export const RichEmbed = Node.create<RichEmbedOptions>({
-  name: "richEmbed",
+  name: 'richEmbed',
 
-  group: "block",
+  group: 'block',
   atom: true,
   selectable: true,
   draggable: true,
@@ -432,7 +445,7 @@ export const RichEmbed = Node.create<RichEmbedOptions>({
   parseHTML() {
     return [
       {
-        tag: "div[data-rich-embed]",
+        tag: 'div[data-rich-embed]',
       },
     ];
   },
@@ -440,77 +453,81 @@ export const RichEmbed = Node.create<RichEmbedOptions>({
   renderHTML({ node, HTMLAttributes }) {
     const { embedSrc, width, height, provider, src, title } = node.attrs;
     const providerInfo = UNIQUE_PROVIDERS.find((p) => p.id === provider);
-    const providerName = providerInfo?.name || provider || "Embed";
-    const providerIcon = providerInfo?.icon || "🔗";
+    const providerName = providerInfo?.name || provider || 'Embed';
+    const providerIcon = providerInfo?.icon || '🔗';
 
     // Rich card embeds (no iframe — show a link card)
     if (providerInfo?.richCard || !embedSrc) {
       return [
-        "div",
+        'div',
         mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-          "data-rich-embed": "",
-          "data-provider": provider,
-          class: "rich-embed-card my-4 rounded-lg border border-border bg-[#0a0a0a] overflow-hidden",
+          'data-rich-embed': '',
+          'data-provider': provider,
+          class:
+            'rich-embed-card my-4 rounded-lg border border-border bg-[#0a0a0a] overflow-hidden',
         }),
         [
-          "a",
+          'a',
           {
             href: src,
-            target: "_blank",
-            rel: "noopener noreferrer",
-            class: "block p-4 hover:bg-muted/20 transition-colors no-underline",
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            class: 'block p-4 hover:bg-muted/20 transition-colors no-underline',
           },
           [
-            "div",
-            { class: "flex items-center gap-2 mb-1" },
-            ["span", { class: "text-base" }, providerIcon],
-            ["span", { class: "text-xs font-semibold uppercase tracking-wider text-muted-foreground" }, providerName],
+            'div',
+            { class: 'flex items-center gap-2 mb-1' },
+            ['span', { class: 'text-base' }, providerIcon],
+            [
+              'span',
+              { class: 'text-xs font-semibold uppercase tracking-wider text-muted-foreground' },
+              providerName,
+            ],
           ],
           [
-            "div",
-            { class: "text-sm font-medium text-[hsl(var(--foreground))]" },
-            title || src || "Open link",
+            'div',
+            { class: 'text-sm font-medium text-[hsl(var(--foreground))]' },
+            title || src || 'Open link',
           ],
-          [
-            "div",
-            { class: "text-xs text-muted-foreground mt-1 truncate" },
-            src,
-          ],
+          ['div', { class: 'text-xs text-muted-foreground mt-1 truncate' }, src],
         ],
       ];
     }
 
     // Iframe embed
     return [
-      "div",
+      'div',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        "data-rich-embed": "",
-        "data-provider": provider,
-        class: "rich-embed-iframe my-4 rounded-lg overflow-hidden border border-border bg-[#0a0a0a]",
+        'data-rich-embed': '',
+        'data-provider': provider,
+        class:
+          'rich-embed-iframe my-4 rounded-lg overflow-hidden border border-border bg-[#0a0a0a]',
       }),
       [
-        "div",
+        'div',
         {
-          class: "flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b border-border/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+          class:
+            'flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b border-border/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground',
         },
-        ["span", { class: "text-xs" }, providerIcon],
-        ["span", {}, providerName],
+        ['span', { class: 'text-xs' }, providerIcon],
+        ['span', {}, providerName],
       ],
       [
-        "div",
+        'div',
         {
-          style: "position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;background:#000;",
+          style:
+            'position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;background:#000;',
         },
         [
-          "iframe",
+          'iframe',
           {
             src: embedSrc,
             width: width,
             height: height,
-            style: "position:absolute;top:0;left:0;width:100%;height:100%;border:0;",
-            allowfullscreen: provider !== "vimeo" ? "" : undefined,
-            allow: providerInfo?.allow || "autoplay;fullscreen",
-            referrerpolicy: "strict-origin-when-cross-origin",
+            style: 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;',
+            allowfullscreen: provider !== 'vimeo' ? '' : undefined,
+            allow: providerInfo?.allow || 'autoplay;fullscreen',
+            referrerpolicy: 'strict-origin-when-cross-origin',
           },
         ],
       ],
@@ -535,7 +552,7 @@ export const RichEmbed = Node.create<RichEmbedOptions>({
               }
             } else {
               attrs.embedSrc = options.src;
-              attrs.provider = "unknown";
+              attrs.provider = 'unknown';
               attrs.title = options.src;
             }
           }
@@ -547,4 +564,3 @@ export const RichEmbed = Node.create<RichEmbedOptions>({
     };
   },
 });
-

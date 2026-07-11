@@ -1,7 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
-import { Loader2, ChevronRight, FileText, Users, BookOpen, MessageSquare, Paperclip, Clock, BarChart3, TrendingUp, Activity } from "lucide-react";
-import { sqlQuery } from "../lib/api";
-import { cn, timeAgo } from "../lib/utils";
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Loader2,
+  ChevronRight,
+  FileText,
+  Users,
+  BookOpen,
+  MessageSquare,
+  Paperclip,
+  Clock,
+  BarChart3,
+  TrendingUp,
+  Activity,
+} from 'lucide-react';
+import { sqlQuery } from '../lib/api';
+import { cn, timeAgo } from '../lib/utils';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -35,48 +47,54 @@ interface RecentActivity {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB"];
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
   const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + " " + units[i];
+  return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
 }
 
 const eventIcons: Record<string, string> = {
-  "page.create": "📝",
-  "page.update": "✏️",
-  "page.delete": "🗑️",
-  "page.restore": "♻️",
-  "page.publish": "🚀",
-  "page.archive": "📦",
-  "collection.create": "📁",
-  "collection.delete": "❌",
-  "comment.create": "💬",
-  "comment.delete": "🗑️",
-  "user.create": "👤",
-  "user.role_change": "🔑",
+  'page.create': '📝',
+  'page.update': '✏️',
+  'page.delete': '🗑️',
+  'page.restore': '♻️',
+  'page.publish': '🚀',
+  'page.archive': '📦',
+  'collection.create': '📁',
+  'collection.delete': '❌',
+  'comment.create': '💬',
+  'comment.delete': '🗑️',
+  'user.create': '👤',
+  'user.role_change': '🔑',
 };
 
 function getEventLabel(eventType: string): string {
   const labels: Record<string, string> = {
-    "page.create": "created page",
-    "page.update": "updated page",
-    "page.delete": "deleted page",
-    "page.restore": "restored page",
-    "page.publish": "published page",
-    "page.archive": "archived page",
-    "collection.create": "created collection",
-    "collection.delete": "deleted collection",
-    "comment.create": "commented on",
-    "comment.delete": "deleted comment",
-    "user.create": "joined",
-    "user.role_change": "changed role",
+    'page.create': 'created page',
+    'page.update': 'updated page',
+    'page.delete': 'deleted page',
+    'page.restore': 'restored page',
+    'page.publish': 'published page',
+    'page.archive': 'archived page',
+    'collection.create': 'created collection',
+    'collection.delete': 'deleted collection',
+    'comment.create': 'commented on',
+    'comment.delete': 'deleted comment',
+    'user.create': 'joined',
+    'user.role_change': 'changed role',
   };
   return labels[eventType] || eventType;
 }
 
 // ─── StatCard ───────────────────────────────────────────────────────────────
 
-function StatCard({ icon, label, value, sub, color }: {
+function StatCard({
+  icon,
+  label,
+  value,
+  sub,
+  color,
+}: {
   icon: React.ReactNode;
   label: string;
   value: number | string;
@@ -89,7 +107,9 @@ function StatCard({ icon, label, value, sub, color }: {
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-lg font-bold tabular-nums">{typeof value === "number" ? value.toLocaleString() : value}</p>
+        <p className="text-lg font-bold tabular-nums">
+          {typeof value === 'number' ? value.toLocaleString() : value}
+        </p>
         <p className="text-[11px] text-muted-foreground truncate">{label}</p>
         {sub && <p className="text-[10px] text-muted-foreground/60 mt-0.5">{sub}</p>}
       </div>
@@ -105,26 +125,36 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [activityLoading, setActivityLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   // ── Load stats ──────────────────────────────────────────────────────────
   const loadStats = useCallback(async () => {
     try {
       const [
-        pageRows, userRows, colRows, comRows, attRows,
-        pubRows, draftRows, archRows, delRows,
-        storageRows, contribRows,
+        pageRows,
+        userRows,
+        colRows,
+        comRows,
+        attRows,
+        pubRows,
+        draftRows,
+        archRows,
+        delRows,
+        storageRows,
+        contribRows,
       ] = await Promise.all([
         sqlQuery("SELECT COUNT(*) as c FROM page WHERE status != 'deleted'"),
-        sqlQuery("SELECT COUNT(*) as c FROM `user`"),
-        sqlQuery("SELECT COUNT(*) as c FROM collection"),
-        sqlQuery("SELECT COUNT(*) as c FROM comment"),
-        sqlQuery("SELECT COUNT(*) as c FROM attachment"),
+        sqlQuery('SELECT COUNT(*) as c FROM `user`'),
+        sqlQuery('SELECT COUNT(*) as c FROM collection'),
+        sqlQuery('SELECT COUNT(*) as c FROM comment'),
+        sqlQuery('SELECT COUNT(*) as c FROM attachment'),
         sqlQuery("SELECT COUNT(*) as c FROM page WHERE status = 'published'"),
-        sqlQuery("SELECT COUNT(*) as c FROM page WHERE status = 'draft' OR status = 'private' OR status = ''"),
+        sqlQuery(
+          "SELECT COUNT(*) as c FROM page WHERE status = 'draft' OR status = 'private' OR status = ''",
+        ),
         sqlQuery("SELECT COUNT(*) as c FROM page WHERE status = 'archived'"),
         sqlQuery("SELECT COUNT(*) as c FROM page WHERE status = 'deleted'"),
-        sqlQuery("SELECT COALESCE(SUM(size_bytes), 0) as total FROM attachment"),
+        sqlQuery('SELECT COALESCE(SUM(size_bytes), 0) as total FROM attachment'),
         sqlQuery(`
           SELECT p.created_by as user_id, COALESCE(u.name, p.created_by) as user_name, COUNT(*) as page_count
           FROM page p LEFT JOIN \`user\` u ON p.created_by = u.id
@@ -147,19 +177,19 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
         pagesDraft: toNum(draftRows),
         pagesArchived: toNum(archRows),
         pagesDeleted: toNum(delRows),
-        totalStorageBytes: toNum2(storageRows, "total"),
+        totalStorageBytes: toNum2(storageRows, 'total'),
       });
 
       setTopContributors(
         (contribRows as unknown[]).map((r: unknown) => ({
-          user_id: String(r.user_id || ""),
-          user_name: String(r.user_name || "Unknown"),
+          user_id: String(r.user_id || ''),
+          user_name: String(r.user_name || 'Unknown'),
           page_count: Number(r.page_count || 0),
-        }))
+        })),
       );
     } catch (e: unknown) {
-      console.error("Failed to load stats:", e);
-      setError("Failed to load wiki statistics. Make sure the database is connected.");
+      console.error('Failed to load stats:', e);
+      setError('Failed to load wiki statistics. Make sure the database is connected.');
     } finally {
       setLoading(false);
     }
@@ -170,25 +200,28 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
     setActivityLoading(true);
     try {
       const rows = await sqlQuery(
-        "SELECT id, event_type, actor_id, target_name, created_at FROM audit_event "
+        'SELECT id, event_type, actor_id, target_name, created_at FROM audit_event ',
       );
       setRecentActivity(
         (rows as unknown[]).map((r: unknown) => ({
-          id: String(r.id || ""),
-          event_type: String(r.event_type || ""),
-          actor_id: String(r.actor_id || ""),
-          target_name: String(r.target_name || ""),
+          id: String(r.id || ''),
+          event_type: String(r.event_type || ''),
+          actor_id: String(r.actor_id || ''),
+          target_name: String(r.target_name || ''),
           created_at: Number(r.created_at || 0),
-        }))
+        })),
       );
     } catch (e) {
-      console.error("Failed to load activity:", e);
+      console.error('Failed to load activity:', e);
     } finally {
       setActivityLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadStats(); loadActivity(); }, [loadStats, loadActivity]);
+  useEffect(() => {
+    loadStats();
+    loadActivity();
+  }, [loadStats, loadActivity]);
 
   // ── Render ──────────────────────────────────────────────────────────────
   if (loading) {
@@ -204,7 +237,10 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
       <div className="px-4 py-8 text-center">
         <p className="text-sm text-red-400">{error}</p>
         <button
-          onClick={() => { setLoading(true); loadStats(); }}
+          onClick={() => {
+            setLoading(true);
+            loadStats();
+          }}
           className="mt-3 h-8 px-3 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
         >
           Retry
@@ -262,10 +298,30 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
           {stats && (
             <div className="space-y-2">
               {[
-                { label: "Published", count: stats.pagesPublished, color: "bg-emerald-500", barColor: "bg-emerald-500/20" },
-                { label: "Draft / Private", count: stats.pagesDraft, color: "bg-blue-500", barColor: "bg-blue-500/20" },
-                { label: "Archived", count: stats.pagesArchived, color: "bg-amber-500", barColor: "bg-amber-500/20" },
-                { label: "Deleted (trash)", count: stats.pagesDeleted, color: "bg-red-500", barColor: "bg-red-500/20" },
+                {
+                  label: 'Published',
+                  count: stats.pagesPublished,
+                  color: 'bg-emerald-500',
+                  barColor: 'bg-emerald-500/20',
+                },
+                {
+                  label: 'Draft / Private',
+                  count: stats.pagesDraft,
+                  color: 'bg-blue-500',
+                  barColor: 'bg-blue-500/20',
+                },
+                {
+                  label: 'Archived',
+                  count: stats.pagesArchived,
+                  color: 'bg-amber-500',
+                  barColor: 'bg-amber-500/20',
+                },
+                {
+                  label: 'Deleted (trash)',
+                  count: stats.pagesDeleted,
+                  color: 'bg-red-500',
+                  barColor: 'bg-red-500/20',
+                },
               ].map((item) => {
                 const total = stats.totalPages + stats.pagesDeleted;
                 const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
@@ -275,10 +331,17 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
                     <span className="text-xs text-muted-foreground flex-1">{item.label}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className={`h-full rounded-full ${item.barColor}`} style={{ width: `${pct}%` }} />
+                        <div
+                          className={`h-full rounded-full ${item.barColor}`}
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
-                      <span className="text-xs font-medium tabular-nums w-12 text-right">{item.count}</span>
-                      <span className="text-[10px] text-muted-foreground/60 w-10 text-right">{pct}%</span>
+                      <span className="text-xs font-medium tabular-nums w-12 text-right">
+                        {item.count}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/60 w-10 text-right">
+                        {pct}%
+                      </span>
                     </div>
                   </div>
                 );
@@ -298,16 +361,23 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
             Top Contributors
           </h3>
           {topContributors.length === 0 ? (
-            <p className="text-xs text-muted-foreground/60 py-4 text-center">No pages created yet.</p>
+            <p className="text-xs text-muted-foreground/60 py-4 text-center">
+              No pages created yet.
+            </p>
           ) : (
             <div className="space-y-1.5">
               {topContributors.map((contrib, i) => (
-                <div key={contrib.user_id} className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-muted/30 transition-colors">
-                  <span className={`w-5 text-center text-xs font-bold ${i < 3 ? "text-primary" : "text-muted-foreground/60"}`}>
-                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
+                <div
+                  key={contrib.user_id}
+                  className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-muted/30 transition-colors"
+                >
+                  <span
+                    className={`w-5 text-center text-xs font-bold ${i < 3 ? 'text-primary' : 'text-muted-foreground/60'}`}
+                  >
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                   </span>
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
-                    {(contrib.user_name || "?").charAt(0).toUpperCase()}
+                    {(contrib.user_name || '?').charAt(0).toUpperCase()}
                   </div>
                   <span className="text-xs flex-1 truncate">{contrib.user_name}</span>
                   <span className="text-xs font-medium tabular-nums">{contrib.page_count}</span>
@@ -330,12 +400,19 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         ) : recentActivity.length === 0 ? (
-          <p className="text-xs text-muted-foreground/60 py-4 text-center">No activity recorded yet.</p>
+          <p className="text-xs text-muted-foreground/60 py-4 text-center">
+            No activity recorded yet.
+          </p>
         ) : (
           <div className="space-y-0.5 max-h-[360px] overflow-y-auto">
             {recentActivity.map((event) => (
-              <div key={event.id} className="flex items-start gap-3 px-2 py-2 rounded-md hover:bg-muted/30 transition-colors">
-                <span className="text-base shrink-0 pt-0.5">{eventIcons[event.event_type] || "📌"}</span>
+              <div
+                key={event.id}
+                className="flex items-start gap-3 px-2 py-2 rounded-md hover:bg-muted/30 transition-colors"
+              >
+                <span className="text-base shrink-0 pt-0.5">
+                  {eventIcons[event.event_type] || '📌'}
+                </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs">
                     <span className="font-medium text-foreground">{event.target_name}</span>

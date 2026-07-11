@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState } from 'react';
 
 export const SIDEBAR_W = 288;
 
@@ -13,13 +13,15 @@ export function useSidebar() {
   const sidebarNavRef = useRef<HTMLDivElement>(null);
 
   return {
-    sidebarOpen, setSidebarOpen,
+    sidebarOpen,
+    setSidebarOpen,
     sidebarDragRef,
     touchStartRef,
     sidebarTouchDelta,
     sidebarElRef,
     sidebarOverlayRef,
-    sidebarOverlayVisible, setSidebarOverlayVisible,
+    sidebarOverlayVisible,
+    setSidebarOverlayVisible,
     SIDEBAR_W,
     sidebarNavRef,
   };

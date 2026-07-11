@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { axe } from "vitest-axe";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import React from "react";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { axe } from 'vitest-axe';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
 
 // ─── Mock API ─────────────────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ const mockConfigGetAll = vi.hoisted(() => vi.fn());
 const mockConfigSet = vi.hoisted(() => vi.fn());
 const mockAiAsk = vi.hoisted(() => vi.fn());
 
-vi.mock("../lib/api", () => ({
+vi.mock('../lib/api', () => ({
   api: {
     ai: {
       sessions: {
@@ -35,7 +35,7 @@ vi.mock("../lib/api", () => ({
   },
 }));
 
-import { AiAssistant } from "../components/AiAssistant";
+import { AiAssistant } from '../components/AiAssistant';
 
 // ─── Mock DOM APIs not available in jsdom ────────────────────────────────────
 
@@ -46,13 +46,39 @@ beforeAll(() => {
 // ─── Sample data ──────────────────────────────────────────────────────────────
 
 const sampleSessions = [
-  { id: "s1", user_id: "u1", title: "Chat about \"Welcome\"", page_context_id: "p1", created_at: 2000, updated_at: 2000 },
-  { id: "s2", user_id: "u1", title: "Chat 6/29/2026, 12:00:00 PM", page_context_id: "", created_at: 1000, updated_at: 1000 },
+  {
+    id: 's1',
+    user_id: 'u1',
+    title: 'Chat about "Welcome"',
+    page_context_id: 'p1',
+    created_at: 2000,
+    updated_at: 2000,
+  },
+  {
+    id: 's2',
+    user_id: 'u1',
+    title: 'Chat 6/29/2026, 12:00:00 PM',
+    page_context_id: '',
+    created_at: 1000,
+    updated_at: 1000,
+  },
 ];
 
 const sampleMessages = [
-  { id: "m1", session_id: "s1", role: "user", content: "What is this wiki about?", created_at: 3000 },
-  { id: "m2", session_id: "s1", role: "assistant", content: "This wiki is a knowledge base for your team.", created_at: 3001 },
+  {
+    id: 'm1',
+    session_id: 's1',
+    role: 'user',
+    content: 'What is this wiki about?',
+    created_at: 3000,
+  },
+  {
+    id: 'm2',
+    session_id: 's1',
+    role: 'assistant',
+    content: 'This wiki is a knowledge base for your team.',
+    created_at: 3001,
+  },
 ];
 
 // ─── Render helper ────────────────────────────────────────────────────────────
@@ -68,7 +94,7 @@ function renderAssistant(overrides?: {
     onClose,
     ...render(
       <AiAssistant
-        userId={overrides?.userId ?? "u1"}
+        userId={overrides?.userId ?? 'u1'}
         currentPageId={overrides?.currentPageId}
         currentPageTitle={overrides?.currentPageTitle}
         onClose={onClose}
@@ -79,7 +105,7 @@ function renderAssistant(overrides?: {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe("AiAssistant", () => {
+describe('AiAssistant', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -88,12 +114,12 @@ describe("AiAssistant", () => {
   // Rendering & welcome screen
   // ═══════════════════════════════════════════════════════════════════════════
 
-  describe("rendering and welcome screen", () => {
-    it("renders the AI Assistant panel header", async () => {
+  describe('rendering and welcome screen', () => {
+    it('renders the AI Assistant panel header', async () => {
       mockSessionsList.mockResolvedValue([]);
       mockConfigGetAll.mockResolvedValue([]);
       renderAssistant();
-      expect(screen.getByText("AI Assistant")).toBeInTheDocument();
+      expect(screen.getByText('AI Assistant')).toBeInTheDocument();
     });
 
     it("shows welcome screen with 'Start a new chat' button when no session exists", async () => {
@@ -101,7 +127,7 @@ describe("AiAssistant", () => {
       mockConfigGetAll.mockResolvedValue([]);
       renderAssistant();
       await waitFor(() => {
-        expect(screen.getByText("Start a new chat")).toBeInTheDocument();
+        expect(screen.getByText('Start a new chat')).toBeInTheDocument();
       });
     });
 
@@ -111,15 +137,15 @@ describe("AiAssistant", () => {
       mockMessagesList.mockResolvedValue([]);
       renderAssistant();
       await waitFor(() => {
-        expect(screen.getByText("Ask anything about your wiki content.")).toBeInTheDocument();
+        expect(screen.getByText('Ask anything about your wiki content.')).toBeInTheDocument();
       });
     });
 
-    it("shows current page title in header when provided", async () => {
+    it('shows current page title in header when provided', async () => {
       mockSessionsList.mockResolvedValue([]);
       mockConfigGetAll.mockResolvedValue([]);
-      renderAssistant({ currentPageTitle: "Meeting Notes" });
-      expect(screen.getByText((t) => t.includes("Meeting Notes"))).toBeInTheDocument();
+      renderAssistant({ currentPageTitle: 'Meeting Notes' });
+      expect(screen.getByText((t) => t.includes('Meeting Notes'))).toBeInTheDocument();
     });
 
     it("shows 'Ask me anything about your wiki' text", async () => {
@@ -136,13 +162,13 @@ describe("AiAssistant", () => {
   // Panel close
   // ═══════════════════════════════════════════════════════════════════════════
 
-  describe("panel close", () => {
-    it("calls onClose when close button is clicked", () => {
+  describe('panel close', () => {
+    it('calls onClose when close button is clicked', () => {
       mockSessionsList.mockResolvedValue([]);
       mockConfigGetAll.mockResolvedValue([]);
       const onClose = vi.fn();
       renderAssistant({ onClose });
-      fireEvent.click(screen.getByTitle("Close"));
+      fireEvent.click(screen.getByTitle('Close'));
       expect(onClose).toHaveBeenCalledOnce();
     });
   });
@@ -151,14 +177,14 @@ describe("AiAssistant", () => {
   // Session management
   // ═══════════════════════════════════════════════════════════════════════════
 
-  describe("session management", () => {
-    it("loads sessions on mount and displays session tabs", async () => {
+  describe('session management', () => {
+    it('loads sessions on mount and displays session tabs', async () => {
       mockSessionsList.mockResolvedValue(sampleSessions);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
       renderAssistant();
       await waitFor(() => {
-        expect(mockSessionsList).toHaveBeenCalledWith("u1");
+        expect(mockSessionsList).toHaveBeenCalledWith('u1');
       });
       await waitFor(() => {
         expect(screen.getByText((t) => t.includes('Chat about'))).toBeInTheDocument();
@@ -168,28 +194,32 @@ describe("AiAssistant", () => {
     it("creates a new session when 'Start a new chat' button is clicked", async () => {
       mockSessionsList.mockResolvedValue([]);
       mockConfigGetAll.mockResolvedValue([]);
-      mockSessionsCreate.mockResolvedValue("s3");
+      mockSessionsCreate.mockResolvedValue('s3');
       renderAssistant();
       await waitFor(() => {
-        expect(screen.getByText("Start a new chat")).toBeInTheDocument();
+        expect(screen.getByText('Start a new chat')).toBeInTheDocument();
       });
-      fireEvent.click(screen.getByText("Start a new chat"));
+      fireEvent.click(screen.getByText('Start a new chat'));
       await waitFor(() => {
-        expect(mockSessionsCreate).toHaveBeenCalledWith("u1", expect.any(String), "");
+        expect(mockSessionsCreate).toHaveBeenCalledWith('u1', expect.any(String), '');
       });
     });
 
-    it("creates a new session with page context when currentPageId is provided", async () => {
+    it('creates a new session with page context when currentPageId is provided', async () => {
       mockSessionsList.mockResolvedValue([]);
       mockConfigGetAll.mockResolvedValue([]);
-      mockSessionsCreate.mockResolvedValue("s3");
-      renderAssistant({ currentPageId: "p1", currentPageTitle: "Test Page" });
+      mockSessionsCreate.mockResolvedValue('s3');
+      renderAssistant({ currentPageId: 'p1', currentPageTitle: 'Test Page' });
       await waitFor(() => {
-        expect(screen.getByText("Start a new chat")).toBeInTheDocument();
+        expect(screen.getByText('Start a new chat')).toBeInTheDocument();
       });
-      fireEvent.click(screen.getByText("Start a new chat"));
+      fireEvent.click(screen.getByText('Start a new chat'));
       await waitFor(() => {
-        expect(mockSessionsCreate).toHaveBeenCalledWith("u1", expect.stringContaining("Test Page"), "p1");
+        expect(mockSessionsCreate).toHaveBeenCalledWith(
+          'u1',
+          expect.stringContaining('Test Page'),
+          'p1',
+        );
       });
     });
 
@@ -197,19 +227,19 @@ describe("AiAssistant", () => {
       mockSessionsList.mockResolvedValue(sampleSessions);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
-      mockSessionsCreate.mockResolvedValue("s3");
+      mockSessionsCreate.mockResolvedValue('s3');
       renderAssistant();
       await waitFor(() => {
-        expect(screen.getByTitle("New chat")).toBeInTheDocument();
+        expect(screen.getByTitle('New chat')).toBeInTheDocument();
       });
-      fireEvent.click(screen.getByTitle("New chat"));
+      fireEvent.click(screen.getByTitle('New chat'));
       await waitFor(() => {
         expect(mockSessionsCreate).toHaveBeenCalledOnce();
       });
-      expect(mockSessionsCreate).toHaveBeenCalledWith("u1", expect.any(String), "");
+      expect(mockSessionsCreate).toHaveBeenCalledWith('u1', expect.any(String), '');
     });
 
-    it("switches active session when a session tab is clicked", async () => {
+    it('switches active session when a session tab is clicked', async () => {
       mockSessionsList.mockResolvedValue(sampleSessions);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
@@ -220,7 +250,7 @@ describe("AiAssistant", () => {
       // second session tab (title truncated to 24 chars: "Chat 6/29/2026, 12:00:0")
       fireEvent.click(screen.getByText((t) => t.includes('Chat 6/29')));
       await waitFor(() => {
-        expect(mockMessagesList).toHaveBeenCalledWith("s2");
+        expect(mockMessagesList).toHaveBeenCalledWith('s2');
       });
     });
   });
@@ -229,27 +259,29 @@ describe("AiAssistant", () => {
   // Messages display
   // ═══════════════════════════════════════════════════════════════════════════
 
-  describe("messages display", () => {
-    it("loads and displays messages for the active session", async () => {
+  describe('messages display', () => {
+    it('loads and displays messages for the active session', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue(sampleMessages);
       renderAssistant();
       await waitFor(() => {
-        expect(screen.getByText("What is this wiki about?")).toBeInTheDocument();
+        expect(screen.getByText('What is this wiki about?')).toBeInTheDocument();
       });
       await waitFor(() => {
-        expect(screen.getByText("This wiki is a knowledge base for your team.")).toBeInTheDocument();
+        expect(
+          screen.getByText('This wiki is a knowledge base for your team.'),
+        ).toBeInTheDocument();
       });
     });
 
-    it("shows empty state when session has no messages and not loading", async () => {
+    it('shows empty state when session has no messages and not loading', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
       renderAssistant();
       await waitFor(() => {
-        expect(screen.getByText("Ask anything about your wiki content.")).toBeInTheDocument();
+        expect(screen.getByText('Ask anything about your wiki content.')).toBeInTheDocument();
       });
     });
   });
@@ -258,17 +290,17 @@ describe("AiAssistant", () => {
   // Sending messages
   // ═══════════════════════════════════════════════════════════════════════════
 
-  describe("sending messages", () => {
-    it("disables input textarea when no active session exists", async () => {
+  describe('sending messages', () => {
+    it('disables input textarea when no active session exists', async () => {
       mockSessionsList.mockResolvedValue([]);
       mockConfigGetAll.mockResolvedValue([]);
       renderAssistant();
       await waitFor(() => {
-        expect(screen.getByPlaceholderText("Start a chat first...")).toBeDisabled();
+        expect(screen.getByPlaceholderText('Start a chat first...')).toBeDisabled();
       });
     });
 
-    it("enables input when an active session exists", async () => {
+    it('enables input when an active session exists', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
@@ -278,25 +310,27 @@ describe("AiAssistant", () => {
       });
     });
 
-    it("send button is disabled when input is empty", async () => {
+    it('send button is disabled when input is empty', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
       renderAssistant();
       await waitFor(() => {
-        const buttons = screen.getAllByRole("button");
-        const sendButton = buttons.find(b => b.innerHTML.includes("Send") || b.querySelector("svg.lucide-send"));
+        const buttons = screen.getAllByRole('button');
+        const sendButton = buttons.find(
+          (b) => b.innerHTML.includes('Send') || b.querySelector('svg.lucide-send'),
+        );
         expect(sendButton).toBeDefined();
         expect(sendButton).toBeDisabled();
       });
     });
 
-    it("sends a message and displays user message bubble", async () => {
+    it('sends a message and displays user message bubble', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
-      mockMessagesAdd.mockResolvedValue("m3");
-      mockAiAsk.mockResolvedValue("AI response text");
+      mockMessagesAdd.mockResolvedValue('m3');
+      mockAiAsk.mockResolvedValue('AI response text');
       renderAssistant();
 
       // Wait for input to be enabled
@@ -305,35 +339,35 @@ describe("AiAssistant", () => {
       });
 
       const input = screen.getByPlaceholderText(/Ask a question/);
-      fireEvent.change(input, { target: { value: "Hello AI!" } });
+      fireEvent.change(input, { target: { value: 'Hello AI!' } });
 
       // Find send button (it's the one with lucide-send icon)
-      const allBtns = screen.getAllByRole("button");
-      const sendButton = allBtns.find(btn => btn.querySelector("svg.lucide-send"));
-      if (!sendButton) throw new Error("Send button not found");
+      const allBtns = screen.getAllByRole('button');
+      const sendButton = allBtns.find((btn) => btn.querySelector('svg.lucide-send'));
+      if (!sendButton) throw new Error('Send button not found');
 
       fireEvent.click(sendButton);
 
       // User message should appear immediately
       await waitFor(() => {
-        expect(screen.getByText("Hello AI!")).toBeInTheDocument();
+        expect(screen.getByText('Hello AI!')).toBeInTheDocument();
       });
 
       // API should have been called
       await waitFor(() => {
-        expect(mockMessagesAdd).toHaveBeenCalledWith("s1", "user", "Hello AI!");
+        expect(mockMessagesAdd).toHaveBeenCalledWith('s1', 'user', 'Hello AI!');
       });
       await waitFor(() => {
-        expect(mockAiAsk).toHaveBeenCalledWith("s1", "Hello AI!", undefined);
+        expect(mockAiAsk).toHaveBeenCalledWith('s1', 'Hello AI!', undefined);
       });
     });
 
-    it("sends message via Enter key", async () => {
+    it('sends message via Enter key', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
-      mockMessagesAdd.mockResolvedValue("m3");
-      mockAiAsk.mockResolvedValue("AI response");
+      mockMessagesAdd.mockResolvedValue('m3');
+      mockAiAsk.mockResolvedValue('AI response');
       renderAssistant();
 
       await waitFor(() => {
@@ -341,20 +375,20 @@ describe("AiAssistant", () => {
       });
 
       const input = screen.getByPlaceholderText(/Ask a question/);
-      fireEvent.change(input, { target: { value: "Enter key test" } });
-      fireEvent.keyDown(input, { key: "Enter" });
+      fireEvent.change(input, { target: { value: 'Enter key test' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
 
       await waitFor(() => {
-        expect(screen.getByText("Enter key test")).toBeInTheDocument();
+        expect(screen.getByText('Enter key test')).toBeInTheDocument();
       });
     });
 
-    it("does not send when Shift+Enter is pressed (newline)", async () => {
+    it('does not send when Shift+Enter is pressed (newline)', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
-      mockMessagesAdd.mockResolvedValue("m3");
-      mockAiAsk.mockResolvedValue("AI response");
+      mockMessagesAdd.mockResolvedValue('m3');
+      mockAiAsk.mockResolvedValue('AI response');
       renderAssistant();
 
       await waitFor(() => {
@@ -362,13 +396,13 @@ describe("AiAssistant", () => {
       });
 
       const input = screen.getByPlaceholderText(/Ask a question/) as HTMLTextAreaElement;
-      fireEvent.change(input, { target: { value: "Shift enter test" } });
-      fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
+      fireEvent.change(input, { target: { value: 'Shift enter test' } });
+      fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
 
       // Wait a tick — the message should NOT appear because Shift+Enter allows newline
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       // The input textarea may contain the text, check no message bubble appears
-      expect(screen.queryByText("Shift enter test", { selector: 'div' })).not.toBeInTheDocument();
+      expect(screen.queryByText('Shift enter test', { selector: 'div' })).not.toBeInTheDocument();
     });
   });
 
@@ -376,8 +410,8 @@ describe("AiAssistant", () => {
   // Loading state
   // ═══════════════════════════════════════════════════════════════════════════
 
-  describe("loading state", () => {
-    it("shows loading indicator (spinner) while AI is responding", async () => {
+  describe('loading state', () => {
+    it('shows loading indicator (spinner) while AI is responding', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
@@ -393,22 +427,22 @@ describe("AiAssistant", () => {
       });
 
       const input = screen.getByPlaceholderText(/Ask a question/);
-      fireEvent.change(input, { target: { value: "Loading test" } });
+      fireEvent.change(input, { target: { value: 'Loading test' } });
 
       // Click send button
-      const allBtns = screen.getAllByRole("button");
-      const sendButton = allBtns.find(btn => btn.querySelector("svg.lucide-send"));
-      if (!sendButton) throw new Error("Send button not found");
+      const allBtns = screen.getAllByRole('button');
+      const sendButton = allBtns.find((btn) => btn.querySelector('svg.lucide-send'));
+      if (!sendButton) throw new Error('Send button not found');
       fireEvent.click(sendButton);
 
       // Loading spinner should appear
       await waitFor(() => {
-        const spinner = document.querySelector(".animate-spin");
+        const spinner = document.querySelector('.animate-spin');
         expect(spinner).toBeTruthy();
       });
     });
 
-    it("disables input and send button while loading", async () => {
+    it('disables input and send button while loading', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
@@ -423,11 +457,11 @@ describe("AiAssistant", () => {
       });
 
       const input = screen.getByPlaceholderText(/Ask a question/);
-      fireEvent.change(input, { target: { value: "Disable test" } });
+      fireEvent.change(input, { target: { value: 'Disable test' } });
 
-      const allBtns = screen.getAllByRole("button");
-      const sendButton = allBtns.find(btn => btn.querySelector("svg.lucide-send"));
-      if (!sendButton) throw new Error("Send button not found");
+      const allBtns = screen.getAllByRole('button');
+      const sendButton = allBtns.find((btn) => btn.querySelector('svg.lucide-send'));
+      if (!sendButton) throw new Error('Send button not found');
       fireEvent.click(sendButton);
 
       await waitFor(() => {
@@ -440,14 +474,14 @@ describe("AiAssistant", () => {
   // Error handling
   // ═══════════════════════════════════════════════════════════════════════════
 
-  describe("error handling", () => {
-    it("shows error message when AI ask fails", async () => {
+  describe('error handling', () => {
+    it('shows error message when AI ask fails', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
-      mockMessagesAdd.mockResolvedValue("m3");
+      mockMessagesAdd.mockResolvedValue('m3');
       // mockAiAsk must reject so handleSend enters the catch block
-      mockAiAsk.mockImplementation(() => Promise.reject(new Error("AI service unavailable")));
+      mockAiAsk.mockImplementation(() => Promise.reject(new Error('AI service unavailable')));
 
       renderAssistant();
 
@@ -456,11 +490,11 @@ describe("AiAssistant", () => {
       });
 
       const input = screen.getByPlaceholderText(/Ask a question/);
-      fireEvent.change(input, { target: { value: "Error test" } });
+      fireEvent.change(input, { target: { value: 'Error test' } });
 
-      const allBtns = screen.getAllByRole("button");
-      const sendButton = allBtns.find(btn => btn.querySelector("svg.lucide-send"));
-      if (!sendButton) throw new Error("Send button not found");
+      const allBtns = screen.getAllByRole('button');
+      const sendButton = allBtns.find((btn) => btn.querySelector('svg.lucide-send'));
+      if (!sendButton) throw new Error('Send button not found');
       fireEvent.click(sendButton);
 
       await waitFor(() => {
@@ -469,29 +503,29 @@ describe("AiAssistant", () => {
       });
     });
 
-    it("shows error message when session creation fails", async () => {
+    it('shows error message when session creation fails', async () => {
       mockSessionsList.mockResolvedValue([]);
       mockConfigGetAll.mockResolvedValue([]);
-      mockSessionsCreate.mockRejectedValue(new Error("Failed to create session"));
+      mockSessionsCreate.mockRejectedValue(new Error('Failed to create session'));
 
       renderAssistant();
 
       await waitFor(() => {
-        expect(screen.getByText("Start a new chat")).toBeInTheDocument();
+        expect(screen.getByText('Start a new chat')).toBeInTheDocument();
       });
-      fireEvent.click(screen.getByText("Start a new chat"));
+      fireEvent.click(screen.getByText('Start a new chat'));
 
       await waitFor(() => {
         expect(screen.getByText(/Failed to create session/)).toBeInTheDocument();
       });
     });
 
-    it("displays error message with dismiss button", async () => {
+    it('displays error message with dismiss button', async () => {
       mockSessionsList.mockResolvedValue([sampleSessions[0]]);
       mockConfigGetAll.mockResolvedValue([]);
       mockMessagesList.mockResolvedValue([]);
-      mockMessagesAdd.mockResolvedValue("m3");
-      mockAiAsk.mockImplementation(() => Promise.reject(new Error("Temporary error")));
+      mockMessagesAdd.mockResolvedValue('m3');
+      mockAiAsk.mockImplementation(() => Promise.reject(new Error('Temporary error')));
 
       renderAssistant();
 
@@ -500,11 +534,11 @@ describe("AiAssistant", () => {
       });
 
       const input = screen.getByPlaceholderText(/Ask a question/);
-      fireEvent.change(input, { target: { value: "Dismiss test" } });
+      fireEvent.change(input, { target: { value: 'Dismiss test' } });
 
-      const allBtns = screen.getAllByRole("button");
-      const sendButton = allBtns.find(btn => btn.querySelector("svg.lucide-send"));
-      if (!sendButton) throw new Error("Send button not found");
+      const allBtns = screen.getAllByRole('button');
+      const sendButton = allBtns.find((btn) => btn.querySelector('svg.lucide-send'));
+      if (!sendButton) throw new Error('Send button not found');
       fireEvent.click(sendButton);
 
       await waitFor(() => {
@@ -514,10 +548,10 @@ describe("AiAssistant", () => {
 
       // Find and click the dismiss X button inside the error banner
       const errBanners = screen.getAllByText(/Temporary error/);
-      const errorBanner = errBanners.find(el => el.closest('[class*="bg-red"]'));
+      const errorBanner = errBanners.find((el) => el.closest('[class*="bg-red"]'));
       if (errorBanner) {
         const bannerDiv = errorBanner.closest('[class*="bg-red"]');
-        const dismissBtn = bannerDiv?.querySelector("button");
+        const dismissBtn = bannerDiv?.querySelector('button');
         if (dismissBtn) {
           fireEvent.click(dismissBtn);
           await waitFor(() => {
@@ -529,127 +563,126 @@ describe("AiAssistant", () => {
     });
   });
 
-  it("shows error message when config save fails", async () => {
+  it('shows error message when config save fails', async () => {
     mockSessionsList.mockResolvedValue([]);
     mockConfigGetAll.mockResolvedValue([]);
-    mockConfigSet.mockRejectedValue(new Error("Config save failed"));
+    mockConfigSet.mockRejectedValue(new Error('Config save failed'));
 
-      renderAssistant();
+    renderAssistant();
 
-      // Open settings panel
-      fireEvent.click(screen.getByTitle("AI Settings"));
+    // Open settings panel
+    fireEvent.click(screen.getByTitle('AI Settings'));
 
-      await waitFor(() => {
-        expect(screen.getByText("Provider")).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText('Provider')).toBeInTheDocument();
+    });
 
-      // Change provider value to trigger saveConfig
-      const select = screen.getByRole("combobox");
-      fireEvent.change(select, { target: { value: "openai" } });
+    // Change provider value to trigger saveConfig
+    const select = screen.getByRole('combobox');
+    fireEvent.change(select, { target: { value: 'openai' } });
 
-      await waitFor(() => {
-        expect(screen.getByText(/Config save failed/)).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText(/Config save failed/)).toBeInTheDocument();
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Settings panel
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('settings panel', () => {
+  it('opens settings panel when gear button is clicked', async () => {
+    mockSessionsList.mockResolvedValue([]);
+    mockConfigGetAll.mockResolvedValue([]);
+    renderAssistant();
+
+    fireEvent.click(screen.getByTitle('AI Settings'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Provider')).toBeInTheDocument();
+    });
+    expect(screen.getByText('API URL (default: http://localhost:11434)')).toBeInTheDocument();
+    expect(screen.getByText('Model')).toBeInTheDocument();
+    expect(screen.getByText('API Key (for OpenAI/Anthropic)')).toBeInTheDocument();
+    expect(screen.getByText('System Prompt')).toBeInTheDocument();
+  });
+
+  it('toggles settings panel open/close on gear click', async () => {
+    mockSessionsList.mockResolvedValue([]);
+    mockConfigGetAll.mockResolvedValue([]);
+    renderAssistant();
+
+    const gearBtn = screen.getByTitle('AI Settings');
+
+    // Open
+    fireEvent.click(gearBtn);
+    await waitFor(() => {
+      expect(screen.getByText('Provider')).toBeInTheDocument();
+    });
+
+    // Close
+    fireEvent.click(gearBtn);
+    await waitFor(() => {
+      expect(screen.queryByText('Provider')).not.toBeInTheDocument();
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Settings panel
-  // ═══════════════════════════════════════════════════════════════════════════
+  it('pre-fills config values from API', async () => {
+    mockSessionsList.mockResolvedValue([]);
+    mockConfigGetAll.mockResolvedValue([
+      { key: 'provider', value: 'openai', updated_at: 1000 },
+      { key: 'model', value: 'gpt-4', updated_at: 1000 },
+    ]);
+    renderAssistant();
 
-  describe("settings panel", () => {
-    it("opens settings panel when gear button is clicked", async () => {
-      mockSessionsList.mockResolvedValue([]);
-      mockConfigGetAll.mockResolvedValue([]);
-      renderAssistant();
+    fireEvent.click(screen.getByTitle('AI Settings'));
 
-      fireEvent.click(screen.getByTitle("AI Settings"));
-
-      await waitFor(() => {
-        expect(screen.getByText("Provider")).toBeInTheDocument();
-      });
-      expect(screen.getByText("API URL (default: http://localhost:11434)")).toBeInTheDocument();
-      expect(screen.getByText("Model")).toBeInTheDocument();
-      expect(screen.getByText("API Key (for OpenAI/Anthropic)")).toBeInTheDocument();
-      expect(screen.getByText("System Prompt")).toBeInTheDocument();
+    await waitFor(() => {
+      const select = screen.getByRole('combobox') as HTMLSelectElement;
+      expect(select.value).toBe('openai');
     });
 
-    it("toggles settings panel open/close on gear click", async () => {
-      mockSessionsList.mockResolvedValue([]);
-      mockConfigGetAll.mockResolvedValue([]);
-      renderAssistant();
-
-      const gearBtn = screen.getByTitle("AI Settings");
-
-      // Open
-      fireEvent.click(gearBtn);
-      await waitFor(() => {
-        expect(screen.getByText("Provider")).toBeInTheDocument();
-      });
-
-      // Close
-      fireEvent.click(gearBtn);
-      await waitFor(() => {
-        expect(screen.queryByText("Provider")).not.toBeInTheDocument();
-      });
-    });
-
-    it("pre-fills config values from API", async () => {
-      mockSessionsList.mockResolvedValue([]);
-      mockConfigGetAll.mockResolvedValue([
-        { key: "provider", value: "openai", updated_at: 1000 },
-        { key: "model", value: "gpt-4", updated_at: 1000 },
-      ]);
-      renderAssistant();
-
-      fireEvent.click(screen.getByTitle("AI Settings"));
-
-      await waitFor(() => {
-        const select = screen.getByRole("combobox") as HTMLSelectElement;
-        expect(select.value).toBe("openai");
-      });
-
-      // Check for the model input value
-      const modelInput = screen.getByDisplayValue("gpt-4") as HTMLInputElement;
-      expect(modelInput).toBeInTheDocument();
-    });
-
-    it("saves config on blur-sm of input fields", async () => {
-      mockSessionsList.mockResolvedValue([]);
-      mockConfigGetAll.mockResolvedValue([]);
-      mockConfigSet.mockResolvedValue(undefined);
-      renderAssistant();
-
-      fireEvent.click(screen.getByTitle("AI Settings"));
-
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText("llama3.2")).toBeInTheDocument();
-      });
-
-      const modelInput = screen.getByPlaceholderText("llama3.2");
-      fireEvent.change(modelInput, { target: { value: "llama3.1" } });
-      fireEvent.blur(modelInput);
-
-      await waitFor(() => {
-        expect(mockConfigSet).toHaveBeenCalledWith("model", "llama3.1");
-      });
-    });
+    // Check for the model input value
+    const modelInput = screen.getByDisplayValue('gpt-4') as HTMLInputElement;
+    expect(modelInput).toBeInTheDocument();
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Accessibility
-  // ═══════════════════════════════════════════════════════════════════════════
+  it('saves config on blur-sm of input fields', async () => {
+    mockSessionsList.mockResolvedValue([]);
+    mockConfigGetAll.mockResolvedValue([]);
+    mockConfigSet.mockResolvedValue(undefined);
+    renderAssistant();
 
-  describe("accessibility", () => {
-    it("has no accessibility violations", async () => {
-      mockSessionsList.mockResolvedValue([]);
-      mockConfigGetAll.mockResolvedValue([]);
-      const { container } = renderAssistant();
-      await waitFor(() => {
-        expect(screen.getByText("Start a new chat")).toBeInTheDocument();
-      });
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
+    fireEvent.click(screen.getByTitle('AI Settings'));
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('llama3.2')).toBeInTheDocument();
+    });
+
+    const modelInput = screen.getByPlaceholderText('llama3.2');
+    fireEvent.change(modelInput, { target: { value: 'llama3.1' } });
+    fireEvent.blur(modelInput);
+
+    await waitFor(() => {
+      expect(mockConfigSet).toHaveBeenCalledWith('model', 'llama3.1');
     });
   });
+});
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Accessibility
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('accessibility', () => {
+  it('has no accessibility violations', async () => {
+    mockSessionsList.mockResolvedValue([]);
+    mockConfigGetAll.mockResolvedValue([]);
+    const { container } = renderAssistant();
+    await waitFor(() => {
+      expect(screen.getByText('Start a new chat')).toBeInTheDocument();
+    });
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+});

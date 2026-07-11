@@ -1,8 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { api, AiChatSession, AiChatMessage } from "../lib/api";
-import {
-  MessageSquare, Send, Trash2, Plus, Loader2, Bot, User, X,
-} from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
+import { api, AiChatSession, AiChatMessage } from '../lib/api';
+import { MessageSquare, Send, Trash2, Plus, Loader2, Bot, User, X } from 'lucide-react';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -19,12 +17,16 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
   const [sessions, setSessions] = useState<AiChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<AiChatMessage[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
   const [configValues, setConfigValues] = useState<Record<string, string>>({
-    provider: "", api_url: "", api_key: "", model: "", system_prompt: "",
+    provider: '',
+    api_url: '',
+    api_key: '',
+    model: '',
+    system_prompt: '',
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -46,7 +48,7 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const loadSessions = async () => {
@@ -57,7 +59,7 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
         setActiveSessionId(s[0].id);
       }
     } catch (err) {
-      console.error("Failed to load AI sessions:", err);
+      console.error('Failed to load AI sessions:', err);
     }
   };
 
@@ -66,7 +68,7 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
       const msgs = await api.ai.messages.list(sessionId);
       setMessages(msgs);
     } catch (err) {
-      console.error("Failed to load messages:", err);
+      console.error('Failed to load messages:', err);
     }
   };
 
@@ -77,7 +79,7 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
       for (const c of all) vals[c.key] = c.value;
       setConfigValues(vals);
     } catch (err) {
-      console.error("Failed to load AI config:", err);
+      console.error('Failed to load AI config:', err);
     }
   };
 
@@ -86,12 +88,18 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
       const title = currentPageTitle
         ? `Chat about "${currentPageTitle}"`
         : `Chat ${new Date().toLocaleString()}`;
-      const id = await api.ai.sessions.create(
-        userId,
-        title,
-        currentPageId || "",
-      );
-      setSessions(prev => [{ id, user_id: userId, title, page_context_id: currentPageId || "", created_at: Date.now(), updated_at: Date.now() }, ...prev]);
+      const id = await api.ai.sessions.create(userId, title, currentPageId || '');
+      setSessions((prev) => [
+        {
+          id,
+          user_id: userId,
+          title,
+          page_context_id: currentPageId || '',
+          created_at: Date.now(),
+          updated_at: Date.now(),
+        },
+        ...prev,
+      ]);
       setActiveSessionId(id);
       setMessages([]);
     } catch (err) {
@@ -102,7 +110,7 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
   const handleDeleteSession = async (id: string) => {
     try {
       await api.ai.sessions.delete(id);
-      setSessions(prev => prev.filter(s => s.id !== id));
+      setSessions((prev) => prev.filter((s) => s.id !== id));
       if (activeSessionId === id) {
         setActiveSessionId(sessions.length > 1 ? sessions[0].id : null);
       }
@@ -114,29 +122,29 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
   const handleSend = async () => {
     const text = input.trim();
     if (!text || !activeSessionId || loading) return;
-    setInput("");
+    setInput('');
     setError(null);
 
     // Add user message locally immediately
     const userMsg: AiChatMessage = {
-      id: "temp_" + Date.now(),
+      id: 'temp_' + Date.now(),
       session_id: activeSessionId,
-      role: "user",
+      role: 'user',
       content: text,
       created_at: Date.now(),
     };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
     try {
       // Save user message to STDB
-      await api.ai.messages.add(activeSessionId, "user", text);
+      await api.ai.messages.add(activeSessionId, 'user', text);
 
       // Get AI response
       const response = await api.ai.ask(activeSessionId, text, currentPageId);
 
       // Save AI response
-      await api.ai.messages.add(activeSessionId, "assistant", response);
+      await api.ai.messages.add(activeSessionId, 'assistant', response);
 
       // Reload messages to get proper IDs
       await loadMessages(activeSessionId);
@@ -144,20 +152,20 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
       setError(String(err));
       // Add error message placeholder
       const errMsg: AiChatMessage = {
-        id: "err_" + Date.now(),
+        id: 'err_' + Date.now(),
         session_id: activeSessionId,
-        role: "assistant",
+        role: 'assistant',
         content: `⚠️ Error: ${String(err)}`,
         created_at: Date.now(),
       };
-      setMessages(prev => [...prev, errMsg]);
+      setMessages((prev) => [...prev, errMsg]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -166,7 +174,7 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
   const saveConfig = async (key: string, value: string) => {
     try {
       await api.ai.config.set(key, value);
-      setConfigValues(prev => ({ ...prev, [key]: value }));
+      setConfigValues((prev) => ({ ...prev, [key]: value }));
     } catch (err) {
       setError(String(err));
     }
@@ -218,7 +226,7 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
               <label className="text-gray-400 block mb-1">Provider</label>
               <select
                 value={configValues.provider}
-                onChange={(e) => saveConfig("provider", e.target.value)}
+                onChange={(e) => saveConfig('provider', e.target.value)}
                 className="w-full bg-[#1a1a2e] border border-[#2a2a4a] rounded px-2 py-1.5 text-white text-xs"
               >
                 <option value="">Ollama (local)</option>
@@ -228,11 +236,13 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
               </select>
             </div>
             <div className="col-span-2">
-              <label className="text-gray-400 block mb-1">API URL (default: http://localhost:11434)</label>
+              <label className="text-gray-400 block mb-1">
+                API URL (default: http://localhost:11434)
+              </label>
               <input
                 value={configValues.api_url}
-                onChange={(e) => setConfigValues(prev => ({ ...prev, api_url: e.target.value }))}
-                onBlur={(e) => saveConfig("api_url", e.target.value)}
+                onChange={(e) => setConfigValues((prev) => ({ ...prev, api_url: e.target.value }))}
+                onBlur={(e) => saveConfig('api_url', e.target.value)}
                 placeholder="http://localhost:11434"
                 className="w-full bg-[#1a1a2e] border border-[#2a2a4a] rounded px-2 py-1.5 text-white text-xs"
               />
@@ -241,8 +251,8 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
               <label className="text-gray-400 block mb-1">Model</label>
               <input
                 value={configValues.model}
-                onChange={(e) => setConfigValues(prev => ({ ...prev, model: e.target.value }))}
-                onBlur={(e) => saveConfig("model", e.target.value)}
+                onChange={(e) => setConfigValues((prev) => ({ ...prev, model: e.target.value }))}
+                onBlur={(e) => saveConfig('model', e.target.value)}
                 placeholder="llama3.2"
                 className="w-full bg-[#1a1a2e] border border-[#2a2a4a] rounded px-2 py-1.5 text-white text-xs"
               />
@@ -252,8 +262,8 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
               <input
                 type="password"
                 value={configValues.api_key}
-                onChange={(e) => setConfigValues(prev => ({ ...prev, api_key: e.target.value }))}
-                onBlur={(e) => saveConfig("api_key", e.target.value)}
+                onChange={(e) => setConfigValues((prev) => ({ ...prev, api_key: e.target.value }))}
+                onBlur={(e) => saveConfig('api_key', e.target.value)}
                 placeholder="sk-..."
                 className="w-full bg-[#1a1a2e] border border-[#2a2a4a] rounded px-2 py-1.5 text-white text-xs"
               />
@@ -262,8 +272,10 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
               <label className="text-gray-400 block mb-1">System Prompt</label>
               <textarea
                 value={configValues.system_prompt}
-                onChange={(e) => setConfigValues(prev => ({ ...prev, system_prompt: e.target.value }))}
-                onBlur={(e) => saveConfig("system_prompt", e.target.value)}
+                onChange={(e) =>
+                  setConfigValues((prev) => ({ ...prev, system_prompt: e.target.value }))
+                }
+                onBlur={(e) => saveConfig('system_prompt', e.target.value)}
                 placeholder="You are a helpful wiki assistant..."
                 rows={2}
                 className="w-full bg-[#1a1a2e] border border-[#2a2a4a] rounded px-2 py-1.5 text-white text-xs resize-none"
@@ -276,19 +288,19 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
       {/* Sessions bar */}
       {sessions.length > 0 && !configOpen && (
         <div className="px-3 py-2 border-b border-[#2a2a4a] bg-[#12122a] flex gap-1 overflow-x-auto shrink-0">
-          {sessions.slice(0, 5).map(session => (
+          {sessions.slice(0, 5).map((session) => (
             <button
               key={session.id}
               onClick={() => setActiveSessionId(session.id)}
               className={`text-xs px-2 py-1 rounded whitespace-nowrap shrink-0 transition-colors ${
                 activeSessionId === session.id
-                  ? "bg-[#6c5ce7] text-white"
-                  : "bg-[#1a1a2e] text-gray-400 hover:text-white"
+                  ? 'bg-[#6c5ce7] text-white'
+                  : 'bg-[#1a1a2e] text-gray-400 hover:text-white'
               }`}
             >
               <MessageSquare size={10} className="inline mr-1" />
               {session.title.slice(0, 24)}
-              {session.title.length > 24 ? "…" : ""}
+              {session.title.length > 24 ? '…' : ''}
             </button>
           ))}
           {sessions.length > 5 && (
@@ -322,31 +334,31 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
             <p className="text-xs text-gray-600">
               {currentPageTitle
                 ? `Context: "${currentPageTitle}" will be included automatically.`
-                : "Open a page to include it as context for the AI."}
+                : 'Open a page to include it as context for the AI.'}
             </p>
           </div>
         )}
 
-        {messages.map(msg => (
+        {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            {msg.role !== "user" && (
+            {msg.role !== 'user' && (
               <div className="w-7 h-7 rounded-full bg-[#2a2a4a] flex items-center justify-center shrink-0 mt-1">
                 <Bot size={14} className="text-[#6c5ce7]" />
               </div>
             )}
             <div
               className={`max-w-[80%] rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-[#6c5ce7] text-white rounded-tr-none"
-                  : "bg-[#2a2a4a] text-gray-200 rounded-tl-none"
+                msg.role === 'user'
+                  ? 'bg-[#6c5ce7] text-white rounded-tr-none'
+                  : 'bg-[#2a2a4a] text-gray-200 rounded-tl-none'
               }`}
             >
               {msg.content}
             </div>
-            {msg.role === "user" && (
+            {msg.role === 'user' && (
               <div className="w-7 h-7 rounded-full bg-[#6c5ce7] flex items-center justify-center shrink-0 mt-1">
                 <User size={14} className="text-white" />
               </div>
@@ -385,7 +397,11 @@ export function AiAssistant({ userId, currentPageId, currentPageTitle, onClose }
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={activeSessionId ? "Ask a question… (Enter to send, Shift+Enter for newline)" : "Start a chat first..."}
+            placeholder={
+              activeSessionId
+                ? 'Ask a question… (Enter to send, Shift+Enter for newline)'
+                : 'Start a chat first...'
+            }
             rows={1}
             disabled={!activeSessionId || loading}
             className="flex-1 bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 resize-none focus:outline-hidden focus:border-[#6c5ce7] disabled:opacity-50"

@@ -1,7 +1,7 @@
-import { Node, mergeAttributes } from "@tiptap/core";
-import { ReactNodeViewRenderer } from "@tiptap/react";
-import type { NodeViewProps } from "@tiptap/react";
-import React, { useState, useEffect, useRef } from "react";
+import { Node, mergeAttributes } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import type { NodeViewProps } from '@tiptap/react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // ─── Lazy katex loader ───────────────────────────────────────────────────────
 // Dynamically import katex (129K) only when a math node is rendered for the
@@ -12,7 +12,7 @@ let _katexPromise: Promise<void> | null = null;
 function ensureKatex(): Promise<void> {
   if (_katex) return Promise.resolve();
   if (!_katexPromise) {
-    _katexPromise = import("katex").then((mod) => {
+    _katexPromise = import('katex').then((mod) => {
       _katex = mod.default || mod;
     });
   }
@@ -52,22 +52,16 @@ function renderBlockMath(tex: string): string {
 
 function escapeHtml(text: string): string {
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 // ─── Shared KaTeX render React component ─────────────────────────────────────
 // Used by both MathInlineNodeView and MathBlockNodeView
 
-function KatexRenderer({
-  tex,
-  displayMode,
-}: {
-  tex: string;
-  displayMode: boolean;
-}) {
+function KatexRenderer({ tex, displayMode }: { tex: string; displayMode: boolean }) {
   const containerRef = useRef<HTMLSpanElement | HTMLDivElement>(null);
   const [loading, setLoading] = useState(!_katex);
   const [error, setError] = useState(false);
@@ -76,7 +70,7 @@ function KatexRenderer({
     ensureKatex().then(() => {
       if (!containerRef.current) return;
       try {
-        const html = _katex.renderToString(tex || "", {
+        const html = _katex.renderToString(tex || '', {
           throwOnError: false,
           displayMode,
         });
@@ -91,27 +85,27 @@ function KatexRenderer({
   }, [tex, displayMode]);
 
   if (loading) {
-    return React.createElement(displayMode ? "div" : "span", {
+    return React.createElement(displayMode ? 'div' : 'span', {
       ref: containerRef,
-      className: "math-loading text-muted-foreground text-sm",
+      className: 'math-loading text-muted-foreground text-sm',
     });
   }
 
-  return React.createElement(displayMode ? "div" : "span", {
+  return React.createElement(displayMode ? 'div' : 'span', {
     ref: containerRef,
-    "data-error": error ? "true" : undefined,
+    'data-error': error ? 'true' : undefined,
     className: error
-      ? "math-error text-red-400"
+      ? 'math-error text-red-400'
       : displayMode
-        ? "math-render max-w-full"
-        : "math-render inline",
+        ? 'math-render max-w-full'
+        : 'math-render inline',
   });
 }
 
 // ─── MathInline React Node View ──────────────────────────────────────────────
 
 const MathInlineNodeView: React.FC<NodeViewProps> = ({ node }) => {
-  const tex = node.attrs.tex || "";
+  const tex = node.attrs.tex || '';
   return (
     <span className="math-inline" contentEditable={false}>
       <KatexRenderer tex={tex} displayMode={false} />
@@ -125,7 +119,7 @@ export interface MathInlineOptions {
   HTMLAttributes: Record<string, unknown>;
 }
 
-declare module "@tiptap/core" {
+declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     mathInline: {
       setMathInline: (attrs: { tex: string }) => ReturnType;
@@ -134,9 +128,9 @@ declare module "@tiptap/core" {
 }
 
 export const MathInline = Node.create<MathInlineOptions>({
-  name: "mathInline",
+  name: 'mathInline',
 
-  group: "inline",
+  group: 'inline',
   inline: true,
   selectable: true,
   atom: true,
@@ -150,26 +144,23 @@ export const MathInline = Node.create<MathInlineOptions>({
   addAttributes() {
     return {
       tex: {
-        default: "",
-        parseHTML: (el) => el.getAttribute("data-tex") || "",
-        renderHTML: (attrs) => ({ "data-tex": attrs.tex }),
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-tex') || '',
+        renderHTML: (attrs) => ({ 'data-tex': attrs.tex }),
       },
     };
   },
 
   parseHTML() {
-    return [{ tag: "span[data-math-inline]" }];
+    return [{ tag: 'span[data-math-inline]' }];
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const tex = node.attrs.tex || "";
+    const tex = node.attrs.tex || '';
     const rendered = renderInlineMath(tex);
     return [
-      "span",
-      mergeAttributes(
-        { "data-math-inline": "", class: "math-inline" },
-        HTMLAttributes,
-      ),
+      'span',
+      mergeAttributes({ 'data-math-inline': '', class: 'math-inline' }, HTMLAttributes),
       rendered,
     ];
   },
@@ -181,7 +172,7 @@ export const MathInline = Node.create<MathInlineOptions>({
   addNodeView() {
     return ReactNodeViewRenderer(MathInlineNodeView, {
       // Inline node views need to be rendered inline
-      as: "span",
+      as: 'span',
     });
   },
 
@@ -201,14 +192,10 @@ export const MathInline = Node.create<MathInlineOptions>({
 
 // ─── Block Math Node View ─────────────────────────────────────────────────────
 
-const MathBlockNodeView: React.FC<NodeViewProps> = ({
-  node,
-  updateAttributes,
-  selected,
-}) => {
+const MathBlockNodeView: React.FC<NodeViewProps> = ({ node, updateAttributes, selected }) => {
   const { tex } = node.attrs;
   const [showEditor, setShowEditor] = useState(false);
-  const [editTex, setEditTex] = useState(tex || "");
+  const [editTex, setEditTex] = useState(tex || '');
   const [renderError, setRenderError] = useState(false);
   const [katexLoading, setKatexLoading] = useState(!_katex);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -219,7 +206,7 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
       setKatexLoading(false);
       if (!previewRef.current) return;
       try {
-        const html = _katex.renderToString(editTex || "", {
+        const html = _katex.renderToString(editTex || '', {
           throwOnError: false,
           displayMode: true,
         });
@@ -232,7 +219,7 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
   }, [tex, editTex]);
 
   const handleDoubleClick = () => {
-    setEditTex(tex || "");
+    setEditTex(tex || '');
     setShowEditor(true);
   };
 
@@ -242,16 +229,16 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
   };
 
   const handleCancel = () => {
-    setEditTex(tex || "");
+    setEditTex(tex || '');
     setShowEditor(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSave();
     }
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       handleCancel();
     }
   };
@@ -259,7 +246,7 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
   return (
     <div
       className={`math-block-wrapper my-4 rounded-lg border ${
-        selected ? "border-primary/50 ring-2 ring-primary/20" : "border-border"
+        selected ? 'border-primary/50 ring-2 ring-primary/20' : 'border-border'
       } bg-muted/20 overflow-hidden`}
       contentEditable={false}
       onDoubleClick={handleDoubleClick}
@@ -267,7 +254,16 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
       {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30 border-b border-border/50">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M4 7V4h16v3" />
             <path d="M9 20h6" />
             <path d="M12 4v16" />
@@ -288,15 +284,9 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
       {/* Rendered math area */}
       <div className="p-5 flex justify-center overflow-x-auto min-h-[48px] items-center">
         {katexLoading ? (
-          <div className="text-muted-foreground text-sm animate-pulse">
-            Loading KaTeX...
-          </div>
+          <div className="text-muted-foreground text-sm animate-pulse">Loading KaTeX...</div>
         ) : (
-          <div
-            ref={previewRef}
-            className="math-render max-w-full"
-            data-tex={tex}
-          />
+          <div ref={previewRef} className="math-render max-w-full" data-tex={tex} />
         )}
       </div>
 
@@ -312,15 +302,13 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
               onChange={(e) => setEditTex(e.target.value)}
               onKeyDown={handleKeyDown}
               className="w-full h-24 px-3 py-2 rounded-lg border border-border bg-[#0a0a0a] text-sm font-mono text-foreground placeholder:text-muted-foreground/40 outline-hidden focus:border-primary/50 resize-y"
-              placeholder={"E = mc^2"}
+              placeholder={'E = mc^2'}
               autoFocus
               spellCheck={false}
             />
             <div className="flex items-center justify-between mt-2">
               <span className="text-[10px] text-muted-foreground/50">
-                {editTex.length > 0
-                  ? `${editTex.split("\n").length} lines`
-                  : "Empty expression"}
+                {editTex.length > 0 ? `${editTex.split('\n').length} lines` : 'Empty expression'}
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -333,7 +321,7 @@ const MathBlockNodeView: React.FC<NodeViewProps> = ({
                   onClick={handleSave}
                   className="px-3 py-1 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
                 >
-                  {tex ? "Update" : "Insert"}
+                  {tex ? 'Update' : 'Insert'}
                 </button>
               </div>
             </div>
@@ -350,7 +338,7 @@ export interface MathBlockOptions {
   HTMLAttributes: Record<string, unknown>;
 }
 
-declare module "@tiptap/core" {
+declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     mathBlock: {
       setMathBlock: (attrs: { tex: string }) => ReturnType;
@@ -359,9 +347,9 @@ declare module "@tiptap/core" {
 }
 
 export const MathBlock = Node.create<MathBlockOptions>({
-  name: "mathBlock",
+  name: 'mathBlock',
 
-  group: "block",
+  group: 'block',
   atom: true,
   selectable: true,
   draggable: true,
@@ -376,30 +364,27 @@ export const MathBlock = Node.create<MathBlockOptions>({
   addAttributes() {
     return {
       tex: {
-        default: "E = mc^2",
-        parseHTML: (el) => el.getAttribute("data-tex") || "",
-        renderHTML: (attrs) => ({ "data-tex": attrs.tex }),
+        default: 'E = mc^2',
+        parseHTML: (el) => el.getAttribute('data-tex') || '',
+        renderHTML: (attrs) => ({ 'data-tex': attrs.tex }),
       },
     };
   },
 
   parseHTML() {
-    return [
-      { tag: "div[data-math-block]" },
-      { tag: "div.math-block" },
-    ];
+    return [{ tag: 'div[data-math-block]' }, { tag: 'div.math-block' }];
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const tex = node.attrs.tex || "";
+    const tex = node.attrs.tex || '';
     const rendered = renderBlockMath(tex);
     return [
-      "div",
+      'div',
       mergeAttributes(
         {
-          "data-math-block": "",
+          'data-math-block': '',
           class:
-            "math-block my-4 p-4 rounded-lg border border-border bg-muted/10 overflow-x-auto text-center",
+            'math-block my-4 p-4 rounded-lg border border-border bg-muted/10 overflow-x-auto text-center',
         },
         HTMLAttributes,
       ),

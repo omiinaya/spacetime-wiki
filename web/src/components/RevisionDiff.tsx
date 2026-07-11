@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import { diffArrays } from "diff";
-import { cn, formatDate } from "../lib/utils";
-import type { PageRevision } from "../lib/api";
+import { useMemo } from 'react';
+import { diffArrays } from 'diff';
+import { cn, formatDate } from '../lib/utils';
+import type { PageRevision } from '../lib/api';
 
 interface Props {
   /** The "old" revision (base) */
@@ -17,34 +17,34 @@ function tiptapToPlain(doc: unknown): string {
   const parts: string[] = [];
   function walk(node: unknown) {
     if (!node) return;
-    if (node.type === "text") {
-      parts.push(node.text || "");
+    if (node.type === 'text') {
+      parts.push(node.text || '');
     }
     if (node.content) {
       for (const child of node.content) walk(child);
     }
     if (
-      node.type === "paragraph" ||
-      node.type === "heading" ||
-      node.type === "codeBlock" ||
-      node.type === "blockquote" ||
-      node.type === "callout" ||
-      node.type === "listItem"
+      node.type === 'paragraph' ||
+      node.type === 'heading' ||
+      node.type === 'codeBlock' ||
+      node.type === 'blockquote' ||
+      node.type === 'callout' ||
+      node.type === 'listItem'
     ) {
-      parts.push("\n");
+      parts.push('\n');
     }
-    if (node.type === "horizontalRule") {
-      parts.push("\n---\n");
+    if (node.type === 'horizontalRule') {
+      parts.push('\n---\n');
     }
   }
   walk(doc);
-  return parts.join("");
+  return parts.join('');
 }
 
 function tryParseTiptap(json: string): unknown {
   try {
     const parsed = JSON.parse(json);
-    if (parsed && parsed.type === "doc") return parsed;
+    if (parsed && parsed.type === 'doc') return parsed;
   } catch {
     // Not valid JSON — treat as plain text
   }
@@ -54,18 +54,18 @@ function tryParseTiptap(json: string): unknown {
 function contentToLines(content: string): string[] {
   const doc = tryParseTiptap(content);
   if (doc) {
-    return tiptapToPlain(doc).split("\n");
+    return tiptapToPlain(doc).split('\n');
   }
   // Fallback: treat as plain text
-  return content.split("\n");
+  return content.split('\n');
 }
 
 // ─── Diff line types ─────────────────────────────────────────────────────────
 
 type DiffLine =
-  | { kind: "added"; text: string }
-  | { kind: "removed"; text: string }
-  | { kind: "unchanged"; text: string };
+  | { kind: 'added'; text: string }
+  | { kind: 'removed'; text: string }
+  | { kind: 'unchanged'; text: string };
 
 function computeDiff(oldLines: string[], newLines: string[]): DiffLine[] {
   const result: DiffLine[] = [];
@@ -75,15 +75,15 @@ function computeDiff(oldLines: string[], newLines: string[]): DiffLine[] {
     const lines = change.value as string[];
     if (change.added) {
       for (const line of lines) {
-        result.push({ kind: "added", text: line });
+        result.push({ kind: 'added', text: line });
       }
     } else if (change.removed) {
       for (const line of lines) {
-        result.push({ kind: "removed", text: line });
+        result.push({ kind: 'removed', text: line });
       }
     } else {
       for (const line of lines) {
-        result.push({ kind: "unchanged", text: line });
+        result.push({ kind: 'unchanged', text: line });
       }
     }
   }
@@ -101,8 +101,8 @@ export function RevisionDiff({ oldRev, newRev, onClose }: Props) {
 
   const titleChanged = oldRev.title !== newRev.title;
 
-  const addedCount = diffs.filter((d) => d.kind === "added").length;
-  const removedCount = diffs.filter((d) => d.kind === "removed").length;
+  const addedCount = diffs.filter((d) => d.kind === 'added').length;
+  const removedCount = diffs.filter((d) => d.kind === 'removed').length;
 
   return (
     <div className="fixed inset-y-0 right-0 w-xl bg-sidebar border-l border-border z-30 flex flex-col shadow-2xl">
@@ -115,7 +115,13 @@ export function RevisionDiff({ oldRev, newRev, onClose }: Props) {
             aria-label="Close diff panel"
             className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -128,7 +134,13 @@ export function RevisionDiff({ oldRev, newRev, onClose }: Props) {
             </span>
             <span>{formatDate(oldRev.created_at)}</span>
           </div>
-          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            className="h-3 w-3"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
           <div className="flex items-center gap-2">
@@ -141,14 +153,12 @@ export function RevisionDiff({ oldRev, newRev, onClose }: Props) {
         {/* Stats bar */}
         <div className="px-4 pb-3 flex items-center gap-3 text-[10px]">
           <span className="text-green-400">
-            +{addedCount} addition{addedCount !== 1 ? "s" : ""}
+            +{addedCount} addition{addedCount !== 1 ? 's' : ''}
           </span>
           <span className="text-red-400">
-            -{removedCount} removal{removedCount !== 1 ? "s" : ""}
+            -{removedCount} removal{removedCount !== 1 ? 's' : ''}
           </span>
-          <span className="text-muted-foreground">
-            {diffs.length} total lines
-          </span>
+          <span className="text-muted-foreground">{diffs.length} total lines</span>
         </div>
       </div>
 
@@ -163,7 +173,13 @@ export function RevisionDiff({ oldRev, newRev, onClose }: Props) {
             <div className="space-y-1">
               <div className="flex items-start gap-2 text-sm">
                 <span className="shrink-0 w-4 h-4 mt-0.5 rounded bg-red-500/20 flex items-center justify-center">
-                  <svg className="h-2.5 w-2.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <svg
+                    className="h-2.5 w-2.5 text-red-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  >
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 </span>
@@ -171,7 +187,13 @@ export function RevisionDiff({ oldRev, newRev, onClose }: Props) {
               </div>
               <div className="flex items-start gap-2 text-sm">
                 <span className="shrink-0 w-4 h-4 mt-0.5 rounded bg-green-500/20 flex items-center justify-center">
-                  <svg className="h-2.5 w-2.5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <svg
+                    className="h-2.5 w-2.5 text-green-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  >
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </span>
@@ -185,38 +207,42 @@ export function RevisionDiff({ oldRev, newRev, onClose }: Props) {
         <div className="py-2">
           {diffs.map((line, i) => {
             const bgColor =
-              line.kind === "added"
-                ? "bg-green-500/10"
-                : line.kind === "removed"
-                ? "bg-red-500/10"
-                : "";
+              line.kind === 'added'
+                ? 'bg-green-500/10'
+                : line.kind === 'removed'
+                  ? 'bg-red-500/10'
+                  : '';
             const textColor =
-              line.kind === "added"
-                ? "text-green-300"
-                : line.kind === "removed"
-                ? "text-red-300"
-                : "text-foreground/80";
+              line.kind === 'added'
+                ? 'text-green-300'
+                : line.kind === 'removed'
+                  ? 'text-red-300'
+                  : 'text-foreground/80';
 
             const prefix =
-              line.kind === "added" ? (
-                <span className="text-green-400 select-none shrink-0 w-5 text-center text-xs">+</span>
-              ) : line.kind === "removed" ? (
+              line.kind === 'added' ? (
+                <span className="text-green-400 select-none shrink-0 w-5 text-center text-xs">
+                  +
+                </span>
+              ) : line.kind === 'removed' ? (
                 <span className="text-red-400 select-none shrink-0 w-5 text-center text-xs">−</span>
               ) : (
-                <span className="text-muted-foreground/40 select-none shrink-0 w-5 text-center text-xs"> </span>
+                <span className="text-muted-foreground/40 select-none shrink-0 w-5 text-center text-xs">
+                  {' '}
+                </span>
               );
 
             return (
               <div
                 key={i}
                 className={cn(
-                  "flex items-start px-4 py-0.5 text-sm font-mono leading-relaxed",
-                  bgColor
+                  'flex items-start px-4 py-0.5 text-sm font-mono leading-relaxed',
+                  bgColor,
                 )}
               >
                 {prefix}
-                <span className={cn("flex-1 whitespace-pre-wrap break-all", textColor)}>
-                  {line.text || " "}
+                <span className={cn('flex-1 whitespace-pre-wrap break-all', textColor)}>
+                  {line.text || ' '}
                 </span>
               </div>
             );

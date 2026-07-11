@@ -1,5 +1,5 @@
-import { Heading } from "@tiptap/extension-heading";
-import { mergeAttributes } from "@tiptap/core";
+import { Heading } from '@tiptap/extension-heading';
+import { mergeAttributes } from '@tiptap/core';
 
 /**
  * Custom Heading extension that adds auto-generated `id` attributes to
@@ -11,17 +11,13 @@ import { mergeAttributes } from "@tiptap/core";
 export const HeadingWithId = Heading.extend({
   renderHTML({ node, HTMLAttributes }) {
     const level = node.attrs.level || 1;
-    const text = node.textContent || "";
+    const text = node.textContent || '';
     const slug = text
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
     const id = slug ? `h-${slug}` : undefined;
 
-    return [
-      `h${level}`,
-      mergeAttributes(HTMLAttributes, { ...(id ? { id } : {}) }),
-      0,
-    ];
+    return [`h${level}`, mergeAttributes(HTMLAttributes, { ...(id ? { id } : {}) }), 0];
   },
 });

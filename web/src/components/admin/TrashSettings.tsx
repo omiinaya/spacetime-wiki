@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { api } from "../../lib/api";
-import { useToast } from "../Toast";
-import { Loader2, Trash2 } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { api } from '../../lib/api';
+import { useToast } from '../Toast';
+import { Loader2, Trash2 } from 'lucide-react';
 
 export function TrashSettings() {
   const [days, setDays] = useState<number>(0);
@@ -20,7 +20,7 @@ export function TrashSettings() {
         setDays(retention);
         setTrashCount(deleted.length);
       } catch (e) {
-        console.error("Failed to load trash settings:", e);
+        console.error('Failed to load trash settings:', e);
       } finally {
         setLoading(false);
       }
@@ -31,31 +31,50 @@ export function TrashSettings() {
     setSaving(true);
     try {
       await api.settings.setTrashRetentionDays(days);
-      addToast({ type: "success", title: "Saved", message: `Trash retention set to ${days > 0 ? `${days} days` : "immediate purge (no retention)"}`, duration: 3000 });
+      addToast({
+        type: 'success',
+        title: 'Saved',
+        message: `Trash retention set to ${days > 0 ? `${days} days` : 'immediate purge (no retention)'}`,
+        duration: 3000,
+      });
     } catch (e) {
-      addToast({ type: "error", title: "Failed to save", message: String(e), duration: 5000 });
+      addToast({ type: 'error', title: 'Failed to save', message: String(e), duration: 5000 });
     } finally {
       setSaving(false);
     }
   };
 
   const handlePurgeNow = async () => {
-    if (!confirm(`Permanently delete all trash pages older than ${days > 0 ? `${days} day(s)` : "any age"}? This cannot be undone.`)) return;
+    if (
+      !confirm(
+        `Permanently delete all trash pages older than ${days > 0 ? `${days} day(s)` : 'any age'}? This cannot be undone.`,
+      )
+    )
+      return;
     setSaving(true);
     try {
       await api.settings.purgeExpiredTrash();
-      addToast({ type: "success", title: "Purged", message: "Expired trash pages deleted permanently", duration: 3000 });
+      addToast({
+        type: 'success',
+        title: 'Purged',
+        message: 'Expired trash pages deleted permanently',
+        duration: 3000,
+      });
       const deleted = await api.pages.listDeleted();
       setTrashCount(deleted.length);
     } catch (e) {
-      addToast({ type: "error", title: "Purge failed", message: String(e), duration: 5000 });
+      addToast({ type: 'error', title: 'Purge failed', message: String(e), duration: 5000 });
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
@@ -67,7 +86,7 @@ export function TrashSettings() {
         <p className="text-[10px] text-muted-foreground/60">
           {days > 0
             ? `Pages stay in trash for ${days} day(s) before auto-purge.`
-            : "Trash is purged immediately on \"Empty trash\" action (no retention window)."}
+            : 'Trash is purged immediately on "Empty trash" action (no retention window).'}
         </p>
       </div>
 

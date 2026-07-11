@@ -1,7 +1,7 @@
-import { Extension } from "@tiptap/core";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
-import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import { NodeSelection } from "@tiptap/pm/state";
+import { Extension } from '@tiptap/core';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { NodeSelection } from '@tiptap/pm/state';
 
 /**
  * DragHandle — adds a draggable grip icon next to top-level block nodes
@@ -11,10 +11,10 @@ import { NodeSelection } from "@tiptap/pm/state";
  * NodeSelection on the block and ProseMirror handles the move on drop.
  */
 export const DragHandle = Extension.create({
-  name: "dragHandle",
+  name: 'dragHandle',
 
   addProseMirrorPlugins() {
-    const pluginKey = new PluginKey("dragHandle");
+    const pluginKey = new PluginKey('dragHandle');
 
     return [
       new Plugin({
@@ -33,21 +33,21 @@ export const DragHandle = Extension.create({
               if (resolved.parent.type !== doc.type) return true;
 
               // Skip tables (they have their own complex structure)
-              if (node.type.name === "table") return true;
+              if (node.type.name === 'table') return true;
 
               const decoration = Decoration.widget(
                 pos,
                 () => {
-                  const grip = document.createElement("span");
-                  grip.className = "drag-handle-grip";
-                  grip.contentEditable = "false";
+                  const grip = document.createElement('span');
+                  grip.className = 'drag-handle-grip';
+                  grip.contentEditable = 'false';
                   grip.draggable = true;
-                  grip.setAttribute("aria-hidden", "true");
+                  grip.setAttribute('aria-hidden', 'true');
                   // Use vertical dots icon (grip)
-                  grip.innerHTML = "⋮⋮";
+                  grip.innerHTML = '⋮⋮';
 
-                  grip.addEventListener("dragstart", (e: DragEvent) => {
-                    const view = (grip as unknown).view as import("@tiptap/pm/view").EditorView;
+                  grip.addEventListener('dragstart', (e: DragEvent) => {
+                    const view = (grip as unknown).view as import('@tiptap/pm/view').EditorView;
                     if (!view) return;
 
                     const { state, dispatch } = view;
@@ -58,17 +58,17 @@ export const DragHandle = Extension.create({
                     dispatch(state.tr.setSelection(nodeSelection));
 
                     // Let ProseMirror know this is a move
-                    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
-                    grip.classList.add("dragging");
+                    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+                    grip.classList.add('dragging');
                   });
 
-                  grip.addEventListener("dragend", () => {
-                    grip.classList.remove("dragging");
+                  grip.addEventListener('dragend', () => {
+                    grip.classList.remove('dragging');
                   });
 
                   return grip;
                 },
-                { key: `dh-${pos}`, side: -1 }
+                { key: `dh-${pos}`, side: -1 },
               );
 
               decorations.push(decoration);

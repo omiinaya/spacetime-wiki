@@ -8,14 +8,14 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
-  userId: __t.string().name("user_id"),
-  ldapProviderId: __t.string().name("ldap_provider_id"),
+  userId: __t.string().name('user_id'),
+  ldapProviderId: __t.string().name('ldap_provider_id'),
   dn: __t.string(),
-  externalId: __t.string().name("external_id"),
-  lastSyncedAt: __t.u64().name("last_synced_at"),
-  createdAt: __t.u64().name("created_at"),
+  externalId: __t.string().name('external_id'),
+  lastSyncedAt: __t.u64().name('last_synced_at'),
+  createdAt: __t.u64().name('created_at'),
 });

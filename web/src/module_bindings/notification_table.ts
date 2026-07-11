@@ -8,17 +8,17 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
-  userId: __t.string().name("user_id"),
-  eventType: __t.string().name("event_type"),
-  targetId: __t.string().name("target_id"),
+  userId: __t.string().name('user_id'),
+  eventType: __t.string().name('event_type'),
+  targetId: __t.string().name('target_id'),
   title: __t.string(),
   message: __t.string(),
-  actorId: __t.string().name("actor_id"),
+  actorId: __t.string().name('actor_id'),
   icon: __t.string(),
-  isRead: __t.bool().name("is_read"),
-  createdAt: __t.u64().name("created_at"),
+  isRead: __t.bool().name('is_read'),
+  createdAt: __t.u64().name('created_at'),
 });

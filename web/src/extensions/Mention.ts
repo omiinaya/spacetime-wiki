@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from "@tiptap/core";
+import { Node, mergeAttributes } from '@tiptap/core';
 
 export interface MentionOptions {
   HTMLAttributes: Record<string, unknown>;
@@ -6,7 +6,7 @@ export interface MentionOptions {
   suggestion?: unknown;
 }
 
-declare module "@tiptap/core" {
+declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     mention: {
       insertMention: (attrs: { id: string; label: string }) => ReturnType;
@@ -15,9 +15,9 @@ declare module "@tiptap/core" {
 }
 
 export const Mention = Node.create<MentionOptions>({
-  name: "mention",
+  name: 'mention',
 
-  group: "inline",
+  group: 'inline',
   inline: true,
   selectable: true,
   atom: true,
@@ -32,18 +32,18 @@ export const Mention = Node.create<MentionOptions>({
   addAttributes() {
     return {
       id: { default: null },
-      label: { default: "" },
+      label: { default: '' },
     };
   },
 
   parseHTML() {
-    return [{ tag: "span[data-mention]" }];
+    return [{ tag: 'span[data-mention]' }];
   },
 
   renderHTML({ node, HTMLAttributes }) {
     return [
-      "span",
-      mergeAttributes({ "data-mention": node.attrs.id, class: "mention" }, HTMLAttributes),
+      'span',
+      mergeAttributes({ 'data-mention': node.attrs.id, class: 'mention' }, HTMLAttributes),
       `@${node.attrs.label}`,
     ];
   },

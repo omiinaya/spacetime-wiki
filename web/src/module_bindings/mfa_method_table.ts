@@ -8,14 +8,14 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
-  userId: __t.string().name("user_id"),
-  methodType: __t.string().name("method_type"),
-  totpSecret: __t.string().name("totp_secret"),
-  isEnabled: __t.bool().name("is_enabled"),
-  createdAt: __t.u64().name("created_at"),
-  updatedAt: __t.u64().name("updated_at"),
+  userId: __t.string().name('user_id'),
+  methodType: __t.string().name('method_type'),
+  totpSecret: __t.string().name('totp_secret'),
+  isEnabled: __t.bool().name('is_enabled'),
+  createdAt: __t.u64().name('created_at'),
+  updatedAt: __t.u64().name('updated_at'),
 });

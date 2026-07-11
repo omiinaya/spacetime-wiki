@@ -8,17 +8,17 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
 export default __t.row({
   id: __t.string().primaryKey(),
-  pageId: __t.string().name("page_id"),
+  pageId: __t.string().name('page_id'),
   token: __t.string(),
-  passwordHash: __t.string().name("password_hash"),
-  createdBy: __t.string().name("created_by"),
-  expiresAt: __t.u64().name("expires_at"),
-  createdAt: __t.u64().name("created_at"),
-  visitCount: __t.u32().name("visit_count"),
-  brandTitle: __t.option(__t.string()).name("brand_title"),
-  brandLogoUrl: __t.option(__t.string()).name("brand_logo_url"),
+  passwordHash: __t.string().name('password_hash'),
+  createdBy: __t.string().name('created_by'),
+  expiresAt: __t.u64().name('expires_at'),
+  createdAt: __t.u64().name('created_at'),
+  visitCount: __t.u32().name('visit_count'),
+  brandTitle: __t.option(__t.string()).name('brand_title'),
+  brandLogoUrl: __t.option(__t.string()).name('brand_logo_url'),
 });

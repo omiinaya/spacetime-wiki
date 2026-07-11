@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: ISC
 
-import type { Infer as __Infer } from "spacetimedb";
+import type { Infer as __Infer } from 'spacetimedb';
 
-export const STDB_HOST = import.meta.env.VITE_STDB_HOST || "localhost:3001";
-export const DB_ID = import.meta.env.VITE_STDB_DB || "spacetime-wiki";
+export const STDB_HOST = import.meta.env.VITE_STDB_HOST || 'localhost:3001';
+export const DB_ID = import.meta.env.VITE_STDB_DB || 'spacetime-wiki';
 
 /** Base URL for the REST API server (Python FastAPI backend). */
-export const API_BASE = import.meta.env.VITE_API_BASE || `http://${STDB_HOST.replace(/:3001$/, ":8000")}`;
+export const API_BASE =
+  import.meta.env.VITE_API_BASE || `http://${STDB_HOST.replace(/:3001$/, ':8000')}`;
 
 /**
  * Execute a raw SQL query against STDB and return rows as positional arrays.
@@ -16,8 +17,8 @@ export const API_BASE = import.meta.env.VITE_API_BASE || `http://${STDB_HOST.rep
  */
 export async function sqlQuery(sql: string): Promise<unknown[][]> {
   const res = await fetch(`http://${STDB_HOST}/v1/database/${DB_ID}/sql`, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
     body: sql,
   });
   if (!res.ok) throw new Error(`STDB query failed: ${res.status}`);
@@ -38,10 +39,7 @@ export async function sqlQuery(sql: string): Promise<unknown[][]> {
  * );
  * ```
  */
-export async function tableQuery<T>(
-  sql: string,
-  mapper: (row: unknown[]) => T,
-): Promise<T[]> {
+export async function tableQuery<T>(sql: string, mapper: (row: unknown[]) => T): Promise<T[]> {
   return sqlQuery(sql).then((rows) => rows.map(mapper));
 }
 
@@ -68,11 +66,8 @@ export async function tableQueryOne<T>(
  * const pages = await typedQuery("SELECT * FROM page", PageRowSchema);
  * ```
  */
-export async function typedQuery<T>(
-  sql: string,
-  schema: object,
-): Promise<T[]> {
-  const { fromStdbRow } = await import("./typed-sql");
+export async function typedQuery<T>(sql: string, schema: object): Promise<T[]> {
+  const { fromStdbRow } = await import('./typed-sql');
   const mapper = fromStdbRow<T>(schema);
   return sqlQuery(sql).then((rows) => rows.map(mapper));
 }
@@ -80,10 +75,7 @@ export async function typedQuery<T>(
 /**
  * Typed SQL query returning a single row (or null).
  */
-export async function typedQueryOne<T>(
-  sql: string,
-  schema: object,
-): Promise<T | null> {
+export async function typedQueryOne<T>(sql: string, schema: object): Promise<T | null> {
   const rows = await typedQuery<T>(sql, schema);
   return rows.length > 0 ? rows[0] : null;
 }
@@ -109,21 +101,18 @@ export function genId(prefix: string): string {
 }
 
 export async function callReducer(reducer: string, args: unknown[]): Promise<void> {
-  const res = await fetch(
-    `http://${STDB_HOST}/v1/database/${DB_ID}/call/${reducer}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(args),
-    },
-  );
+  const res = await fetch(`http://${STDB_HOST}/v1/database/${DB_ID}/call/${reducer}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || `Reducer ${reducer} failed: ${res.status}`);
   }
 }
 
-const ATTACHMENT_PREFIX = "attachment://";
+const ATTACHMENT_PREFIX = 'attachment://';
 
 /** Max upload size for pasted/dropped images: 10 MB */
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -144,7 +133,7 @@ export function readFileAsBase64(file: File): Promise<string> {
     const reader = new FileReader();
     reader.onload = () => {
       const dataUri = reader.result as string;
-      resolve(dataUri.split(",")[1] || "");
+      resolve(dataUri.split(',')[1] || '');
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
@@ -162,8 +151,8 @@ export function base64ToBlobUrl(base64: string, mimeType: string): string {
     const blob = new Blob([bytes], { type: mimeType });
     return URL.createObjectURL(blob);
   } catch (e) {
-    console.error("base64ToBlobUrl failed:", e);
-    return "";
+    console.error('base64ToBlobUrl failed:', e);
+    return '';
   }
 }
 
@@ -180,11 +169,12 @@ export async function resolveContentAttachments(
   // Collect attachment IDs that need fetching
   const needed = new Set<string>();
   const walkCollect = (node: unknown) => {
-    if (!node || typeof node !== "object") return;
+    if (!node || typeof node !== 'object') return;
     const obj = node as Record<string, unknown>;
     if (
-      obj.attrs && typeof obj.attrs === "object" &&
-      typeof (obj.attrs as Record<string, unknown>).src === "string" &&
+      obj.attrs &&
+      typeof obj.attrs === 'object' &&
+      typeof (obj.attrs as Record<string, unknown>).src === 'string' &&
       isAttachmentUrl((obj.attrs as Record<string, unknown>).src as string)
     ) {
       const id = getAttachmentId((obj.attrs as Record<string, unknown>).src as string);
@@ -203,8 +193,8 @@ export async function resolveContentAttachments(
         const rows = await sqlQuery(`SELECT * FROM attachment WHERE id = '${id}'`);
         if (rows.length > 0) {
           const row = rows[0];
-          const storageKey = String(row[5] ?? "");
-          const mimeType = String(row[3] ?? "image/png");
+          const storageKey = String(row[5] ?? '');
+          const mimeType = String(row[3] ?? 'image/png');
           const blobUrl = base64ToBlobUrl(storageKey, mimeType);
           if (blobUrl) blobCache.set(id, blobUrl);
         }
@@ -216,11 +206,12 @@ export async function resolveContentAttachments(
 
   // Replace attachment:// URLs with blob URLs
   const resolveNode = (node: unknown): unknown => {
-    if (!node || typeof node !== "object") return node;
+    if (!node || typeof node !== 'object') return node;
     const obj = node as Record<string, unknown>;
     if (
-      obj.attrs && typeof obj.attrs === "object" &&
-      typeof (obj.attrs as Record<string, unknown>).src === "string" &&
+      obj.attrs &&
+      typeof obj.attrs === 'object' &&
+      typeof (obj.attrs as Record<string, unknown>).src === 'string' &&
       isAttachmentUrl((obj.attrs as Record<string, unknown>).src as string)
     ) {
       const id = getAttachmentId((obj.attrs as Record<string, unknown>).src as string);

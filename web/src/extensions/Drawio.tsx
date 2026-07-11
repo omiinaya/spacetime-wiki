@@ -1,11 +1,11 @@
-import { Node, mergeAttributes } from "@tiptap/core";
-import { ReactNodeViewRenderer } from "@tiptap/react";
-import type { NodeViewProps } from "@tiptap/react";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Node, mergeAttributes } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import type { NodeViewProps } from '@tiptap/react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const DRAWIO_EMBED_URL = "https://embed.diagrams.net/?embed=1&spin=1&proto=json&configure=1";
+const DRAWIO_EMBED_URL = 'https://embed.diagrams.net/?embed=1&spin=1&proto=json&configure=1';
 
 // ─── Options ─────────────────────────────────────────────────────────────────
 
@@ -13,7 +13,7 @@ export interface DrawioOptions {
   HTMLAttributes: Record<string, unknown>;
 }
 
-declare module "@tiptap/core" {
+declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     drawio: {
       setDrawio: (options: { src: string }) => ReturnType;
@@ -25,18 +25,18 @@ declare module "@tiptap/core" {
 
 export function escapeHtml(text: string): string {
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 export function decodeDrawioXml(data: string): string {
   // draw.io data can be plain XML or base64-encoded XML with ?xml prefix check
-  if (data.startsWith("<?xml") || data.startsWith("<mx")) return data;
+  if (data.startsWith('<?xml') || data.startsWith('<mx')) return data;
   try {
     const decoded = atob(data);
-    if (decoded.startsWith("<?xml") || decoded.startsWith("<mx")) return decoded;
+    if (decoded.startsWith('<?xml') || decoded.startsWith('<mx')) return decoded;
   } catch {
     // not base64
   }
@@ -68,17 +68,12 @@ export function extractSvgFromDrawioExport(data: string): string | null {
 
 // ─── Draw.io Node View ───────────────────────────────────────────────────────
 
-const DrawioNodeView: React.FC<NodeViewProps> = ({
-  node,
-  updateAttributes,
-  selected,
-  editor,
-}) => {
+const DrawioNodeView: React.FC<NodeViewProps> = ({ node, updateAttributes, selected, editor }) => {
   const { src } = node.attrs;
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [showEditor, setShowEditor] = useState(false);
-  const [editSrc, setEditSrc] = useState(src || "");
+  const [editSrc, setEditSrc] = useState(src || '');
   const [svgPreview, setSvgPreview] = useState<string | null>(null);
   const [renderError, setRenderError] = useState(false);
 
@@ -106,44 +101,45 @@ const DrawioNodeView: React.FC<NodeViewProps> = ({
   }, [src]);
 
   // Listen for postMessage from draw.io iframe
-  const handleMessage = useCallback((event: MessageEvent) => {
-    if (!showEditor) return;
-    try {
-      const msg = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      if (msg.event === "init") {
-        // Send the XML data to draw.io to load
-        const xml = decodeDrawioXml(editSrc || getDefaultDiagram());
-        if (iframeRef.current?.contentWindow) {
-          iframeRef.current.contentWindow.postMessage(
-            JSON.stringify({
-              action: "load",
-              xml,
-            }),
-            "*"
-          );
+  const handleMessage = useCallback(
+    (event: MessageEvent) => {
+      if (!showEditor) return;
+      try {
+        const msg = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (msg.event === 'init') {
+          // Send the XML data to draw.io to load
+          const xml = decodeDrawioXml(editSrc || getDefaultDiagram());
+          if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage(
+              JSON.stringify({
+                action: 'load',
+                xml,
+              }),
+              '*',
+            );
+          }
+        } else if (msg.event === 'save') {
+          // User saved from draw.io
+          const newXml = msg.xml || '';
+          const newSvg = msg.svg || '';
+          // Store both XML and SVG for preview
+          const combined = newSvg ? JSON.stringify({ xml: newXml, svg: newSvg }) : newXml;
+          updateAttributes({ src: combined });
+          setEditSrc(combined);
+          setShowEditor(false);
+        } else if (msg.event === 'exit') {
+          setShowEditor(false);
         }
-      } else if (msg.event === "save") {
-        // User saved from draw.io
-        const newXml = msg.xml || "";
-        const newSvg = msg.svg || "";
-        // Store both XML and SVG for preview
-        const combined = newSvg
-          ? JSON.stringify({ xml: newXml, svg: newSvg })
-          : newXml;
-        updateAttributes({ src: combined });
-        setEditSrc(combined);
-        setShowEditor(false);
-      } else if (msg.event === "exit") {
-        setShowEditor(false);
+      } catch {
+        // Not a JSON message, ignore
       }
-    } catch {
-      // Not a JSON message, ignore
-    }
-  }, [showEditor, editSrc, updateAttributes]);
+    },
+    [showEditor, editSrc, updateAttributes],
+  );
 
   useEffect(() => {
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, [handleMessage]);
 
   const handleOpenEditor = () => {
@@ -156,7 +152,7 @@ const DrawioNodeView: React.FC<NodeViewProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       handleCloseEditor();
     }
   };
@@ -164,14 +160,23 @@ const DrawioNodeView: React.FC<NodeViewProps> = ({
   return (
     <div
       className={`drawio-wrapper my-4 rounded-lg border ${
-        selected ? "border-primary/50 ring-2 ring-primary/20" : "border-border"
+        selected ? 'border-primary/50 ring-2 ring-primary/20' : 'border-border'
       } bg-[#1a1a2e]/50 overflow-hidden`}
       contentEditable={false}
     >
       {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30 border-b border-border/50">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <polyline points="21 15 16 10 5 21" />
@@ -185,7 +190,7 @@ const DrawioNodeView: React.FC<NodeViewProps> = ({
               className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-[11px]"
               title="Edit diagram with draw.io"
             >
-              {src ? "Edit" : "Create diagram"}
+              {src ? 'Edit' : 'Create diagram'}
             </button>
           )}
         </div>
@@ -213,7 +218,7 @@ const DrawioNodeView: React.FC<NodeViewProps> = ({
         </div>
       ) : (
         /* Draw.io editor iframe */
-        <div className="relative" style={{ height: "500px" }} onKeyDown={handleKeyDown}>
+        <div className="relative" style={{ height: '500px' }} onKeyDown={handleKeyDown}>
           <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground/50 bg-background/80 px-2 py-1 rounded">
               Editing in draw.io
@@ -223,7 +228,16 @@ const DrawioNodeView: React.FC<NodeViewProps> = ({
               className="p-1 rounded bg-background/80 text-muted-foreground hover:text-foreground transition-colors text-xs border border-border/50"
               title="Close editor"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -233,7 +247,7 @@ const DrawioNodeView: React.FC<NodeViewProps> = ({
             ref={iframeRef}
             src={DRAWIO_EMBED_URL}
             className="w-full h-full rounded-lg"
-            style={{ border: "none" }}
+            style={{ border: 'none' }}
             title="Draw.io Editor"
           />
         </div>
@@ -262,9 +276,9 @@ function getDefaultDiagram(): string {
 // ─── Extension ─────────────────────────────────────────────────────────────────
 
 export const Drawio = Node.create<DrawioOptions>({
-  name: "drawio",
+  name: 'drawio',
 
-  group: "block",
+  group: 'block',
   atom: true,
   selectable: true,
   draggable: true,
@@ -278,18 +292,16 @@ export const Drawio = Node.create<DrawioOptions>({
   addAttributes() {
     return {
       src: {
-        default: "",
+        default: '',
         parseHTML: (el) => {
           const container = el as HTMLElement;
           return (
-            container.getAttribute("data-drawio-src") ||
-            container.getAttribute("data-src") ||
-            ""
+            container.getAttribute('data-drawio-src') || container.getAttribute('data-src') || ''
           );
         },
         renderHTML: (attrs) => {
           if (!attrs.src) return {};
-          return { "data-drawio-src": attrs.src };
+          return { 'data-drawio-src': attrs.src };
         },
       },
     };
@@ -298,23 +310,23 @@ export const Drawio = Node.create<DrawioOptions>({
   parseHTML() {
     return [
       {
-        tag: "div[data-drawio-src]",
+        tag: 'div[data-drawio-src]',
       },
       {
-        tag: "div.drawio-diagram",
+        tag: 'div.drawio-diagram',
       },
     ];
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const src = node.attrs.src || "";
+    const src = node.attrs.src || '';
     return [
-      "div",
+      'div',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        "data-drawio-src": src,
-        class: "drawio-diagram",
+        'data-drawio-src': src,
+        class: 'drawio-diagram',
       }),
-      "<!-- draw.io diagram -->",
+      '<!-- draw.io diagram -->',
     ];
   },
 

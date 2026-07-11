@@ -1,10 +1,10 @@
-import { Node, mergeAttributes, wrappingInputRule } from "@tiptap/core";
+import { Node, mergeAttributes, wrappingInputRule } from '@tiptap/core';
 
 export interface DetailsOptions {
   HTMLAttributes: Record<string, unknown>;
 }
 
-declare module "@tiptap/core" {
+declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     details: {
       toggleDetails: () => ReturnType;
@@ -13,10 +13,10 @@ declare module "@tiptap/core" {
 }
 
 export const Details = Node.create<DetailsOptions>({
-  name: "details",
+  name: 'details',
 
-  group: "block",
-  content: "block+",
+  group: 'block',
+  content: 'block+',
   defining: true,
 
   addOptions() {
@@ -24,21 +24,24 @@ export const Details = Node.create<DetailsOptions>({
   },
 
   parseHTML() {
-    return [{ tag: "details" }];
+    return [{ tag: 'details' }];
   },
 
   renderHTML({ HTMLAttributes }) {
     return [
-      "details",
+      'details',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        class: "my-2 rounded-lg border border-border bg-muted/30",
+        class: 'my-2 rounded-lg border border-border bg-muted/30',
       }),
       [
-        "summary",
-        { class: "px-3 py-1.5 cursor-pointer select-none text-sm font-medium text-muted-foreground hover:text-foreground" },
+        'summary',
+        {
+          class:
+            'px-3 py-1.5 cursor-pointer select-none text-sm font-medium text-muted-foreground hover:text-foreground',
+        },
         0, // placeholder; user edits content
       ],
-      ["div", { class: "px-3 pb-2" }, 0],
+      ['div', { class: 'px-3 pb-2' }, 0],
     ];
   },
 
@@ -47,7 +50,7 @@ export const Details = Node.create<DetailsOptions>({
       toggleDetails:
         () =>
         ({ commands }) => {
-          return commands.toggleNode("details", "paragraph");
+          return commands.toggleNode('details', 'paragraph');
         },
     };
   },

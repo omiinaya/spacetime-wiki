@@ -24,7 +24,7 @@ export interface PMMark {
 
 /** A ProseMirror text node */
 export interface PMTextNode {
-  type: "text";
+  type: 'text';
   text: string;
   marks?: PMMark[];
   attrs?: Record<string, unknown>;
@@ -33,14 +33,14 @@ export interface PMTextNode {
 
 /** Link mark */
 export interface PMLinkMark {
-  type: "link";
+  type: 'link';
   attrs: { href: string; title?: string };
 }
 
 // ---- Specific node types (all use structured attrs) ----
 
 export interface PMDoc {
-  type: "doc";
+  type: 'doc';
   content: PMNode[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -48,7 +48,7 @@ export interface PMDoc {
 }
 
 export interface PMParagraph {
-  type: "paragraph";
+  type: 'paragraph';
   content?: PMNode[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -56,7 +56,7 @@ export interface PMParagraph {
 }
 
 export interface PMHeading {
-  type: "heading";
+  type: 'heading';
   attrs: { level: number };
   content: PMNode[];
   marks?: undefined;
@@ -64,7 +64,7 @@ export interface PMHeading {
 }
 
 export interface PMBulletList {
-  type: "bulletList";
+  type: 'bulletList';
   content: PMNode[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -72,7 +72,7 @@ export interface PMBulletList {
 }
 
 export interface PMOrderedList {
-  type: "orderedList";
+  type: 'orderedList';
   content: PMNode[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -80,7 +80,7 @@ export interface PMOrderedList {
 }
 
 export interface PMListItem {
-  type: "listItem";
+  type: 'listItem';
   content: PMNode[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -88,7 +88,7 @@ export interface PMListItem {
 }
 
 export interface PMTaskList {
-  type: "taskList";
+  type: 'taskList';
   content: PMTaskItem[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -96,7 +96,7 @@ export interface PMTaskList {
 }
 
 export interface PMTaskItem {
-  type: "taskItem";
+  type: 'taskItem';
   attrs: { checked: boolean };
   content: PMNode[];
   marks?: undefined;
@@ -104,7 +104,7 @@ export interface PMTaskItem {
 }
 
 export interface PMCodeBlock {
-  type: "codeBlock";
+  type: 'codeBlock';
   attrs?: { language?: string };
   content: PMTextNode[];
   marks?: undefined;
@@ -112,7 +112,7 @@ export interface PMCodeBlock {
 }
 
 export interface PMBlockquote {
-  type: "blockquote";
+  type: 'blockquote';
   content: PMNode[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -120,7 +120,7 @@ export interface PMBlockquote {
 }
 
 export interface PMHorizontalRule {
-  type: "horizontalRule";
+  type: 'horizontalRule';
   attrs?: Record<string, unknown>;
   marks?: undefined;
   text?: undefined;
@@ -128,7 +128,7 @@ export interface PMHorizontalRule {
 }
 
 export interface PMImage {
-  type: "image";
+  type: 'image';
   attrs: { src: string; alt?: string; title?: string };
   marks?: undefined;
   text?: undefined;
@@ -136,7 +136,7 @@ export interface PMImage {
 }
 
 export interface PMHardBreak {
-  type: "hardBreak";
+  type: 'hardBreak';
   attrs?: Record<string, unknown>;
   marks?: undefined;
   text?: undefined;
@@ -144,7 +144,7 @@ export interface PMHardBreak {
 }
 
 export interface PMTable {
-  type: "table";
+  type: 'table';
   content: PMTableRow[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -152,7 +152,7 @@ export interface PMTable {
 }
 
 export interface PMTableRow {
-  type: "tableRow";
+  type: 'tableRow';
   content: PMTableCell[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -160,7 +160,7 @@ export interface PMTableRow {
 }
 
 export interface PMTableCell {
-  type: "tableCell" | "tableHeader";
+  type: 'tableCell' | 'tableHeader';
   content: PMNode[];
   attrs?: Record<string, unknown>;
   marks?: undefined;
@@ -168,15 +168,15 @@ export interface PMTableCell {
 }
 
 export interface PMCallout {
-  type: "callout";
-  attrs: { type: "info" | "warning" | "success" | "error"; emoji?: string };
+  type: 'callout';
+  attrs: { type: 'info' | 'warning' | 'success' | 'error'; emoji?: string };
   content: PMNode[];
   marks?: undefined;
   text?: undefined;
 }
 
 export interface PMTransclusion {
-  type: "transclusion";
+  type: 'transclusion';
   attrs: { pageId: string; pageTitle: string; content?: PMNode };
   marks?: undefined;
   text?: undefined;
@@ -202,11 +202,11 @@ export type PMBlockNode =
 
 /** A ProseMirror mark variant */
 export type PMAnyMark =
-  | { type: "bold"; attrs?: Record<string, unknown> }
-  | { type: "italic"; attrs?: Record<string, unknown> }
-  | { type: "underline"; attrs?: Record<string, unknown> }
-  | { type: "strike"; attrs?: Record<string, unknown> }
-  | { type: "code"; attrs?: Record<string, unknown> }
+  | { type: 'bold'; attrs?: Record<string, unknown> }
+  | { type: 'italic'; attrs?: Record<string, unknown> }
+  | { type: 'underline'; attrs?: Record<string, unknown> }
+  | { type: 'strike'; attrs?: Record<string, unknown> }
+  | { type: 'code'; attrs?: Record<string, unknown> }
   | PMLinkMark;
 
 // ---- Type guards ----
@@ -215,7 +215,7 @@ export type PMAnyMark =
  * Check if a node is a text node
  */
 export function isTextNode(node: PMNode): node is PMTextNode {
-  return node.type === "text" && typeof node.text === "string";
+  return node.type === 'text' && typeof node.text === 'string';
 }
 
 /**

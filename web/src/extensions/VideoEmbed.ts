@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from "@tiptap/core";
+import { Node, mergeAttributes } from '@tiptap/core';
 
 // ─── Provider definitions ─────────────────────────────────────────────────────
 
@@ -18,22 +18,25 @@ export interface VideoProvider {
 
 const PROVIDERS: VideoProvider[] = [
   {
-    id: "youtube",
-    name: "YouTube",
-    icon: "▶",
+    id: 'youtube',
+    name: 'YouTube',
+    icon: '▶',
     // youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID
-    urlPattern: /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    urlPattern:
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
     extractId: (url) => {
-      const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      const match = url.match(
+        /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+      );
       return match ? match[1] : null;
     },
     embedUrl: (id) => `https://www.youtube.com/embed/${id}`,
     allowFullScreen: true,
   },
   {
-    id: "vimeo",
-    name: "Vimeo",
-    icon: "🎥",
+    id: 'vimeo',
+    name: 'Vimeo',
+    icon: '🎥',
     urlPattern: /vimeo\.com\/(\d+)/,
     extractId: (url) => {
       const match = url.match(/vimeo\.com\/(\d+)/);
@@ -43,9 +46,9 @@ const PROVIDERS: VideoProvider[] = [
     allowFullScreen: true,
   },
   {
-    id: "loom",
-    name: "Loom",
-    icon: "🎬",
+    id: 'loom',
+    name: 'Loom',
+    icon: '🎬',
     urlPattern: /loom\.com\/(?:share\/|embed\/)([a-f0-9]+)/,
     extractId: (url) => {
       const match = url.match(/loom\.com\/(?:share\/|embed\/)([a-f0-9]+)/);
@@ -55,9 +58,9 @@ const PROVIDERS: VideoProvider[] = [
     allowFullScreen: true,
   },
   {
-    id: "twitch",
-    name: "Twitch",
-    icon: "📺",
+    id: 'twitch',
+    name: 'Twitch',
+    icon: '📺',
     urlPattern: /twitch\.tv\/(?:videos\/)?(\d+|[a-zA-Z0-9_]+)/,
     extractId: (url) => {
       // Twitch can be clips, videos, or channels
@@ -68,9 +71,9 @@ const PROVIDERS: VideoProvider[] = [
     allowFullScreen: true,
   },
   {
-    id: "vimeo",
-    name: "Vimeo",
-    icon: "🎥",
+    id: 'vimeo',
+    name: 'Vimeo',
+    icon: '🎥',
     urlPattern: /vimeo\.com\/(\d+)/,
     extractId: (url) => {
       const match = url.match(/vimeo\.com\/(\d+)/);
@@ -118,10 +121,15 @@ export interface VideoEmbedOptions {
   height: number;
 }
 
-declare module "@tiptap/core" {
+declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     videoEmbed: {
-      setVideoEmbed: (options: { src: string; provider?: string; width?: number; height?: number }) => ReturnType;
+      setVideoEmbed: (options: {
+        src: string;
+        provider?: string;
+        width?: number;
+        height?: number;
+      }) => ReturnType;
     };
   }
 }
@@ -129,9 +137,9 @@ declare module "@tiptap/core" {
 // ─── Extension ─────────────────────────────────────────────────────────────────
 
 export const VideoEmbed = Node.create<VideoEmbedOptions>({
-  name: "videoEmbed",
+  name: 'videoEmbed',
 
-  group: "block",
+  group: 'block',
   atom: true,
   selectable: true,
   draggable: true,
@@ -157,7 +165,7 @@ export const VideoEmbed = Node.create<VideoEmbedOptions>({
   parseHTML() {
     return [
       {
-        tag: "div[data-video-embed]",
+        tag: 'div[data-video-embed]',
       },
       {
         tag: "iframe[src*='youtube.com']",
@@ -200,53 +208,48 @@ export const VideoEmbed = Node.create<VideoEmbedOptions>({
 
   renderHTML({ node, HTMLAttributes }) {
     const { embedSrc, width, height, provider } = node.attrs;
-    const providerName = provider || "video";
-    const providerIcon = UNIQUE_PROVIDERS.find((p) => p.id === provider)?.icon || "🎬";
+    const providerName = provider || 'video';
+    const providerIcon = UNIQUE_PROVIDERS.find((p) => p.id === provider)?.icon || '🎬';
 
     return [
-      "div",
+      'div',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        "data-video-embed": "",
-        "data-provider": provider,
-        class: "video-embed-block my-4 rounded-lg overflow-hidden border border-border bg-[#0a0a0a]",
-        style: "position:relative;",
+        'data-video-embed': '',
+        'data-provider': provider,
+        class:
+          'video-embed-block my-4 rounded-lg overflow-hidden border border-border bg-[#0a0a0a]',
+        style: 'position:relative;',
       }),
       [
-        "div",
+        'div',
         {
-          class: "flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b border-border/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+          class:
+            'flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b border-border/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground',
         },
-        [
-          "span",
-          { class: "text-xs" },
-          providerIcon,
-        ],
-        [
-          "span",
-          {},
-          providerName,
-        ],
+        ['span', { class: 'text-xs' }, providerIcon],
+        ['span', {}, providerName],
       ],
       [
-        "div",
+        'div',
         {
-          style: "position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;background:#000;",
+          style:
+            'position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;background:#000;',
         },
         [
-          "iframe",
+          'iframe',
           {
             src: embedSrc,
             width: width,
             height: height,
-            style: "position:absolute;top:0;left:0;width:100%;height:100%;border:0;",
-            allowfullscreen: provider !== "vimeo" ? "" : undefined,
+            style: 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;',
+            allowfullscreen: provider !== 'vimeo' ? '' : undefined,
             allow:
-              provider === "youtube"
-                ? "accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
-                : provider === "vimeo"
-                  ? "autoplay;fullscreen;picture-in-picture"
-                  : "autoplay;fullscreen",
-            referrerpolicy: "strict-origin-when-cross-origin",
+              provider === 'youtube'
+                ? 'accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture'
+                : provider === 'vimeo'
+                  ? 'autoplay;fullscreen;picture-in-picture'
+                  : 'autoplay;fullscreen',
+            referrerpolicy: 'strict-origin-when-cross-origin',
           },
         ],
       ],
@@ -268,7 +271,7 @@ export const VideoEmbed = Node.create<VideoEmbedOptions>({
             } else {
               // Fallback: use the src directly as embed src
               attrs.embedSrc = options.src;
-              attrs.provider = "unknown";
+              attrs.provider = 'unknown';
             }
           }
           return commands.insertContent({

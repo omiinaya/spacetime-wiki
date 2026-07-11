@@ -1,26 +1,23 @@
-import { Library, Menu } from "lucide-react";
-import { AiAssistant } from "./AiAssistant";
-import { KeyboardShortcuts } from "./KeyboardShortcuts";
-import { TemplatePicker } from "./TemplatePicker";
-import { AdminPanels } from "./admin/AdminPanels";
-import { Sidebar } from "./Sidebar";
-import { TrashDialog } from "./TrashDialog";
-import { ShareDialog } from "./ShareDialog";
-import { CollectionDialog } from "./CollectionDialog";
-import { TemplateModal } from "./TemplateModal";
-import { CommandPalette } from "./CommandPalette";
-import { PageContextMenu } from "./PageContextMenu";
-import { useAppLayout } from "../hooks/useAppLayout";
-import { AppLayoutRoutes } from "../routes";
+import { Library, Menu } from 'lucide-react';
+import { AiAssistant } from './AiAssistant';
+import { KeyboardShortcuts } from './KeyboardShortcuts';
+import { TemplatePicker } from './TemplatePicker';
+import { AdminPanels } from './admin/AdminPanels';
+import { Sidebar } from './Sidebar';
+import { TrashDialog } from './TrashDialog';
+import { ShareDialog } from './ShareDialog';
+import { CollectionDialog } from './CollectionDialog';
+import { TemplateModal } from './TemplateModal';
+import { CommandPalette } from './CommandPalette';
+import { PageContextMenu } from './PageContextMenu';
+import { useAppLayout } from '../hooks/useAppLayout';
+import { AppLayoutRoutes } from '../routes';
 
 export function Layout() {
   const s = useAppLayout();
 
   return (
-    <div
-      className="flex h-screen bg-background"
-      onClick={() => s.setContextMenu(null)}
-    >
+    <div className="flex h-screen bg-background" onClick={() => s.setContextMenu(null)}>
       {/* Sidebar */}
       <Sidebar
         pages={s.pages}
@@ -108,8 +105,7 @@ export function Layout() {
           ref={s.sidebarOverlayRef}
           className="fixed inset-0 z-30 bg-black/60 backdrop-blur-xs md:hidden transition-opacity duration-300"
           style={{
-            opacity:
-              s.sidebarOpen && !s.sidebarDragRef.current ? 1 : undefined,
+            opacity: s.sidebarOpen && !s.sidebarDragRef.current ? 1 : undefined,
           }}
           onClick={() => {
             s.setSidebarOpen(false);
@@ -132,14 +128,14 @@ export function Layout() {
           onEditCol={s.openEditCol}
           onDeleteCol={s.deleteCollection}
           onDeletePage={async (pageId) => {
-            if (!confirm("Move this page to trash?")) return;
-            const { api } = await import("../lib/api");
-            await api.pages.batchSetStatus([pageId], "deleted");
+            if (!confirm('Move this page to trash?')) return;
+            const { api } = await import('../lib/api');
+            await api.pages.batchSetStatus([pageId], 'deleted');
             s.refreshData();
-            const { showToast } = await import("../components/Toast");
+            const { showToast } = await import('../components/Toast');
             showToast({
-              type: "success",
-              title: "Page moved to trash",
+              type: 'success',
+              title: 'Page moved to trash',
               duration: 3000,
             });
           }}
@@ -147,11 +143,11 @@ export function Layout() {
       )}
 
       {/* Trash panel */}
-      {s.location.pathname === "/trash" && (
+      {s.location.pathname === '/trash' && (
         <TrashDialog
           trashPages={s.trashPages}
           trashLoading={s.trashLoading}
-          onClose={() => s.navigate("/")}
+          onClose={() => s.navigate('/')}
           onRestore={s.restorePage}
           onPermanentDelete={s.permanentDelete}
           onEmptyTrash={s.emptyTrash}
@@ -159,11 +155,7 @@ export function Layout() {
       )}
 
       {/* Admin panels */}
-      <AdminPanels
-        userId={s.userId ?? ""}
-        allUsers={s.allUsers}
-        setAllUsers={s.setAllUsers}
-      />
+      <AdminPanels userId={s.userId ?? ''} allUsers={s.allUsers} setAllUsers={s.setAllUsers} />
 
       {/* Share dialog */}
       {s.shareDialog && (
@@ -229,16 +221,12 @@ export function Layout() {
       <main
         className="flex-1 overflow-y-auto"
         onTouchStart={(e) => {
-          if (
-            !s.sidebarOpen &&
-            s.sidebarElRef.current &&
-            e.touches[0].clientX < 30
-          ) {
+          if (!s.sidebarOpen && s.sidebarElRef.current && e.touches[0].clientX < 30) {
             s.touchStartRef.current = e.touches[0].clientX;
             s.sidebarDragRef.current = true;
             s.sidebarTouchDelta.current = 0;
             const el = s.sidebarElRef.current;
-            el.style.transition = "none";
+            el.style.transition = 'none';
           }
         }}
         onTouchMove={(e) => {
@@ -247,13 +235,12 @@ export function Layout() {
           s.sidebarTouchDelta.current = dx;
           const el = s.sidebarElRef.current;
           if (!el) return;
-          el.style.transition = "none";
+          el.style.transition = 'none';
           if (!s.sidebarOpen && dx > 0) {
             const offset = Math.min(dx, s.SIDEBAR_W);
             el.style.transform = `translateX(${offset - s.SIDEBAR_W}px)`;
             const progress = offset / s.SIDEBAR_W;
-            if (progress > 0.05 && !s.sidebarOverlayVisible)
-              s.setSidebarOverlayVisible(true);
+            if (progress > 0.05 && !s.sidebarOverlayVisible) s.setSidebarOverlayVisible(true);
             const ov = s.sidebarOverlayRef.current;
             if (ov) ov.style.opacity = String(progress * 0.6);
           } else if (s.sidebarOpen && dx < 0) {
@@ -273,8 +260,8 @@ export function Layout() {
           s.sidebarDragRef.current = false;
           const el = s.sidebarElRef.current;
           if (el) {
-            el.style.transition = "";
-            el.style.transform = "";
+            el.style.transition = '';
+            el.style.transform = '';
           }
           s.sidebarTouchDelta.current = 0;
         }}
@@ -315,10 +302,7 @@ export function Layout() {
         navigate={s.navigate}
       />
 
-      <KeyboardShortcuts
-        open={s.shortcutsOpen}
-        onClose={() => s.setShortcutsOpen(false)}
-      />
+      <KeyboardShortcuts open={s.shortcutsOpen} onClose={() => s.setShortcutsOpen(false)} />
 
       {s.aiAssistantOpen && s.userId && (
         <AiAssistant

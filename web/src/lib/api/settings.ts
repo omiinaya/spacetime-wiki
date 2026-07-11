@@ -1,33 +1,69 @@
 // SPDX-License-Identifier: ISC
 
-import type { AiConfig, AiChatSession, AiChatMessage, Invitation, Watch, Notification, AppSetting, DbBase, DbColumn, DbRow, DbCell, SyncedBlock, SyncedBlockRef, ScimProvider, ScimEvent, PagePermission, CollectionGroupPermission } from "./types";
-import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId } from "./client";
-import { mapAiConfig, mapAiChatSession, mapAiChatMessage, mapAppSetting, mapDbBase, mapDbColumn, mapDbRow, mapDbCell, mapSyncedBlock, mapSyncedBlockRef, mapInvitation, mapWatch, mapNotification, mapScimProvider, mapScimEvent, mapPagePermission, mapCollectionGroupPermission } from "./mappers";
+import type {
+  AiConfig,
+  AiChatSession,
+  AiChatMessage,
+  Invitation,
+  Watch,
+  Notification,
+  AppSetting,
+  DbBase,
+  DbColumn,
+  DbRow,
+  DbCell,
+  SyncedBlock,
+  SyncedBlockRef,
+  ScimProvider,
+  ScimEvent,
+  PagePermission,
+  CollectionGroupPermission,
+} from './types';
+import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId } from './client';
+import {
+  mapAiConfig,
+  mapAiChatSession,
+  mapAiChatMessage,
+  mapAppSetting,
+  mapDbBase,
+  mapDbColumn,
+  mapDbRow,
+  mapDbCell,
+  mapSyncedBlock,
+  mapSyncedBlockRef,
+  mapInvitation,
+  mapWatch,
+  mapNotification,
+  mapScimProvider,
+  mapScimEvent,
+  mapPagePermission,
+  mapCollectionGroupPermission,
+} from './mappers';
 
 // ─── App Settings ─────────────────────────────────────────────────────────────
 
 export async function getAppSetting(key: string): Promise<string> {
   const rows = await sqlQuery(`SELECT * FROM app_setting WHERE key = '${key}'`);
-  return rows.length > 0 ? String(rows[0]?.[1] ?? "") : "";
+  return rows.length > 0 ? String(rows[0]?.[1] ?? '') : '';
 }
 
 export async function setAppSetting(key: string, value: string): Promise<void> {
-  return callReducer("set_app_setting", [key, value]);
+  return callReducer('set_app_setting', [key, value]);
 }
 
 // ─── AI Config ────────────────────────────────────────────────────────────────
 
 export async function getAiConfig(key: string): Promise<string> {
   const rows = await sqlQuery(`SELECT * FROM ai_config WHERE key = '${key}'`);
-  return rows.length > 0 ? String(rows[0]?.[1] ?? "") : "";
+  return rows.length > 0 ? String(rows[0]?.[1] ?? '') : '';
 }
 
 export async function getAllAiConfig(): Promise<AiConfig[]> {
-  return tableQuery("SELECT * FROM ai_config", mapAiConfig);
+  return tableQuery('SELECT * FROM ai_config', mapAiConfig);
 }
 
 export async function setAiConfig(key: string, value: string): Promise<void> {
-  return callReducer("set_ai_config", [key, value]);
+  return callReducer('set_ai_config', [key, value]);
 }
 
 // ─── AI Chat Sessions ─────────────────────────────────────────────────────────
@@ -40,38 +76,47 @@ export async function getAiChatSession(id: string): Promise<AiChatSession | null
   return tableQueryOne(`SELECT * FROM ai_chat_session WHERE id = '${id}'`, mapAiChatSession);
 }
 
-export async function createAiChatSession(userId: string, title: string, pageContextId: string = ""): Promise<string> {
-  const id = genId("ai_s");
-  return callReducer("create_ai_chat_session", [id, userId, title, pageContextId])
-    .then(() => id);
+export async function createAiChatSession(
+  userId: string,
+  title: string,
+  pageContextId: string = '',
+): Promise<string> {
+  const id = genId('ai_s');
+  return callReducer('create_ai_chat_session', [id, userId, title, pageContextId]).then(() => id);
 }
 
 export async function deleteAiChatSession(id: string): Promise<void> {
-  return callReducer("delete_ai_chat_session", [id]);
+  return callReducer('delete_ai_chat_session', [id]);
 }
 
 // ─── AI Chat Messages ─────────────────────────────────────────────────────────
 
 export async function getAiChatMessages(sessionId: string): Promise<AiChatMessage[]> {
-  return tableQuery(`SELECT * FROM ai_chat_message WHERE session_id = '${sessionId}'`, mapAiChatMessage);
+  return tableQuery(
+    `SELECT * FROM ai_chat_message WHERE session_id = '${sessionId}'`,
+    mapAiChatMessage,
+  );
 }
 
-export async function addAiChatMessage(sessionId: string, role: string, content: string): Promise<string> {
-  const id = genId("ai_m");
-  return callReducer("add_ai_chat_message", [id, sessionId, role, content])
-    .then(() => id);
+export async function addAiChatMessage(
+  sessionId: string,
+  role: string,
+  content: string,
+): Promise<string> {
+  const id = genId('ai_m');
+  return callReducer('add_ai_chat_message', [id, sessionId, role, content]).then(() => id);
 }
 
 export async function deleteAiChatMessage(id: string): Promise<void> {
-  return callReducer("delete_ai_chat_message", [id]);
+  return callReducer('delete_ai_chat_message', [id]);
 }
 
 // ─── Database Bases ───────────────────────────────────────────────────────────
 
 export async function getDbBases(pageId?: string): Promise<DbBase[]> {
-  let sql = "SELECT * FROM db_base";
+  let sql = 'SELECT * FROM db_base';
   if (pageId) sql += ` WHERE page_id = '${pageId}'`;
-  sql += "";
+  sql += '';
   return tableQuery(sql, mapDbBase);
 }
 
@@ -79,13 +124,18 @@ export async function getDbBase(id: string): Promise<DbBase | null> {
   return tableQueryOne(`SELECT * FROM db_base WHERE id = '${id}'`, mapDbBase);
 }
 
-export async function createDbBase(pageId: string, title: string, viewType: string, createdBy: string): Promise<string> {
-  const id = genId("db");
-  return callReducer("create_db_base", [id, pageId, title, viewType, createdBy]).then(() => id);
+export async function createDbBase(
+  pageId: string,
+  title: string,
+  viewType: string,
+  createdBy: string,
+): Promise<string> {
+  const id = genId('db');
+  return callReducer('create_db_base', [id, pageId, title, viewType, createdBy]).then(() => id);
 }
 
 export async function deleteDbBase(id: string): Promise<void> {
-  return callReducer("delete_db_base", [id]);
+  return callReducer('delete_db_base', [id]);
 }
 
 // ─── Database Columns ─────────────────────────────────────────────────────────
@@ -94,9 +144,17 @@ export async function getDbColumns(baseId: string): Promise<DbColumn[]> {
   return tableQuery(`SELECT * FROM db_column WHERE base_id = '${baseId}'`, mapDbColumn);
 }
 
-export async function createDbColumn(baseId: string, name: string, fieldType: string, options: string = "{}", sortOrder: number = 0): Promise<string> {
-  const id = genId("dbc");
-  return callReducer("create_db_column", [id, baseId, name, fieldType, options, sortOrder]).then(() => id);
+export async function createDbColumn(
+  baseId: string,
+  name: string,
+  fieldType: string,
+  options: string = '{}',
+  sortOrder: number = 0,
+): Promise<string> {
+  const id = genId('dbc');
+  return callReducer('create_db_column', [id, baseId, name, fieldType, options, sortOrder]).then(
+    () => id,
+  );
 }
 
 // ─── Database Rows ────────────────────────────────────────────────────────────
@@ -109,17 +167,21 @@ export async function getDbRow(id: string): Promise<DbRow | null> {
   return tableQueryOne(`SELECT * FROM db_row WHERE id = '${id}'`, mapDbRow);
 }
 
-export async function createDbRow(baseId: string, sortOrder: number, createdBy: string): Promise<string> {
-  const id = genId("dbr");
-  return callReducer("create_db_row", [id, baseId, sortOrder, createdBy]).then(() => id);
+export async function createDbRow(
+  baseId: string,
+  sortOrder: number,
+  createdBy: string,
+): Promise<string> {
+  const id = genId('dbr');
+  return callReducer('create_db_row', [id, baseId, sortOrder, createdBy]).then(() => id);
 }
 
 export async function deleteDbRow(id: string): Promise<void> {
-  return callReducer("delete_db_row", [id]);
+  return callReducer('delete_db_row', [id]);
 }
 
 export async function reorderDbRows(rowIds: string[], newSortOrders: number[]): Promise<void> {
-  return callReducer("reorder_db_rows", [rowIds, newSortOrders]);
+  return callReducer('reorder_db_rows', [rowIds, newSortOrders]);
 }
 
 // ─── Database Cells ───────────────────────────────────────────────────────────
@@ -136,8 +198,8 @@ export async function getDbCellsForBase(baseId: string): Promise<DbCell[]> {
 }
 
 export async function setDbCell(rowId: string, columnId: string, value: string): Promise<void> {
-  const id = genId("dce");
-  return callReducer("set_db_cell", [rowId, columnId, value]);
+  const id = genId('dce');
+  return callReducer('set_db_cell', [rowId, columnId, value]);
 }
 
 export async function updateDbCell(rowId: string, columnId: string, value: string): Promise<void> {
@@ -147,41 +209,60 @@ export async function updateDbCell(rowId: string, columnId: string, value: strin
 // ─── Synced Blocks ─────────────────────────────────────���──────────────────────
 
 export async function getSyncedBlocks(): Promise<SyncedBlock[]> {
-  return tableQuery("SELECT * FROM synced_block", mapSyncedBlock);
+  return tableQuery('SELECT * FROM synced_block', mapSyncedBlock);
 }
 
 export async function getSyncedBlock(id: string): Promise<SyncedBlock | null> {
   return tableQueryOne(`SELECT * FROM synced_block WHERE id = '${id}'`, mapSyncedBlock);
 }
 
-export async function createSyncedBlock(title: string, content: string, createdBy: string): Promise<string> {
-  const id = genId("sb");
-  return callReducer("create_synced_block", [id, title, content, createdBy]).then(() => id);
+export async function createSyncedBlock(
+  title: string,
+  content: string,
+  createdBy: string,
+): Promise<string> {
+  const id = genId('sb');
+  return callReducer('create_synced_block', [id, title, content, createdBy]).then(() => id);
 }
 
-export async function updateSyncedBlock(id: string, title: string, content: string, updatedBy: string): Promise<void> {
-  return callReducer("update_synced_block", [id, title, content, updatedBy]);
+export async function updateSyncedBlock(
+  id: string,
+  title: string,
+  content: string,
+  updatedBy: string,
+): Promise<void> {
+  return callReducer('update_synced_block', [id, title, content, updatedBy]);
 }
 
 export async function deleteSyncedBlock(id: string): Promise<void> {
-  return callReducer("delete_synced_block", [id]);
+  return callReducer('delete_synced_block', [id]);
 }
 
-export async function addSyncedBlockRef(blockId: string, pageId: string, createdBy: string): Promise<string> {
-  const id = genId("sbr");
-  return callReducer("add_synced_block_ref", [id, blockId, pageId, createdBy]).then(() => id);
+export async function addSyncedBlockRef(
+  blockId: string,
+  pageId: string,
+  createdBy: string,
+): Promise<string> {
+  const id = genId('sbr');
+  return callReducer('add_synced_block_ref', [id, blockId, pageId, createdBy]).then(() => id);
 }
 
 export async function removeSyncedBlockRef(id: string): Promise<void> {
-  return callReducer("remove_synced_block_ref", [id]);
+  return callReducer('remove_synced_block_ref', [id]);
 }
 
 export async function listSyncedBlockRefs(blockId: string): Promise<SyncedBlockRef[]> {
-  return tableQuery(`SELECT * FROM synced_block_ref WHERE block_id = '${blockId}'`, mapSyncedBlockRef);
+  return tableQuery(
+    `SELECT * FROM synced_block_ref WHERE block_id = '${blockId}'`,
+    mapSyncedBlockRef,
+  );
 }
 
 export async function listSyncedBlockRefsByPage(pageId: string): Promise<SyncedBlockRef[]> {
-  return tableQuery(`SELECT * FROM synced_block_ref WHERE page_id = '${pageId}'`, mapSyncedBlockRef);
+  return tableQuery(
+    `SELECT * FROM synced_block_ref WHERE page_id = '${pageId}'`,
+    mapSyncedBlockRef,
+  );
 }
 
 // ─── Invitations ──────────────────────────────────────────────────────────────
@@ -196,26 +277,34 @@ export async function createInvitation(
   message: string,
   expiresDays: number,
 ): Promise<string> {
-  const id = genId("inv");
-  return callReducer("create_invitation", [
-    id, email, invitedBy, role, pageIds, collectionIds, token, message, expiresDays,
+  const id = genId('inv');
+  return callReducer('create_invitation', [
+    id,
+    email,
+    invitedBy,
+    role,
+    pageIds,
+    collectionIds,
+    token,
+    message,
+    expiresDays,
   ]).then(() => id);
 }
 
 export async function acceptInvitation(token: string, userId: string): Promise<void> {
-  return callReducer("accept_invitation", [token, userId]);
+  return callReducer('accept_invitation', [token, userId]);
 }
 
 export async function revokeInvitation(id: string, revokedBy: string): Promise<void> {
-  return callReducer("revoke_invitation", [id, revokedBy]);
+  return callReducer('revoke_invitation', [id, revokedBy]);
 }
 
 export async function recordInvitationView(token: string): Promise<void> {
-  return callReducer("record_invitation_view", [token]);
+  return callReducer('record_invitation_view', [token]);
 }
 
 export async function getInvitations(): Promise<Invitation[]> {
-  return tableQuery("SELECT * FROM invitation", mapInvitation);
+  return tableQuery('SELECT * FROM invitation', mapInvitation);
 }
 
 export async function getInvitation(id: string): Promise<Invitation | null> {
@@ -228,9 +317,13 @@ export async function getInvitationByToken(token: string): Promise<Invitation | 
 
 // ─── Watch / Toggle ───────────────────────────────────────────────────────────
 
-export async function toggleWatch(userId: string, targetType: string, targetId: string): Promise<void> {
-  const id = genId("watch");
-  return callReducer("toggle_watch", [id, userId, targetType, targetId]);
+export async function toggleWatch(
+  userId: string,
+  targetType: string,
+  targetId: string,
+): Promise<void> {
+  const id = genId('watch');
+  return callReducer('toggle_watch', [id, userId, targetType, targetId]);
 }
 
 export async function getWatchByUser(userId: string): Promise<Watch[]> {
@@ -238,84 +331,152 @@ export async function getWatchByUser(userId: string): Promise<Watch[]> {
 }
 
 export async function getWatchByTarget(targetType: string, targetId: string): Promise<Watch[]> {
-  return tableQuery(`SELECT * FROM watch WHERE target_type = '${targetType}' AND target_id = '${targetId}'`, mapWatch);
+  return tableQuery(
+    `SELECT * FROM watch WHERE target_type = '${targetType}' AND target_id = '${targetId}'`,
+    mapWatch,
+  );
 }
 
-export async function isWatching(userId: string, targetType: string, targetId: string): Promise<boolean> {
+export async function isWatching(
+  userId: string,
+  targetType: string,
+  targetId: string,
+): Promise<boolean> {
   const rows = await sqlQuery(
-    `SELECT id FROM watch WHERE user_id = '${userId}' AND target_type = '${targetType}' AND target_id = '${targetId}'`
+    `SELECT id FROM watch WHERE user_id = '${userId}' AND target_type = '${targetType}' AND target_id = '${targetId}'`,
   );
   return rows.length > 0;
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 
-export async function getNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
-  return tableQuery(`SELECT * FROM notification WHERE user_id = '${userId}' LIMIT ${limit}`, mapNotification);
+export async function getNotifications(
+  userId: string,
+  limit: number = 50,
+): Promise<Notification[]> {
+  return tableQuery(
+    `SELECT * FROM notification WHERE user_id = '${userId}' LIMIT ${limit}`,
+    mapNotification,
+  );
 }
 
-export async function getUnreadNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
-  return tableQuery(`SELECT * FROM notification WHERE user_id = '${userId}' AND is_read = false LIMIT ${limit}`, mapNotification);
+export async function getUnreadNotifications(
+  userId: string,
+  limit: number = 50,
+): Promise<Notification[]> {
+  return tableQuery(
+    `SELECT * FROM notification WHERE user_id = '${userId}' AND is_read = false LIMIT ${limit}`,
+    mapNotification,
+  );
 }
 
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
-  const rows = await sqlQuery(`SELECT COUNT(*) FROM notification WHERE user_id = '${userId}' AND is_read = false`);
+  const rows = await sqlQuery(
+    `SELECT COUNT(*) FROM notification WHERE user_id = '${userId}' AND is_read = false`,
+  );
   return Number(rows[0]?.[0] ?? 0);
 }
 
 export async function createNotification(
-  userId: string, eventType: string, targetId: string,
-  title: string, message: string, actorId: string, icon: string,
+  userId: string,
+  eventType: string,
+  targetId: string,
+  title: string,
+  message: string,
+  actorId: string,
+  icon: string,
 ): Promise<string> {
-  const id = genId("notif");
-  return callReducer("create_notification", [id, userId, eventType, targetId, title, message, actorId, icon]).then(() => id);
+  const id = genId('notif');
+  return callReducer('create_notification', [
+    id,
+    userId,
+    eventType,
+    targetId,
+    title,
+    message,
+    actorId,
+    icon,
+  ]).then(() => id);
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
-  return callReducer("mark_notification_read", [id]);
+  return callReducer('mark_notification_read', [id]);
 }
 
 export async function markAllNotificationsRead(userId: string): Promise<void> {
-  return callReducer("mark_all_notifications_read", [userId]);
+  return callReducer('mark_all_notifications_read', [userId]);
 }
 
 export async function deleteNotification(id: string): Promise<void> {
-  return callReducer("delete_notification", [id]);
+  return callReducer('delete_notification', [id]);
 }
 
 export async function clearAllNotifications(userId: string): Promise<void> {
-  return callReducer("clear_all_notifications", [userId]);
+  return callReducer('clear_all_notifications', [userId]);
 }
 
 // ─── SCIM Providers ─────────────────────────────────────��─────────────────────
 
 export async function getScimProviders(): Promise<ScimProvider[]> {
-  return tableQuery("SELECT * FROM scim_provider", mapScimProvider);
+  return tableQuery('SELECT * FROM scim_provider', mapScimProvider);
 }
 
-export async function addScimProvider(name: string, slug: string, apiToken: string, defaultRole: string,
-                autoRegister: boolean, deprovisionBehavior: string, syncGroups: boolean,
-                createdBy: string): Promise<string> {
-  const id = genId("scim");
-  return callReducer("add_scim_provider", [id, name, slug, apiToken, defaultRole,
-    autoRegister, deprovisionBehavior, syncGroups, createdBy]).then(() => id);
+export async function addScimProvider(
+  name: string,
+  slug: string,
+  apiToken: string,
+  defaultRole: string,
+  autoRegister: boolean,
+  deprovisionBehavior: string,
+  syncGroups: boolean,
+  createdBy: string,
+): Promise<string> {
+  const id = genId('scim');
+  return callReducer('add_scim_provider', [
+    id,
+    name,
+    slug,
+    apiToken,
+    defaultRole,
+    autoRegister,
+    deprovisionBehavior,
+    syncGroups,
+    createdBy,
+  ]).then(() => id);
 }
 
-export async function updateScimProvider(id: string, name: string, slug: string, apiToken: string,
-                    defaultRole: string, autoRegister: boolean, deprovisionBehavior: string,
-                    syncGroups: boolean, isActive: boolean): Promise<void> {
-  return callReducer("update_scim_provider", [id, name, slug, apiToken, defaultRole,
-    autoRegister, deprovisionBehavior, syncGroups, isActive]);
+export async function updateScimProvider(
+  id: string,
+  name: string,
+  slug: string,
+  apiToken: string,
+  defaultRole: string,
+  autoRegister: boolean,
+  deprovisionBehavior: string,
+  syncGroups: boolean,
+  isActive: boolean,
+): Promise<void> {
+  return callReducer('update_scim_provider', [
+    id,
+    name,
+    slug,
+    apiToken,
+    defaultRole,
+    autoRegister,
+    deprovisionBehavior,
+    syncGroups,
+    isActive,
+  ]);
 }
 
 export async function deleteScimProvider(id: string): Promise<void> {
-  return callReducer("delete_scim_provider", [id]);
+  return callReducer('delete_scim_provider', [id]);
 }
 
 export async function getScimEvents(providerId?: string): Promise<ScimEvent[]> {
-  let sql = "SELECT * FROM scim_event";
+  let sql = 'SELECT * FROM scim_event';
   if (providerId) sql += ` WHERE provider_id = '${providerId}'`;
-  sql += " LIMIT 100";
+  sql += ' LIMIT 100';
   return sqlQuery(sql).then((rows) => (rows as unknown[][]).map(mapScimEvent));
 }
 
@@ -346,24 +507,30 @@ export async function getFavorites(userId: string): Promise<unknown[][]> {
 }
 
 export async function toggleFavorite(userId: string, pageId: string): Promise<void> {
-  const id = genId("fav");
-  return callReducer("toggle_favorite", [id, userId, pageId]);
+  const id = genId('fav');
+  return callReducer('toggle_favorite', [id, userId, pageId]);
 }
 
 // ─── Page Permissions ─────────────────────────────────────────────────────────
 
 export async function getPagePermissions(pageId: string): Promise<PagePermission[]> {
-  return sqlQuery(`SELECT * FROM page_permission WHERE page_id = '${pageId}'`)
-    .then((rows) => (rows as unknown[][]).map(mapPagePermission));
+  return sqlQuery(`SELECT * FROM page_permission WHERE page_id = '${pageId}'`).then((rows) =>
+    (rows as unknown[][]).map(mapPagePermission),
+  );
 }
 
-export async function setPagePermission(pageId: string, userId: string, groupId: string, role: string): Promise<void> {
-  const id = genId("pp");
-  return callReducer("set_page_permission", [id, pageId, userId, groupId, role]);
+export async function setPagePermission(
+  pageId: string,
+  userId: string,
+  groupId: string,
+  role: string,
+): Promise<void> {
+  const id = genId('pp');
+  return callReducer('set_page_permission', [id, pageId, userId, groupId, role]);
 }
 
 export async function removePagePermission(id: string): Promise<void> {
-  return callReducer("remove_page_permission", [id]);
+  return callReducer('remove_page_permission', [id]);
 }
 
 // ── API sections for the `api` object ──
@@ -474,5 +641,3 @@ export const favoritesApi = {
   list: getFavorites,
   toggle: toggleFavorite,
 };
-
-

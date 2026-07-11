@@ -1,180 +1,339 @@
 // SPDX-License-Identifier: ISC
 
 export interface Page {
-  id: string; title: string; slug: string; content: string;
-  text_content: string; collection_id: string; parent_page_id: string;
-  status: string; icon: string; color: string; full_width: boolean;
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  text_content: string;
+  collection_id: string;
+  parent_page_id: string;
+  status: string;
+  icon: string;
+  color: string;
+  full_width: boolean;
   is_pinned: boolean;
-  is_template: boolean; template_id: string; sort_order: number;
-  created_by: string; updated_by: string; created_at: number;
-  updated_at: number; published_at: number; deleted_at: number;
+  is_template: boolean;
+  template_id: string;
+  sort_order: number;
+  created_by: string;
+  updated_by: string;
+  created_at: number;
+  updated_at: number;
+  published_at: number;
+  deleted_at: number;
   direction: string;
 }
 
 export interface Collection {
-  id: string; name: string; slug: string; description: string;
-  parent_id: string; icon: string; color: string; sort_order: number;
-  created_by: string; created_at: number; updated_at: number;
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  parent_id: string;
+  icon: string;
+  color: string;
+  sort_order: number;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface PageRevision {
-  id: string; page_id: string; title: string; content: string;
-  edited_by: string; created_at: number; revision_number: number;
+  id: string;
+  page_id: string;
+  title: string;
+  content: string;
+  edited_by: string;
+  created_at: number;
+  revision_number: number;
 }
 
 export interface Comment {
-  id: string; page_id: string; parent_comment_id: string;
-  user_id: string; body: string; text_anchor: string; is_resolved: boolean;
-  created_at: number; updated_at: number;
+  id: string;
+  page_id: string;
+  parent_comment_id: string;
+  user_id: string;
+  body: string;
+  text_anchor: string;
+  is_resolved: boolean;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface CommentReaction {
-  id: string; comment_id: string; user_id: string;
-  emoji: string; created_at: number;
+  id: string;
+  comment_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: number;
 }
 
 export interface PageTag {
-  id: string; page_id: string; name: string; value: string;
+  id: string;
+  page_id: string;
+  name: string;
+  value: string;
 }
 
 export interface Attachment {
-  id: string; page_id: string; filename: string; mime_type: string;
-  size_bytes: number; storage_key: string; uploaded_by: string; created_at: number;
+  id: string;
+  page_id: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  storage_key: string;
+  uploaded_by: string;
+  created_at: number;
 }
 
 export interface User {
-  id: string; name: string; email: string; role: string; avatar_url: string;
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar_url: string;
   created_at: number;
 }
 
 export interface CollectionMember {
-  id: string; collection_id: string; user_id: string; role: string;
-  added_by: string; created_at: number;
+  id: string;
+  collection_id: string;
+  user_id: string;
+  role: string;
+  added_by: string;
+  created_at: number;
 }
 
 export interface ShareLink {
-  id: string; page_id: string; token: string; password_hash: string;
-  created_by: string; expires_at: number; created_at: number; visit_count: number;
-  brand_title: string | null; brand_logo_url: string | null;
+  id: string;
+  page_id: string;
+  token: string;
+  password_hash: string;
+  created_by: string;
+  expires_at: number;
+  created_at: number;
+  visit_count: number;
+  brand_title: string | null;
+  brand_logo_url: string | null;
 }
 
 export interface ApiKey {
-  id: string; user_id: string; name: string; key_hash: string;
-  key_prefix: string; last_used_at: number; created_at: number;
-  expires_at: number; is_revoked: boolean;
+  id: string;
+  user_id: string;
+  name: string;
+  key_hash: string;
+  key_prefix: string;
+  last_used_at: number;
+  created_at: number;
+  expires_at: number;
+  is_revoked: boolean;
 }
 
 export interface Group {
-  id: string; name: string; description: string;
-  created_by: string; created_at: number; updated_at: number;
+  id: string;
+  name: string;
+  description: string;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface GroupMember {
-  id: string; group_id: string; user_id: string; role: string;
-  added_by: string; created_at: number;
+  id: string;
+  group_id: string;
+  user_id: string;
+  role: string;
+  added_by: string;
+  created_at: number;
 }
 
 export interface CollectionGroupPermission {
-  id: string; collection_id: string; group_id: string; role: string;
+  id: string;
+  collection_id: string;
+  group_id: string;
+  role: string;
   created_at: number;
 }
 
 export interface PagePermission {
-  id: string; page_id: string; user_id: string; group_id: string;
-  role: string; created_at: number;
+  id: string;
+  page_id: string;
+  user_id: string;
+  group_id: string;
+  role: string;
+  created_at: number;
 }
 
 export interface Webhook {
-  id: string; name: string; url: string; events: string;
-  is_active: boolean; secret: string; created_by: string;
-  created_at: number; updated_at: number;
+  id: string;
+  name: string;
+  url: string;
+  events: string;
+  is_active: boolean;
+  secret: string;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface WebhookEvent {
-  id: string; webhook_id: string; event_type: string; page_id: string;
-  payload: string; status: string; response_code: number;
-  response_body: string; created_at: number; sent_at: number;
+  id: string;
+  webhook_id: string;
+  event_type: string;
+  page_id: string;
+  payload: string;
+  status: string;
+  response_code: number;
+  response_body: string;
+  created_at: number;
+  sent_at: number;
 }
 
 export interface OidcProvider {
-  id: string; name: string; slug: string; issuer_url: string;
-  client_id: string; client_secret: string; scopes: string;
-  is_active: boolean; created_by: string;
-  created_at: number; updated_at: number;
+  id: string;
+  name: string;
+  slug: string;
+  issuer_url: string;
+  client_id: string;
+  client_secret: string;
+  scopes: string;
+  is_active: boolean;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface SamlProvider {
-  id: string; name: string; slug: string; entity_id: string;
-  sso_url: string; certificate: string; name_id_format: string;
-  attribute_mapping: string; auto_register: boolean;
-  is_active: boolean; created_by: string;
-  created_at: number; updated_at: number;
+  id: string;
+  name: string;
+  slug: string;
+  entity_id: string;
+  sso_url: string;
+  certificate: string;
+  name_id_format: string;
+  attribute_mapping: string;
+  auto_register: boolean;
+  is_active: boolean;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface AppSetting {
-  key: string; value: string; updated_at: number;
+  key: string;
+  value: string;
+  updated_at: number;
 }
 
 export interface ScimProvider {
-  id: string; name: string; slug: string;
-  api_token_hash: string; is_active: boolean;
-  default_role: string; auto_register: boolean;
-  deprovision_behavior: string; sync_groups: boolean;
-  created_by: string; created_at: number; updated_at: number;
+  id: string;
+  name: string;
+  slug: string;
+  api_token_hash: string;
+  is_active: boolean;
+  default_role: string;
+  auto_register: boolean;
+  deprovision_behavior: string;
+  sync_groups: boolean;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface ScimEvent {
-  id: string; provider_id: string; resource_type: string;
-  operation: string; external_id: string; local_id: string;
-  status: string; detail: string; created_at: number;
+  id: string;
+  provider_id: string;
+  resource_type: string;
+  operation: string;
+  external_id: string;
+  local_id: string;
+  status: string;
+  detail: string;
+  created_at: number;
 }
 
 export interface CollabSession {
-  id: string; page_id: string; user_id: string;
-  user_name: string; color: string; cursor_position: string;
-  last_seen_at: number; joined_at: number;
+  id: string;
+  page_id: string;
+  user_id: string;
+  user_name: string;
+  color: string;
+  cursor_position: string;
+  last_seen_at: number;
+  joined_at: number;
 }
 
 export interface CollabUpdate {
-  id: string; page_id: string; update_data: string;
-  user_id: string; created_at: number;
+  id: string;
+  page_id: string;
+  update_data: string;
+  user_id: string;
+  created_at: number;
 }
 
 export interface PasskeyCredential {
-  id: string; user_id: string; credential_id: string;
-  public_key: string; counter: number; transports: string;
-  device_name: string; created_at: number; last_used_at: number;
+  id: string;
+  user_id: string;
+  credential_id: string;
+  public_key: string;
+  counter: number;
+  transports: string;
+  device_name: string;
+  created_at: number;
+  last_used_at: number;
 }
 
 export interface PasskeyChallenge {
-  challenge: string; user_handle: string; purpose: string;
-  created_at: number; expires_at: number;
+  challenge: string;
+  user_handle: string;
+  purpose: string;
+  created_at: number;
+  expires_at: number;
 }
 
 export interface AiConfig {
-  key: string; value: string; updated_at: number;
+  key: string;
+  value: string;
+  updated_at: number;
 }
 
 export interface AiChatSession {
-  id: string; user_id: string; title: string;
-  page_context_id: string; created_at: number; updated_at: number;
+  id: string;
+  user_id: string;
+  title: string;
+  page_context_id: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface AiChatMessage {
-  id: string; session_id: string; role: string;
-  content: string; created_at: number;
+  id: string;
+  session_id: string;
+  role: string;
+  content: string;
+  created_at: number;
 }
 
 export interface Invitation {
-  id: string; email: string; invited_by: string; role: string;
-  page_ids: string; collection_ids: string; token: string;
-  status: string; message: string; expires_at: number;
-  view_count: number; created_at: number; updated_at: number;
+  id: string;
+  email: string;
+  invited_by: string;
+  role: string;
+  page_ids: string;
+  collection_ids: string;
+  token: string;
+  status: string;
+  message: string;
+  expires_at: number;
+  view_count: number;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface CollectionSortRule {
   collection_id: string;
-  sort_field: string;    // "title" | "created_at" | "updated_at" | "manual"
+  sort_field: string; // "title" | "created_at" | "updated_at" | "manual"
   sort_direction: string; // "asc" | "desc"
   auto_apply: boolean;
   updated_by: string;
@@ -200,25 +359,42 @@ export interface MfaBackupCode {
 }
 
 export interface DbBase {
-  id: string; page_id: string; title: string;
-  view_type: string; created_by: string;
-  created_at: number; updated_at: number;
+  id: string;
+  page_id: string;
+  title: string;
+  view_type: string;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface DbColumn {
-  id: string; base_id: string; name: string;
-  field_type: string; options: string;
-  sort_order: number; created_at: number; updated_at: number;
+  id: string;
+  base_id: string;
+  name: string;
+  field_type: string;
+  options: string;
+  sort_order: number;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface DbRow {
-  id: string; base_id: string; sort_order: number;
-  created_by: string; created_at: number; updated_at: number;
+  id: string;
+  base_id: string;
+  sort_order: number;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface DbCell {
-  id: string; row_id: string; column_id: string;
-  value: string; created_at: number; updated_at: number;
+  id: string;
+  row_id: string;
+  column_id: string;
+  value: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface SyncedBlock {

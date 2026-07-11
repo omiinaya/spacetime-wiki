@@ -1,6 +1,6 @@
-import { useNavigate } from "react-router-dom";
-import { History } from "lucide-react";
-import { ActivityFeed } from "../components/ActivityFeed";
+import { useNavigate } from 'react-router-dom';
+import { History } from 'lucide-react';
+import { ActivityFeed } from '../components/ActivityFeed';
 
 export default function ActivityView() {
   const navigate = useNavigate();
@@ -15,19 +15,24 @@ export default function ActivityView() {
             Recent changes across the wiki — page creates, updates, deletes, and more
           </p>
         </div>
-        <button onClick={() => navigate('/')}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-muted/50 transition-colors">
+        <button
+          onClick={() => navigate('/')}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-muted/50 transition-colors"
+        >
           Back to home
         </button>
       </div>
       <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <ActivityFeed limit={200} onNavigate={(targetId, eventType) => {
-          if (eventType.startsWith("page.") || eventType.startsWith("comment.")) {
-            navigate(`/page/${targetId}`);
-          } else if (eventType.startsWith("collection.")) {
-            navigate(`/?col=${targetId}`);
-          }
-        }} />
+        <ActivityFeed
+          limit={200}
+          onNavigate={(targetId, eventType) => {
+            if (eventType.startsWith('page.') || eventType.startsWith('comment.')) {
+              navigate(`/page/${targetId}`);
+            } else if (eventType.startsWith('collection.')) {
+              navigate(`/?col=${targetId}`);
+            }
+          }}
+        />
       </div>
     </div>
   );

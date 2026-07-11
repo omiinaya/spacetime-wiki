@@ -1,5 +1,5 @@
-import { createPortal } from "react-dom";
-import { X, Command, Keyboard } from "lucide-react";
+import { createPortal } from 'react-dom';
+import { X, Command, Keyboard } from 'lucide-react';
 
 interface ShortcutGroup {
   title: string;
@@ -8,53 +8,53 @@ interface ShortcutGroup {
 
 const SHORTCUTS: ShortcutGroup[] = [
   {
-    title: "Global",
+    title: 'Global',
     shortcuts: [
-      { keys: "⌘K / Ctrl+K", label: "Command palette" },
-      { keys: "?", label: "Keyboard shortcuts (this)" },
-      { keys: "⌘S / Ctrl+S", label: "Save page" },
+      { keys: '⌘K / Ctrl+K', label: 'Command palette' },
+      { keys: '?', label: 'Keyboard shortcuts (this)' },
+      { keys: '⌘S / Ctrl+S', label: 'Save page' },
     ],
   },
   {
-    title: "Navigation",
+    title: 'Navigation',
     shortcuts: [
-      { keys: "⌘B / Ctrl+B", label: "Bold" },
-      { keys: "⌘I / Ctrl+I", label: "Italic" },
-      { keys: "⌘U / Ctrl+U", label: "Underline" },
-      { keys: "⌘Shift+X", label: "Strikethrough" },
-      { keys: "⌘Alt+1", label: "Heading 1" },
-      { keys: "⌘Alt+2", label: "Heading 2" },
-      { keys: "⌘Alt+3", label: "Heading 3" },
-      { keys: "⌘Shift+8", label: "Bullet list" },
-      { keys: "⌘Shift+7", label: "Ordered list" },
-      { keys: "⌘Shift+B", label: "Blockquote" },
-      { keys: "⌘Alt+C", label: "Code block" },
+      { keys: '⌘B / Ctrl+B', label: 'Bold' },
+      { keys: '⌘I / Ctrl+I', label: 'Italic' },
+      { keys: '⌘U / Ctrl+U', label: 'Underline' },
+      { keys: '⌘Shift+X', label: 'Strikethrough' },
+      { keys: '⌘Alt+1', label: 'Heading 1' },
+      { keys: '⌘Alt+2', label: 'Heading 2' },
+      { keys: '⌘Alt+3', label: 'Heading 3' },
+      { keys: '⌘Shift+8', label: 'Bullet list' },
+      { keys: '⌘Shift+7', label: 'Ordered list' },
+      { keys: '⌘Shift+B', label: 'Blockquote' },
+      { keys: '⌘Alt+C', label: 'Code block' },
     ],
   },
   {
-    title: "Slash Commands",
+    title: 'Slash Commands',
     shortcuts: [
-      { keys: "/", label: "Open slash command menu" },
-      { keys: "↑ ↓", label: "Navigate commands" },
-      { keys: "↵", label: "Select command" },
-      { keys: "esc", label: "Close menu" },
+      { keys: '/', label: 'Open slash command menu' },
+      { keys: '↑ ↓', label: 'Navigate commands' },
+      { keys: '↵', label: 'Select command' },
+      { keys: 'esc', label: 'Close menu' },
     ],
   },
   {
-    title: "Emoji Picker",
+    title: 'Emoji Picker',
     shortcuts: [
-      { keys: ":word", label: "Type `:` followed by name" },
-      { keys: "↑ ↓", label: "Navigate emoji" },
-      { keys: "↵ / space", label: "Insert selected emoji" },
-      { keys: "esc", label: "Close picker" },
+      { keys: ':word', label: 'Type `:` followed by name' },
+      { keys: '↑ ↓', label: 'Navigate emoji' },
+      { keys: '↵ / space', label: 'Insert selected emoji' },
+      { keys: 'esc', label: 'Close picker' },
     ],
   },
   {
-    title: "Mentions",
+    title: 'Mentions',
     shortcuts: [
-      { keys: "@", label: "Open mention menu" },
-      { keys: "↑ ↓", label: "Navigate suggestions" },
-      { keys: "↵", label: "Insert mention" },
+      { keys: '@', label: 'Open mention menu' },
+      { keys: '↑ ↓', label: 'Navigate suggestions' },
+      { keys: '↵', label: 'Insert mention' },
     ],
   },
 ];
@@ -68,10 +68,15 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl max-h-[80vh] flex flex-col"
-        role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Keyboard shortcuts"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -80,7 +85,11 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
             <Keyboard className="h-4 w-4 text-muted-foreground" />
             Keyboard Shortcuts
           </h3>
-          <button onClick={onClose} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted" aria-label="Close keyboard shortcuts">
+          <button
+            onClick={onClose}
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+            aria-label="Close keyboard shortcuts"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -109,7 +118,9 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
         {/* Footer */}
         <div className="flex items-center justify-between px-4 h-9 border-t border-border text-[10px] text-muted-foreground shrink-0">
           <span>5 shortcut groups</span>
-          <span>Press <kbd className="px-1 py-0.5 rounded bg-muted font-mono">?</kbd> to toggle</span>
+          <span>
+            Press <kbd className="px-1 py-0.5 rounded bg-muted font-mono">?</kbd> to toggle
+          </span>
         </div>
       </div>
     </div>,

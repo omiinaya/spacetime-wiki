@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: ISC
 
-import { API_BASE } from "./client";
+import { API_BASE } from './client';
 
 export interface SearchResult {
   data: Array<{
@@ -27,13 +27,13 @@ export async function searchPages(params: {
   limit?: number;
 }): Promise<SearchResult> {
   const queryParams = new URLSearchParams();
-  queryParams.set("q", params.q);
-  if (params.collection_id) queryParams.set("collection_id", params.collection_id);
-  if (params.author_id) queryParams.set("author_id", params.author_id);
-  if (params.from) queryParams.set("from", params.from);
-  if (params.to) queryParams.set("to", params.to);
-  if (params.tags) queryParams.set("tags", params.tags);
-  if (params.limit) queryParams.set("limit", String(params.limit));
+  queryParams.set('q', params.q);
+  if (params.collection_id) queryParams.set('collection_id', params.collection_id);
+  if (params.author_id) queryParams.set('author_id', params.author_id);
+  if (params.from) queryParams.set('from', params.from);
+  if (params.to) queryParams.set('to', params.to);
+  if (params.tags) queryParams.set('tags', params.tags);
+  if (params.limit) queryParams.set('limit', String(params.limit));
   return fetch(`${API_BASE}/api/v1/search?${queryParams.toString()}`).then(async (res) => {
     if (!res.ok) throw new Error(`Search failed: ${res.status}`);
     return res.json();

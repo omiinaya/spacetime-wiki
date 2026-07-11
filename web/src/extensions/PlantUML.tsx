@@ -1,13 +1,13 @@
-import { Node, mergeAttributes } from "@tiptap/core";
-import { ReactNodeViewRenderer } from "@tiptap/react";
-import type { NodeViewProps } from "@tiptap/react";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Node, mergeAttributes } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import type { NodeViewProps } from '@tiptap/react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 // @ts-expect-error - no types
-import plantumlEncoder from "plantuml-encoder";
+import plantumlEncoder from 'plantuml-encoder';
 
 // ─── Default server URL (configurable) ───────────────────────────────────────
 
-const DEFAULT_PLANTUML_SERVER = "https://www.plantuml.com/plantuml";
+const DEFAULT_PLANTUML_SERVER = 'https://www.plantuml.com/plantuml';
 
 // ─── Options ─────────────────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ export interface PlantUMLOptions {
   serverUrl?: string;
 }
 
-declare module "@tiptap/core" {
+declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     plantuml: {
       setPlantUML: (options: { src: string }) => ReturnType;
@@ -28,16 +28,13 @@ declare module "@tiptap/core" {
 
 export function escapeHtml(text: string): string {
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
-export function getDiagramUrl(
-  src: string,
-  serverUrl: string = DEFAULT_PLANTUML_SERVER,
-): string {
+export function getDiagramUrl(src: string, serverUrl: string = DEFAULT_PLANTUML_SERVER): string {
   const encoded = plantumlEncoder.encode(src);
   return `${serverUrl}/svg/${encoded}`;
 }
@@ -52,19 +49,20 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
 }) => {
   const { src } = node.attrs;
   const [showEditor, setShowEditor] = useState(false);
-  const [editSrc, setEditSrc] = useState(src || "");
+  const [editSrc, setEditSrc] = useState(src || '');
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const serverUrl =
-    (editor.extensionManager.extensions.find(
-      (ext: unknown) => ext.name === "plantuml",
-    )?.options as PlantUMLOptions)?.serverUrl || DEFAULT_PLANTUML_SERVER;
+    (
+      editor.extensionManager.extensions.find((ext: unknown) => ext.name === 'plantuml')
+        ?.options as PlantUMLOptions
+    )?.serverUrl || DEFAULT_PLANTUML_SERVER;
 
-  const diagramUrl = src ? getDiagramUrl(src, serverUrl) : "";
+  const diagramUrl = src ? getDiagramUrl(src, serverUrl) : '';
 
   const handleDoubleClick = () => {
-    setEditSrc(src || "");
+    setEditSrc(src || '');
     setShowEditor(true);
   };
 
@@ -76,16 +74,16 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
   };
 
   const handleCancel = () => {
-    setEditSrc(src || "");
+    setEditSrc(src || '');
     setShowEditor(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSave();
     }
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       handleCancel();
     }
   };
@@ -103,7 +101,7 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
   return (
     <div
       className={`plantuml-wrapper my-4 rounded-lg border ${
-        selected ? "border-primary/50 ring-2 ring-primary/20" : "border-border"
+        selected ? 'border-primary/50 ring-2 ring-primary/20' : 'border-border'
       } bg-[#1a1a2e]/50 overflow-hidden`}
       contentEditable={false}
       onDoubleClick={handleDoubleClick}
@@ -111,7 +109,16 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
       {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30 border-b border-border/50">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
           </svg>
@@ -135,8 +142,19 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
             {!imgLoaded && !imgError && (
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
                 </svg>
                 Rendering diagram...
               </div>
@@ -152,7 +170,7 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
             <img
               src={diagramUrl}
               alt="PlantUML Diagram"
-              className={`max-w-full h-auto ${imgLoaded ? "block" : "hidden"}`}
+              className={`max-w-full h-auto ${imgLoaded ? 'block' : 'hidden'}`}
               onError={handleImgError}
               onLoad={handleImgLoad}
             />
@@ -182,9 +200,7 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
             />
             <div className="flex items-center justify-between mt-2">
               <span className="text-[10px] text-muted-foreground/50">
-                {editSrc.length > 0
-                  ? `${editSrc.split('\n').length} lines`
-                  : "Empty diagram"}
+                {editSrc.length > 0 ? `${editSrc.split('\n').length} lines` : 'Empty diagram'}
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -197,7 +213,7 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
                   onClick={handleSave}
                   className="px-3 py-1 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
                 >
-                  {src ? "Update" : "Insert"}
+                  {src ? 'Update' : 'Insert'}
                 </button>
               </div>
             </div>
@@ -211,9 +227,9 @@ const PlantUMLNodeView: React.FC<NodeViewProps> = ({
 // ─── Extension ─────────────────────────────────────────────────────────────────
 
 export const PlantUML = Node.create<PlantUMLOptions>({
-  name: "plantuml",
+  name: 'plantuml',
 
-  group: "block",
+  group: 'block',
   atom: true,
   selectable: true,
   draggable: true,
@@ -231,15 +247,11 @@ export const PlantUML = Node.create<PlantUMLOptions>({
         default: `@startuml\nAlice -> Bob: Hello\nBob -> Alice: Hi!\n@enduml`,
         parseHTML: (el) => {
           const container = el as HTMLElement;
-          return (
-            container.getAttribute("data-plantuml-src") ||
-            container.textContent ||
-            ""
-          );
+          return container.getAttribute('data-plantuml-src') || container.textContent || '';
         },
         renderHTML: (attrs) => {
           if (!attrs.src) return {};
-          return { "data-plantuml-src": attrs.src };
+          return { 'data-plantuml-src': attrs.src };
         },
       },
     };
@@ -248,18 +260,19 @@ export const PlantUML = Node.create<PlantUMLOptions>({
   parseHTML() {
     return [
       {
-        tag: "div[data-plantuml-src]",
+        tag: 'div[data-plantuml-src]',
       },
     ];
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const src = node.attrs.src || "";
+    const src = node.attrs.src || '';
     return [
-      "div",
+      'div',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        "data-plantuml-src": src,
-        class: "plantuml-wrapper my-4 rounded-lg border border-border bg-[#1a1a2e]/50 p-4 overflow-x-auto flex justify-center",
+        'data-plantuml-src': src,
+        class:
+          'plantuml-wrapper my-4 rounded-lg border border-border bg-[#1a1a2e]/50 p-4 overflow-x-auto flex justify-center',
       }),
       src,
     ];
