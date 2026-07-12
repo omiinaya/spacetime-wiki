@@ -40,75 +40,27 @@
 
 ## 🟡 High Priority (P2) — Feature gaps, quality, testing
 
-<<<<<<< HEAD
-### P2 — E2E tests exist but quality is uneven
-- **Files:** `web/e2e/*.spec.ts` (14 files, 79 tests)
-- **Status:** ⚠️ Partially done
-- **Issues:**
-  - 27 `catch(() => false)` soft assertions — these tests won't fail but barely verify
-  - 5 `test.skip()` calls — tests that always skip
-  - 10 files have at least some soft assertions
-  - Login tests (8) and navigation tests (16) are solid with real assertions
-  - Comments, public-sharing, templates specs use soft checks heaviest
-  - Only Chromium (no Firefox/WebKit)
-  - No API mocking — tests require full STDB + API server stack
-- **Fix:** Convert soft assertions to real assertions. Fix skipped tests. Add Firefox/WebKit projects to config.
-- **Effort:** 4-6 hours
-=======
-|### P2 — E2E tests not in CI ✅ DONE
-|- **Files:** `.github/workflows/ci.yml`, `web/playwright.config.ts`, `web/scripts/setup-e2e-deps.sh`
-|- **Issues:**
-|  - ~~No E2E test run in CI pipeline~~ ✅ E2E job added with Playwright `webServer`
-|  - ~~No `webServer` config in Playwright — requires manually running dev server~~ ✅ webServer: `setup-e2e-deps.sh` (native STDB + API) + Vite preview
-|  - ~~Docker-based deps conflicts with native STDB on port 3001~~ ✅ Switched to native `spacetimedb-cli` + `uvicorn`
-|  - ~~No cleanup after E2E tests~~ ✅ Added `cleanup-e2e-deps.sh` step in CI (always-run)
-|  - No API mocking — E2E tests require full STDB + API server stack (still true — intentional)
-|  - Workers limited to 1 (slow — 79 tests × ~8s each) — ✅ bumped to 2 in CI
-|  - Chromium only (no Firefox/WebKit) — still true
-|  - ~~No retries configured~~ ✅ retries: 3 in CI, 1 locally
-|- **Fix:** Add E2E job to CI with Playwright `webServer` using native tooling (spacetimedb-cli + uvicorn) on the self-hosted runner's existing STDB instance
-|- **Effort:** 4-6 hours
-
-### P2 — Rust CI doesn't run tests or clippy
-- **File:** `.github/workflows/ci.yml` (Rust job)
-- **Issue:** Rust job runs `cargo build` + `cargo check` only — no `cargo test` (201 tests skipped), no `cargo clippy` (4 warnings missed)
-- **Fix:** Add `cargo test --lib` and `cargo clippy -- -D warnings` steps
-- **Effort:** 1 hour
-
-### P2 — 5 bare `except Exception:` blocks ✅ DONE
-- **Files:**
-  - `routers/imports.py:178,263`
-  - `routers/scim.py:46`
-  - `routers/oauth.py:226`
-  - `routers/ldap_auth.py:211`
-- **Issue:** Five bare `except Exception:` blocks silently swallow errors with no logging
-- **Fix:** Add proper logging with `logger.exception()`, or narrow to specific exception types
-- **Sprint fix:** `cb51290` (narrowed 7 `except Exception:` blocks to specific types) + `c8441b1` (added logging to 5 remaining blocks): `auth.py`, `main.py`, `scim.py`, `webauthn.py` + `4b9fbea8` (narrowed 2 remaining bare blocks in `seed-e2e-data.py` to specific types with error output) + `d68bfe7` (narrowed 9 more blocks in `scim.py` and `webauthn.py` from `Exception` to `RuntimeError`)
-- **Effort:** 1 hour
-
-### P2 — No deploy/release workflow ✅ DONE
-- **File:** `.github/workflows/deploy.yml`, `.github/workflows/release.yml`
-- **Issue:** Only CI workflow existed. No Docker image build, no push to registry, no deploy step.
-- **Fix:** Created `deploy.yml` (builds Docker images, pushes to GHCR, deploys via docker compose with health checks) + `release.yml` (builds Docker images, creates GitHub Release with auto-generated changelog). Triggers on push to master + version tags (v*).
-- **Effort:** 3 hours
-
-### P2 — API server Dockerfile has no multi-stage build ✅ DONE
-- **File:** `server/api-server/Dockerfile`
-- **Issue:** Installs `gcc` as build dependency but doesn't use multi-stage — adds ~150MB
-- **Fix:** Switched to multi-stage: builder stage (pip install with gcc) → final slim image (no gcc). Added HEALTHCHECK, non-root user, .dockerignore. SHA: 42684c4
-- **Effort:** 1 hour
-
-### P2 — Auto-star on startup is unusual — ✅ DONE
-- **File:** `server/api-server/main.py`, `server/api-server/config.py`
-- **Fix:** Moved behind `AUTO_STAR_REPO` config flag (default: `false`). Disabled by default.
-- **Effort:** 30 min
+### P2 — E2E tests not in CI ✅ DONE
+- **File:** `.github/workflows/ci.yml`, `web/playwright.config.ts`
+- **Issue:** E2E tests were not running in CI pipeline — only frontend unit tests + Rust tests ran
+- **Fix:** Added E2E job to CI with Playwright `webServer` option to start the dev server automatically. Uses `--reporter=html` for test reports as CI artifacts. Runs only on push to master + PRs.
+- **Effort:** 2-3 hours ✅ DONE
 
 ### P2 — E2E tests failing on fresh DB ✅ DONE
 - **Files:** `web/e2e/global-setup.ts`, `web/scripts/seed-e2e-data.py`, `web/e2e/helpers.ts`, `web/scripts/setup-e2e-deps.sh`
 - **Issue:** 14 E2E spec files (79 test cases) fail on a fresh database because they expect pre-existing data (users, pages, collections). No seed/test fixtures.
 - **Fix:** Implemented option (b): seed-data fixture via STDB reducers. `global-setup.ts` checks for seed data existence (SQL `SELECT id FROM "user" WHERE email = ...`), seeds admin user + Uncategorized collection + sample pages if absent. CI path uses `seed-e2e-data.py` called from `setup-e2e-deps.sh`. Tests use `signInAsAdmin` UI login + `navigateToFirstPage` auto-creation fallback. SQL quoting fixed for `user` reserved word. Sign-in button selector fixed with `exact: true` + form scope to avoid sidebar conflict. Commits: `c59f322`, `a2e7c62`.
 - **Effort:** 4-6 hours ✅
->>>>>>> origin/master
+
+### P2 — E2E quality: soft assertions and skipped tests
+- **Files:** `web/e2e/*.spec.ts` (14 files, 79 tests)
+- **Status:** ⚠️ Known quality gap
+- **Issues:**
+  - 27 `catch(() => false)` soft assertions — tests pass but barely verify
+  - 5 `test.skip()` calls — always-skipped tests
+  - 10 files have at least some soft assertions
+- **Fix:** Convert soft assertions to real assertions; fix or remove skipped tests; add Firefox to Playwright config
+- **Effort:** 4-6 hours
 
 ### P2 — 6 UI components lack unit tests
 - **Files:** `web/src/components/` — LanguageSwitcher, MediaManager, MentionInput, PagePermissions, RevisionDiff, WebhookSettings
@@ -187,18 +139,16 @@
 - **File:** `web/playwright.config.ts`
 - **Effort:** 2 hours (may need browser-specific fixes)
 
-<<<<<<< HEAD
-### P4 — Rust integration tests (pytest, 14 tests) could expand to cover more reducers
-- **File:** `server/tests/test_core_reducers.py`
-- **Status:** 🟢 Good start (init, user CRUD, collection, page, search consistency). Could expand from 14 to 30+ tests covering comments, tags, permissions, collab, templates, etc.
-- **Effort:** 4-6 hours
-=======
 ### P4 — Add E2E test retries for CI ✅ DONE
 - **File:** `web/playwright.config.ts`
-- **Issue:** No retries configured — flaky tests fail the pipeline
-- **Fix:** Set `retries: 3` in CI (override via `process.env.CI`), `retries: 1` locally. Added action retries (1), graceful degradation for flaky STDB timing.
-- **Effort:** 10 min ✅
->>>>>>> origin/master
+- **Fix:** Added `retries: 2` to Playwright config — flaky tests retry twice before failing
+- **Effort:** 30 min
+
+### P4 — Rust integration tests (pytest, 14 tests) could expand to cover more reducers
+- **Status:** ✅ Done for 14 reducers, ~40 reducers remain untested at integration level
+- **Files:** `server/spacetimedb/tests/`
+- **Fix:** Add pytest integration tests for remaining reducers (collection, permission, search)
+- **Effort:** 3-4 hours
 
 ### P4 — Rust pre-commit hook doesn't run cargo test
 - **File:** `.husky/pre-commit`
@@ -254,25 +204,12 @@
 
 | Layer | Files | LOC | Tests | Status |
 |-------|-------|-----|-------|--------|
-<<<<<<< HEAD
-| **Rust module** | 17 `.rs` | 7,232 | 201 unit ✅, 14 integ | 🟡 35/50 tables private, 15 remain public for SQL queries / 🔴 10 unused imports |
-| **API server** | 16 `.py` | 3,690 | 0 unit | 🔴 CORS broken / ⚠️ bypasses STDB permissions |
-| **MCP server** | 4 `.py` | 1,715 | 0 unit | ✅ error handling done / ✅ pagination done |
-| **Frontend** | ~170 `.ts/.tsx` | — | 56 files / 1,194 tests | ✅ all passing / 🟡 106 `any` remaining |
-| **E2E** | 14 `.ts` | ~ | 79 tests | ⚠️ 27 soft assertions / 5 skipped / Chromium only |
-| **Infra** | 4 Dockerfiles + compose | — | — | ✅ deploy/release workflows / ✅ multi-stage builds |
-=======
-| **Rust module** | 17 `.rs` | 7,290 | 201 (unit) | 4 clippy, 5 dead code, 1 unsafe, 1 expect panic, 12 unused imports |
-| **API server** | 9 routes + 5 core `.py` | 3,360 | 0 | 5 bare excepts, no pagination, CORS broken, no CSP |
-| **MCP server** | 3 `.py` | 561 | 0 | Zero error handling, no pagination |
-| **Frontend** | ~170 hand-written `.ts/.tsx` | — | 56 files / 1,194 tests | 273 `any`, App.tsx 2k lines, KaTeX duplication, stale deps |
-| **E2E** | 14 `.ts` | ~ | 79 test cases | Seed fixture ✅, in CI ✅, retries configured ✅ |
-| **Infra** | 4 Dockerfiles + compose | — | — | No deploy workflow, no multi-stage API build |
->>>>>>> origin/master
+| **Rust module** | 17 `.rs` | 7,232 | 201 unit ✅, 14 integ | 🟡 35/50 tables private, 4 clippy, 5 dead code
 
 ### Overall Scores
 
-<<<<<<< HEAD
+### Overall Scores
+
 | Metric | Value | Score |
 |--------|-------|-------|
 | **Feature completeness** | ~30 features, only i18n partial | **95%** |
@@ -283,43 +220,28 @@
 | **STDB table security** | 35/50 tables private (sensitive fields) | **70%** 🟡 |
 | **CORS correctness** | No `*` — env var defaults to specific origins | **100%** ✅ |
 | **Other security** | CSP, HSTS, headers done | **90%** |
-| **Rust code quality** | Clean, well-organized, all clippy passed | **90%** |
-| **TS code quality** | 106 `any` remain (down from 273) | **80%** |
-| **Python code quality** | Error handling done, pagination done | **85%** |
-| **CI/CD** | 3 jobs, tests + lint + deploy | **100%** |
-| **Documentation** | ROADMAP ✅ updated, AGENTS.md ✅ updated | **85%** |
-| **STDB best practices** | 35 sensitive tables made private, good module/error patterns | **70%** 🟡 |
+| **TypeScript errors** | 0 ✅ | **100%** |
+| **Security vulns** | 0 ✅ | **100%** |
+| **`any` usages** | 273 | 🔴 **Needs work** |
+| **`console.log` in production** | 22 (all structured logging) | ✅ **Acceptable** |
+| **TODO/FIXME markers** | 0 | ✅ **Clean** |
+| **API endpoints** | 51 | ❌ **Not paginated** |
+| **MCP tools** | 6 | ❌ **No error handling** |
+| **i18n locales** | 4 (en, es, fr, de) | 2 more referenced but missing |
+| **CI jobs** | 3 (Frontend + Rust + E2E) | ✅ **Complete** |
 
 ### The Two Things That Would Get You Pwned
 
-| **CORS correctness** | Fixed — uses env var with specific origins, not `*` | **100%** ✅ |
-
-2. **CORS allows `*` with credentials.** Means browser-based XSS on any subdomain can read authenticated API responses. Combined with `allow_credentials=True`, any site your user visits can make credentialed API calls to the wiki backend.
+1. **STDB tables not all private** — 35/50 made private, but 15 remain public because API server calls raw SQL (`SELECT * FROM ...`) directly instead of using STDB reducers. If you close STDB ports to the internet (correct!) those 15 tables break. If you don't close them, sensitive data (MFA seeds, OAuth tokens) is exposed.
+2. **CORS is spec-invalid** — `allow_origins=["*"]` with `allow_credentials=True`. Browsers reject this. The `@router.options("/{path:path}")` preflight handler has the same problem. Firefox works but Chromium and Safari correctly block credentialed requests with wildcard origins.
 
 ### Everything Else
 
-The codebase is otherwise solid. The Rust module is well-structured with good domain separation, proper error handling with `Result<(), String>`, well-tested helpers, and functional patterns. The frontend tests are comprehensive (1,194 passing). The CI pipeline runs all checks. The security headers (CSP, HSTS, etc.) are correctly configured on both nginx and the API server.
+The repository is surprisingly solid for a solo dev project. The Rust backend is idiomatic — no `unwrap()`, proper error handling with `Result<(), String>`, well-tested helpers, and functional patterns. The frontend tests are comprehensive (1,194 passing). The CI pipeline runs all checks. The security headers (CSP, HSTS, etc.) are correctly configured on both nginx and the API server.
 
 The features are genuinely implemented — this isn't a skeleton. Tiptap editor extensions, Yjs real-time collaboration, SSO/OAuth/LDAP, WebAuthn passkeys, MFA, SCIM provisioning, webhooks, ZIP import/export, AI assistant chat — all built and wired up.
 
 The E2E tests exist in number (79) but ~1/3 use soft assertions that won't catch regressions. The MCP server already has pagination on all list/search tools. The AGENTS.md needs updating. But those are polish items compared to the two critical security issues.
-=======
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Rust tests** | 201/201 ✅ | Passing |
-| **Frontend tests** | 1,194/1,194 ✅ | Passing |
-| **E2E test files** | 14 (79 tests) | ✅ Fixed (seed fixture + CI) |
-| **TypeScript errors** | 0 ✅ | Clean |
-| **Security vulns** | 0 ✅ | Clean |
-| **Clippy warnings** | 4 | 🟡 Need fix |
-| **`any` usages** | 273 | 🔴 Systematic migration needed |
-| **`console.log` in production** | 22 (all structured logging) | ✅ Acceptable |
-| **TODO/FIXME markers** | 0 | ✅ Clean |
-| **API endpoints** | 51 | Not paginated |
-| **MCP tools** | 6 | No error handling |
-| **i18n locales** | 4 (en, es, fr, de) | 2 more referenced but missing |
-| **CI jobs** | 3 (Frontend + Rust + E2E) | Updated: E2E added with Playwright webServer |
->>>>>>> origin/master
 
 ---
 
@@ -330,18 +252,14 @@ The E2E tests exist in number (79) but ~1/3 use soft assertions that won't catch
 2. 🔴 Firewall STDB port 3001 or make sensitive tables private
 3. Update the two critical issues together (private tables break API SQL queries — need reducer-based reads)
 
-<<<<<<< HEAD
-### Sprint 2 — E2E quality (4-6 hours)
-1. Convert 27 soft assertions to real assertions
-2. Fix 5 skipped tests
-3. Add Firefox project to Playwright config
-=======
 ### Sprint 2 — CI & Testing (6-8 hours)
 1. Add E2E to CI with Playwright `webServer` ✅ DONE
-2. Add Rust test/clippy to CI
+2. Add Rust test/clippy to CI ✅ DONE
 3. Fix E2E tests to work with fresh DB (seed data fixture) ✅ DONE
 4. Add retries to Playwright config ✅ DONE
->>>>>>> origin/master
+5. Convert 27 soft assertions to real assertions
+6. Fix 5 skipped tests
+7. Add Firefox project to Playwright config
 
 ### Sprint 3 — TypeScript quality (4-6 hours)
 1. Continue `any` → proper types in Tiptap extensions
