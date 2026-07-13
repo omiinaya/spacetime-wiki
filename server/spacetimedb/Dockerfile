@@ -1,4 +1,4 @@
-FROM rust:1.85-alpine AS builder
+FROM rust:1.97-alpine AS builder
 
 WORKDIR /module
 
@@ -15,7 +15,7 @@ RUN cargo build --release --target-dir /tmp/module-build 2>&1 || \
     echo "Module build will be done with spacetime CLI in final stage"
 
 # ─── CLI + Publish stage ────────────────────────────────────────────────────
-FROM rust:1.85-alpine
+FROM rust:1.97-alpine
 
 RUN apk add --no-cache musl-dev pkgconfig openssl-dev curl bash
 
