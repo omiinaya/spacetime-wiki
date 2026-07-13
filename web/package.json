@@ -83,7 +83,7 @@
     "@types/diff": "^8.0.0",
     "@types/jszip": "^3.4.1",
     "@types/katex": "^0.16.8",
-    "@types/node": "^26.0.1",
+    "@types/node": "^26.1.1",
     "@types/pako": "^2.0.4",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
