@@ -18,11 +18,10 @@
 - **Note:** `PRIVACY-AUDIT.md` referenced in prior roadmap doesn't exist
 
 ### P0 — CORS config is spec-invalid
-- **File:** `server/api-server/main.py:115`
-- **Status:** ❌ UNFIXED
+- **File:** `server/api-server/main.py:115`, `server/api-server/config.py:22-43`
+- **Status:** ✅ DONE (2026-07-13)
 - **Issue:** `allow_origins=["*"]` + `allow_credentials=True` — browsers reject this per CORS spec
-- **Fix:** Replace with explicit origins list (e.g., `["http://localhost:5184", "https://wiki.example.com"]`)
-- **Effort:** 30 min
+- **Fix:** Added `cors_origins_safe` property in `config.py` that validates origins and rejects wildcards when credentials are enabled. Falls back to sensible defaults if unsafe config detected.
 
 ### P1 — API server bypasses STDB permission system
 - **Files:** `server/api-server/routers/*.py`, `server/api-server/stdb_client.py`

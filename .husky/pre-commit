@@ -11,8 +11,8 @@ npx lint-staged
 # Check if Rust files were modified
 RUST_CHANGED=$(git diff --cached --name-only | grep -c '\.rs$' || true)
 if [ "$RUST_CHANGED" -gt 0 ]; then
-  echo "⟦pre-commit⟧ Rust files changed — running cargo check..."
-  cd server/spacetimedb && cargo check 2>&1
+  echo "⟦pre-commit⟧ Rust files changed — running cargo check + cargo test..."
+  cd server/spacetimedb && cargo check 2>&1 && cargo test 2>&1
   cd "$OLDPWD"
 fi
 
