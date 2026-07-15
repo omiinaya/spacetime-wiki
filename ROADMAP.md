@@ -67,10 +67,10 @@
 - **Fix:** Write Vitest component tests. Range from 68–410 LOC each.
 - **Effort:** 4-6 hours
 
-### P2 — No frontend coverage tracking in CI
-- **Status:** ❌ Not done
-- **Fix:** Add `npx vitest run --coverage` to CI and enforce minimum % or track trend
-- **Effort:** 1 hour
+### P2 — No frontend coverage tracking in CI ✅ DONE
+- **File:** `.github/workflows/ci.yml:46-47`
+- **Status:** ✅ DONE — coverage step already present (`npx vitest run --coverage`)
+- **Effort:** 1 hour (done in prior commit)
 
 ### P2 — No Rust doc generation in CI
 - **Status:** ❌ Not done
@@ -90,25 +90,18 @@
 - **Fix:** Continue systematic migration. Remaining cases are genuinely harder (ProseMirror flexible schema).
 - **Effort:** 4-6 hours
 
-### P3 — 10 Rust unused import warnings (`use super::*`)
+### P3 — 10 Rust unused import warnings (`use super::*`) ✅ DONE
 - **Files:** `src/users.rs:90`, `src/comments.rs`, `src/tags.rs`, `src/favorites.rs`, `src/attachments.rs`, `src/templates.rs`, `src/api_keys.rs`, `src/app_settings.rs`, `src/collection_members.rs`, `src/share_links.rs`
-- **Status:** 🟡 Was 12, 2 fixed. 10 remain.
-- **Fix:** Remove unused `use super::*` from test modules
-- **Effort:** 10 min
+- **Status:** ✅ DONE — only 5 `use super::*` remain, all in active use. `cargo clippy` passes clean.
+- **Fix:** Were 12, now only 5 remain in use. Completed in prior passes.
 
-### P3 — i18n: ja.json and zh.json referenced but missing
+### P3 — i18n: ja.json and zh.json referenced but missing ✅ DONE
 - **File:** `web/src/i18n/locales/`
-- **Status:** ⚠️ Known gap
-- **Issue:** Japanese and Chinese languages listed but no translation files. Falls back silently to English.
-- **Fix:** Either add locale files or remove options from language switcher
-- **Effort:** 30 min (remove) or 8+ hours (add translations)
+- **Status:** ✅ DONE — config only imports en/es/fr/de. `LANGUAGE_LABELS` in LanguageSwitcher only has those 4. ja/zh not referenced anywhere in codebase. Likely removed in a prior refactor.
 
-### P3 — KaTeX chunk duplication in build
+### P3 — KaTeX chunk duplication in build ✅ DONE
 - **File:** `web/vite.config.ts`
-- **Status:** ⚠️ Known issue
-- **Issue:** Build produces two 129KB KaTeX chunks instead of one
-- **Fix:** Add manual chunks config in `rollupOptions.output.manualChunks` for katex
-- **Effort:** 30 min
+- **Status:** ✅ DONE — `manualChunks` already includes `if (id.includes(\"node_modules/katex\")) { return \"katex\"; }` at line 40-42.
 
 ### P3 — AGENTS.md is stale
 - **File:** `AGENTS.md`
@@ -149,10 +142,9 @@
 - **Fix:** Add pytest integration tests for remaining reducers (collection, permission, search)
 - **Effort:** 3-4 hours
 
-### P4 — Rust pre-commit hook doesn't run cargo test
+### P4 — Rust pre-commit hook doesn't run cargo test ✅ DONE
 - **File:** `.husky/pre-commit`
-- **Status:** ❌ Not done — only runs `cargo check`, not `cargo test`
-- **Effort:** 10 min
+- **Status:** ✅ DONE — pre-commit hook runs both `cargo check` AND `cargo test` when Rust files changed (commit e9c1c8d4).
 
 ### P5 — Repetitive struct-construction tests (~2,000 lines)
 - **File:** `server/spacetimedb/src/tables.rs`
@@ -194,6 +186,11 @@
 | P4 — E2E retries | Done | ✅ DONE |
 | P4 — nginx config extracted to file | Dedicated web/nginx.conf | ✅ DONE |
 | P4 — 5 dead-code `default_*()` test helpers | Removed 5 unused test helpers | ✅ DONE |
+| P4 — Pre-commit runs cargo test | Added alongside cargo check when Rust files change (commit e9c1c8d4) | ✅ DONE |
+| P3 — Frontend coverage in CI | CI already has `npx vitest run --coverage` step | ✅ DONE |
+| P3 — KaTeX chunk dedup | vite.config.ts already has manualChunk for katex | ✅ DONE |
+| P3 — i18n missing ja/zh locales | Config only imports 4 locales; no ja/zh references in codebase | ✅ DONE |
+| P3 — Rust unused import warnings | Only 5 `use super::*` remain (all used); clippy passes clean | ✅ DONE |
 
 ---
 
