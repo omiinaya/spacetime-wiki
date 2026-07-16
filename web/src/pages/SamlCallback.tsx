@@ -42,7 +42,7 @@ export default function SamlCallback() {
           const issuerEl = xmlDoc.querySelector('Issuer');
           if (issuerEl?.textContent) {
             const providers = await api.saml.list();
-            const matched = providers.find((p: unknown) => p.entity_id === issuerEl!.textContent);
+            const matched = providers.find(p => p.entity_id === issuerEl!.textContent);
             if (matched) providerId = matched.id;
           }
         }
@@ -100,8 +100,9 @@ export default function SamlCallback() {
           return;
         }
         navigate('/', { replace: true });
-      } catch (err: unknown) {
-        setStatus(`Error: ${err.message || err}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setStatus(`Error: ${message}`);
       }
     })();
   }, [navigate]);
