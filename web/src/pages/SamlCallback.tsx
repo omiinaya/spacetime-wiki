@@ -42,7 +42,7 @@ export default function SamlCallback() {
           const issuerEl = xmlDoc.querySelector('Issuer');
           if (issuerEl?.textContent) {
             const providers = await api.saml.list();
-            const matched = providers.find(p => p.entity_id === issuerEl!.textContent);
+            const matched = providers.find((p) => p.entity_id === issuerEl!.textContent);
             if (matched) providerId = matched.id;
           }
         }
