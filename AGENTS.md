@@ -261,15 +261,15 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 
 | Metric | Count |
 |--------|-------|
-| **STDB Reducers** | 140 (67 in `lib.rs`, 73 across 14 module files) |
+| **STDB Reducers** | 141 (68 in `lib.rs`, 73 across 15 module files) |
 | **STDB Tables** | 50 (35 private, 15 remain public for SQL queries) |
-| **Rust Tests** | 201 unit (Rust) + 14 integration (Python) |
-| **Frontend Test Files** | 56 |
-| **Frontend Tests** | 1,194 (Vitest) |
+| **Rust Tests** | 201 unit (Rust) + 12 integration (Python) |
+| **Frontend Test Files** | 57 |
+| **Frontend Tests** | 1,207 (Vitest) |
 | **E2E Spec Files** | 14 |
 | **E2E Test Cases** | 79 |
-| **API Endpoints** | 51 (FastAPI REST gateway) |
-| **MCP Tools** | 6 (`wiki_search`, `wiki_read_page`, `wiki_list_collections`, `wiki_list_pages`, `wiki_get_backlinks`, `wiki_get_linked_pages`) |
+| **API Endpoints** | 52 (FastAPI REST gateway) |
+| **MCP Tools** | 7 (`wiki_health`, `wiki_search`, `wiki_read_page`, `wiki_list_collections`, `wiki_list_pages`, `wiki_get_backlinks`, `wiki_get_linked_pages`) |
 
 ### Python / MCP Server Quality
 
