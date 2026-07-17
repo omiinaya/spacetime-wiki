@@ -72,6 +72,7 @@ spacetime-wiki/
 │   │   ├── src/sso.rs            # SSO/OAuth/OIDC/SAML
 │   │   ├── src/app_settings.rs   # App-wide settings
 │   │   ├── src/collection_members.rs # Collection membership
+│   │   ├── src/collaboration.rs  # Real-time Yjs collab + cursor sync
 │   │   └── Cargo.toml            # Dependencies
 │   └── mcp-server/               # MCP server for AI agents (stdio)
 │       ├── server.py             # MCP tools + resource handlers
@@ -261,7 +262,7 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 
 | Metric | Count |
 |--------|-------|
-| **STDB Reducers** | 141 (68 in `lib.rs`, 73 across 15 module files) |
+| **STDB Reducers** | 141 (68 in `lib.rs`, 73 across 14 module files) |
 | **STDB Tables** | 50 (35 private, 15 remain public for SQL queries) |
 | **Rust Tests** | 201 unit (Rust) + 12 integration (Python) |
 | **Frontend Test Files** | 57 |
