@@ -56,11 +56,11 @@ spacetime-wiki/
 │   │   ├── auth.py               # Bearer + API key auth
 │   │   └── config.py             # Env-based config
 │   ├── spacetimedb/              # Rust module — tables + reducers
-│   │   ├── src/lib.rs            # ~1950 lines: tables, reducers, logic
+│   │   ├── src/lib.rs            # ~2525 lines: tables, reducers, logic
 │   │   ├── src/tables.rs         # Table schemas (pages, collections, users...)
 │   │   ├── src/pages.rs          # Page CRUD reducers
 │   │   ├── src/users.rs          # User management reducers
-│   │   ├── src/helpers.rs        # Utility functions (~200 tests)
+│   │   ├── src/helpers.rs        # Utility functions (~41 tests)
 │   │   ├── src/permissions.rs    # RBAC + per-page/collection permissions
 │   │   ├── src/attachments.rs    # File attachment handling
 │   │   ├── src/share_links.rs    # Public share link logic
@@ -90,7 +90,7 @@ spacetime-wiki/
 ## 3. Task-to-File Mapping
 
 ### STDB Reducers (SpacetimeDB Rust module)
-All reducers live in `server/spacetimedb/src/lib.rs` (~1950 lines). Additional
+All reducers live in `server/spacetimedb/src/lib.rs` (~2525 lines). Additional
 logic is split across topic modules:
 
 | File | Responsibility |
@@ -99,7 +99,7 @@ logic is split across topic modules:
 | `tables.rs` | Table schemas & struct definitions |
 | `pages.rs` | Page creation, update, delete, restore, duplicate, move, status |
 | `users.rs` | User create, update, avatar, roles |
-| `helpers.rs` | Auth hashing, slug generation, IDs, validation (~200 tests) |
+| `helpers.rs` | Auth hashing, slug generation, IDs, validation (~41 tests) |
 | `permissions.rs` | RBAC, per-page ACL, collection-level permissions |
 | `attachments.rs` | File refs, blob storage, URL generation |
 | `share_links.rs` | Public share links with password + expiration |
