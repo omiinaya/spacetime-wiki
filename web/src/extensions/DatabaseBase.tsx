@@ -27,7 +27,7 @@ const CellEditor: React.FC<{
   onCancel: () => void;
 }> = ({ value, fieldType, onSave, onCancel }) => {
   const [editValue, setEditValue] = useState(value || '');
-  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -46,7 +46,7 @@ const CellEditor: React.FC<{
   if (fieldType === 'number') {
     return (
       <input
-        ref={inputRef as any}
+        ref={inputRef}
         type="number"
         value={editValue}
         onChange={(e) => setEditValue(e.target.value)}
@@ -60,7 +60,7 @@ const CellEditor: React.FC<{
   if (fieldType === 'checkbox') {
     return (
       <input
-        ref={inputRef as any}
+        ref={inputRef}
         type="checkbox"
         checked={editValue === 'true'}
         onChange={(e) => {
@@ -73,7 +73,7 @@ const CellEditor: React.FC<{
 
   return (
     <input
-      ref={inputRef as any}
+      ref={inputRef}
       type="text"
       value={editValue}
       onChange={(e) => setEditValue(e.target.value)}
