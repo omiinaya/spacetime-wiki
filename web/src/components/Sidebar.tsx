@@ -382,7 +382,7 @@ export function Sidebar(props: SidebarProps) {
 
         {/* Import buttons */}
         <input
-          ref={props.importRef as any}
+          ref={props.importRef}
           type="file"
           accept=".md,.txt"
           onChange={props.handleImportMD}
@@ -401,7 +401,7 @@ export function Sidebar(props: SidebarProps) {
           {props.importing ? 'Importing...' : 'Import MD'}
         </button>
         <input
-          ref={props.notionImportRef as any}
+          ref={props.notionImportRef}
           type="file"
           accept=".zip,.html,.htm"
           onChange={props.handleImportNotion}
@@ -420,7 +420,7 @@ export function Sidebar(props: SidebarProps) {
           {props.importingNotion ? 'Importing...' : 'Import Wiki'}
         </button>
         <input
-          ref={props.confluenceImportRef as any}
+          ref={props.confluenceImportRef}
           type="file"
           accept=".zip"
           onChange={props.handleImportConfluence}
