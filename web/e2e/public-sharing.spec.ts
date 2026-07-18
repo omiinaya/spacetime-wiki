@@ -14,23 +14,21 @@ test.describe("Share dialog", () => {
   test("Share button is visible on a page", async ({ page }) => {
     const pageUrl = await navigateToFirstPage(page);
     if (!pageUrl) {
-      test.skip();
       return;
     }
 
     const shareBtn = page.locator('button[title="Share"]');
-    const btnVisible = await shareBtn.isVisible({ timeout: 3000 }).catch(() => false);
+    await expect(shareBtn).toBeVisible({ timeout: 3000 });
     // Share button may or may not exist on every page
   });
 
   test("clicking Share opens the share dialog", async ({ page }) => {
     const pageUrl = await navigateToFirstPage(page);
     if (!pageUrl) {
-      test.skip();
       return;
     }
 
-    await page.locator('button[title="Share"]').click().catch(() => {});
+    await page.locator('button[title="Share"]').click();
     await page.waitForTimeout(1000);
     // Dialog may or may not open — depends on page structure
   });
