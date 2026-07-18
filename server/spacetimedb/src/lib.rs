@@ -2222,12 +2222,10 @@ pub fn get_dashboard_stats(ctx: &ReducerContext) -> Result<(), String> {
     // Store stats in AppSetting for frontend to read via subscription
     // Using a more stable approach: directly readable from the frontend
     ctx.db.app_setting().key().update(AppSetting {
-        id: "dashboard_stats".to_string(),
         key: "dashboard_stats".to_string(),
         value: format!(r#"{{"total_pages":{},"total_users":{},"total_collections":{},"total_comments":{},"total_attachments":{},"published_pages":{},"draft_pages":{},"archived_pages":{},"deleted_pages":{},"total_storage_bytes":{}}}"#,
             total_pages, total_users, total_collections, total_comments, total_attachments,
             published_pages, draft_pages, archived_pages, deleted_pages, total_storage_bytes),
-        created_at: now_ms(ctx),
         updated_at: now_ms(ctx),
     });
 
