@@ -5,9 +5,6 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
-# ─── Helper to import the server module fresh per test ────────────────────
-
-
 @pytest.fixture
 def server_module():
     """Return a freshly-imported ``server`` module.
@@ -21,11 +18,8 @@ def server_module():
     return server_mod
 
 
-# ─── Tests for tool definitions ───────────────────────────────────────────
-
-
 class TestListTools:
-    """Verify the 6 (actually 7) tool definitions returned by list_tools()."""
+    """Verify tool definitions returned by list_tools()."""
 
     def test_returns_seven_tools(self, server_module):
         import server as srv
@@ -59,9 +53,6 @@ class TestListTools:
         rp = [t for t in tools if t.name == "wiki_read_page"][0]
         schema = rp.inputSchema
         assert "page_id" in schema.get("required", [])
-
-
-# ─── Tests for tool dispatch / call_tool ──────────────────────────────────
 
 
 class TestToolDispatch:
@@ -183,30 +174,12 @@ class TestToolDispatch:
         assert "error" in data
 
     @pytest.mark.asyncio
-    async def test_stdb_error_returns_error_response(self, server_module, stdb_mocks):
+    async def test_missing_required_arg(self, server_module, stdb_mocks):
         import server as srv
-        stdb_mocks["search_pages"].side_effect = RuntimeError("STDB down")
-        # We need to properly mock STDBError - but since we patched STDBError to RuntimeError,
-        # server code checks isinstance(error, STDBError) which is now RuntimeError.
-        # The server's _tool_error checks: isinstance(error, (ValueError, TypeError)) first,
-        # then TimeoutError, then STDBError (now RuntimeError), so let's just check we get an error
-        # Actually the patch in conftest replaces STDBError with RuntimeError in stdb_client module,
-        # but the server module imported STDBError before the patch. Let's see.
-        # Actually the conftest patches AFTER module load... but our fixture design patches before
-        # import. Let's instead just make search_pages raise a ValueError that simulates validation.
-        pass
-
-    @pytest.mark.asyncio
-    async def test_empty_arguments_error(self, server_module, stdb_mocks):
-        import server as srv
-        # Missing required arg for wiki_read_page
         result = await srv.call_tool("wiki_read_page", {})
         text = result[0].text
         data = json.loads(text)
         assert "error" in data
-
-
-# ─── Tests for resource handlers ──────────────────────────────────────────
 
 
 class TestResources:
@@ -215,8 +188,8 @@ class TestResources:
     def test_list_resources(self, server_module, stdb_mocks):
         import server as srv
         stdb_mocks["list_pages"].return_value = [
-            {"id": "p1", "title": "Page1", "slug": "page1", "updated_at": "2024-01-01",
-             "collection_id": None}
+            {"id": "p1", "title": "Page1", "slug": "page1",
+             "updated_at": "2024-01-01", "collection_id": None}
         ]
         resources = srv.list_resources()
         assert len(resources) >= 1
@@ -262,6 +235,14 @@ class TestResources:
         assert data.get("name") == "Docs"
 
     @pytest.mark.asyncio
+    async def test_read_resource_collection_not_found(self, server_module, stdb_mocks):
+        import server as srv
+        stdb_mocks["get_collection"].return_value = None
+        result = await srv.read_resource("wiki://collections/nonexistent")
+        data = json.loads(result)
+        assert "error" in data
+
+    @pytest.mark.asyncio
     async def test_read_resource_unknown_uri(self, server_module):
         import server as srv
         result = await srv.read_resource("wiki://unknown/foo")
@@ -275,3 +256,43 @@ class TestResources:
         result = await srv.read_resource("")
         data = json.loads(result)
         assert "error" in data
+
+    @pytest.mark.asyncio
+    async def test_read_resource_invalid_page_id(self, server_module, stdb_mocks):
+        import server as srv
+        stdb_mocks["get_page"].side_effect = ValueError("Invalid ID")
+        result = await srv.read_resource("wiki://pages/invalid")
+        data = json.loads(result)
+        assert "error" in data
+
+    @pytest.mark.asyncio
+    async def test_read_resource_stdb_error(self, server_module, stdb_mocks):
+        import server as srv
+        stdb_mocks["get_page"].side_effect = RuntimeError("STDB error")
+        result = await srv.read_resource("wiki://pages/p1")
+        data = json.loads(result)
+        assert "error" in data
+
+
+class TestErrorHandling:
+    """Test error handling utilities."""
+
+    def test_error_response_format(self, server_module):
+        import server as srv
+        result = srv._error_response(srv.MCPErrorCode.VALIDATION_ERROR, "test error")
+        text = result[0].text
+        data = json.loads(text)
+        assert data["error"]["code"] == "VALIDATION_ERROR"
+        assert "test error" in data["error"]["message"]
+
+    def test_text_helper(self, server_module):
+        import server as srv
+        result = srv._text("hello")
+        assert result[0].text == "hello"
+
+    def test_tool_error_validation(self, server_module):
+        import server as srv
+        result = srv._tool_error("test_tool", ValueError("bad value"), "validation")
+        text = result[0].text
+        data = json.loads(text)
+        assert data["error"]["code"] == "VALIDATION_ERROR"
