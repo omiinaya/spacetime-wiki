@@ -24,7 +24,7 @@ test.describe("Page features", () => {
     const aside = page.locator("aside");
     // Look for any collection-like text - may show collections or not
     const collectionElement = aside.locator("button").filter({ hasText: /Uncategorized|Engineering|Design|Marketing|Research/i });
-    const collectionVisible = await collectionElement.first().isVisible({ timeout: 5000 }).catch(() => false);
+    await expect(collectionElement.first()).toBeVisible({ timeout: 5000 });
     // Collections may or may not exist — that's fine
     if (collectionVisible) {
       const text = await collectionElement.first().textContent();
@@ -34,11 +34,9 @@ test.describe("Page features", () => {
 
   test("Filters button exists and is clickable", async ({ page }) => {
     const filtersButton = page.locator("aside").getByRole("button", { name: "Filters" });
-    const btnVisible = await filtersButton.isVisible({ timeout: 3000 }).catch(() => false);
-    if (btnVisible) {
-      await filtersButton.click();
-      await page.waitForTimeout(500);
-    }
+    await expect(filtersButton).toBeVisible({ timeout: 3000 });
+    await filtersButton.click();
+    await page.waitForTimeout(500);
   });
 });
 
@@ -95,7 +93,7 @@ test.describe("New page creation flow", () => {
 
     // Template picker modal should appear
     const templateModal = page.getByRole("heading", { name: "New page from template" });
-    const modalVisible = await templateModal.isVisible({ timeout: 5000 }).catch(() => false);
+    const modalVisible = await templateModal.isVisible({ timeout: 5000 });
     if (!modalVisible) {
       // May have already navigated to /new directly
       return;
