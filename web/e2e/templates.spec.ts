@@ -20,7 +20,7 @@ test.describe("Templates — picker and usage", () => {
 
     // Template picker modal may appear
     const templateHeading = page.getByRole("heading", { name: /New page from template|template/i });
-    const headingVisible = await templateHeading.isVisible({ timeout: 3000 }).catch(() => false);
+    await expect(templateHeading).toBeVisible({ timeout: 3000 });
     // May navigate directly to /new without template picker
   });
 
@@ -32,7 +32,7 @@ test.describe("Templates — picker and usage", () => {
     await page.waitForTimeout(500);
 
     const blankPageBtn = page.getByRole("button", { name: /Blank page/i });
-    if (await blankPageBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (await blankPageBtn.isVisible({ timeout: 3000 })) {
       await blankPageBtn.click();
       await page.waitForURL(/\/new/, { timeout: 10000 });
       await expect(page.locator(".ProseMirror")).toBeVisible({ timeout: 15000 });
