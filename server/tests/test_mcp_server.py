@@ -348,3 +348,313 @@ class TestHandleWikiListCollections:
                      side_effect=STDBError("db err", code=STDBErrorCode.QUERY_FAILED))
         result = await _handle_wiki_list_collections({})
         assert "Database error" in result[0].text
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tool: wiki_list_pages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestHandleWikiListPages:
+    async def test_list_pages(self, mocker) -> None:
+        fake = [
+            {"id": "p1", "title": "Page One", "slug": "page-one",
+             "text_content": "Content", "updated_at": "2024-01-01",
+             "created_at": "2024-01-01T00:00:00Z", "status": "published"},
+        ]
+        mocker.patch("mcp_server.server.list_pages", return_value=fake)
+        result = await _handle_wiki_list_pages({"limit": 10, "offset": 0})
+        text = result[0].text
+        assert "Page One" in text
+        assert "p1" in text
+
+    async def test_list_pages_defaults(self, mocker) -> None:
+        mocker.patch("mcp_server.server.list_pages", return_value=[])
+        result = await _handle_wiki_list_pages({})
+        assert "No pages found" in result[0].text
+
+    async def test_list_pages_with_collection(self, mocker) -> None:
+        fake = [{"id": "p1", "title": "In Coll", "slug": "in-coll",
+                 "text_content": "", "updated_at": "2024-01-01",
+                 "created_at": "2024-01-01T00:00:00Z", "status": "published"}]
+        mocker.patch("mcp_server.server.list_pages", return_value=fake)
+        result = await _handle_wiki_list_pages({"collection_id": "c1", "limit": 10, "offset": 0})
+        text = result[0].text
+        assert "In Coll" in text
+
+    async def test_list_pages_stdb_error(self, mocker) -> None:
+        mocker.patch("mcp_server.server.list_pages",
+                     side_effect=STDBError("db err", code=STDBErrorCode.QUERY_FAILED))
+        result = await _handle_wiki_list_pages({})
+        assert "Database error" in result[0].text
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tool: wiki_get_backlinks
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestHandleWikiGetBacklinks:
+    async def test_get_backlinks(self, mocker) -> None:
+        fake = [
+            {"id": "p2", "title": "Referrer", "slug": "referrer",
+             "text_content": "See p1", "updated_at": "2024-01-01",
+             "created_at": "2024-01-01T00:00:00Z", "status": "published"},
+        ]
+        mocker.patch("mcp_server.server.get_backlinks", return_value=fake)
+        result = await _handle_wiki_get_backlinks({"page_id": "p1", "limit": 10, "offset": 0})
+        text = result[0].text
+        assert "Referrer" in text
+
+    async def test_get_backlinks_empty(self, mocker) -> None:
+        mocker.patch("mcp_server.server.get_backlinks", return_value=[])
+        result = await _handle_wiki_get_backlinks({"page_id": "p1"})
+        assert "No pages link" in result[0].text
+
+    async def test_get_backlinks_missing_id(self) -> None:
+        result = await _handle_wiki_get_backlinks({})
+        assert "Missing required argument" in result[0].text
+
+    async def test_get_backlinks_stdb_error(self, mocker) -> None:
+        mocker.patch("mcp_server.server.get_backlinks",
+                     side_effect=STDBError("err", code=STDBErrorCode.QUERY_FAILED))
+        result = await _handle_wiki_get_backlinks({"page_id": "p1"})
+        assert "Database error" in result[0].text
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tool: wiki_get_linked_pages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestHandleWikiGetLinkedPages:
+    async def test_get_linked_pages(self, mocker) -> None:
+        fake = [
+            {"id": "p2", "title": "Linked", "slug": "linked",
+             "text_content": "", "updated_at": "2024-01-01",
+             "created_at": "2024-01-01T00:00:00Z", "status": "published"},
+        ]
+        mocker.patch("mcp_server.server.get_linked_pages", return_value=fake)
+        result = await _handle_wiki_get_linked_pages({"page_id": "p1", "limit": 10, "offset": 0})
+        text = result[0].text
+        assert "Linked" in text
+
+    async def test_get_linked_pages_empty(self, mocker) -> None:
+        mocker.patch("mcp_server.server.get_linked_pages", return_value=[])
+        result = await _handle_wiki_get_linked_pages({"page_id": "p1"})
+        assert "No linked pages" in result[0].text
+
+    async def test_get_linked_pages_missing_id(self) -> None:
+        result = await _handle_wiki_get_linked_pages({})
+        assert "Missing required argument" in result[0].text
+
+    async def test_get_linked_pages_stdb_error(self, mocker) -> None:
+        mocker.patch("mcp_server.server.get_linked_pages",
+                     side_effect=STDBError("err", code=STDBErrorCode.QUERY_FAILED))
+        result = await _handle_wiki_get_linked_pages({"page_id": "p1"})
+        assert "Database error" in result[0].text
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tool registry & dispatch (call_tool)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestToolRegistry:
+    def test_all_tools_registered(self) -> None:
+        """All 7 tool handlers should be present in _TOOL_HANDLERS."""
+        expected = {
+            "wiki_health",
+            "wiki_search",
+            "wiki_read_page",
+            "wiki_list_collections",
+            "wiki_list_pages",
+            "wiki_get_backlinks",
+            "wiki_get_linked_pages",
+        }
+        assert set(_TOOL_HANDLERS.keys()) == expected
+
+    def test_tool_handlers_are_callable(self) -> None:
+        for name, handler in _TOOL_HANDLERS.items():
+            assert callable(handler), f"{name} handler is not callable"
+
+
+class TestCallTool:
+    async def test_call_known_tool(self, mocker) -> None:
+        mocker.patch("mcp_server.server.search_pages", return_value=[])
+        result = await call_tool("wiki_search", {"query": "test"})
+        assert len(result) == 1
+        assert isinstance(result[0], TextContent)
+
+    async def test_call_unknown_tool(self) -> None:
+        result = await call_tool("nonexistent", {})
+        payload = json.loads(result[0].text)
+        assert payload["error"]["code"] == "VALIDATION_ERROR"
+        assert "Unknown tool" in payload["error"]["message"]
+
+    async def test_call_non_dict_arguments(self) -> None:
+        result = await call_tool("wiki_health", "not-a-dict")  # type: ignore[arg-type]
+        payload = json.loads(result[0].text)
+        assert payload["error"]["code"] == "VALIDATION_ERROR"
+
+    async def test_call_tool_value_error_handling(self, mocker) -> None:
+        async def failing_handler(args: dict) -> list[TextContent]:
+            raise ValueError("bad input")
+        mocker.patch.dict("mcp_server.server._TOOL_HANDLERS", {"failing": failing_handler})
+        result = await call_tool("failing", {})
+        payload = json.loads(result[0].text)
+        assert payload["error"]["code"] == "VALIDATION_ERROR"
+
+    async def test_call_tool_stdb_error_handling(self, mocker) -> None:
+        async def failing_handler(args: dict) -> list[TextContent]:
+            raise STDBError("db down", code=STDBErrorCode.QUERY_FAILED)
+        mocker.patch.dict("mcp_server.server._TOOL_HANDLERS", {"failing": failing_handler})
+        result = await call_tool("failing", {})
+        payload = json.loads(result[0].text)
+        assert payload["error"]["code"] == "STDB_UNAVAILABLE"
+
+    async def test_call_tool_unexpected_error_handling(self, mocker) -> None:
+        async def failing_handler(args: dict) -> list[TextContent]:
+            raise RuntimeError("unexpected")
+        mocker.patch.dict("mcp_server.server._TOOL_HANDLERS", {"failing": failing_handler})
+        result = await call_tool("failing", {})
+        payload = json.loads(result[0].text)
+        assert payload["error"]["code"] == "INTERNAL_ERROR"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# list_tools
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestListTools:
+    def test_list_tools_returns_all_tools(self) -> None:
+        tools = list_tools()
+        assert isinstance(tools, list)
+        names = {t.name for t in tools}
+        expected = {
+            "wiki_health",
+            "wiki_search",
+            "wiki_read_page",
+            "wiki_list_collections",
+            "wiki_list_pages",
+            "wiki_get_backlinks",
+            "wiki_get_linked_pages",
+        }
+        assert names == expected
+
+    def test_each_tool_has_schema(self) -> None:
+        tools = list_tools()
+        for t in tools:
+            assert t.inputSchema is not None
+            assert "properties" in t.inputSchema
+            assert t.description, f"Tool {t.name} missing description"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Resource handlers: list_resources, read_resource, list_resource_templates
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestListResources:
+    async def test_list_resources_success(self, mocker) -> None:
+        fake = [{"id": "p1", "title": "Test", "slug": "test",
+                 "status": "published", "updated_at": "2024-01-01",
+                 "created_at": "2024-01-01T00:00:00Z", "text_content": ""}]
+        mocker.patch("mcp_server.server.list_pages", return_value=fake)
+        resources = await list_resources()
+        assert len(resources) == 1
+        assert resources[0].uri == "wiki://pages/p1"
+        assert resources[0].name == "Test"
+
+    async def test_list_resources_empty(self, mocker) -> None:
+        mocker.patch("mcp_server.server.list_pages", return_value=[])
+        resources = await list_resources()
+        assert resources == []
+
+    async def test_list_resources_stdb_error(self, mocker) -> None:
+        mocker.patch("mcp_server.server.list_pages",
+                     side_effect=STDBError("err", code=STDBErrorCode.QUERY_FAILED))
+        resources = await list_resources()
+        assert resources == []
+
+
+class TestListResourceTemplates:
+    def test_list_resource_templates_returns_templates(self) -> None:
+        templates = list_resource_templates()
+        assert isinstance(templates, list)
+        uris = {t.uriTemplate for t in templates}
+        assert "wiki://pages/{page_id}" in uris
+        assert "wiki://collections/{collection_id}" in uris
+
+
+class TestReadResource:
+    async def test_read_resource_page(self, mocker) -> None:
+        fake_page = {"id": "p1", "title": "Test", "slug": "test",
+                     "text_content": "Hello", "updated_at": "2024-01-01",
+                     "created_at": "2024-01-01T00:00:00Z", "status": "published",
+                     "tags": []}
+        mocker.patch("mcp_server.server.get_page", return_value=fake_page)
+        result = await read_resource("wiki://pages/p1")
+        payload = json.loads(result) if isinstance(result, str) else json.loads(result.decode())
+        assert payload["title"] == "Test"
+
+    async def test_read_resource_page_not_found(self, mocker) -> None:
+        mocker.patch("mcp_server.server.get_page", return_value=None)
+        mocker.patch("mcp_server.server.get_page_by_slug", return_value=None)
+        result = await read_resource("wiki://pages/nonexistent")
+        payload = json.loads(result) if isinstance(result, str) else json.loads(result.decode())
+        assert "not found" in payload.get("error", "").lower()
+
+    async def test_read_resource_collection(self, mocker) -> None:
+        fake_coll = {"id": "c1", "name": "Docs", "slug": "docs",
+                     "description": "Docs", "icon": "📚", "color": "#000",
+                     "page_count": 3, "updated_at": "2024-01-01"}
+        mocker.patch("mcp_server.server.get_collection", return_value=fake_coll)
+        result = await read_resource("wiki://collections/c1")
+        payload = json.loads(result) if isinstance(result, str) else json.loads(result.decode())
+        assert payload["name"] == "Docs"
+
+    async def test_read_resource_collection_not_found(self, mocker) -> None:
+        mocker.patch("mcp_server.server.get_collection", return_value=None)
+        result = await read_resource("wiki://collections/c_nope")
+        payload = json.loads(result) if isinstance(result, str) else json.loads(result.decode())
+        assert "not found" in payload.get("error", "").lower()
+
+    async def test_read_resource_invalid_uri(self) -> None:
+        result = await read_resource("invalid")
+        payload = json.loads(result) if isinstance(result, str) else json.loads(result.decode())
+        assert "error" in payload
+
+    async def test_read_resource_empty_uri(self) -> None:
+        result = await read_resource("")
+        payload = json.loads(result) if isinstance(result, str) else json.loads(result.decode())
+        assert "error" in payload
+
+    async def test_read_resource_stdb_error_page(self, mocker) -> None:
+        mocker.patch("mcp_server.server.get_page",
+                     side_effect=STDBError("err", code=STDBErrorCode.QUERY_FAILED))
+        result = await read_resource("wiki://pages/p1")
+        payload = json.loads(result) if isinstance(result, str) else json.loads(result.decode())
+        assert "error" in payload
+
+    async def test_read_resource_stdb_error_collection(self, mocker) -> None:
+        mocker.patch("mcp_server.server.get_collection",
+                     side_effect=STDBError("err", code=STDBErrorCode.QUERY_FAILED))
+        result = await read_resource("wiki://collections/c1")
+        payload = json.loads(result) if isinstance(result, str) else json.loads(result.decode())
+        assert "error" in payload
+
+    async def test_read_resource_page_with_slug_fallback(self, mocker) -> None:
+        """When get_page returns None, should try get_page_by_slug."""
+        fake = {"id": "p1", "title": "Slugged", "slug": "my-slug",
+                "text_content": "", "updated_at": "2024-01-01",
+                "created_at": "2024-01-01T00:00:00Z", "status": "published",
+                "tags": []}
+        get_page_mock = mocker.patch("mcp_server.server.get_page", return_value=None)
+        slug_mock = mocker.patch("mcp_server.server.get_page_by_slug", return_value=fake)
+        result = await read_resource("wiki://pages/my-slug")
+        payload = json.loads(result) if isinstance(result, str) else json.loads(result.decode())
+        assert payload["title"] == "Slugged"
+        get_page_mock.assert_awaited_with("my-slug")
+        slug_mock.assert_awaited_with("my-slug")
