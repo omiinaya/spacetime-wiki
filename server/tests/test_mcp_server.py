@@ -149,14 +149,15 @@ class TestErrorResponse:
 class TestHealth:
     async def test_ok(self):
         t=(await _handle_wiki_health({}))[0].text
-        assert "ok" in t.lower()
+        assert "Server: running" in t
+        assert "STDB:" in t
     async def test_extra_args(self):
         t=(await _handle_wiki_health({"x":1}))[0].text
-        assert "ok" in t.lower()
+        assert "Server: running" in t
 
 class TestSearch:
     async def test_valid(self,mocker):
-        mocker.patch("server.search_pages",return_value=[{"id":"p1","title":"A","slug":"a","text_content":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z","status":"published"}])
+        mocker.patch("server.search_pages",return_value=[{"id":"p1","title":"A","slug":"a","text_content":"","collection_id":"","status":"published","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"}])
         t=(await _handle_wiki_search({"query":"t","limit":10,"offset":0}))[0].text
         assert "A" in t
     async def test_missing_query(self):
@@ -173,13 +174,13 @@ class TestSearch:
 
 class TestReadPage:
     async def test_by_id(self,mocker):
-        mocker.patch("server.get_page",return_value={"id":"p1","title":"R","slug":"r","text_content":"H","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z","status":"published","tags":[]})
+        mocker.patch("server.get_page",return_value={"id":"p1","title":"R","slug":"r","text_content":"H","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
         mocker.patch("server.list_page_tags",return_value=[])
         t=(await _handle_wiki_read_page({"id":"p1"}))[0].text
         assert "R" in t and "H" in t
     async def test_by_slug(self,mocker):
         mocker.patch("server.get_page",return_value=None)
-        mocker.patch("server.get_page_by_slug",return_value={"id":"p1","title":"R","slug":"r","text_content":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z","status":"published","tags":[]})
+        mocker.patch("server.get_page_by_slug",return_value={"id":"p1","title":"R","slug":"r","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
         mocker.patch("server.list_page_tags",return_value=[])
         t=(await _handle_wiki_read_page({"id":"slug"}))[0].text
         assert "R" in t
@@ -198,7 +199,7 @@ class TestReadPage:
 
 class TestListCols:
     async def test_list(self,mocker):
-        mocker.patch("server.list_collections",return_value=[{"id":"c1","name":"Docs","slug":"d","description":"","icon":"","color":"","page_count":1,"updated_at":"2024-01-01"}])
+        mocker.patch("server.list_collections",return_value=[{"id":"c1","name":"Docs","slug":"d","description":"Documents","parent_id":"","icon":"","color":"","sort_order":0,"created_by":"","created_at":0,"updated_at":0}])
         t=(await _handle_wiki_list_collections({}))[0].text
         assert "Docs" in t
     async def test_empty(self,mocker):
@@ -212,7 +213,7 @@ class TestListCols:
 
 class TestListPages:
     async def test_list(self,mocker):
-        mocker.patch("server.list_pages",return_value=[{"id":"p1","title":"P","slug":"p","text_content":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z","status":"published"}])
+        mocker.patch("server.list_pages",return_value=[{"id":"p1","title":"P","slug":"p","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"}])
         t=(await _handle_wiki_list_pages({"limit":10,"offset":0}))[0].text
         assert "P" in t
     async def test_defaults(self,mocker):
@@ -307,7 +308,7 @@ class TestListTools:
 
 class TestListResources:
     async def test_success(self,mocker):
-        mocker.patch("server.list_pages",return_value=[{"id":"p1","title":"Test","slug":"test","status":"published","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z","text_content":""}])
+        mocker.patch("server.list_pages",return_value=[{"id":"p1","title":"Test","slug":"test","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"}])
         resources=await list_resources()
         assert len(resources)==1
         assert resources[0].uri=="wiki://pages/p1"
@@ -328,7 +329,7 @@ class TestListResourceTemplates:
 
 class TestReadResource:
     async def test_page(self,mocker):
-        mocker.patch("server.get_page",return_value={"id":"p1","title":"Test","slug":"test","text_content":"H","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z","status":"published","tags":[]})
+        mocker.patch("server.get_page",return_value={"id":"p1","title":"Test","slug":"test","text_content":"H","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
         r=await read_resource("wiki://pages/p1")
         p=json.loads(r) if isinstance(r,str) else json.loads(r.decode())
         assert p["title"]=="Test"
@@ -368,7 +369,7 @@ class TestReadResource:
         assert "error" in p
     async def test_page_slug_fallback(self,mocker):
         mocker.patch("server.get_page",return_value=None)
-        mocker.patch("server.get_page_by_slug",return_value={"id":"p1","title":"Slugged","slug":"my-slug","text_content":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z","status":"published","tags":[]})
+        mocker.patch("server.get_page_by_slug",return_value={"id":"p1","title":"Slugged","slug":"my-slug","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
         r=await read_resource("wiki://pages/my-slug")
         p=json.loads(r) if isinstance(r,str) else json.loads(r.decode())
         assert p["title"]=="Slugged"
