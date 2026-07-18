@@ -46,13 +46,17 @@ SAMPLE_COLLECTION = dict(
 class TestListTools:
     """Verify the 7 tool definitions."""
 
-    def test_returns_seven_tools(self, server_module):
+    @pytest.mark.asyncio
+    async def test_returns_seven_tools(self, server_module):
         import server as srv
-        assert len(srv.TOOL_DEFINITIONS) == 7
+        tools = await srv.list_tools()
+        assert len(tools) == 7
 
-    def test_tool_names(self, server_module):
+    @pytest.mark.asyncio
+    async def test_tool_names(self, server_module):
         import server as srv
-        names = [t.name for t in srv.TOOL_DEFINITIONS]
+        tools = await srv.list_tools()
+        names = [t.name for t in tools]
         assert names == [
             "wiki_health",
             "wiki_search",
@@ -63,19 +67,25 @@ class TestListTools:
             "wiki_get_linked_pages",
         ]
 
-    def test_health_has_no_required_params(self, server_module):
+    @pytest.mark.asyncio
+    async def test_health_has_no_required_params(self, server_module):
         import server as srv
-        health = [t for t in srv.TOOL_DEFINITIONS if t.name == "wiki_health"][0]
+        tools = await srv.list_tools()
+        health = [t for t in tools if t.name == "wiki_health"][0]
         assert health.inputSchema.get("required", []) == []
 
-    def test_read_page_requires_id(self, server_module):
+    @pytest.mark.asyncio
+    async def test_read_page_requires_id(self, server_module):
         import server as srv
-        rp = [t for t in srv.TOOL_DEFINITIONS if t.name == "wiki_read_page"][0]
+        tools = await srv.list_tools()
+        rp = [t for t in tools if t.name == "wiki_read_page"][0]
         assert "id" in rp.inputSchema.get("required", [])
 
-    def test_search_requires_query(self, server_module):
+    @pytest.mark.asyncio
+    async def test_search_requires_query(self, server_module):
         import server as srv
-        s = [t for t in srv.TOOL_DEFINITIONS if t.name == "wiki_search"][0]
+        tools = await srv.list_tools()
+        s = [t for t in tools if t.name == "wiki_search"][0]
         assert "query" in s.inputSchema.get("required", [])
 
 
@@ -101,7 +111,8 @@ class TestToolDispatch:
     @pytest.mark.asyncio
     async def test_health_stdb_failure(self, server_module):
         import server as srv
-        srv.sql_query.side_effect = RuntimeError("STDB down")
+        # Server catches STDBError specifically
+        srv.sql_query.side_effect = srv.STDBError("STDB down")
         result = await srv.call_tool("wiki_health", {})
         text = result[0].text
         assert "unreachable" in text.lower()
@@ -119,7 +130,7 @@ class TestToolDispatch:
         import server as srv
         result = await srv.call_tool("wiki_search", {"query": "nothing"})
         text = result[0].text
-        assert "No results" in text
+        assert "No pages found" in text
 
     @pytest.mark.asyncio
     async def test_read_page_by_id(self, server_module):
@@ -179,7 +190,7 @@ class TestToolDispatch:
         import server as srv
         result = await srv.call_tool("wiki_list_pages", {})
         text = result[0].text
-        assert "No pages" in text.lower()
+        assert "No pages found" in text
 
     @pytest.mark.asyncio
     async def test_list_pages_filtered_by_collection(self, server_module):
@@ -203,7 +214,7 @@ class TestToolDispatch:
         import server as srv
         result = await srv.call_tool("wiki_get_backlinks", {"page_id": "p1"})
         text = result[0].text
-        assert "No backlinks" in text
+        assert "No pages link to p1" in text
 
     @pytest.mark.asyncio
     async def test_get_linked_pages(self, server_module):
@@ -245,7 +256,7 @@ class TestResources:
         srv.list_pages.return_value = [dict(SAMPLE_PAGE)]
         resources = await srv.list_resources()
         assert len(resources) >= 1
-        assert resources[0].uri == "wiki://pages/p1"
+        assert str(resources[0].uri) == "wiki://pages/p1"
         assert "Test Page" in resources[0].name
 
     @pytest.mark.asyncio

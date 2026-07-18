@@ -29,33 +29,34 @@ def _make_mocks():
         "get_correlation_id": MagicMock(return_value="test-corr-id"),
         "set_correlation_id": MagicMock(),
         "close_http_client": AsyncMock(),
+        # STDBError is imported as a class ref — we keep the original
+        # so that isinstance(x, STDBError) still works.  To simulate
+        # STDBError in tests, import from server module.
     }
 
 
 @pytest.fixture
 def stdb_mocks():
-    """Return a fresh set of mocks *after* importing + patching the server.
+    """Return a fresh set of mocks applied to the server module.
 
-    These mocks are applied to the server module so that its local references
-    (e.g. ``server.search_pages``) are replaced with AsyncMock objects.
+    These mocks replace the names that server.py imported from stdb_client.
     """
     import importlib
     import server as server_mod
     importlib.reload(server_mod)
 
     mocks = _make_mocks()
-    # Patch every name on the server module that was imported from stdb_client
     for name, obj in mocks.items():
         setattr(server_mod, name, obj)
 
     yield mocks
 
-    # Restore by re-importing (the module is cached, so next reload will reset)
+    # Restore by re-importing
     importlib.reload(server_mod)
 
 
 @pytest.fixture
 def server_module(stdb_mocks):
-    """Return the patched server module (same as importing ``server``)."""
+    """Return the patched server module."""
     import server as srv
     return srv
