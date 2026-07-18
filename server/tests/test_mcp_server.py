@@ -116,7 +116,7 @@ class TestHealth:
         assert "ok" in t.lower() or "healthy" in t.lower()
     async def test_extra_args(self):
         t=(await _handle_wiki_health({"x":1}))[0].text
-        assert "ok" in t.lower() or "healthy" in t.lower()"
+        assert "ok" in t.lower() or "healthy" in t.lower()
 
 class TestSearch:
     async def test_valid(self,mocker):
