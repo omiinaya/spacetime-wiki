@@ -1,17 +1,5 @@
 #![allow(clippy::too_many_arguments)]
 // Provide __getrandom_custom for WASM builds (required by argon2 crate)
-#[cfg(target_arch = "wasm32")]
-mod wasm_getrandom {
-    #[no_mangle]
-    pub extern "C" fn __getrandom_custom(dest: *mut u8, len: usize) -> u32 {
-        // Use spacetimedb's context-based rng when possible, fallback to 0 for build-only use
-        // (spacetime generate needs this symbol to link)
-        for i in 0..len {
-            unsafe { *dest.add(i) = (i as u8).wrapping_mul(0x9e).wrapping_add(0x37) };
-        }
-        0
-    }
-}
 
 use spacetimedb::*;
 mod helpers;
