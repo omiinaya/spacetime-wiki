@@ -101,9 +101,11 @@ test.describe("Import buttons", () => {
     const importConfluence = aside.getByRole("button", { name: /Import.*Confluence/i });
 
     // At least some import buttons should exist
-    const hasImport = (await importMd.isVisible({ timeout: 2000 }).catch(() => false)) ||
-                      (await importWiki.isVisible({ timeout: 2000 }).catch(() => false)) ||
-                      (await importConfluence.isVisible({ timeout: 2000 }).catch(() => false));
-    // Import buttons may be behind a menu toggle — soft check
+    // At least some import button should exist and be clickable
+    const hasImportMd = await importMd.isVisible({ timeout: 2000 });
+    const hasImportWiki = await importWiki.isVisible({ timeout: 2000 });
+    const hasImportConfluence = await importConfluence.isVisible({ timeout: 2000 });
+    const hasImport = hasImportMd || hasImportWiki || hasImportConfluence;
+    expect(hasImport).toBeTruthy();
   });
 });

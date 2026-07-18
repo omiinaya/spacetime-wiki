@@ -67,7 +67,7 @@ export async function createPage(
 ): Promise<string | null> {
   // Click "New page" in sidebar
   const newPageBtn = page.locator("aside").getByRole("button", { name: "New page" }).first();
-  if (!(await newPageBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
+  if (!(await isVisible(newPageBtn, 3000))) {
     return null;
   }
   await newPageBtn.click();
@@ -75,7 +75,7 @@ export async function createPage(
 
   // Template picker — choose "Blank page"
   const blankPageBtn = page.getByRole("button", { name: /Blank page/i });
-  if (await blankPageBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+  if (await isVisible(blankPageBtn, 3000)) {
     await blankPageBtn.click();
   }
 
@@ -88,7 +88,7 @@ export async function createPage(
 
   // Set title
   const titleInput = page.getByPlaceholder("Untitled");
-  if (await titleInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+  if (await isVisible(titleInput, 3000)) {
     await titleInput.fill(title);
   }
 
@@ -107,17 +107,17 @@ export async function createPage(
  */
 export async function createCollection(page: Page, name: string): Promise<boolean> {
   const newColBtn = page.locator("aside").getByRole("button", { name: "New collection" });
-  if (!(await newColBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
+  if (!(await isVisible(newColBtn, 3000))) {
     return false;
   }
   await newColBtn.click();
   await page.waitForTimeout(500);
 
   const nameInput = page.getByPlaceholder(/name|title/i);
-  if (await nameInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+  if (await isVisible(nameInput, 2000)) {
     await nameInput.fill(name);
     const submitBtn = page.getByRole("button", { name: /create|save|add/i }).first();
-    if (await submitBtn.isVisible().catch(() => false)) {
+    if (await isVisible(submitBtn)) {
       await submitBtn.click();
       await page.waitForTimeout(1000);
       return true;

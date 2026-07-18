@@ -27,13 +27,13 @@ test.describe("Collection management — CRUD", () => {
 
     // Fill in name
     const nameInput = page.getByPlaceholder(/name|title/i);
-    if (await nameInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await nameInput.isVisible({ timeout: 2000 })) {
       await nameInput.fill(collectionName);
     }
 
     // Submit
     const createButton = page.getByRole("button", { name: /create|save|add/i }).first();
-    if (await createButton.isVisible().catch(() => false)) {
+    if (await createButton.isVisible()) {
       await createButton.click();
     }
 
@@ -42,16 +42,14 @@ test.describe("Collection management — CRUD", () => {
 
     // New collection may appear in sidebar
     const newCol = page.locator("aside").getByText(collectionName).first();
-    const visible = await newCol.isVisible({ timeout: 5000 }).catch(() => false);
-    expect(visible).toBeTruthy();
+    await expect(newCol).toBeVisible({ timeout: 5000 });
   });
 
   test("sidebar shows collection section", async ({ page }) => {
     const sidebar = page.locator("aside");
     // Look for collection-like text in the sidebar
     const collectionBtn = sidebar.locator("button").filter({ hasText: /Uncategorized|Engineering|Design|Marketing|Research/i });
-    const _collectionVisible = await collectionBtn.first().isVisible({ timeout: 5000 }).catch(() => false);
-    // Collections may or may not exist
+    await expect(collectionBtn.first()).toBeVisible({ timeout: 5000 });
   });
 
   test("collection shows page count in sidebar", async ({ page }) => {
@@ -59,11 +57,10 @@ test.describe("Collection management — CRUD", () => {
     await page.waitForLoadState("load");
     const sidebar = page.locator("aside");
     const collectionBtn = sidebar.locator("button").filter({ hasText: /Uncategorized/ });
-    const btnVisible = await collectionBtn.isVisible({ timeout: 5000 }).catch(() => false);
-    if (btnVisible) {
-      const text = await collectionBtn.textContent();
-      const _countMatch = text?.match(/(\d+)/);
-      // May or may not have a page count
-    }
+    // Collection with page count should be visible
+    await expect(collectionBtn).toBeVisible({ timeout: 5000 });
+    const text = await collectionBtn.textContent();
+    const countMatch = text?.match(/(\d+)/);
+    expect(countMatch).not.toBeNull();
   });
 });
