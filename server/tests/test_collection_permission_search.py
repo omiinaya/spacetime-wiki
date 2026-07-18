@@ -231,3 +231,176 @@ async def test_cleanup_search_results_removes_old(http_client, http_base):
     )
     # May or may not be cleaned up depending on timing; just verify no errors
     assert isinstance(ok, bool)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Collection Member Reducers
+# ═══════════════════════════════════════════════════════════════════════════════
+
+async def test_add_collection_member(http_client, http_base):
+    """Add a member to a collection and verify membership."""
+    coll_id = "test_coll_member_add"
+    member_id = "cm_add_test"
+    await reducer_succeeds(
+        http_client, http_base, "create_collection",
+        [coll_id, "Coll Member Add", "", "", "", "", "test_user_001"],
+    )
+    ok = await reducer_succeeds(
+        http_client, http_base, "add_collection_member",
+        [member_id, coll_id, "test_user_001", "admin", "test_user_001"],
+    )
+    assert ok, "add_collection_member failed"
+    rows = await sql_query(
+        http_client, http_base,
+        f"SELECT collection_id, user_id, role FROM collection_member WHERE id = '{member_id}'",
+    )
+    assert_row_count(rows, 1)
+    assert rows[0][0] == coll_id
+    assert rows[0][1] == "test_user_001"
+    assert rows[0][2] == "admin"
+
+
+async def test_add_collection_member_duplicate(http_client, http_base):
+    """Adding the same member twice should fail."""
+    coll_id = "test_coll_member_dup"
+    member_id = "cm_dup_test"
+    await reducer_succeeds(
+        http_client, http_base, "create_collection",
+        [coll_id, "Coll Member Dup", "", "", "", "", "test_user_001"],
+    )
+    await reducer_succeeds(
+        http_client, http_base, "add_collection_member",
+        [member_id, coll_id, "test_user_001", "member", "test_user_001"],
+    )
+    ok = await reducer_succeeds(
+        http_client, http_base, "add_collection_member",
+        ["cm_dup_second", coll_id, "test_user_001", "member", "test_user_001"],
+    )
+    assert not ok, "Duplicate collection member should fail"
+
+
+async def test_update_collection_member_role(http_client, http_base):
+    """Update a collection member's role."""
+    coll_id = "test_coll_member_role"
+    member_id = "cm_role_test"
+    await reducer_succeeds(
+        http_client, http_base, "create_collection",
+        [coll_id, "Coll Member Role", "", "", "", "", "test_user_001"],
+    )
+    await reducer_succeeds(
+        http_client, http_base, "add_collection_member",
+        [member_id, coll_id, "test_user_001", "member", "test_user_001"],
+    )
+    ok = await reducer_succeeds(
+        http_client, http_base, "update_collection_member_role",
+        [member_id, "admin"],
+    )
+    assert ok, "update_collection_member_role failed"
+    rows = await sql_query(
+        http_client, http_base,
+        f"SELECT role FROM collection_member WHERE id = '{member_id}'",
+    )
+    assert rows[0][0] == "admin"
+
+
+async def test_remove_collection_member(http_client, http_base):
+    """Remove a collection member and verify deletion."""
+    coll_id = "test_coll_member_rm"
+    member_id = "cm_rm_test"
+    await reducer_succeeds(
+        http_client, http_base, "create_collection",
+        [coll_id, "Coll Member RM", "", "", "", "", "test_user_001"],
+    )
+    await reducer_succeeds(
+        http_client, http_base, "add_collection_member",
+        [member_id, coll_id, "test_user_001", "member", "test_user_001"],
+    )
+    ok = await reducer_succeeds(
+        http_client, http_base, "remove_collection_member", [member_id],
+    )
+    assert ok, "remove_collection_member failed"
+    rows = await sql_query(
+        http_client, http_base,
+        f"SELECT id FROM collection_member WHERE id = '{member_id}'",
+    )
+    assert_row_count(rows, 0)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Share Link Reducers (permission-adjacent)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+async def test_create_share_link(http_client, http_base):
+    """Create a share link for a page and verify it exists."""
+    link_id = "share_link_test"
+    ok = await reducer_succeeds(
+        http_client, http_base, "create_share_link",
+        [link_id, "test_page_001", "test_token_abc", "editor", True, False, "", 0, "test_user_001"],
+    )
+    assert ok, "create_share_link failed"
+    rows = await sql_query(
+        http_client, http_base,
+        f"SELECT id, page_id, token FROM share_link WHERE id = '{link_id}'",
+    )
+    assert_row_count(rows, 1)
+    assert rows[0][0] == link_id
+    assert rows[0][1] == "test_page_001"
+
+
+async def test_delete_share_link(http_client, http_base):
+    """Delete a share link and verify deletion."""
+    link_id = "share_link_del"
+    await reducer_succeeds(
+        http_client, http_base, "create_share_link",
+        [link_id, "test_page_001", "token_del", "viewer", True, False, "", 0, "test_user_001"],
+    )
+    ok = await reducer_succeeds(
+        http_client, http_base, "delete_share_link", [link_id],
+    )
+    assert ok, "delete_share_link failed"
+    rows = await sql_query(
+        http_client, http_base,
+        f"SELECT id FROM share_link WHERE id = '{link_id}'",
+    )
+    assert_row_count(rows, 0)
+
+
+async def test_update_share_branding(http_client, http_base):
+    """Update share link branding settings."""
+    link_id = "share_link_brand"
+    await reducer_succeeds(
+        http_client, http_base, "create_share_link",
+        [link_id, "test_page_001", "token_brand", "editor", True, False, "", 0, "test_user_001"],
+    )
+    ok = await reducer_succeeds(
+        http_client, http_base, "update_share_branding",
+        [link_id, True, "Custom Brand"],
+    )
+    assert ok, "update_share_branding failed"
+
+
+async def test_verify_share_password(http_client, http_base):
+    """Verify a share link password succeeds."""
+    link_id = "share_link_pw"
+    await reducer_succeeds(
+        http_client, http_base, "create_share_link",
+        [link_id, "test_page_001", "token_pw", "editor", True, True, "secret123", 0, "test_user_001"],
+    )
+    ok = await reducer_succeeds(
+        http_client, http_base, "verify_share_password",
+        [link_id, "secret123"],
+    )
+    assert ok, "verify_share_password should succeed with correct password"
+
+
+async def test_visit_share_link(http_client, http_base):
+    """Record a visit to a share link."""
+    link_id = "share_link_visit"
+    await reducer_succeeds(
+        http_client, http_base, "create_share_link",
+        [link_id, "test_page_001", "token_visit", "viewer", True, False, "", 0, "test_user_001"],
+    )
+    ok = await reducer_succeeds(
+        http_client, http_base, "visit_share_link", [link_id],
+    )
+    assert ok, "visit_share_link failed"
