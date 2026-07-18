@@ -2203,6 +2203,37 @@ pub fn deny_access_request(
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
+
+// ─── Admin Dashboard Stats ─────────────────────────────────────────
+
+#[reducer]
+pub fn get_dashboard_stats(ctx: &ReducerContext) -> Result<(), String> {
+    let total_pages = ctx.db.page().iter().filter(|p| p.status != "deleted").count() as u64;
+    let total_users = ctx.db.user().iter().count() as u64;
+    let total_collections = ctx.db.collection().iter().count() as u64;
+    let total_comments = ctx.db.comment().iter().count() as u64;
+    let total_attachments = ctx.db.attachment().iter().count() as u64;
+    let published_pages = ctx.db.page().iter().filter(|p| p.status == "published").count() as u64;
+    let draft_pages = ctx.db.page().iter().filter(|p| p.status == "draft" || p.status == "private" || p.status == "").count() as u64;
+    let archived_pages = ctx.db.page().iter().filter(|p| p.status == "archived").count() as u64;
+    let deleted_pages = ctx.db.page().iter().filter(|p| p.status == "deleted").count() as u64;
+    let total_storage_bytes = ctx.db.attachment().iter().map(|a| a.size_bytes).sum::<u64>();
+
+    // Store stats in AppSetting for frontend to read via subscription
+    // Using a more stable approach: directly readable from the frontend
+    ctx.db.app_setting().key().update(AppSetting {
+        id: "dashboard_stats".to_string(),
+        key: "dashboard_stats".to_string(),
+        value: format!(r#"{{"total_pages":{},"total_users":{},"total_collections":{},"total_comments":{},"total_attachments":{},"published_pages":{},"draft_pages":{},"archived_pages":{},"deleted_pages":{},"total_storage_bytes":{}}}"#,
+            total_pages, total_users, total_collections, total_comments, total_attachments,
+            published_pages, draft_pages, archived_pages, deleted_pages, total_storage_bytes),
+        created_at: now_ms(ctx),
+        updated_at: now_ms(ctx),
+    });
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
 
