@@ -31,6 +31,10 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+    },
   ],
   // In CI (self-hosted runner):
   //   - STDB must be running natively (port 3001) — it's NOT managed here
