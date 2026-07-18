@@ -2,6 +2,7 @@
 
 import json
 import pytest
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
@@ -21,14 +22,16 @@ def server_module():
 class TestListTools:
     """Verify tool definitions returned by list_tools()."""
 
-    def test_returns_seven_tools(self, server_module):
+    @pytest.mark.asyncio
+    async def test_returns_seven_tools(self, server_module):
         import server as srv
-        tools = srv.list_tools()
+        tools = await srv.list_tools()
         assert len(tools) == 7
 
-    def test_tool_names(self, server_module):
+    @pytest.mark.asyncio
+    async def test_tool_names(self, server_module):
         import server as srv
-        tools = srv.list_tools()
+        tools = await srv.list_tools()
         names = [t.name for t in tools]
         assert names == [
             "wiki_health",
@@ -40,19 +43,29 @@ class TestListTools:
             "wiki_get_linked_pages",
         ]
 
-    def test_health_has_no_required_params(self, server_module):
+    @pytest.mark.asyncio
+    async def test_health_has_no_required_params(self, server_module):
         import server as srv
-        tools = srv.list_tools()
+        tools = await srv.list_tools()
         health = [t for t in tools if t.name == "wiki_health"][0]
         schema = health.inputSchema
         assert schema.get("required", []) == []
 
-    def test_read_page_requires_page_id(self, server_module):
+    @pytest.mark.asyncio
+    async def test_read_page_requires_id(self, server_module):
         import server as srv
-        tools = srv.list_tools()
+        tools = await srv.list_tools()
         rp = [t for t in tools if t.name == "wiki_read_page"][0]
         schema = rp.inputSchema
-        assert "page_id" in schema.get("required", [])
+        assert "id" in schema.get("required", [])
+
+    @pytest.mark.asyncio
+    async def test_search_requires_query(self, server_module):
+        import server as srv
+        tools = await srv.list_tools()
+        s = [t for t in tools if t.name == "wiki_search"][0]
+        schema = s.inputSchema
+        assert "query" in schema.get("required", [])
 
 
 class TestToolDispatch:
@@ -73,7 +86,7 @@ class TestToolDispatch:
         stdb_mocks["sql_query"].return_value = [["1"]]
         result = await srv.call_tool("wiki_health", {})
         text = result[0].text
-        assert "STDB" in text or "reachable" in text or "health" in text.lower()
+        assert "reachable" in text or "status" in text.lower()
 
     @pytest.mark.asyncio
     async def test_search_returns_results(self, server_module, stdb_mocks):
@@ -90,7 +103,7 @@ class TestToolDispatch:
         import server as srv
         result = await srv.call_tool("wiki_search", {"query": "nothing"})
         text = result[0].text
-        assert "No results" in text or "nothing" in text.lower()
+        assert "No results" in text
 
     @pytest.mark.asyncio
     async def test_read_page_by_id(self, server_module, stdb_mocks):
@@ -102,7 +115,7 @@ class TestToolDispatch:
         }
         stdb_mocks["list_page_tags"].return_value = []
         stdb_mocks["get_backlinks"].return_value = []
-        result = await srv.call_tool("wiki_read_page", {"page_id": "p123"})
+        result = await srv.call_tool("wiki_read_page", {"id": "p123"})
         text = result[0].text
         assert "My Page" in text
 
@@ -117,7 +130,7 @@ class TestToolDispatch:
         }
         stdb_mocks["list_page_tags"].return_value = []
         stdb_mocks["get_backlinks"].return_value = []
-        result = await srv.call_tool("wiki_read_page", {"page_id": "slug-page"})
+        result = await srv.call_tool("wiki_read_page", {"id": "slug-page"})
         text = result[0].text
         assert "Slug Page" in text
 
@@ -166,37 +179,47 @@ class TestToolDispatch:
         assert "Linked" in text
 
     @pytest.mark.asyncio
-    async def test_validation_error(self, server_module, stdb_mocks):
+    async def test_validation_error_empty_id(self, server_module):
         import server as srv
-        result = await srv.call_tool("wiki_read_page", {"page_id": ""})
+        result = await srv.call_tool("wiki_read_page", {"id": ""})
         text = result[0].text
         data = json.loads(text)
         assert "error" in data
 
     @pytest.mark.asyncio
-    async def test_missing_required_arg(self, server_module, stdb_mocks):
+    async def test_missing_required_arg(self, server_module):
         import server as srv
         result = await srv.call_tool("wiki_read_page", {})
         text = result[0].text
         data = json.loads(text)
         assert "error" in data
 
+    @pytest.mark.asyncio
+    async def test_health_stdb_failure(self, server_module, stdb_mocks):
+        import server as srv
+        stdb_mocks["sql_query"].side_effect = RuntimeError("STDB down")
+        result = await srv.call_tool("wiki_health", {})
+        text = result[0].text
+        assert "unreachable" in text or "error" in text.lower()
+
 
 class TestResources:
     """Exercise resource listing and reading."""
 
-    def test_list_resources(self, server_module, stdb_mocks):
+    @pytest.mark.asyncio
+    async def test_list_resources(self, server_module, stdb_mocks):
         import server as srv
         stdb_mocks["list_pages"].return_value = [
             {"id": "p1", "title": "Page1", "slug": "page1",
              "updated_at": "2024-01-01", "collection_id": None}
         ]
-        resources = srv.list_resources()
+        resources = await srv.list_resources()
         assert len(resources) >= 1
 
-    def test_list_resource_templates(self, server_module):
+    @pytest.mark.asyncio
+    async def test_list_resource_templates(self, server_module):
         import server as srv
-        templates = srv.list_resource_templates()
+        templates = await srv.list_resource_templates()
         assert len(templates) == 2
         uris = [t.uriTemplate for t in templates]
         assert "wiki://pages/{id}" in uris
@@ -275,7 +298,7 @@ class TestResources:
 
 
 class TestErrorHandling:
-    """Test error handling utilities."""
+    """Test error handling utilities (all sync functions)."""
 
     def test_error_response_format(self, server_module):
         import server as srv
