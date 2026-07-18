@@ -1,23 +1,21 @@
-"""Test fixtures for MCP server unit tests."""
+"""Test fixtures for MCP server unit tests.
+
+Patching strategy: server.py does ``from stdb_client import ...`` which
+binds names in the **server** module namespace.  To intercept, we patch
+those names *on* the server module after importing it.
+"""
 
 import sys
 import os
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-# Ensure the server package is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import stdb_client
 
-
-@pytest.fixture(autouse=True)
-def mock_stdb_client():
-    """Mock every stdb_client function used by server.py.
-
-    Returns dict of mock objects for per-test customization.
-    """
-    mocks = {
+def _make_mocks():
+    """Build the standard dict of mocks used by all tests."""
+    return {
         "search_pages": AsyncMock(return_value=[]),
         "get_page": AsyncMock(return_value=None),
         "get_page_by_slug": AsyncMock(return_value=None),
@@ -33,19 +31,31 @@ def mock_stdb_client():
         "close_http_client": AsyncMock(),
     }
 
-    patchers = []
+
+@pytest.fixture
+def stdb_mocks():
+    """Return a fresh set of mocks *after* importing + patching the server.
+
+    These mocks are applied to the server module so that its local references
+    (e.g. ``server.search_pages``) are replaced with AsyncMock objects.
+    """
+    import importlib
+    import server as server_mod
+    importlib.reload(server_mod)
+
+    mocks = _make_mocks()
+    # Patch every name on the server module that was imported from stdb_client
     for name, obj in mocks.items():
-        p = patch.object(stdb_client, name, obj)
-        p.start()
-        patchers.append(p)
+        setattr(server_mod, name, obj)
 
     yield mocks
 
-    for p in patchers:
-        p.stop()
+    # Restore by re-importing (the module is cached, so next reload will reset)
+    importlib.reload(server_mod)
 
 
 @pytest.fixture
-def stdb_mocks(mock_stdb_client):
-    """Alias for mock_stdb_client."""
-    return mock_stdb_client
+def server_module(stdb_mocks):
+    """Return the patched server module (same as importing ``server``)."""
+    import server as srv
+    return srv
