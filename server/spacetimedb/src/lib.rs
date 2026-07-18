@@ -1,6 +1,5 @@
 #![allow(clippy::too_many_arguments)]
-// Provide __getrandom_custom for WASM builds (required by argon2 crate)
-
+// getrandom uses the "js" feature to call crypto.getRandomValues() on WASM
 use spacetimedb::*;
 mod helpers;
 mod tables;
