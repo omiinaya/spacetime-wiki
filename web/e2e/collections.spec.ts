@@ -10,7 +10,7 @@ test.describe("Collections — sidebar", () => {
     const sidebar = page.getByRole("complementary");
     // May show collections or an empty state
     const collectionBtn = sidebar.locator("button").filter({ hasText: /Uncategorized|Engineering|Design/ });
-    const collectionVisible = await collectionBtn.first().isVisible({ timeout: 5000 }).catch(() => false);
+    await expect(collectionBtn.first()).toBeVisible({ timeout: 5000 });
     // Collections may not exist yet - soft check
   });
 
