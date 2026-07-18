@@ -84,18 +84,18 @@ class TestGetStrArg:
             _get_str_arg({}, "key", max_len=100)
 
     def test_missing_with_default(self) -> None:
-        assert _get_str_arg({}, "key", default="fallback", max_len=100) == "fallback"
+        assert _get_str_arg({}, "key", required=False, default="fallback", max_len=100) == "fallback"
 
     def test_non_string_raises(self) -> None:
         with pytest.raises(TypeError, match="must be a string"):
             _get_str_arg({"key": 42}, "key", max_len=100)
 
     def test_whitespace_only_raises(self) -> None:
-        with pytest.raises(ValueError, match="cannot be empty"):
+        with pytest.raises(ValueError, match="must not be empty"):
             _get_str_arg({"key": "   "}, "key", max_len=100)
 
     def test_exceeds_max_length_raises(self) -> None:
-        with pytest.raises(ValueError, match="exceeds maximum length"):
+        with pytest.raises(ValueError, match="too long"):
             _get_str_arg({"key": "a" * 300}, "key", max_len=200)
 
     def test_none_with_required_raises(self) -> None:
@@ -103,7 +103,7 @@ class TestGetStrArg:
             _get_str_arg({"key": None}, "key", max_len=100)
 
     def test_none_with_default(self) -> None:
-        result = _get_str_arg({"key": None}, "key", default="fallback", max_len=100)
+        result = _get_str_arg({"key": None}, "key", required=False, default="fallback", max_len=100)
         assert result == "fallback"
 
     def test_strips_whitespace(self) -> None:
