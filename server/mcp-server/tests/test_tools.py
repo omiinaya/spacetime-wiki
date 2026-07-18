@@ -2,37 +2,57 @@
 
 import json
 import pytest
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
+# Realistic page dict matching stdb_client.map_page() output
+SAMPLE_PAGE = dict(
+    id="p1",
+    title="Test Page",
+    slug="test-page",
+    text_content="Hello world",
+    collection_id=None,
+    parent_page_id=None,
+    status="published",
+    icon="📄",
+    color="gray",
+    full_width=False,
+    is_pinned=False,
+    is_template=False,
+    template_id=None,
+    sort_order=0,
+    created_by="user1",
+    updated_by="user1",
+    created_at=1700000000,
+    updated_at=1700000001,
+    published_at=1700000000,
+    deleted_at=None,
+)
 
-@pytest.fixture
-def server_module():
-    """Return a freshly-imported ``server`` module.
-
-    Must be imported *after* conftest mocks are installed so that
-    ``from stdb_client import ...`` picks up mocked names.
-    """
-    import importlib
-    import server as server_mod
-    importlib.reload(server_mod)
-    return server_mod
+SAMPLE_COLLECTION = dict(
+    id="c1",
+    name="Docs",
+    slug="docs",
+    description="Documentation collection",
+    parent_id=None,
+    icon="📚",
+    color="blue",
+    sort_order=0,
+    created_by="user1",
+    created_at=1700000000,
+    updated_at=1700000001,
+)
 
 
 class TestListTools:
-    """Verify tool definitions returned by list_tools()."""
+    """Verify the 7 tool definitions."""
 
-    @pytest.mark.asyncio
-    async def test_returns_seven_tools(self, server_module):
+    def test_returns_seven_tools(self, server_module):
         import server as srv
-        tools = await srv.list_tools()
-        assert len(tools) == 7
+        assert len(srv.TOOL_DEFINITIONS) == 7
 
-    @pytest.mark.asyncio
-    async def test_tool_names(self, server_module):
+    def test_tool_names(self, server_module):
         import server as srv
-        tools = await srv.list_tools()
-        names = [t.name for t in tools]
+        names = [t.name for t in srv.TOOL_DEFINITIONS]
         assert names == [
             "wiki_health",
             "wiki_search",
@@ -43,29 +63,20 @@ class TestListTools:
             "wiki_get_linked_pages",
         ]
 
-    @pytest.mark.asyncio
-    async def test_health_has_no_required_params(self, server_module):
+    def test_health_has_no_required_params(self, server_module):
         import server as srv
-        tools = await srv.list_tools()
-        health = [t for t in tools if t.name == "wiki_health"][0]
-        schema = health.inputSchema
-        assert schema.get("required", []) == []
+        health = [t for t in srv.TOOL_DEFINITIONS if t.name == "wiki_health"][0]
+        assert health.inputSchema.get("required", []) == []
 
-    @pytest.mark.asyncio
-    async def test_read_page_requires_id(self, server_module):
+    def test_read_page_requires_id(self, server_module):
         import server as srv
-        tools = await srv.list_tools()
-        rp = [t for t in tools if t.name == "wiki_read_page"][0]
-        schema = rp.inputSchema
-        assert "id" in schema.get("required", [])
+        rp = [t for t in srv.TOOL_DEFINITIONS if t.name == "wiki_read_page"][0]
+        assert "id" in rp.inputSchema.get("required", [])
 
-    @pytest.mark.asyncio
-    async def test_search_requires_query(self, server_module):
+    def test_search_requires_query(self, server_module):
         import server as srv
-        tools = await srv.list_tools()
-        s = [t for t in tools if t.name == "wiki_search"][0]
-        schema = s.inputSchema
-        assert "query" in schema.get("required", [])
+        s = [t for t in srv.TOOL_DEFINITIONS if t.name == "wiki_search"][0]
+        assert "query" in s.inputSchema.get("required", [])
 
 
 class TestToolDispatch:
@@ -75,146 +86,173 @@ class TestToolDispatch:
     async def test_unknown_tool(self, server_module):
         import server as srv
         result = await srv.call_tool("nonexistent", {})
-        text = result[0].text
-        data = json.loads(text)
-        assert "error" in data
-        assert "Unknown tool" in data["error"]
+        data = json.loads(result[0].text)
+        assert data["error"]["code"] == "VALIDATION_ERROR"
+        assert "Unknown tool" in data["error"]["message"]
 
     @pytest.mark.asyncio
-    async def test_health_returns_status(self, server_module, stdb_mocks):
+    async def test_health_returns_ok(self, server_module):
         import server as srv
-        stdb_mocks["sql_query"].return_value = [["1"]]
+        srv.sql_query.return_value = [["1"]]
         result = await srv.call_tool("wiki_health", {})
         text = result[0].text
-        assert "reachable" in text or "status" in text.lower()
+        assert "reachable" in text.lower() or "ok" in text.lower()
 
     @pytest.mark.asyncio
-    async def test_search_returns_results(self, server_module, stdb_mocks):
+    async def test_health_stdb_failure(self, server_module):
         import server as srv
-        stdb_mocks["search_pages"].return_value = [
-            {"id": "p1", "title": "Test", "slug": "test", "updated_at": "2024-01-01"}
-        ]
+        srv.sql_query.side_effect = RuntimeError("STDB down")
+        result = await srv.call_tool("wiki_health", {})
+        text = result[0].text
+        assert "unreachable" in text.lower()
+
+    @pytest.mark.asyncio
+    async def test_search_returns_results(self, server_module):
+        import server as srv
+        srv.search_pages.return_value = [SAMPLE_PAGE]
         result = await srv.call_tool("wiki_search", {"query": "test"})
         text = result[0].text
-        assert "Test" in text
+        assert "Test Page" in text
 
     @pytest.mark.asyncio
-    async def test_search_empty_results(self, server_module, stdb_mocks):
+    async def test_search_empty_results(self, server_module):
         import server as srv
         result = await srv.call_tool("wiki_search", {"query": "nothing"})
         text = result[0].text
         assert "No results" in text
 
     @pytest.mark.asyncio
-    async def test_read_page_by_id(self, server_module, stdb_mocks):
+    async def test_read_page_by_id(self, server_module):
         import server as srv
-        stdb_mocks["get_page"].return_value = {
-            "id": "p123", "title": "My Page", "slug": "my-page",
-            "text_content": "Hello", "updated_at": "2024-01-01",
-            "collection_id": None,
-        }
-        stdb_mocks["list_page_tags"].return_value = []
-        stdb_mocks["get_backlinks"].return_value = []
-        result = await srv.call_tool("wiki_read_page", {"id": "p123"})
-        text = result[0].text
-        assert "My Page" in text
+        srv.get_page.return_value = dict(SAMPLE_PAGE)
+        srv.list_page_tags.return_value = []
+        srv.get_backlinks.return_value = []
+        result = await srv.call_tool("wiki_read_page", {"id": "p1"})
+        data = json.loads(result[0].text)
+        assert data["title"] == "Test Page"
 
     @pytest.mark.asyncio
-    async def test_read_page_by_slug(self, server_module, stdb_mocks):
+    async def test_read_page_by_slug(self, server_module):
         import server as srv
-        stdb_mocks["get_page"].return_value = None
-        stdb_mocks["get_page_by_slug"].return_value = {
-            "id": "p456", "title": "Slug Page", "slug": "slug-page",
-            "text_content": "Body", "updated_at": "2024-01-01",
-            "collection_id": None,
-        }
-        stdb_mocks["list_page_tags"].return_value = []
-        stdb_mocks["get_backlinks"].return_value = []
-        result = await srv.call_tool("wiki_read_page", {"id": "slug-page"})
-        text = result[0].text
-        assert "Slug Page" in text
+        srv.get_page.return_value = None
+        srv.get_page_by_slug.return_value = dict(SAMPLE_PAGE)
+        srv.list_page_tags.return_value = []
+        srv.get_backlinks.return_value = []
+        result = await srv.call_tool("wiki_read_page", {"id": "sluggy"})
+        data = json.loads(result[0].text)
+        assert data["title"] == "Test Page"
 
     @pytest.mark.asyncio
-    async def test_list_collections(self, server_module, stdb_mocks):
+    async def test_read_page_not_found(self, server_module):
         import server as srv
-        stdb_mocks["list_collections"].return_value = [
-            {"id": "c1", "name": "Docs", "description": "Docs collection",
-             "updated_at": "2024-01-01"}
-        ]
+        srv.get_page.return_value = None
+        srv.get_page_by_slug.return_value = None
+        result = await srv.call_tool("wiki_read_page", {"id": "nonexistent"})
+        text = result[0].text
+        assert "not found" in text.lower()
+
+    @pytest.mark.asyncio
+    async def test_list_collections(self, server_module):
+        import server as srv
+        srv.list_collections.return_value = [SAMPLE_COLLECTION]
         result = await srv.call_tool("wiki_list_collections", {})
         text = result[0].text
         assert "Docs" in text
 
     @pytest.mark.asyncio
-    async def test_list_pages(self, server_module, stdb_mocks):
+    async def test_list_collections_empty(self, server_module):
         import server as srv
-        stdb_mocks["list_pages"].return_value = [
-            {"id": "p1", "title": "Page1", "slug": "page1", "updated_at": "2024-01-01",
-             "collection_id": None}
-        ]
-        result = await srv.call_tool("wiki_list_pages", {})
+        result = await srv.call_tool("wiki_list_collections", {})
         text = result[0].text
-        assert "Page1" in text
+        assert "No collections" in text
 
     @pytest.mark.asyncio
-    async def test_get_backlinks(self, server_module, stdb_mocks):
+    async def test_list_pages(self, server_module):
         import server as srv
-        stdb_mocks["get_backlinks"].return_value = [
-            {"id": "p2", "title": "Referrer", "slug": "referrer",
-             "updated_at": "2024-01-01"}
-        ]
+        srv.list_pages.return_value = [dict(SAMPLE_PAGE)]
+        result = await srv.call_tool("wiki_list_pages", {})
+        text = result[0].text
+        assert "Test Page" in text
+
+    @pytest.mark.asyncio
+    async def test_list_pages_empty(self, server_module):
+        import server as srv
+        result = await srv.call_tool("wiki_list_pages", {})
+        text = result[0].text
+        assert "No pages" in text.lower()
+
+    @pytest.mark.asyncio
+    async def test_list_pages_filtered_by_collection(self, server_module):
+        import server as srv
+        srv.list_pages.return_value = [dict(SAMPLE_PAGE)]
+        result = await srv.call_tool("wiki_list_pages", {"collection_id": "c1"})
+        text = result[0].text
+        assert "Test Page" in text
+
+    @pytest.mark.asyncio
+    async def test_get_backlinks(self, server_module):
+        import server as srv
+        backlink = dict(SAMPLE_PAGE, id="p2", title="Referrer")
+        srv.get_backlinks.return_value = [backlink]
         result = await srv.call_tool("wiki_get_backlinks", {"page_id": "p1"})
         text = result[0].text
         assert "Referrer" in text
 
     @pytest.mark.asyncio
-    async def test_get_linked_pages(self, server_module, stdb_mocks):
+    async def test_get_backlinks_empty(self, server_module):
         import server as srv
-        stdb_mocks["get_linked_pages"].return_value = [
-            {"id": "p3", "title": "Linked", "slug": "linked",
-             "updated_at": "2024-01-01"}
-        ]
+        result = await srv.call_tool("wiki_get_backlinks", {"page_id": "p1"})
+        text = result[0].text
+        assert "No backlinks" in text
+
+    @pytest.mark.asyncio
+    async def test_get_linked_pages(self, server_module):
+        import server as srv
+        linked = dict(SAMPLE_PAGE, id="p3", title="Linked Page")
+        srv.get_linked_pages.return_value = [linked]
         result = await srv.call_tool("wiki_get_linked_pages", {"page_id": "p1"})
         text = result[0].text
-        assert "Linked" in text
+        assert "Linked Page" in text
+
+    @pytest.mark.asyncio
+    async def test_get_linked_pages_empty(self, server_module):
+        import server as srv
+        result = await srv.call_tool("wiki_get_linked_pages", {"page_id": "p1"})
+        text = result[0].text
+        assert "No linked pages" in text
 
     @pytest.mark.asyncio
     async def test_validation_error_empty_id(self, server_module):
         import server as srv
         result = await srv.call_tool("wiki_read_page", {"id": ""})
-        text = result[0].text
-        data = json.loads(text)
-        assert "error" in data
+        data = json.loads(result[0].text)
+        assert data["error"]["code"] == "VALIDATION_ERROR"
 
     @pytest.mark.asyncio
     async def test_missing_required_arg(self, server_module):
         import server as srv
         result = await srv.call_tool("wiki_read_page", {})
-        text = result[0].text
-        data = json.loads(text)
-        assert "error" in data
-
-    @pytest.mark.asyncio
-    async def test_health_stdb_failure(self, server_module, stdb_mocks):
-        import server as srv
-        stdb_mocks["sql_query"].side_effect = RuntimeError("STDB down")
-        result = await srv.call_tool("wiki_health", {})
-        text = result[0].text
-        assert "unreachable" in text or "error" in text.lower()
+        data = json.loads(result[0].text)
+        assert data["error"]["code"] == "VALIDATION_ERROR"
 
 
 class TestResources:
     """Exercise resource listing and reading."""
 
     @pytest.mark.asyncio
-    async def test_list_resources(self, server_module, stdb_mocks):
+    async def test_list_resources(self, server_module):
         import server as srv
-        stdb_mocks["list_pages"].return_value = [
-            {"id": "p1", "title": "Page1", "slug": "page1",
-             "updated_at": "2024-01-01", "collection_id": None}
-        ]
+        srv.list_pages.return_value = [dict(SAMPLE_PAGE)]
         resources = await srv.list_resources()
         assert len(resources) >= 1
+        assert resources[0].uri == "wiki://pages/p1"
+        assert "Test Page" in resources[0].name
+
+    @pytest.mark.asyncio
+    async def test_list_resources_empty(self, server_module):
+        import server as srv
+        resources = await srv.list_resources()
+        assert len(resources) == 0
 
     @pytest.mark.asyncio
     async def test_list_resource_templates(self, server_module):
@@ -226,41 +264,34 @@ class TestResources:
         assert "wiki://collections/{id}" in uris
 
     @pytest.mark.asyncio
-    async def test_read_resource_page(self, server_module, stdb_mocks):
+    async def test_read_resource_page(self, server_module):
         import server as srv
-        stdb_mocks["get_page"].return_value = {
-            "id": "p1", "title": "Test", "slug": "test",
-            "text_content": "Body", "updated_at": "2024-01-01",
-            "collection_id": None,
-        }
-        stdb_mocks["list_page_tags"].return_value = []
+        srv.get_page.return_value = dict(SAMPLE_PAGE)
+        srv.list_page_tags.return_value = []
         result = await srv.read_resource("wiki://pages/p1")
         data = json.loads(result)
-        assert data.get("title") == "Test"
+        assert data.get("title") == "Test Page"
 
     @pytest.mark.asyncio
-    async def test_read_resource_page_not_found(self, server_module, stdb_mocks):
+    async def test_read_resource_page_not_found(self, server_module):
         import server as srv
-        stdb_mocks["get_page"].return_value = None
+        srv.get_page.return_value = None
         result = await srv.read_resource("wiki://pages/nonexistent")
         data = json.loads(result)
         assert "error" in data
 
     @pytest.mark.asyncio
-    async def test_read_resource_collection(self, server_module, stdb_mocks):
+    async def test_read_resource_collection(self, server_module):
         import server as srv
-        stdb_mocks["get_collection"].return_value = {
-            "id": "c1", "name": "Docs", "description": "Docs",
-            "updated_at": "2024-01-01",
-        }
+        srv.get_collection.return_value = dict(SAMPLE_COLLECTION)
         result = await srv.read_resource("wiki://collections/c1")
         data = json.loads(result)
         assert data.get("name") == "Docs"
 
     @pytest.mark.asyncio
-    async def test_read_resource_collection_not_found(self, server_module, stdb_mocks):
+    async def test_read_resource_collection_not_found(self, server_module):
         import server as srv
-        stdb_mocks["get_collection"].return_value = None
+        srv.get_collection.return_value = None
         result = await srv.read_resource("wiki://collections/nonexistent")
         data = json.loads(result)
         assert "error" in data
@@ -281,17 +312,17 @@ class TestResources:
         assert "error" in data
 
     @pytest.mark.asyncio
-    async def test_read_resource_invalid_page_id(self, server_module, stdb_mocks):
+    async def test_read_resource_invalid_page_id(self, server_module):
         import server as srv
-        stdb_mocks["get_page"].side_effect = ValueError("Invalid ID")
+        srv.get_page.side_effect = ValueError("Invalid ID")
         result = await srv.read_resource("wiki://pages/invalid")
         data = json.loads(result)
         assert "error" in data
 
     @pytest.mark.asyncio
-    async def test_read_resource_stdb_error(self, server_module, stdb_mocks):
+    async def test_read_resource_stdb_error(self, server_module):
         import server as srv
-        stdb_mocks["get_page"].side_effect = RuntimeError("STDB error")
+        srv.get_page.side_effect = RuntimeError("STDB error")
         result = await srv.read_resource("wiki://pages/p1")
         data = json.loads(result)
         assert "error" in data
