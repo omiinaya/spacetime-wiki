@@ -177,7 +177,7 @@ async def test_add_remove_group_member(http_client, http_base, seeded_user):
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT user_id FROM group_member WHERE group_id = '{group_id}' AND user_id = '{member_user}'",
+        f"SELECT id FROM group_member WHERE group_id = '{group_id}' AND user_id = '{member_user}'",
     )
     assert len(rows) >= 1, "Member should be in group"
 
