@@ -19,8 +19,7 @@ test.describe("Comments — viewing and creating", () => {
 
     // Comments section may be visible
     const commentsHeader = page.getByText(/Comments/).first();
-    const commentsVisible = await commentsHeader.isVisible({ timeout: 3000 });
-    // Comments section may not exist on all pages — soft check
+    await expect(commentsHeader).toBeVisible({ timeout: 3000 });
   });
 
   test("comments section has an input field or add button", async ({ page }) => {
@@ -32,9 +31,7 @@ test.describe("Comments — viewing and creating", () => {
     // Try to find a comment input
     const commentInput = page.getByPlaceholder(/comment|write/i);
     const addButton = page.getByRole("button", { name: /add comment|new comment/i });
-    const hasInputOrButton = (await commentInput.isVisible({ timeout: 2000 })) ||
-                             (await addButton.isVisible({ timeout: 2000 }));
-    // Comments input may not exist — depends on page template
+    await expect(commentInput.or(addButton).first()).toBeVisible({ timeout: 2000 });
   });
 
   test("can write a comment on a page", async ({ page }) => {
@@ -45,17 +42,14 @@ test.describe("Comments — viewing and creating", () => {
 
     // Try to add a comment
     const commentInput = page.getByPlaceholder(/comment|write|add/i).first();
-    if (await commentInput.isVisible({ timeout: 3000 })) {
-      await commentInput.fill("E2E test comment");
-      const submitBtn = page.getByRole("button", { name: /send|submit|post|add/i }).first();
-      if (await submitBtn.isVisible()) {
-        await submitBtn.click();
-      } else {
-        await commentInput.press("Enter");
-      }
-      await page.waitForTimeout(1000);
-      // The comment should appear
-      await expect(page.getByText("E2E test comment").first()).toBeVisible({ timeout: 3000 });
-    }
+    const commentInputVisible = await commentInput.isVisible({ timeout: 3000 });
+    expect(commentInputVisible).toBeTruthy();
+    await commentInput.fill("E2E test comment");
+    const submitBtn = page.getByRole("button", { name: /send|submit|post|add/i }).first();
+    await expect(submitBtn).toBeVisible({ timeout: 3000 });
+    await submitBtn.click();
+    await page.waitForTimeout(1000);
+    // The comment should appear
+    await expect(page.getByText("E2E test comment").first()).toBeVisible({ timeout: 3000 });
   });
 });
