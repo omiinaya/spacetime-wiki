@@ -80,6 +80,9 @@ jobs:
       - name: Tests
         run: cargo test --lib 2>&1 | tail -20
 
+      - name: Doc
+        run: cargo doc --no-deps 2>&1 | tail -10
+
       - name: Clippy
         run: cargo clippy -- -D warnings 2>&1 | tail -30
 
