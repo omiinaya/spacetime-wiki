@@ -311,7 +311,7 @@ class TestListResources:
         mocker.patch("server.list_pages",return_value=[{"id":"p1","title":"Test","slug":"test","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"}])
         resources=await list_resources()
         assert len(resources)==1
-        assert resources[0].uri=="wiki://pages/p1"
+        assert str(resources[0].uri)=="wiki://pages/p1"
         assert resources[0].name=="Test"
     async def test_empty(self,mocker):
         mocker.patch("server.list_pages",return_value=[])
@@ -324,8 +324,8 @@ class TestListResourceTemplates:
     async def test_templates(self):
         templates=await list_resource_templates()
         uris={t.uriTemplate for t in templates}
-        assert "wiki://pages/{page_id}" in uris
-        assert "wiki://collections/{collection_id}" in uris
+        assert "wiki://pages/{id}" in uris
+        assert "wiki://collections/{id}" in uris
 
 class TestReadResource:
     async def test_page(self,mocker):
@@ -368,8 +368,8 @@ class TestReadResource:
         p=json.loads(r) if isinstance(r,str) else json.loads(r.decode())
         assert "error" in p
     async def test_page_slug_fallback(self,mocker):
-        mocker.patch("server.get_page",return_value=None)
-        mocker.patch("server.get_page_by_slug",return_value={"id":"p1","title":"Slugged","slug":"my-slug","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
+        mocker.patch("stdb_client.get_page",return_value=None)
+        mocker.patch("stdb_client.get_page_by_slug",return_value={"id":"p1","title":"Slugged","slug":"my-slug","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
         r=await read_resource("wiki://pages/my-slug")
         p=json.loads(r) if isinstance(r,str) else json.loads(r.decode())
         assert p["title"]=="Slugged"
