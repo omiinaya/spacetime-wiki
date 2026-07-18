@@ -10,12 +10,10 @@ test.describe("Page view", () => {
     await page.waitForLoadState("load");
     // Navigate to first available page or create one
     const firstPage = page.locator("main button").filter({ hasText: /Updated/ }).first();
-    const hasPage = await firstPage.isVisible({ timeout: 5000 }).catch(() => false);
-    if (hasPage) {
-      await firstPage.click();
-      await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/);
-      await expect(page.locator("main")).toBeVisible({ timeout: 10000 });
-    }
+    await expect(firstPage).toBeVisible({ timeout: 5000 });
+    await firstPage.click();
+    await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/);
+    await expect(page.locator("main")).toBeVisible({ timeout: 10000 });
   });
 
   test("main content renders", async ({ page }) => {
@@ -24,10 +22,7 @@ test.describe("Page view", () => {
 
   test("shows Edit button in page toolbar", async ({ page }) => {
     const editBtn = page.locator('button[title="Edit"]');
-    const btnVisible = await editBtn.isVisible({ timeout: 3000 }).catch(() => false);
-    if (btnVisible) {
-      await expect(editBtn).toBeVisible();
-    }
+    await expect(editBtn).toBeVisible({ timeout: 3000 });
   });
 
   test("shows toolbar buttons", async ({ page }) => {
@@ -41,29 +36,21 @@ test.describe("Page view", () => {
 
     for (const selector of toolbarButtons) {
       const btn = page.locator(selector);
-      const visible = await btn.isVisible({ timeout: 1000 }).catch(() => false);
-      // If any toolbar button is visible, that's a good sign
-      if (visible) {
-        break;
-      }
+      await expect(btn).toBeVisible({ timeout: 1000 });
     }
   });
 
   test("shows metadata (word count or reading time)", async ({ page }) => {
     const wordCount = page.getByText(/words?/i);
     const readTime = page.getByText(/min read/i);
-    const hasMetadata = (await wordCount.isVisible({ timeout: 3000 }).catch(() => false)) ||
-                         (await readTime.isVisible({ timeout: 3000 }).catch(() => false));
-    // Page may or may not have metadata
+    await expect(wordCount.or(readTime).first()).toBeVisible({ timeout: 3000 });
   });
 
   test("clicking Edit navigates to editor", async ({ page }) => {
     const editBtn = page.locator('button[title="Edit"]');
-    const btnVisible = await editBtn.isVisible({ timeout: 3000 }).catch(() => false);
-    if (btnVisible) {
-      await editBtn.click();
-      await expect(page).toHaveURL(/\/edit/);
-    }
+    await expect(editBtn).toBeVisible({ timeout: 3000 });
+    await editBtn.click();
+    await expect(page).toHaveURL(/\/edit/);
   });
 });
 
