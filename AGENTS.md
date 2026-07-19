@@ -306,3 +306,6 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 
 **Total lines of Rust:** 7760
 
+
+## Module Map
+
