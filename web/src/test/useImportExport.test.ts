@@ -370,6 +370,8 @@ describe('useImportExport', () => {
 });
 
 it('handles Notion HTML import', async () => {
+  const userId = 'user-1';
+  const onRefresh = vi.fn();
   const { useImportExport } = await import('../hooks/useImportExport');
   const { result } = renderHook(() => useImportExport(userId, onRefresh));
 
