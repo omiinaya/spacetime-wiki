@@ -90,7 +90,7 @@ spacetime-wiki/
 ## 3. Task-to-File Mapping
 
 ### STDB Reducers (SpacetimeDB Rust module)
-All reducers live in `server/spacetimedb/src/lib.rs` (~2525 lines). Additional
+All `#[spacetimedb::reducer]` functions, init, table definitions — `server/spacetimedb/src/lib.rs` (2541 lines). Additional
 logic is split across topic modules:
 
 | File | Responsibility |
@@ -281,3 +281,8 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | **API pagination** | ✅ DONE — pages.py has `limit`/`offset` params |
 | **Python code quality** | ✅ Error handling done, pagination done — score: **85%** (ROADMAP) |
 
+
+
+## Codebase Stats (test)
+
+Write works
