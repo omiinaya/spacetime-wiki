@@ -29,6 +29,7 @@ pub struct AuditEvent {
 /// Groups can be granted collection-level roles and shared across the wiki.
 #[table(accessor = group, public)]
 #[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
 pub struct Group {
     #[primary_key]
     pub id: String,
@@ -91,6 +92,7 @@ pub struct User {
 /// Collections can have custom sorting, icons, colours, and access permissions.
 #[table(accessor = collection, public)]
 #[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
 pub struct Collection {
     #[primary_key]
     pub id: String,
@@ -856,31 +858,12 @@ pub struct OauthUser {
 #[allow(dead_code)]
 #[cfg(test)]
 fn default_group() -> Group {
-    Group {
-        id: "g_default".into(),
-        name: String::new(),
-        description: String::new(),
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
+    Group::default()
 }
 
 #[cfg(test)]
 fn default_collection() -> Collection {
-    Collection {
-        id: "c_default".into(),
-        name: String::new(),
-        slug: String::new(),
-        description: String::new(),
-        parent_id: String::new(),
-        icon: String::new(),
-        color: String::new(),
-        sort_order: 0,
-        created_by: String::new(),
-        created_at: 0,
-        updated_at: 0,
-    }
+    Collection::default()
 }
 
 #[cfg(test)]
