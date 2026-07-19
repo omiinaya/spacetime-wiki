@@ -309,3 +309,22 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 
 ## Module Map
 
+
+server/spacetimedb/src/
+├── lib.rs
+├── api_keys.rs
+├── app_settings.rs
+├── attachments.rs
+├── collection_members.rs
+├── collaboration.rs
+├── comments.rs
+├── favorites.rs
+├── helpers.rs
+├── pages.rs
+├── permissions.rs
+├── share_links.rs
+├── sso.rs
+├── tables.rs
+├── tags.rs
+├── templates.rs
+└── users.rs
