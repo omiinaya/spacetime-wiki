@@ -56,7 +56,7 @@ spacetime-wiki/
 │   │   ├── auth.py               # Bearer + API key auth
 │   │   └── config.py             # Env-based config
 │   ├── spacetimedb/              # Rust module — tables + reducers
-│   │   ├── src/lib.rs            # ~2525 lines: tables, reducers, logic
+│   │   ├── src/lib.rs            # 2541 lines: tables, reducers, logic
 │   │   ├── src/tables.rs         # Table schemas (pages, collections, users...)
 │   │   ├── src/pages.rs          # Page CRUD reducers
 │   │   ├── src/users.rs          # User management reducers
@@ -280,4 +280,29 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | **MCP server pagination** | ✅ DONE — `limit` (default 50) and `offset` (default 0) on list/search tools |
 | **API pagination** | ✅ DONE — pages.py has `limit`/`offset` params |
 | **Python code quality** | ✅ Error handling done, pagination done — score: **85%** (ROADMAP) |
+
+
+## Codebase Stats (last updated: 2025-01-19)
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `lib.rs` | 2541 | Crate root, reducer functions, init, table definitions |
+| `tables.rs` | 1749 | Table schemas & struct definitions |
+| `pages.rs` | 430 | Page CRUD, restore, duplicate, move, status |
+| `users.rs` | 142 | User create, update, avatar, roles |
+| `helpers.rs` | 608 | Auth hashing, slug generation, IDs, validation |
+| `permissions.rs` | 441 | RBAC, per-page ACL, collection-level permissions |
+| `attachments.rs` | 55 | File refs, blob storage, URL generation |
+| `share_links.rs` | 156 | Public share links with password + expiration |
+| `templates.rs` | 65 | Page template CRUD |
+| `tags.rs` | 45 | Tag add/remove, batch operations |
+| `comments.rs` | 136 | Comment CRUD on pages |
+| `favorites.rs` | 48 | Favorite/unfavorite toggle |
+| `api_keys.rs` | 82 | API key generate, revoke, hash validation |
+| `sso.rs` | 758 | SSO/OAuth/OIDC/SAML/LDAP identity linking |
+| `app_settings.rs` | 87 | Global app configuration |
+| `collection_members.rs` | 101 | Collection user/group membership |
+| `collaboration.rs` | 316 | Real-time Yjs collab: broadcast/join/leave/cursor, stale session cleanup |
+
+**Total lines of Rust:** 7760
 
