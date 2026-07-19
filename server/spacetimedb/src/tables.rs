@@ -31,7 +31,6 @@ pub struct AuditEvent {
 #[table(accessor = group, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
-#[cfg_attr(test, derive(Default))]
 pub struct Group {
     #[primary_key]
     pub id: String,
@@ -97,7 +96,6 @@ pub struct User {
 /// Collections can have custom sorting, icons, colours, and access permissions.
 #[table(accessor = collection, public)]
 #[derive(Debug, Clone)]
-#[cfg_attr(test, derive(Default))]
 #[cfg_attr(test, derive(Default))]
 pub struct Collection {
     #[primary_key]
@@ -908,235 +906,274 @@ pub struct OauthUser {
 #[allow(dead_code)]
 #[cfg(test)]
 #[cfg(test)]
-fn default_group() -> Group {
+#[cfg(test)]
+fn group() -> Group {
     Group::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_collection() -> Collection {
+#[cfg(test)]
+fn collection() -> Collection {
     Collection::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_page() -> Page {
+#[cfg(test)]
+fn page() -> Page {
     Page::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_page_revision() -> PageRevision {
+#[cfg(test)]
+fn page_revision() -> PageRevision {
     PageRevision::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_comment() -> Comment {
+#[cfg(test)]
+fn comment() -> Comment {
     Comment::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_attachment() -> Attachment {
+#[cfg(test)]
+fn attachment() -> Attachment {
     Attachment::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_page_tag() -> PageTag {
+#[cfg(test)]
+fn page_tag() -> PageTag {
     PageTag::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_favorite() -> Favorite {
+#[cfg(test)]
+fn favorite() -> Favorite {
     Favorite::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_share_link() -> ShareLink {
+#[cfg(test)]
+fn share_link() -> ShareLink {
     ShareLink::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_page_permission() -> PagePermission {
+#[cfg(test)]
+fn page_permission() -> PagePermission {
     PagePermission::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_api_key() -> ApiKey {
+#[cfg(test)]
+fn api_key() -> ApiKey {
     ApiKey::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_webhook() -> Webhook {
+#[cfg(test)]
+fn webhook() -> Webhook {
     Webhook::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_webhook_event() -> WebhookEvent {
+#[cfg(test)]
+fn webhook_event() -> WebhookEvent {
     WebhookEvent::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_collection_sort_rule() -> CollectionSortRule {
+#[cfg(test)]
+fn collection_sort_rule() -> CollectionSortRule {
     CollectionSortRule::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_search_result() -> SearchResult {
+#[cfg(test)]
+fn search_result() -> SearchResult {
     SearchResult::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_saml_provider() -> SamlProvider {
+#[cfg(test)]
+fn saml_provider() -> SamlProvider {
     SamlProvider::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_oidc_provider() -> OidcProvider {
+#[cfg(test)]
+fn oidc_provider() -> OidcProvider {
     OidcProvider::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_ldap_provider() -> LdapProvider {
+#[cfg(test)]
+fn ldap_provider() -> LdapProvider {
     LdapProvider::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_ldap_user() -> LdapUser {
+#[cfg(test)]
+fn ldap_user() -> LdapUser {
     LdapUser::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_page_view() -> PageView {
+#[cfg(test)]
+fn page_view() -> PageView {
     PageView::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_app_setting() -> AppSetting {
+#[cfg(test)]
+fn app_setting() -> AppSetting {
     AppSetting::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_collab_update() -> CollabUpdate {
+#[cfg(test)]
+fn collab_update() -> CollabUpdate {
     CollabUpdate::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_collab_session() -> CollabSession {
+#[cfg(test)]
+fn collab_session() -> CollabSession {
     CollabSession::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_ai_config() -> AiConfig {
+#[cfg(test)]
+fn ai_config() -> AiConfig {
     AiConfig::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_ai_chat_message() -> AiChatMessage {
+#[cfg(test)]
+fn ai_chat_message() -> AiChatMessage {
     AiChatMessage::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_scim_provider() -> ScimProvider {
+#[cfg(test)]
+fn scim_provider() -> ScimProvider {
     ScimProvider::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_passkey_credential() -> PasskeyCredential {
+#[cfg(test)]
+fn passkey_credential() -> PasskeyCredential {
     PasskeyCredential::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_passkey_challenge() -> PasskeyChallenge {
+#[cfg(test)]
+fn passkey_challenge() -> PasskeyChallenge {
     PasskeyChallenge::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_db_base() -> DbBase {
+#[cfg(test)]
+fn db_base() -> DbBase {
     DbBase::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_db_column() -> DbColumn {
+#[cfg(test)]
+fn db_column() -> DbColumn {
     DbColumn::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_db_cell() -> DbCell {
+#[cfg(test)]
+fn db_cell() -> DbCell {
     DbCell::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_invitation() -> Invitation {
+#[cfg(test)]
+fn invitation() -> Invitation {
     Invitation::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_synced_block() -> SyncedBlock {
+#[cfg(test)]
+fn synced_block() -> SyncedBlock {
     SyncedBlock::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_mfa_method() -> MfaMethod {
+#[cfg(test)]
+fn mfa_method() -> MfaMethod {
     MfaMethod::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_watch() -> Watch {
+#[cfg(test)]
+fn watch() -> Watch {
     Watch::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_notification() -> Notification {
+#[cfg(test)]
+fn notification() -> Notification {
     Notification::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_access_request() -> AccessRequest {
+#[cfg(test)]
+fn access_request() -> AccessRequest {
     AccessRequest::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_oauth_provider() -> OauthProvider {
+#[cfg(test)]
+fn oauth_provider() -> OauthProvider {
     OauthProvider::default()
 }
 
 #[cfg(test)]
 #[cfg(test)]
-fn default_oauth_user() -> OauthUser {
+#[cfg(test)]
+fn oauth_user() -> OauthUser {
     OauthUser::default()
 }
 
