@@ -281,8 +281,3 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | **API pagination** | ✅ DONE — pages.py has `limit`/`offset` params |
 | **Python code quality** | ✅ Error handling done, pagination done — score: **85%** (ROADMAP) |
 
-
-
-## Codebase Stats (test)
-
-Write works
