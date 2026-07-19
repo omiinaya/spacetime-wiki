@@ -112,9 +112,9 @@
 
 ### P3 — Add pagination to MCP list tools ✅ DONE
 - **Files:** `server/mcp-server/server.py`, `server/mcp-server/stdb_client.py`
-- **Status:** ❌ Not done
-- **Issue:** `wiki_list_pages` and `wiki_search` have no `limit`/`offset` params
-- **Fix:** Add `limit` (default 50) and `offset` (default 0) to list/search MCP tools
+- **Status:** ✅ DONE — `limit` (default 50, max 100) and `offset` (default 0, max 9999) already present on all list/search tools
+- **Issue:** ✅ Resolved
+- **Fix:** ✅ Already applied
 - **Effort:** 1 hour
 
 ### P3 — `__getrandom_custom` deterministic RNG stub
