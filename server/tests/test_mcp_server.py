@@ -16,8 +16,7 @@ sys.path.insert(0, "server/mcp-server")
 # Apply patches BEFORE importing server module
 patch("stdb_client.sql_query", return_value=[[1]]).start()
 patch("stdb_client.search_pages", return_value=[]).start()
-patch("stdb_client.get_page", return_value=None).start()
-patch("stdb_client.get_page_by_slug", return_value=None).start()
+# get_page and get_page_by_slug are patched per-test via mocker
 patch("stdb_client.list_collections", return_value=[]).start()
 patch("stdb_client.list_pages", return_value=[]).start()
 patch("stdb_client.get_backlinks", return_value=[]).start()
@@ -368,8 +367,9 @@ class TestReadResource:
         p=json.loads(r) if isinstance(r,str) else json.loads(r.decode())
         assert "error" in p
     async def test_page_slug_fallback(self,mocker):
-        mocker.patch("stdb_client.get_page",return_value=None)
-        mocker.patch("stdb_client.get_page_by_slug",return_value={"id":"p1","title":"Slugged","slug":"my-slug","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
+        # Patch at server level to avoid conflicts with module-level stdb_client patches
+        mocker.patch("server.get_page",return_value=None)
+        mocker.patch("server.get_page_by_slug",return_value={"id":"p1","title":"Slugged","slug":"my-slug","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
         r=await read_resource("wiki://pages/my-slug")
         p=json.loads(r) if isinstance(r,str) else json.loads(r.decode())
         assert p["title"]=="Slugged"
