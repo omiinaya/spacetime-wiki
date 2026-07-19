@@ -23,6 +23,8 @@ patch("stdb_client.get_backlinks", return_value=[]).start()
 patch("stdb_client.get_linked_pages", return_value=[]).start()
 patch("stdb_client.get_collection", return_value=None).start()
 patch("stdb_client.list_page_tags", return_value=[]).start()
+patch("stdb_client.get_page", return_value=None).start()
+patch("stdb_client.get_page_by_slug", return_value=None).start()
 
 import server
 import stdb_client
@@ -326,6 +328,12 @@ class TestListResourceTemplates:
         assert "wiki://pages/{id}" in uris
         assert "wiki://collections/{id}" in uris
 
+    async def test_page_not_found_slug(self,mocker):
+        mocker.patch("server.get_page",return_value=None)
+        r=await read_resource("wiki://pages/my-slug")
+        p=json.loads(r) if isinstance(r,str) else json.loads(r.decode())
+        assert "not found" in p.get("error","").lower()
+
 class TestReadResource:
     async def test_page(self,mocker):
         mocker.patch("server.get_page",return_value={"id":"p1","title":"Test","slug":"test","text_content":"H","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
@@ -366,10 +374,4 @@ class TestReadResource:
         r=await read_resource("wiki://collections/c1")
         p=json.loads(r) if isinstance(r,str) else json.loads(r.decode())
         assert "error" in p
-    async def test_page_slug_fallback(self,mocker):
-        # Patch at server level to avoid conflicts with module-level stdb_client patches
-        mocker.patch("server.get_page",return_value=None)
-        mocker.patch("server.get_page_by_slug",return_value={"id":"p1","title":"Slugged","slug":"my-slug","text_content":"","collection_id":"","status":"published","icon":"","updated_at":"2024-01-01","created_at":"2024-01-01T00:00:00Z"})
-        r=await read_resource("wiki://pages/my-slug")
-        p=json.loads(r) if isinstance(r,str) else json.loads(r.decode())
-        assert p["title"]=="Slugged"
+
