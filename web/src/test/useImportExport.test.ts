@@ -49,7 +49,7 @@ describe('useImportExport', () => {
   const onRefresh = vi.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('handleImportMD - successful markdown import', async () => {
