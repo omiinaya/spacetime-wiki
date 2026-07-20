@@ -268,8 +268,8 @@ describe('useImportExport', () => {
       json: () => Promise.resolve({ pages_created: 5 }),
     });
     vi.stubGlobal('fetch', mockFetch);
-    (globalThis as any).__API_BASE__ = '/api/v1';
-    (globalThis as any).__API_KEY__ = 'test-key';
+    (globalThis as Record<string, unknown>).__API_BASE__ = '/api/v1';
+    (globalThis as Record<string, unknown>).__API_KEY__ = 'test-key';
 
     const { useImportExport } = await import('../hooks/useImportExport');
     const { result } = renderHook(() => useImportExport(userId, onRefresh));

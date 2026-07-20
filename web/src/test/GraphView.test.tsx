@@ -292,7 +292,7 @@ describe('GraphView', () => {
     fireEvent.dblClick(colCircle!);
     // Collections should NOT navigate - isCollection=true prevents it
     const pageNavCalls = mockNavigate.mock.calls.filter(
-      (args: any[]) => typeof args[0] === 'string' && args[0].startsWith('/page/'),
+      (args: unknown[]) => typeof args[0] === 'string' && args[0].startsWith('/page/'),
     );
     expect(pageNavCalls).toHaveLength(0);
   });

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 
-function createContext(node: any) {
+function createContext(node: object) {
   const opts = node.config.addOptions?.() ?? {};
   return {
     options: opts,
@@ -10,17 +10,17 @@ function createContext(node: any) {
   };
 }
 
-function getAttrs(node: any) {
+function getAttrs(node: object) {
   const ctx = createContext(node);
   return node.config.addAttributes?.call(ctx) ?? {};
 }
 
-function getParseRules(node: any): any[] {
+function getParseRules(node: object): unknown[] {
   const ctx = createContext(node);
   return node.config.parseHTML?.call(ctx) ?? [];
 }
 
-function getRenderHTML(node: any, props: any): any {
+function getRenderHTML(node: object, props: object): unknown {
   const ctx = createContext(node);
   return node.config.renderHTML?.call(ctx, props) ?? null;
 }
@@ -32,7 +32,7 @@ function getRenderHTML(node: any, props: any): any {
 import { Mermaid } from '../extensions/Mermaid';
 
 describe('Mermaid Node', () => {
-  const node = Mermaid as any;
+  const node = Mermaid as Record<string, unknown>;
 
   it("has name 'mermaid'", () => {
     expect(node.name).toBe('mermaid');
@@ -78,7 +78,7 @@ describe('Mermaid Node', () => {
 import { MathInline, MathBlock } from '../extensions/Math';
 
 describe('MathInline Node', () => {
-  const node = MathInline as any;
+  const node = MathInline as Record<string, unknown>;
 
   it("has name 'mathInline'", () => {
     expect(node.name).toBe('mathInline');
@@ -110,7 +110,7 @@ describe('MathInline Node', () => {
 });
 
 describe('MathBlock Node', () => {
-  const node = MathBlock as any;
+  const node = MathBlock as Record<string, unknown>;
 
   it("has name 'mathBlock'", () => {
     expect(node.name).toBe('mathBlock');
@@ -151,8 +151,8 @@ describe('MathBlock Node', () => {
 import { Transclusion } from '../extensions/Transclusion';
 
 describe('Transclusion Node', () => {
-  const node = Transclusion as any;
-  let rules: any[];
+  const node = Transclusion as Record<string, unknown>;
+  let rules: unknown[];
 
   beforeAll(() => {
     rules = getParseRules(node);
@@ -211,8 +211,8 @@ describe('Transclusion Node', () => {
 import { SyncedBlockExtension } from '../extensions/SyncedBlock';
 
 describe('SyncedBlock Node', () => {
-  const node = SyncedBlockExtension as any;
-  let rules: any[];
+  const node = SyncedBlockExtension as Record<string, unknown>;
+  let rules: unknown[];
 
   beforeAll(() => {
     rules = getParseRules(node);
@@ -271,7 +271,7 @@ describe('SyncedBlock Node', () => {
 import { DatabaseBase } from '../extensions/DatabaseBase';
 
 describe('DatabaseBase Node', () => {
-  const node = DatabaseBase as any;
+  const node = DatabaseBase as Record<string, unknown>;
 
   it("has name 'databaseBase'", () => {
     expect(node.name).toBe('databaseBase');
@@ -308,7 +308,7 @@ describe('DatabaseBase Node', () => {
 import { ImageEnhanced } from '../extensions/ImageEnhanced';
 
 describe('ImageEnhanced Node', () => {
-  const node = ImageEnhanced as any;
+  const node = ImageEnhanced as Record<string, unknown>;
 
   it("has name 'imageEnhanced'", () => {
     expect(node.name).toBe('imageEnhanced');

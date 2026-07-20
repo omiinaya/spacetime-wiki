@@ -56,13 +56,13 @@ beforeEach(() => {
     constructor(_url: string) {
       wsConstructorCalls++;
       currentMockWs!.readyState = 1;
-      return currentMockWs as any;
+      return currentMockWs as unknown as WebSocket;
     }
     static readonly CONNECTING = 0;
     static readonly OPEN = 1;
     static readonly CLOSING = 2;
     static readonly CLOSED = 3;
-  } as any;
+  } as unknown as Response;
 });
 
 afterEach(() => {
@@ -71,7 +71,7 @@ afterEach(() => {
 
 // ─── Mock fetch used by useSubscription hook ──────────────────────────────────
 const mockFetch = vi.fn();
-globalThis.fetch = mockFetch as any;
+globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch;
 
 import {
   SubscriptionManager,

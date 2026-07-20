@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
 // ─── Mock Yjs ────────────────────────────────────────────────────────────────
-const mockYDocs: any[] = [];
+const mockYDocs: object[] = [];
 vi.mock('yjs', () => {
   const Doc = function () {
     const doc = { on: vi.fn(), off: vi.fn(), getMap: vi.fn(), toJSON: vi.fn() };
@@ -21,10 +21,10 @@ vi.mock('@tiptap/extension-collaboration-cursor', () => ({
 }));
 
 // ─── Mock YjsStdbProvider ────────────────────────────────────────────────────
-const mockProviderInstances: any[] = [];
+const mockProviderInstances: object[] = [];
 const MockProvider = vi.hoisted(() =>
   vi.fn().mockImplementation(function (
-    this: any,
+    this: object,
     pageId: string,
     userId: string,
     userName: string,

@@ -23,7 +23,7 @@ describe('PageTags', () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       json: () => Promise.resolve([{ rows: [['design'], ['frontend'], ['backend']] }]),
       ok: true,
-    } as any);
+    } as unknown as Response);
   });
 
   it('returns null while tags are loading', () => {

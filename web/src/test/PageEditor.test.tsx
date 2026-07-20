@@ -36,7 +36,7 @@ const mockNavigate = vi.hoisted(() => vi.fn());
 // We build a comprehensive mock that supports all these.
 
 function buildMockEditor() {
-  const chain: any = {};
+  const chain: Record<string, unknown> = {};
   // Every chainable method returns the chain object for chaining
   chain.focus = () => chain;
   const run = vi.fn();
@@ -78,9 +78,9 @@ function buildMockEditor() {
   }
   chain.run = run;
 
-  const eventHandlers: Record<string, Set<(...args: any[]) => void>> = {};
+  const eventHandlers: Record<string, Set<(...args: unknown[]) => void>> = {};
 
-  const editor: any = {
+  const editor: Record<string, unknown> = {
     chain: vi.fn(() => chain),
     isActive: vi.fn(() => false),
     isEditable: true,
@@ -102,14 +102,14 @@ function buildMockEditor() {
     setEditable: vi.fn((editable: boolean) => {
       editor.isEditable = editable;
     }),
-    on: vi.fn((event: string, handler: (...args: any[]) => void) => {
+    on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
       if (!eventHandlers[event]) eventHandlers[event] = new Set();
       eventHandlers[event].add(handler);
     }),
-    off: vi.fn((event: string, handler: (...args: any[]) => void) => {
+    off: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
       eventHandlers[event]?.delete(handler);
     }),
-    _trigger: (event: string, ...args: any[]) => {
+    _trigger: (event: string, ...args: unknown[]) => {
       eventHandlers[event]?.forEach((h) => h(...args));
     },
   };
@@ -165,14 +165,14 @@ vi.mock('../lib/api', () => ({
   },
   readFileAsBase64: vi.fn(() => Promise.resolve('base64data')),
   MAX_IMAGE_BYTES: 10 * 1024 * 1024,
-  resolveContentAttachments: vi.fn((content: any) => Promise.resolve(content)),
+  resolveContentAttachments: vi.fn((content: unknown) => Promise.resolve(content)),
   isAttachmentUrl: vi.fn(() => false),
   Page: class {},
 }));
 
 vi.mock('@tiptap/react', () => ({
   useEditor: mockUseEditor,
-  EditorContent: ({ editor }: any) => {
+  EditorContent: ({ editor }: Record<string, unknown>) => {
     if (!editor) return null;
     return React.createElement('div', { 'data-testid': 'editor-content' });
   },

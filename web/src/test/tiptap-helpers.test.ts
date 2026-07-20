@@ -513,7 +513,7 @@ describe('markdownToProseMirror', () => {
 
   it('converts headings, lists, code, blockquote, hr', () => {
     const result = markdownToProseMirror('# H1\n## H2\n- Item\n> Q\n```\ncode\n```\n---');
-    const types = result.content.map((n: any) => n.type);
+    const types = result.content.map((n: Record<string, unknown>) => (n as { type?: string }).type);
     expect(types).toContain('heading');
     expect(types).toContain('bulletList');
     expect(types).toContain('blockquote');
@@ -524,8 +524,8 @@ describe('markdownToProseMirror', () => {
   it('converts inline formatting', () => {
     const result = markdownToProseMirror('**B** _I_ `C`');
     const marks = result.content[0].content
-      .filter((c: any) => c.marks)
-      .map((c: any) => c.marks[0].type);
+      .filter((c: Record<string, unknown>) => (c as { marks?: unknown }).marks)
+      .map((c: Record<string, unknown>) => ((c as { marks: Array<Record<string, unknown>> }).marks[0] as Record<string, unknown>).type);
     expect(marks).toContain('bold');
     expect(marks).toContain('italic');
     expect(marks).toContain('code');
