@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 
@@ -22,8 +22,8 @@ vi.mock('../../lib/helpers', () => ({
 }));
 
 let store: Record<string, string> = {};
-let setItemSpy: any;
-let removeItemSpy: any;
+let setItemSpy: Mock;
+let removeItemSpy: Mock;
 
 import GoogleCallback from '../../pages/GoogleCallback';
 
