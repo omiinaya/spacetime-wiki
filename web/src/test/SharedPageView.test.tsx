@@ -108,7 +108,7 @@ describe('SharedPageView', () => {
 
   it('renders a placeholder when share link is valid and no password', async () => {
     mockSqlQuery.mockResolvedValue([sampleShareLink]);
-    (globalThis.fetch as any).mockResolvedValue({ ok: true } as Response);
+vi.mocked(globalThis.fetch).mockResolvedValue({ ok: true } as Response);
     renderShared('token_abc');
 
     // SharedPageView renders <PageView pageId="page_xyz789" /> but PageView
@@ -158,7 +158,7 @@ describe('SharedPageView', () => {
     const input = screen.getByPlaceholderText('Enter password');
     fireEvent.change(input, { target: { value: 'wrong_password' } });
 
-    (globalThis.fetch as any).mockResolvedValue({
+    vi.mocked(globalThis.fetch).mockResolvedValue({
       ok: false,
       text: () => Promise.resolve('Incorrect password'),
     } as Response);
@@ -179,7 +179,7 @@ describe('SharedPageView', () => {
     fireEvent.change(input, { target: { value: 'correct_password' } });
 
     mockSqlQuery.mockResolvedValue([passwordProtectedLink]);
-    (globalThis.fetch as any).mockResolvedValue({ ok: true } as Response);
+vi.mocked(globalThis.fetch).mockResolvedValue({ ok: true } as Response);
 
     fireEvent.click(screen.getByText('View Page'));
     await vi.waitFor(() => {

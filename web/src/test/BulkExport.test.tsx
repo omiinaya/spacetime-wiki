@@ -29,7 +29,7 @@ const MockJSZip = vi.hoisted(() => {
   return class {
     files: Record<string, unknown> = {};
     file(name: string, content: unknown) {
-      (this as any).files[name] = content;
+      (this as Record<string, unknown>).files[name] = content;
       return this;
     }
     generateAsync() {
@@ -183,14 +183,14 @@ describe('BulkExport', () => {
     URL.createObjectURL = vi.fn(() => 'blob:http://test');
     URL.revokeObjectURL = vi.fn();
     window.open = vi.fn(
-      () => ({ document: { write: vi.fn(), close: vi.fn() }, focus: vi.fn() }) as any,
+      () => ({ document: { write: vi.fn(), close: vi.fn() }, focus: vi.fn() }) as unknown as () => Window,
     );
   });
 
   afterEach(() => {
     URL.createObjectURL = originalCreateObjectURL;
     URL.revokeObjectURL = originalRevokeObjectURL;
-    window.open = originalOpen as any;
+    window.open = originalOpen as unknown as typeof window.open;
   });
 
   // ─── Basic rendering ───────────────────────────────────────────────────────
