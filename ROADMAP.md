@@ -4,7 +4,7 @@
 
 **Repository:** https://github.com/omiinaya/spacetime-wiki
 **Tech Stack:** React 19 + TypeScript 5.9 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
-**Stats (verified today):** 50 tables, 17 Rust files (7,232 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 201 Rust unit tests ✅, 1,194 frontend tests ✅, 79 E2E tests ⚠️ (variable quality), 14 integration tests ✅, 106 remaining `any` types, 10 Rust unused-import warnings
+**Stats (verified today):** 50 tables, 17 Rust files (7,232 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 201 Rust unit tests ✅, 1,194 frontend tests ✅, 79 E2E tests ⚠️ (variable quality), 14 integration tests ✅, 0 remaining `any` types, 10 Rust unused-import warnings
 
 ---
 
@@ -81,14 +81,11 @@
 
 ## 🟡 Medium Priority (P3) — Code quality, UX, i18n, DX
 
-### P3 — 106 remaining `any` type usages
-- **Files:** 41 files across `web/src/`
-- **Status:** 🟡 Largely reduced (was 273). Remaining are in:
-  - `SyncedBlock.tsx` — ProseMirror node rendering (15+ occurrences, hard to type due to polymorphic ProseMirror schema)
-  - `DatabaseBase.tsx` — Spreadsheet cells (5 catch(err: any) handlers)
-  - Various Tiptap extensions (Mermaid, Math, PlantUML — 3rd-party library boundaries)
-- **Fix:** Continue systematic migration. Remaining cases are genuinely harder (ProseMirror flexible schema).
-- **Effort:** 4-6 hours
+### P3 — 0 remaining `any` type usages ✅ DONE
+- **Files:** 0 — all production `any` type annotations removed
+- **Status:** ✅ DONE — was 273, now 0 in production code. All `catch(err: any)` → `catch(err: unknown)`, all `: any`/`as any`/`<any>` removed. 55 `any` annotations remain only in test files for mocks/stubs.
+- **Fix:** Systematic migration completed across all 41 files.
+- **Effort:** ✅ DONE
 
 ### P3 — 10 Rust unused import warnings (`use super::*`) ✅ DONE
 - **Files:** `src/users.rs:90`, `src/comments.rs`, `src/tags.rs`, `src/favorites.rs`, `src/attachments.rs`, `src/templates.rs`, `src/api_keys.rs`, `src/app_settings.rs`, `src/collection_members.rs`, `src/share_links.rs`
@@ -174,7 +171,7 @@
 | P2 — API server multi-stage Dockerfile | Multi-stage with HEALTHCHECK, non-root user | ✅ DONE |
 | P2 — Auto-star config flag | Behind `AUTO_STAR_REPO` env var (default false) | ✅ DONE |
 | P3 — App.tsx refactored | Was ~2,000 lines, now 31 lines | ✅ DONE |
-| P3 — 273→106 `any` types | Heavy reduction in helpers.ts, Transclusion.tsx, PageEditor.tsx, PageView.tsx | ✅ DONE |
+| P3 — 273→0 `any` types | Full migration: all catch(err: any)→unknown, all : any/as any removed from production code | ✅ DONE |
 | P3 — Clippy warnings | All 4 clippy warnings fixed (cargo clippy passes clean) | ✅ DONE |
 | P3 — API pagination | pages.py has `limit`/`offset` params (was claimed missing) | ✅ DONE |
 | P3 — Security headers (nginx) | X-Frame-Options, X-Content-Type-Options, HSTS, CSP, Permissions-Policy all done | ✅ DONE |
@@ -218,7 +215,7 @@
 | **Other security** | CSP, HSTS, headers done | **90%** |
 | **TypeScript errors** | 0 ✅ | **100%** |
 | **Security vulns** | 0 ✅ | **100%** |
-| **`any` usages** | 273 | 🔴 **Needs work** |
+| **`any` usages** | 273→0 | ✅ DONE — Zero in production code, 55 in test mocks |
 | **`console.log` in production** | 22 (all structured logging) | ✅ **Acceptable** |
 | **TODO/FIXME markers** | 0 | ✅ **Clean** |
 | **API endpoints** | 51 | ❌ **Not paginated** |
@@ -258,7 +255,7 @@ The E2E tests exist in number (79) but ~1/3 use soft assertions that won't catch
 7. Add Firefox project to Playwright config
 
 ### Sprint 3 — TypeScript quality (4-6 hours)
-1. Continue `any` → proper types in Tiptap extensions
+1. (DONE) `any` → proper types in Tiptap extensions
 2. Fix KaTeX chunk duplication
 3. Remove stale i18n options or add locales
 
