@@ -21,7 +21,10 @@ def _str(row: list, idx: int) -> str:
 
 
 def _int(row: list, idx: int) -> int:
-    return int(row[idx]) if idx < len(row) and row[idx] is not None else 0
+    val = row[idx] if idx < len(row) else None
+    if val is None or val == "":
+        return 0
+    return int(val)
 
 
 def _bool(row: list, idx: int) -> bool:

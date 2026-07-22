@@ -27,7 +27,7 @@ class HtmlToProseMirror(html.parser.HTMLParser):
 
     def _flush_text(self):
         text = self._current_text.strip()
-        if text and self._stack:
+        if text and self._stack and self._stack[-1][2] is not None:
             self._stack[-1][2].append({"type": "text", "text": text})
         self._current_text = ""
 
@@ -44,13 +44,15 @@ class HtmlToProseMirror(html.parser.HTMLParser):
             self._stack.append(("paragraph", {}, content))
             self.doc["content"].append({"type": "paragraph", "content": content})
         elif tag == "ul":
-            self._stack.append(("bulletList", {}, None))
-            self.doc["content"].append({"type": "bulletList", "content": []})
+            content = []
+            self._stack.append(("bulletList", {}, content))
+            self.doc["content"].append({"type": "bulletList", "content": content})
         elif tag == "ol":
-            self._stack.append(("orderedList", {}, None))
-            self.doc["content"].append({"type": "orderedList", "content": []})
+            content = []
+            self._stack.append(("orderedList", {}, content))
+            self.doc["content"].append({"type": "orderedList", "content": content})
         elif tag == "li":
-            self._stack.append(("listItem", {}, None))
+            self._stack.append(("listItem", {}, []))
         elif tag == "blockquote":
             content = []
             self._stack.append(("blockquote", {}, None))
@@ -80,17 +82,31 @@ class HtmlToProseMirror(html.parser.HTMLParser):
 
     def handle_endtag(self, tag):
         self._flush_text()
-        # Pop from stack if this tag was tracked
+        # Pop from stack if this tag was tracked and commit content
         for i in range(len(self._stack) - 1, -1, -1):
-            if self._stack[i][0] in (
+            entry = self._stack[i]
+            if entry[0] in (
                 "heading", "paragraph", "bulletList", "orderedList",
                 "listItem", "blockquote", "codeBlock", "code",
                 "bold", "italic", "underline", "strike", "link",
             ):
-                # For inline marks, wrap preceding text in the last paragraph
+                if entry[0] in ("bulletList", "orderedList", "blockquote", "codeBlock"):
+                    # These have content at self.doc["content"] — nothing extra to do
+                    break
+                elif entry[0] == "listItem":
+                    # Commit list item content to parent list
+                    content = entry[2]
+                    for parent in reversed(self._stack[:i]):
+                        if parent[0] in ("bulletList", "orderedList"):
+                            if parent[2] is not None:
+                                parent[2].append({"type": "listItem", "content": content} if content else {"type": "listItem"})
+                            break
+                    break
+                # For inline marks, pop the stack and wrap preceding text
+                # (simplified: marks are handled via handle_data text accumulation)
                 break
-        # Simplification: for this server-side parser we keep it basic
-        # Marks are handled in handle_data via simple regex in the frontend too
+        # Pop stack entries up to and including the matching tag
+        # (for proper nesting we'd do more, but this is a simplified parser)
 
     def handle_data(self, data):
         # Store text for inline mark wrapping

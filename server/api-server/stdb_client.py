@@ -159,7 +159,10 @@ def _str(row: list, idx: int) -> str:
 
 
 def _int(row: list, idx: int) -> int:
-    return int(row[idx]) if idx < len(row) and row[idx] is not None else 0
+    val = row[idx] if idx < len(row) else None
+    if val is None or val == "":
+        return 0
+    return int(val)
 
 
 def _bool(row: list, idx: int) -> bool:
@@ -179,15 +182,17 @@ def map_page(row: list) -> dict:
         "icon": _str(row, 8),
         "color": _str(row, 9),
         "full_width": _bool(row, 10),
-        "is_template": _bool(row, 11),
-        "template_id": _str(row, 12),
-        "sort_order": _int(row, 13),
-        "created_by": _str(row, 14),
-        "updated_by": _str(row, 15),
-        "created_at": _int(row, 16),
-        "updated_at": _int(row, 17),
-        "published_at": _int(row, 18),
-        "deleted_at": _int(row, 19),
+        "is_pinned": _bool(row, 11),
+        "is_template": _bool(row, 12),
+        "template_id": _str(row, 13),
+        "sort_order": _int(row, 14),
+        "created_by": _str(row, 15),
+        "updated_by": _str(row, 16),
+        "created_at": _int(row, 17),
+        "updated_at": _int(row, 18),
+        "published_at": _int(row, 19),
+        "deleted_at": _int(row, 20),
+        "direction": _str(row, 21),
     }
 
 
