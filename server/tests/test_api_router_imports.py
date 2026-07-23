@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-sys.path.insert(0, "server/api-server")
+sys.path.insert(0, "api-server")
 
 from routers.imports import (
     convert_html_to_prosemirror,

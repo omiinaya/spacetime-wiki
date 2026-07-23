@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-sys.path.insert(0, "server/api-server")
+sys.path.insert(0, "api-server")
 
 from stdb_client import (
     _safe_quote,

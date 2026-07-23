@@ -6,7 +6,7 @@ import os
 import sys
 from unittest.mock import patch
 
-sys.path.insert(0, "server/api-server")
+sys.path.insert(0, "api-server")
 
 
 class TestSettingsDefaults:

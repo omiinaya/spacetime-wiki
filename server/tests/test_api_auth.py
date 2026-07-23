@@ -6,7 +6,7 @@ import sys
 import hashlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
-sys.path.insert(0, "server/api-server")
+sys.path.insert(0, "api-server")
 
 from auth import generate_api_key
 

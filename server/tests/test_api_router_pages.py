@@ -9,7 +9,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-sys.path.insert(0, "server/api-server")
+sys.path.insert(0, "api-server")
 
 
 def _make_test_app():

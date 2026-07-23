@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-sys.path.insert(0, "server/api-server")
+sys.path.insert(0, "api-server")
 
 from models import (
     PageResponse,
