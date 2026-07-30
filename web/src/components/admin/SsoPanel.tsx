@@ -40,11 +40,11 @@ export function SsoPanel({ addToast }: SsoPanelProps) {
     api.oidc
       .list()
       .then(setOidcProviders)
-      .catch((err) => console.error("API error:", err));
+      .catch((err) => console.error('API error:', err));
     api.saml
       .list()
       .then(setSamlProviders)
-      .catch((err) => console.error("API error:", err));
+      .catch((err) => console.error('API error:', err));
   }
 
   const saveOidc = async () => {

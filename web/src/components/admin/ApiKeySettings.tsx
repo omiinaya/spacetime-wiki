@@ -14,7 +14,7 @@ export function ApiKeySection({ userId }: { userId: string | null }) {
       api.apiKeys
         .list(userId)
         .then(setKeys)
-        .catch((err) => console.error("API error:", err));
+        .catch((err) => console.error('API error:', err));
   }, [userId]);
 
   const handleCreate = async () => {

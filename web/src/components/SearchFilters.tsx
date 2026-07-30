@@ -34,11 +34,11 @@ export function SearchFilters({ filters, onChange }: Props) {
     api.collections
       .list()
       .then(setCollections)
-      .catch((err) => console.error("API error:", err));
+      .catch((err) => console.error('API error:', err));
     api.users
       .list()
       .then(setUsers)
-      .catch((err) => console.error("API error:", err));
+      .catch((err) => console.error('API error:', err));
   }, []);
 
   // Close on click outside

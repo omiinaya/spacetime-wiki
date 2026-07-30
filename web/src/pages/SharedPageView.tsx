@@ -101,7 +101,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify([tok]),
         },
-      ).catch((err) => console.error("Failed to record share visit:", err));
+      ).catch((err) => console.error('Failed to record share visit:', err));
 
       setPageId(link.page_id);
       setLoading(false);

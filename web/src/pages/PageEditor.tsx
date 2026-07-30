@@ -1002,7 +1002,7 @@ export function PageEditor({ userId }: Props) {
     api.pages
       .list()
       .then(setAllPages)
-      .catch((err) => console.error("Failed to load pages for autocomplete:", err));
+      .catch((err) => console.error('Failed to load pages for autocomplete:', err));
   }, []);
 
   // Load existing page

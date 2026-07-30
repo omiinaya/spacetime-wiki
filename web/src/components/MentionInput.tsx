@@ -40,7 +40,7 @@ export function MentionInput({
     api.users
       .list()
       .then(setUsers)
-      .catch((err) => console.error("API error:", err));
+      .catch((err) => console.error('API error:', err));
   }, []);
 
   // Filter users based on query

@@ -172,7 +172,7 @@ export function GroupsPanel({ allUsers, userId, addToast }: GroupsPanelProps) {
                     api.groups
                       .listMembers(g.id)
                       .then(setGroupMembers)
-                      .catch((err) => console.error("API error:", err));
+                      .catch((err) => console.error('API error:', err));
                   }
                 }}
                 className="flex-1 flex items-center gap-2 text-left"

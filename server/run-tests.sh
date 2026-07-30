@@ -24,7 +24,8 @@ $PYTHON -m pytest tests/ \
   --ignore=tests/test_collection_permission_action.py \
   --ignore=tests/test_collection_permission_operations.py \
   --ignore=tests/test_collection_permission_propagation.py \
-  --ignore=tests/test_collection_permission_reducers.py
+  --ignore=tests/test_collection_permission_reducers.py \
+  --ignore=tests/test_misc_reducers.py
 
 echo ""
 

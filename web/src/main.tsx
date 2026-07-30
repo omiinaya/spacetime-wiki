@@ -85,7 +85,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <SpacetimeDBProvider connectionBuilder={connectionBuilder}>
-        <React.Suspense fallback={<div style={{ padding: 40, color: '#888' }} role="status">Loading...</div>}>
+        <React.Suspense
+          fallback={
+            <div style={{ padding: 40, color: '#888' }} role="status">
+              Loading...
+            </div>
+          }
+        >
           <App />
         </React.Suspense>
       </SpacetimeDBProvider>
