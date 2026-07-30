@@ -24,16 +24,14 @@ $PYTHON -m pytest tests/ \
   --ignore=tests/test_collection_permission_action.py \
   --ignore=tests/test_collection_permission_operations.py \
   --ignore=tests/test_collection_permission_propagation.py \
-  --ignore=tests/test_collection_permission_reducers.py \
-  2>&1 | tail -6
+  --ignore=tests/test_collection_permission_reducers.py
 
 echo ""
 
 # ─── MCP server tests ────────────────────────────────────────────────────────
 echo "==> MCP server unit tests …"
-$PYTHON -m pytest mcp-server/tests/ --tb=short -q 2>&1 | tail -3
+$PYTHON -m pytest mcp-server/tests/ --tb=short -q
 
 echo ""
 echo "── Summary ──"
-# Report just the pass/fail lines
 echo "See above for full details."
