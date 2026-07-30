@@ -908,7 +908,6 @@ pub struct OauthUser {
 /// Default constructors for use in #[cfg(test)] blocks.
 /// Each creates a struct filled with default values, letting callers
 /// override only the fields they care about via `..default_*()`.
-#[allow(dead_code)]
 
 // We define each helper individually so IDE go-to-definition works.
 #[cfg(test)] fn default_group() -> Group { Group::default() }
