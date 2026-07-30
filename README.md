@@ -14,7 +14,7 @@
 | **Database** | SpacetimeDB v2.6.0 — WebSocket sync, reducers, SQL |
 | **API Server** | Python (FastAPI) — REST gateway with rate limiting |
 | **AI Access** | MCP Server — stdio transport, Hermes native client integration |
-| **Tests** | Vitest (1,316 unit/component) + Playwright (E2E) + vitest-axe (a11y) |
+|| **Tests** | Vitest (1,385 unit/component) + Playwright (E2E) + vitest-axe (a11y) |
 | **CI** | GitHub Actions — tsc, 1,600+ tests, Rust build + clippy |
 | **Docker** | `docker compose up` starts all 4 services |
 
@@ -253,7 +253,7 @@ spacetime-wiki/
 │   │   ├── Dockerfile
 │   │   └── requirements.txt
 │   ├── spacetimedb/              # Rust module — tables, reducers, search
-│   │   ├── src/lib.rs            # ~4500 lines: all tables, reducers, logic
+│   │   ├── src/lib.rs            # ~2540 lines: all tables, reducers, logic
 │   │   ├── Cargo.toml
 │   │   └── Dockerfile            # Build + publish via spacetime CLI
 │   └── mcp-server/               # MCP server for AI agent integration
@@ -341,7 +341,7 @@ git commit --no-verify -m "msg"
 | **Component** | Vitest + testing-library + vitest-axe | UI components with accessibility assertions |
 | **E2E** | Playwright | Full app flows against built SPA |
 
-### Test suites (84+ tests, 7 suites)
+### Test suites (69+ extension tests + component tests)
 
 | Suite | Tests | What it validates |
 |-------|-------|-------------------|
