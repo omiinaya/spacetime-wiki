@@ -1,16 +1,13 @@
 """Collection CRUD endpoints."""
 from fastapi import APIRouter, HTTPException, Query, Request
-
-from permissions import check_page_access
-
-from stdb_client import sql_query, call_reducer, map_collection
 from models import (
-    CollectionResponse,
     CollectionCreateResponse,
-    CollectionUpdateResponse,
     CollectionDeleteResponse,
+    CollectionResponse,
+    CollectionUpdateResponse,
     PaginatedResponse,
 )
+from stdb_client import call_reducer, map_collection, sql_query
 
 router = APIRouter(prefix="/api/v1/collections", tags=["collections"])
 

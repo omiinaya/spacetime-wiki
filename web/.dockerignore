@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+playwright-report
+test-results
+.git
+*.md
+.eslintrc*
+.prettierrc*
+vitest.config.ts

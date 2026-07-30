@@ -7,9 +7,12 @@ and user info retrieval. Supports auto-registration for new users.
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
-
-from stdb_client import sql_query, call_reducer
-from models import OAuthProviderResponse, OAuthLoginResponse, OAuthCallbackResponse, OAuthUserLinkResponse, PaginatedResponse
+from models import (
+    OAuthCallbackResponse,
+    OAuthLoginResponse,
+    PaginatedResponse,
+)
+from stdb_client import call_reducer, sql_query
 
 logger = logging.getLogger(__name__)
 
@@ -331,9 +334,9 @@ async def oauth_callback(body: dict):
             detail="User not found and auto-register is disabled. Ask an admin to create your account first."
         )
 
-    import uuid
     import hashlib
     import time
+    import uuid
 
     user_id = str(uuid.uuid4())
     random_pw = hashlib.sha256(f"oauth_{user_id}_{provider_id}".encode()).hexdigest()

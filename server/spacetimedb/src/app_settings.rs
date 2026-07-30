@@ -75,7 +75,7 @@ mod tests {
         let value = "updated_value".to_string();
         let result = match existing {
             None => value.clone(),
-            Some(old) => {
+            Some(_old) => {
                 // Update the old value
                 format!("{}", value)
             },

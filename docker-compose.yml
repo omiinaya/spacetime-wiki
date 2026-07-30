@@ -49,9 +49,17 @@ services:
     depends_on:
       spacetimedb:
         condition: service_healthy
+      module-publisher:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - wiki-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8711/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # ─── Frontend (React SPA via nginx) ─────────────────────────────────────────
   frontend:
@@ -65,7 +73,8 @@ services:
     ports:
       - "5184:5184"
     depends_on:
-      - api-server
+      api-server:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - wiki-net

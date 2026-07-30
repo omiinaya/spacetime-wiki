@@ -1,10 +1,9 @@
 """Authentication and API key management endpoints."""
 
-from fastapi import APIRouter, HTTPException, Query
-
 from auth import generate_api_key
-from stdb_client import sql_query, call_reducer, map_api_key
-from models import ApiKeyResponse, ApiKeyRegisterResponse, ApiKeyRevokeResponse, PaginatedResponse
+from fastapi import APIRouter, Query
+from models import ApiKeyRegisterResponse, ApiKeyRevokeResponse, PaginatedResponse
+from stdb_client import call_reducer, map_api_key, sql_query
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 

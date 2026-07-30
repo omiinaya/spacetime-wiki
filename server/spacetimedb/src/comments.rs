@@ -117,7 +117,7 @@ mod tests {
     #[test]
     fn test_resolve_comment_toggle() {
         // Comments can be toggled between resolved/unresolved
-        let mut is_resolved = false;
+        let mut is_resolved;
         is_resolved = true; // resolve
         assert!(is_resolved);
         is_resolved = false; // unresolve

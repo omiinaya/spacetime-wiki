@@ -1,46 +1,46 @@
 """Unit tests for MCP server tool definitions and handlers."""
 
 import json
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 # Realistic page dict matching stdb_client.map_page() output
-SAMPLE_PAGE = dict(
-    id="p1",
-    title="Test Page",
-    slug="test-page",
-    text_content="Hello world",
-    collection_id=None,
-    parent_page_id=None,
-    status="published",
-    icon="📄",
-    color="gray",
-    full_width=False,
-    is_pinned=False,
-    is_template=False,
-    template_id=None,
-    sort_order=0,
-    created_by="user1",
-    updated_by="user1",
-    created_at=1700000000,
-    updated_at=1700000001,
-    published_at=1700000000,
-    deleted_at=None,
-)
+SAMPLE_PAGE = {
+    "id": "p1",
+    "title": "Test Page",
+    "slug": "test-page",
+    "text_content": "Hello world",
+    "collection_id": None,
+    "parent_page_id": None,
+    "status": "published",
+    "icon": "📄",
+    "color": "gray",
+    "full_width": False,
+    "is_pinned": False,
+    "is_template": False,
+    "template_id": None,
+    "sort_order": 0,
+    "created_by": "user1",
+    "updated_by": "user1",
+    "created_at": 1700000000,
+    "updated_at": 1700000001,
+    "published_at": 1700000000,
+    "deleted_at": None,
+}
 
-SAMPLE_COLLECTION = dict(
-    id="c1",
-    name="Docs",
-    slug="docs",
-    description="Documentation collection",
-    parent_id=None,
-    icon="📚",
-    color="blue",
-    sort_order=0,
-    created_by="user1",
-    created_at=1700000000,
-    updated_at=1700000001,
-)
+SAMPLE_COLLECTION = {
+    "id": "c1",
+    "name": "Docs",
+    "slug": "docs",
+    "description": "Documentation collection",
+    "parent_id": None,
+    "icon": "📚",
+    "color": "blue",
+    "sort_order": 0,
+    "created_by": "user1",
+    "created_at": 1700000000,
+    "updated_at": 1700000001,
+}
 
 
 class TestListTools:
@@ -71,21 +71,21 @@ class TestListTools:
     async def test_health_has_no_required_params(self, server_module):
         import server as srv
         tools = await srv.list_tools()
-        health = [t for t in tools if t.name == "wiki_health"][0]
+        health = next(t for t in tools if t.name == "wiki_health")
         assert health.inputSchema.get("required", []) == []
 
     @pytest.mark.asyncio
     async def test_read_page_requires_id(self, server_module):
         import server as srv
         tools = await srv.list_tools()
-        rp = [t for t in tools if t.name == "wiki_read_page"][0]
+        rp = next(t for t in tools if t.name == "wiki_read_page")
         assert "id" in rp.inputSchema.get("required", [])
 
     @pytest.mark.asyncio
     async def test_search_requires_query(self, server_module):
         import server as srv
         tools = await srv.list_tools()
-        s = [t for t in tools if t.name == "wiki_search"][0]
+        s = next(t for t in tools if t.name == "wiki_search")
         assert "query" in s.inputSchema.get("required", [])
 
 

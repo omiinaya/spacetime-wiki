@@ -1,11 +1,9 @@
 """Tests for MCP server config module — validation and default values."""
 
-import os
-import re
-from unittest.mock import patch
-
 # Reload config after each env change
 import importlib
+import os
+from unittest.mock import patch
 
 
 class TestConfigDefaults:

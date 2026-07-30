@@ -3,9 +3,8 @@
 import time
 
 from fastapi import APIRouter, HTTPException, Query
-
-from stdb_client import sql_query, call_reducer
-from models import SearchResponse, PaginatedResponse
+from models import PaginatedResponse, SearchResponse
+from stdb_client import call_reducer, sql_query
 
 router = APIRouter(prefix="/api/v1/search", tags=["search"])
 

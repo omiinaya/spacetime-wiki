@@ -1,32 +1,25 @@
 """Page CRUD endpoints."""
-from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, Request
-
+from models import (
+    CommentCreateResponse,
+    PageCreateResponse,
+    PageDeleteResponse,
+    PageResponse,
+    PageUpdateResponse,
+    PaginatedResponse,
+    ShareLinkCreateResponse,
+    TagCreateResponse,
+)
 from permissions import check_page_access
 from stdb_client import (
-    sql_query,
     call_reducer,
+    map_attachment,
+    map_comment,
     map_page,
     map_revision,
-    map_comment,
-    map_tag,
-    map_attachment,
     map_share_link,
-)
-from models import (
-    PageResponse,
-    PageCreateResponse,
-    PageUpdateResponse,
-    PageDeleteResponse,
-    RevisionResponse,
-    CommentResponse,
-    CommentCreateResponse,
-    TagResponse,
-    TagCreateResponse,
-    AttachmentResponse,
-    ShareLinkResponse,
-    ShareLinkCreateResponse,
-    PaginatedResponse,
+    map_tag,
+    sql_query,
 )
 
 router = APIRouter(prefix="/api/v1/pages", tags=["pages"])

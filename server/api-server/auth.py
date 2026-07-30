@@ -5,15 +5,14 @@ import logging
 import secrets
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
 from config import settings
-from stdb_client import sql_query, map_api_key
-
+from stdb_client import map_api_key, sql_query
 
 SKIP_PATHS = {
     "/docs", "/openapi.json", "/redoc",
@@ -72,8 +71,8 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             request.state.api_key_name = key_record["name"]
             request.state.api_user_id = key_record["user_id"]
 
-        except Exception as e:
-            logger.error("Auth middleware error: %s", e, exc_info=True)
+        except Exception:
+            logger.exception("Auth middleware error")
             return JSONResponse(
                 status_code=500,
                 content={"detail": "Internal authentication error."},

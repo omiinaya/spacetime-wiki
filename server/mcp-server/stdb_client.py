@@ -16,14 +16,11 @@ from enum import Enum
 from typing import Any
 
 import httpx
-
 from config import (
-    STDB_BASE_URL,
-    STDB_DATABASE,
+    STDB_BASE_DELAY_S,
+    STDB_MAX_RETRIES,
     STDB_SQL_URL,
     STDB_TIMEOUT_S,
-    STDB_MAX_RETRIES,
-    STDB_BASE_DELAY_S,
 )
 
 logger = logging.getLogger("spacetime-wiki-mcp.stdb_client")
@@ -134,7 +131,7 @@ class CircuitBreaker:
             result = await operation(*args, **kwargs)
             self._record_success()
             return result
-        except Exception as e:
+        except Exception:
             self._record_failure()
             raise
 
@@ -395,7 +392,7 @@ async def _execute_with_retry(sql: str) -> list[list]:
             # Our own raised errors (>=400, structural) — re-raise immediately
             raise
 
-        except RuntimeError as e:
+        except RuntimeError:
             # Circuit breaker or other runtime errors
             raise
 

@@ -1,8 +1,8 @@
 """MCP Server configuration with validation."""
 
+import logging
 import os
 import re
-import logging
 
 logger = logging.getLogger("spacetime-wiki-mcp.config")
 

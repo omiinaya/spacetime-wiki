@@ -2,12 +2,10 @@
 import hashlib
 import logging
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-
-from stdb_client import sql_query, call_reducer
+from stdb_client import call_reducer, sql_query
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +44,11 @@ async def _record_event(provider_id: str, resource_type: str, operation: str,
             event_id, provider_id, resource_type, operation,
             external_id, local_id, status, detail,
         ])
-    except RuntimeError as e:
-        logger.error("Failed to record SCIM event: %s", e, exc_info=True)
+    except RuntimeError:
+        logger.exception("Failed to record SCIM event")
 
 
-def _wiki_user_to_scim(rows: list) -> Optional[dict]:
+def _wiki_user_to_scim(rows: list) -> dict | None:
     if not rows:
         return None
     r = rows[0]
@@ -84,7 +82,7 @@ def _wiki_user_to_scim(rows: list) -> Optional[dict]:
     }
 
 
-def _wiki_group_to_scim(rows: list) -> Optional[dict]:
+def _wiki_group_to_scim(rows: list) -> dict | None:
     if not rows:
         return None
     r = rows[0]
@@ -216,7 +214,7 @@ async def get_schema(request: Request, schema_id: str):
 @router.get("/Users")
 async def list_users(
     request: Request,
-    filter: Optional[str] = None,
+    filter: str | None = None,
     startIndex: int = 1,
     count: int = 100,
 ):
@@ -403,7 +401,7 @@ async def delete_user(request: Request, user_id: str):
 @router.get("/Groups")
 async def list_groups(
     request: Request,
-    filter: Optional[str] = None,
+    filter: str | None = None,
     startIndex: int = 1,
     count: int = 100,
 ):

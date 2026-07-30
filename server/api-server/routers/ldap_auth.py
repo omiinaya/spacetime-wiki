@@ -3,12 +3,10 @@
 import logging
 
 from fastapi import APIRouter, HTTPException
-
 from models import LDAPLoginResponse
-from stdb_client import sql_query, call_reducer
+from stdb_client import call_reducer, sql_query
 
 logger = logging.getLogger(__name__)
-from models import LDAPLoginResponse
 
 router = APIRouter(prefix="/api/v1/auth/ldap", tags=["ldap"])
 
@@ -184,8 +182,8 @@ async def ldap_login(body: dict):
                 )
 
             # Create new user
-            import uuid
             import hashlib
+            import uuid
 
             user_id = str(uuid.uuid4())
             # Generate a random password hash since LDAP users don't use local passwords
@@ -208,7 +206,7 @@ async def ldap_login(body: dict):
     except HTTPException:
         raise
     except Exception as exc:
-        logger.error("LDAP authentication error: %s", exc, exc_info=True)
+        logger.exception("LDAP authentication error")
         raise HTTPException(status_code=500, detail=f"LDAP authentication error: {exc}")
     finally:
         if conn and conn.bound:

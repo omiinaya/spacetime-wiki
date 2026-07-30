@@ -18,36 +18,32 @@ Usage:
 import base64
 import json
 import logging
-import os
-import time
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
 logger = logging.getLogger(__name__)
-from webauthn import (
-    generate_registration_options,
-    verify_registration_response,
-    generate_authentication_options,
-    verify_authentication_response,
-    options_to_json,
+from models import (
+    WebAuthnAuthCompleteResponse,
+    WebAuthnBeginAuthResponse,
+    WebAuthnBeginRegisterResponse,
+    WebAuthnRegisterCompleteResponse,
 )
+from stdb_client import call_reducer, sql_query
+from webauthn import (
+    generate_authentication_options,
+    generate_registration_options,
+    options_to_json,
+    verify_authentication_response,
+    verify_registration_response,
+)
+from webauthn.helpers import generate_challenge as wa_generate_challenge
 from webauthn.helpers.structs import (
+    AuthenticationCredential,
     AuthenticatorSelectionCriteria,
     PublicKeyCredentialDescriptor,
     RegistrationCredential,
-    AuthenticationCredential,
-    UserVerificationRequirement,
     ResidentKeyRequirement,
-)
-from webauthn.helpers import generate_challenge as wa_generate_challenge
-
-from stdb_client import sql_query, call_reducer
-from models import (
-    WebAuthnBeginRegisterResponse,
-    WebAuthnRegisterCompleteResponse,
-    WebAuthnBeginAuthResponse,
-    WebAuthnAuthCompleteResponse,
+    UserVerificationRequirement,
 )
 
 router = APIRouter(prefix="/api/v1/webauthn", tags=["webauthn"])
@@ -83,7 +79,7 @@ def base64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode().rstrip("=")
 
 
-async def get_user_by_email(email: str) -> Optional[dict]:
+async def get_user_by_email(email: str) -> dict | None:
     """Look up a user by email with SQL injection protection."""
     rows = await sql_query("SELECT * FROM user WHERE email = ?", email)
     if not rows:
@@ -113,7 +109,7 @@ async def get_credentials_for_user(user_id: str) -> list[dict]:
     return credentials
 
 
-async def get_credential_by_credential_id(credential_id: str) -> Optional[dict]:
+async def get_credential_by_credential_id(credential_id: str) -> dict | None:
     """Look up a credential by credential_id."""
     rows = await sql_query("SELECT * FROM passkey_credential WHERE credential_id = ?", credential_id)
     if not rows:
@@ -156,7 +152,6 @@ async def register_begin(request: Request, email: str, display_name: str = ""):
         raise HTTPException(status_code=404, detail="User not found")
 
     rp_id = get_rp_id(request)
-    rp_origin = get_rp_origin(request)
 
     # Generate challenge using the webauthn library
     challenge = wa_generate_challenge()
@@ -211,8 +206,8 @@ async def register_complete(request: Request, body: dict):
         # Verify the challenge exists and consume it
         try:
             await call_reducer("consume_passkey_challenge", [challenge_b64])
-        except RuntimeError as e:
-            logger.error("Challenge verification failed during registration: %s", e, exc_info=True)
+        except RuntimeError:
+            logger.exception("Challenge verification failed during registration")
             raise HTTPException(status_code=400, detail="Challenge verification failed.")
 
         rp_id = get_rp_id(request)
@@ -261,8 +256,8 @@ async def register_complete(request: Request, body: dict):
     except HTTPException:
         raise
     except (RuntimeError, ValueError, TypeError, LookupError) as e:
-        logger.error("WebAuthn registration failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+        logger.exception("WebAuthn registration failed")
+        raise HTTPException(status_code=500, detail=f"Registration failed: {e!s}")
 
 
 # ─── Authentication ────────────────────────────────────────────────────────────
@@ -271,7 +266,7 @@ async def register_complete(request: Request, body: dict):
 
 
 @router.get("/auth/begin", response_model=WebAuthnBeginAuthResponse)
-async def auth_begin(request: Request, email: Optional[str] = None):
+async def auth_begin(request: Request, email: str | None = None):
     """Generate WebAuthn authentication options.
 
     Returns options that the browser passes to navigator.credentials.get().
@@ -325,7 +320,6 @@ async def auth_complete(request: Request, body: dict):
         client_data_json_b64 = body.get("response", {}).get("clientDataJSON", "")
         authenticator_data_b64 = body.get("response", {}).get("authenticatorData", "")
         signature_b64 = body.get("response", {}).get("signature", "")
-        user_handle_b64 = body.get("response", {}).get("userHandle", "")
 
         if not all([credential_id, client_data_json_b64, authenticator_data_b64, signature_b64]):
             raise HTTPException(status_code=400, detail="Missing required fields")
@@ -341,8 +335,8 @@ async def auth_complete(request: Request, body: dict):
         # Consume the challenge
         try:
             await call_reducer("consume_passkey_challenge", [challenge_b64])
-        except RuntimeError as e:
-            logger.error("Challenge verification failed during auth: %s", e, exc_info=True)
+        except RuntimeError:
+            logger.exception("Challenge verification failed during auth")
             raise HTTPException(status_code=400, detail="Challenge verification failed.")
 
         # Look up the credential to get stored public key
@@ -406,5 +400,5 @@ async def auth_complete(request: Request, body: dict):
     except HTTPException:
         raise
     except (RuntimeError, ValueError, TypeError, LookupError) as e:
-        logger.error("WebAuthn authentication failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
+        logger.exception("WebAuthn authentication failed")
+        raise HTTPException(status_code=500, detail=f"Authentication failed: {e!s}")

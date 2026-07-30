@@ -106,12 +106,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Re-publish STDB module
-        run: docker compose up -d --no-deps module-publisher || true
+        run: docker compose pull && docker compose up -d --no-deps module-publisher || true
         env:
           COMPOSE_FILE: docker-compose.yml
 
       - name: Deploy with Docker Compose
-        run: docker compose up -d --no-deps api-server frontend
+        run: |
+          docker compose pull api-server frontend
+          docker compose up -d --no-deps api-server frontend
         env:
           COMPOSE_FILE: docker-compose.yml
 
@@ -123,6 +125,10 @@ jobs:
               echo "API server is healthy"
               break
             fi
+            if [ "$i" -eq 30 ]; then
+              echo "ERROR: API server failed to start within 60s"
+              exit 1
+            fi
             sleep 2
           done
           echo "Waiting for frontend..."
@@ -131,8 +137,13 @@ jobs:
               echo "Frontend is serving"
               break
             fi
+            if [ "$i" -eq 30 ]; then
+              echo "ERROR: Frontend failed to start within 60s"
+              exit 1
+            fi
             sleep 2
           done
+          echo "All services healthy!"
 
       - name: Clean up old Docker images
         run: docker image prune -f --filter "until=24h"

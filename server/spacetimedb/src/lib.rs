@@ -2201,7 +2201,7 @@ pub fn get_dashboard_stats(ctx: &ReducerContext) -> Result<(), String> {
     let total_comments = ctx.db.comment().iter().count() as u64;
     let total_attachments = ctx.db.attachment().iter().count() as u64;
     let published_pages = ctx.db.page().iter().filter(|p| p.status == "published").count() as u64;
-    let draft_pages = ctx.db.page().iter().filter(|p| p.status == "draft" || p.status == "private" || p.status == "").count() as u64;
+    let draft_pages = ctx.db.page().iter().filter(|p| p.status == "draft" || p.status == "private" || p.status.is_empty()).count() as u64;
     let archived_pages = ctx.db.page().iter().filter(|p| p.status == "archived").count() as u64;
     let deleted_pages = ctx.db.page().iter().filter(|p| p.status == "deleted").count() as u64;
     let total_storage_bytes = ctx.db.attachment().iter().map(|a| a.size_bytes).sum::<u64>();

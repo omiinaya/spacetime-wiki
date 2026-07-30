@@ -5,10 +5,11 @@ binds names in the **server** module namespace.  To intercept, we patch
 those names *on* the server module after importing it.
 """
 
-import sys
 import os
+import sys
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -42,6 +43,7 @@ def stdb_mocks():
     These mocks replace the names that server.py imported from stdb_client.
     """
     import importlib
+
     import server as server_mod
     importlib.reload(server_mod)
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -12,25 +12,24 @@ sys.path.insert(0, "server/mcp-server")
 # Mock httpx before importing stdb_client
 patch("stdb_client.httpx").start()
 
-import stdb_client
 from stdb_client import (
-    _safe_quote,
-    _build_safe_sql,
-    _validate_id,
-    _validate_non_empty_string,
-    _clamp_int,
-    map_page,
-    map_collection,
-    map_user,
-    map_tag,
-    _str,
-    _int,
-    _bool,
-    STDBError,
-    STDBErrorCode,
+    TABLE_NAMES,
     CircuitBreaker,
     CircuitState,
-    TABLE_NAMES,
+    STDBError,
+    STDBErrorCode,
+    _bool,
+    _build_safe_sql,
+    _clamp_int,
+    _int,
+    _safe_quote,
+    _str,
+    _validate_id,
+    _validate_non_empty_string,
+    map_collection,
+    map_page,
+    map_tag,
+    map_user,
 )
 
 

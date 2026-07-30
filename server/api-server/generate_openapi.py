@@ -8,8 +8,8 @@ Output: openapi.json in the current directory.
 """
 
 import json
-import sys
 import os
+import sys
 
 # Add the api-server directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -19,6 +19,7 @@ os.environ["STDB_HOST"] = "localhost:3001"
 os.environ["STDB_DATABASE"] = "placeholder"
 
 from main import app
+
 
 def generate():
     """Generate and write the OpenAPI 3.0 spec."""

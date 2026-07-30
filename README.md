@@ -14,8 +14,8 @@
 | **Database** | SpacetimeDB v2.6.0 — WebSocket sync, reducers, SQL |
 | **API Server** | Python (FastAPI) — REST gateway with rate limiting |
 | **AI Access** | MCP Server — stdio transport, Hermes native client integration |
-| **Tests** | Vitest (unit/component) + Playwright (E2E) + vitest-axe (a11y) |
-| **CI** | GitHub Actions — tsc, 84+ tests, Rust build |
+| **Tests** | Vitest (1,316 unit/component) + Playwright (E2E) + vitest-axe (a11y) |
+| **CI** | GitHub Actions — tsc, 1,600+ tests, Rust build + clippy |
 | **Docker** | `docker compose up` starts all 4 services |
 
 ---

@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_mark_as_template_flips_flag() {
-        let mut page_is_template = false;
+        let mut page_is_template;
         page_is_template = true;
         assert!(page_is_template);
         page_is_template = false;

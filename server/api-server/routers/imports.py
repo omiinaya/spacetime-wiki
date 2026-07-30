@@ -1,13 +1,12 @@
 """Import endpoints — Notion, Markdown, Confluence imports via REST API."""
 
-import logging
-
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 import html.parser
+import logging
 import re
 
-from stdb_client import call_reducer, sql_query
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from models import ImportResponse
+from stdb_client import call_reducer
 
 logger = logging.getLogger("spacetime-wiki-api.imports")
 
@@ -180,7 +179,7 @@ async def import_notion(
     filename = (file.filename or "export").lower()
 
     # Single HTML file
-    if filename.endswith(".html") or filename.endswith(".htm"):
+    if filename.endswith((".html", ".htm")):
         html = raw.decode("utf-8", errors="replace")
         doc = convert_html_to_prosemirror(html)
         title = filename.rsplit(".", 1)[0]
@@ -190,8 +189,8 @@ async def import_notion(
 
     # Notion Markdown export (ZIP)
     if filename.endswith(".zip"):
-        import zipfile
         import io
+        import zipfile
 
         try:
             zf = zipfile.ZipFile(io.BytesIO(raw))
@@ -212,7 +211,7 @@ async def import_notion(
                     "dir": "/".join(parts[:-1]),
                     "ext": ".md",
                 })
-            elif fname.endswith(".html") or fname.endswith(".htm"):
+            elif fname.endswith((".html", ".htm")):
                 entries.append({
                     "path": path,
                     "name": fname.rsplit(".", 1)[0],
@@ -247,7 +246,7 @@ async def import_notion(
                 page_ids_by_dir[f"{entry['dir']}/{entry['name']}"] = page_id
                 created += 1
             except (RuntimeError, ValueError, KeyError, OSError) as e:
-                logger.error("Failed to create page '%s': %s", entry["path"], e, exc_info=True)
+                logger.exception("Failed to create page .%s.", entry["path"])
                 errors.append(f"{entry['path']}: {e}")
 
         zf.close()
@@ -275,9 +274,9 @@ async def import_confluence(
     if not filename.endswith(".zip"):
         raise HTTPException(400, "Confluence import requires a .zip file (space export). Supported: Confluence Cloud/Server HTML export ZIP.")
 
-    import zipfile
     import io
     import xml.etree.ElementTree as ET
+    import zipfile
 
     try:
         zf = zipfile.ZipFile(io.BytesIO(raw))
@@ -322,7 +321,7 @@ async def import_confluence(
             continue
         parts = path.split("/")
         fname = parts[-1]
-        if fname.endswith(".html") or fname.endswith(".htm"):
+        if fname.endswith((".html", ".htm")):
             entry_name = fname.rsplit(".", 1)[0]
             # Try to find matching metadata
             meta = pages_meta.get(entry_name, pages_meta.get(path, {}))
@@ -342,7 +341,7 @@ async def import_confluence(
             if path.endswith("/"):
                 continue
             fname = path.split("/")[-1]
-            if fname.endswith(".html") or fname.endswith(".htm"):
+            if fname.endswith((".html", ".htm")):
                 html_entries.append({
                     "path": path,
                     "name": fname.rsplit(".", 1)[0],
@@ -391,7 +390,7 @@ async def import_confluence(
                 page_ids_by_meta_id[entry["meta_id"]] = page_id
             created += 1
         except (RuntimeError, ValueError, KeyError, OSError) as e:
-            logger.error("Failed to create Confluence page '%s': %s", entry["path"], e, exc_info=True)
+            logger.exception("Failed to create Confluence page .%s.", entry["path"])
             errors.append(f"{entry['path']}: {e}")
 
     zf.close()

@@ -4,7 +4,6 @@ import logging
 
 from fastapi import HTTPException, Request
 from starlette.status import HTTP_403_FORBIDDEN
-
 from stdb_client import sql_query
 
 logger = logging.getLogger(__name__)
@@ -71,8 +70,8 @@ async def check_page_access(request: Request, page_id: str, min_role: str = "vie
             )
             if rows and role_hierarchy.get(rows[0][0], -1) >= required:
                 return True
-        except Exception:
-            pass  # table may not exist or be private
+        except RuntimeError:
+            logger.debug("collection_member table not available — skipping collection permission check")
     
     # 3. Check if user is the page creator/owner (implicit admin)
     rows = await sql_query("SELECT created_by FROM page WHERE id = ?", page_id)

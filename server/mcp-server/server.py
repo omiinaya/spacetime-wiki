@@ -13,34 +13,34 @@ import logging
 import sys
 import time
 import uuid
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import Any, AsyncIterator
+from typing import Any
 
+from config import MCP_SERVER_NAME
 from mcp.server import Server
 from mcp.types import (
-    Tool,
-    TextContent,
     Resource,
     ResourceTemplate,
+    TextContent,
+    Tool,
 )
 from stdb_client import (
-    search_pages,
+    STDBError,
+    close_http_client,
+    get_backlinks,
+    get_collection,
+    get_correlation_id,
+    get_linked_pages,
     get_page,
     get_page_by_slug,
     list_collections,
-    list_pages,
-    get_backlinks,
     list_page_tags,
-    get_linked_pages,
-    get_collection,
-    get_correlation_id,
-    set_correlation_id,
-    STDBError,
-    close_http_client,
+    list_pages,
+    search_pages,
     sql_query,
 )
-from config import MCP_SERVER_NAME
 
 logger = logging.getLogger("spacetime-wiki-mcp.server")
 
@@ -218,7 +218,7 @@ def _tool_error(
     ctx = f" ({context})" if context else ""
     logger.error(
         "Error in %s%s: %s (correlation_id=%s)",
-        tool_name, ctx, error, get_correlation_id(), exc_info=True,
+        tool_name, ctx, error, get_correlation_id(),
     )
 
     if isinstance(error, (ValueError, TypeError)):
@@ -267,10 +267,8 @@ async def list_resources() -> list[Resource]:
 
     try:
         pages = await _with_concurrency(list_pages(limit=100))
-    except STDBError as e:
-        logger.error(
-            "Failed to list resources from STDB: %s (request_id=%s)", e, corr_id, exc_info=True,
-        )
+    except STDBError:
+        logger.exception("Failed to list resources from STDB (request_id=%s)", corr_id)
         return []
 
     return [
@@ -316,20 +314,14 @@ async def read_resource(uri: str) -> str | bytes:  # type: ignore[override, arg-
                 "correlation_id": corr_id,
             })
         except STDBError as e:
-            logger.error(
-                "STDB error reading page %s: %s (request_id=%s)",
-                page_id, e, corr_id, exc_info=True,
-            )
+            logger.exception("STDB error reading page %s (request_id=%s)", page_id, corr_id)
             return json.dumps({
                 "error": f"Database error: {e}",
                 "code": e.code.value,
                 "correlation_id": corr_id,
             })
         except Exception as e:
-            logger.error(
-                "Failed to read page %s from STDB: %s (request_id=%s)",
-                page_id, e, corr_id, exc_info=True,
-            )
+            logger.exception("Failed to read page %s from STDB (request_id=%s)", page_id, corr_id)
             return json.dumps({
                 "error": f"STDB unavailable: {e}",
                 "correlation_id": corr_id,
@@ -370,20 +362,14 @@ async def read_resource(uri: str) -> str | bytes:  # type: ignore[override, arg-
                 "correlation_id": corr_id,
             })
         except STDBError as e:
-            logger.error(
-                "STDB error reading collection %s: %s (request_id=%s)",
-                collection_id, e, corr_id, exc_info=True,
-            )
+            logger.exception("STDB error reading collection %s (request_id=%s)", collection_id, corr_id)
             return json.dumps({
                 "error": f"Database error: {e}",
                 "code": e.code.value,
                 "correlation_id": corr_id,
             })
         except Exception as e:
-            logger.error(
-                "Failed to read collection %s from STDB: %s (request_id=%s)",
-                collection_id, e, corr_id, exc_info=True,
-            )
+            logger.exception("Failed to read collection %s from STDB (request_id=%s)", collection_id, corr_id)
             return json.dumps({
                 "error": f"STDB unavailable: {e}",
                 "correlation_id": corr_id,
@@ -700,7 +686,7 @@ async def _handle_wiki_list_collections(
     except STDBError as e:
         return _tool_error("wiki_list_collections", e, context="stdb")
     except Exception as e:
-        logger.error("Failed to list collections from STDB: %s", e, exc_info=True)
+        logger.exception("Failed to list collections from STDB")
         return _text(f"STDB unavailable: {e}")
 
     if not cols:
@@ -734,7 +720,7 @@ async def _handle_wiki_list_pages(arguments: dict[str, Any]) -> list[TextContent
     except STDBError as e:
         return _tool_error("wiki_list_pages", e, context="stdb")
     except Exception as e:
-        logger.error("Failed to list pages from STDB: %s", e, exc_info=True)
+        logger.exception("Failed to list pages from STDB")
         return _text(f"STDB unavailable: {e}")
 
     if not results:
@@ -767,7 +753,7 @@ async def _handle_wiki_get_backlinks(arguments: dict[str, Any]) -> list[TextCont
     except STDBError as e:
         return _tool_error("wiki_get_backlinks", e, context="stdb")
     except Exception as e:
-        logger.error("Failed to get backlinks for %s from STDB: %s", page_id, e, exc_info=True)
+        logger.exception("Failed to get backlinks for %s from STDB", page_id)
         return _text(f"STDB unavailable: {e}")
 
     if not results:
@@ -797,7 +783,7 @@ async def _handle_wiki_get_linked_pages(
     except STDBError as e:
         return _tool_error("wiki_get_linked_pages", e, context="stdb")
     except Exception as e:
-        logger.error("Failed to get linked pages for %s from STDB: %s", page_id, e, exc_info=True)
+        logger.exception("Failed to get linked pages for %s from STDB", page_id)
         return _text(f"STDB unavailable: {e}")
 
     if not results:

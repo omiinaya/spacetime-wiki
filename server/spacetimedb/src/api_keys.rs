@@ -92,8 +92,7 @@ mod tests {
     #[test]
     fn test_revoke_api_key_is_idempotent() {
         // Revoking an already-revoked key should be safe
-        let mut is_revoked = true;
-        is_revoked = true; // revoke again
+        let is_revoked = true; // revoke again — idempotent
         assert!(is_revoked);
     }
 
