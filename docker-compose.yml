@@ -1,5 +1,8 @@
 services:
   # ─── SpacetimeDB Server ──────────────────────────────────────────────────────
+  # IMPORTANT: Keep the server image version in sync with the spacetimedb-cli
+  # version in server/spacetimedb/Dockerfile and the spacetimedb crate pin in
+  # server/spacetimedb/Cargo.toml. Mismatched versions can cause publish failures.
   spacetimedb:
     image: spacetimeos/spacetimedb:latest
     container_name: st-wiki-stdb

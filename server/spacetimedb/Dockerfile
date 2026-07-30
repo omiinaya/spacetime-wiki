@@ -15,8 +15,8 @@ FROM rust:1.97-alpine
 
 RUN apk add --no-cache musl-dev pkgconfig openssl-dev curl bash
 
-# Install spacetimedb-cli
-RUN cargo install spacetimedb-cli --version 2.6.0 --locked
+# Install spacetimedb-cli — must match the spacetimedb crate version in Cargo.toml
+RUN cargo install spacetimedb-cli --version 2.6.1 --locked
 
 WORKDIR /module
 COPY --from=source /module /module

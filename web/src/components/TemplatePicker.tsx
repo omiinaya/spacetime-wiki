@@ -30,7 +30,7 @@ export function TemplatePicker({
     api.pages
       .listTemplates()
       .then(setTemplates)
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load templates:", err))
       .finally(() => setLoading(false));
   }, [open, collections]);
 

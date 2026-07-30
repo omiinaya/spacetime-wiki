@@ -353,7 +353,7 @@ export function PageView({ pageId, userId }: Props) {
       api.shareLinks
         .list(pageId)
         .then((links) => setShareLinks(links))
-        .catch(() => {});
+        .catch((err) => console.error("Failed to load share links:", err));
     }
   }, [showShare, pageId]);
 
@@ -434,12 +434,12 @@ export function PageView({ pageId, userId }: Props) {
       });
       // Record page view (debounced, deduplicated per viewer)
       const viewer = localStorage.getItem('sw_user_id') || 'anonymous';
-      api.analytics.recordView(pageId, viewer).catch(() => {});
+      api.analytics.recordView(pageId, viewer).catch((err) => console.error("Failed to record view:", err));
       // Fetch view count
       api.analytics
         .getViewCount(pageId)
         .then(setViewCount)
-        .catch(() => {});
+        .catch((err) => console.error("Failed to load view count:", err));
       const [revs, coms] = await Promise.all([
         api.revisions.list(pageId),
         api.comments.list(pageId),

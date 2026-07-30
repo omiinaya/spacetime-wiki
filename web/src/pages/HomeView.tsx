@@ -54,7 +54,7 @@ export default function HomeView() {
         );
         setTrendingPages(enriched.filter((t: unknown) => t.title !== 'Unknown'));
       })
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load trending pages:", err));
   }, []);
 
   const handleImportMD = async (e: React.ChangeEvent<HTMLInputElement>) => {

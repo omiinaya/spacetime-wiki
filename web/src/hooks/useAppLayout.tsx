@@ -201,7 +201,7 @@ export function useAppLayout() {
       api.notifications
         .list(userId, 100)
         .then(setNotificationList)
-        .catch(() => {});
+        .catch((err) => console.error("API error:", err));
     }
   }, [userId]);
 
@@ -317,7 +317,7 @@ export function useAppLayout() {
         }
         setAllPageTags(map);
       })
-      .catch(() => {});
+      .catch((err) => console.error("API error:", err));
   }, []);
 
   // ─── Load favorites ─────────────────────────────────────────────────────
@@ -334,7 +334,7 @@ export function useAppLayout() {
           setFavoritePages(allPages.filter((p) => favPageIds.has(p.id)));
         });
       })
-      .catch(() => {});
+      .catch((err) => console.error("API error:", err));
   }, [userId, location.pathname]);
 
   // ─── Keyboard: ? = shortcuts, Escape to close ────────────────────────────
@@ -432,11 +432,11 @@ export function useAppLayout() {
     if (mode !== 'manual') {
       api.collections.sortRules
         .set(colId, field, dir, autoApply, userId || 'anonymous')
-        .catch(() => {});
+        .catch((err) => console.error("API error:", err));
     } else {
       api.collections.sortRules
         .set(colId, 'manual', 'asc', false, userId || 'anonymous')
-        .catch(() => {});
+        .catch((err) => console.error("API error:", err));
     }
   };
 

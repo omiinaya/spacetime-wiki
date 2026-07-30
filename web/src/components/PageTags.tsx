@@ -71,7 +71,7 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
           const names = ((data[0]?.rows || []) as unknown[][]).map((r) => String(r[0]));
           setAllTags(names);
         })
-        .catch(() => {});
+        .catch((err) => console.error("API error:", err));
     });
   }, [pageId, editable]);
 

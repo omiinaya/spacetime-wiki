@@ -23,19 +23,19 @@ export default function LoginView() {
     api.oidc
       .listActive()
       .then(setOidcProviders)
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load OIDC providers:", err));
     api.saml
       .listActive()
       .then(setSamlProviders)
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load SAML providers:", err));
     api.ldap
       .listActive()
       .then(setLdapProviders)
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load LDAP providers:", err));
     api.oauth
       .listProviders()
       .then(setOauthProviders)
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load OAuth providers:", err));
   }, []);
 
   const handleOidcSignIn = (provider: OidcProvider) => {

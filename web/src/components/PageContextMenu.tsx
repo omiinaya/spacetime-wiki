@@ -99,7 +99,7 @@ export function PageContextMenu({
           <button
             onClick={() => {
               const url = `${window.location.origin}/page/${contextMenu.pageId}`;
-              navigator.clipboard.writeText(url).catch(() => {});
+              navigator.clipboard.writeText(url).catch((err) => console.error("API error:", err));
               onClose();
               showToast({ type: 'success', title: 'Link copied', duration: 2000 });
             }}
@@ -112,7 +112,7 @@ export function PageContextMenu({
               const page = pages.find((p) => p.id === contextMenu.pageId);
               if (page) {
                 const mdLink = `[${page.title}](${window.location.origin}/page/${page.slug || page.id})`;
-                navigator.clipboard.writeText(mdLink).catch(() => {});
+                navigator.clipboard.writeText(mdLink).catch((err) => console.error("API error:", err));
                 showToast({ type: 'success', title: 'Markdown link copied', duration: 2000 });
               }
               onClose();

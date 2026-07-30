@@ -264,7 +264,7 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 |--------|-------|
 | **STDB Reducers** | 141 (68 in `lib.rs`, 73 across 14 module files) |
 | **STDB Tables** | 50 (35 private, 15 remain public for SQL queries) |
-| **Rust Tests** | 201 unit ✅ |
+| **Rust Tests** | 246 unit ✅ |
 | **Python Unit Tests** | 329 (211 API server + 118 MCP server) ✅ |
 || **Frontend Test Files** | **65** (up from 57 — 8 previously untested components now covered: Layout, Sidebar, ShareDialog, CommandPalette, TemplateModal, CollectionDialog, TrashDialog, PageContextMenu) |
 || **Frontend Tests** | **1,316** ✅ all passing — 0 flaky, 0 skipped, 0 soft assertions ||

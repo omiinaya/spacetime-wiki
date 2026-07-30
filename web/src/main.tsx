@@ -44,7 +44,7 @@ class ErrorBoundary extends React.Component<
     if (this.state.error) {
       return React.createElement(
         'div',
-        { style: { padding: '40px', color: 'red', fontFamily: 'monospace' } },
+        { role: 'alert', style: { padding: '40px', color: 'red', fontFamily: 'monospace' } },
         React.createElement('h2', {}, 'React Error:'),
         React.createElement('pre', {}, this.state.error.message),
         React.createElement(
@@ -85,7 +85,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <SpacetimeDBProvider connectionBuilder={connectionBuilder}>
-        <React.Suspense fallback={<div style={{ padding: 40, color: '#888' }}>Loading...</div>}>
+        <React.Suspense fallback={<div style={{ padding: 40, color: '#888' }} role="status">Loading...</div>}>
           <App />
         </React.Suspense>
       </SpacetimeDBProvider>

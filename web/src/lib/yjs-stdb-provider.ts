@@ -121,7 +121,7 @@ export class YjsStdbProvider {
   /** Update cursor position in STDB (debounced in caller) */
   updateCursor(cursorJson: string): void {
     if (this.destroyed) return;
-    api.collaboration.updateCursor(this.pageId, this.userId, cursorJson).catch(() => {});
+    api.collaboration.updateCursor(this.pageId, this.userId, cursorJson).catch((err) => console.error("Cursor update failed:", err));
   }
 
   /** Get awareness data for other users on this page */
@@ -155,6 +155,6 @@ export class YjsStdbProvider {
       this.broadcastDebounce = null;
     }
     this.awareness.destroy();
-    api.collaboration.leaveSession(this.pageId, this.userId).catch(() => {});
+    api.collaboration.leaveSession(this.pageId, this.userId).catch((err) => console.error("Failed to leave session:", err));
   }
 }
