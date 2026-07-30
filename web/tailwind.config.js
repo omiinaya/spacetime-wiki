@@ -1,4 +1,8 @@
 /** @type {import('tailwindcss').Config} */
+/**
+ * NOTE: This config is used by Tailwind v4 for IntelliSense only.
+ * Actual theme configuration is defined in src/index.css via @theme directive.
+ */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
