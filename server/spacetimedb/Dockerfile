@@ -1,18 +1,14 @@
-FROM rust:1.97-alpine AS builder
+# ─── Source stage ───────────────────────────────────────────────────────────
+FROM rust:1.97-alpine AS source
 
 WORKDIR /module
 
 # Install build dependencies for spacetimedb-cli
 RUN apk add --no-cache musl-dev pkgconfig openssl-dev
 
-# Build the module (just the Rust code, not spacetime CLI itself)
+# Copy source code for the final stage
 COPY Cargo.toml Cargo.lock ./
 COPY src/ src/
-
-# Build with the spacetimedb crate — we need the `spacetime` CLI
-# to publish, so install it in a separate stage
-RUN cargo build --release --target-dir /tmp/module-build 2>&1 || \
-    echo "Module build will be done with spacetime CLI in final stage"
 
 # ─── CLI + Publish stage ────────────────────────────────────────────────────
 FROM rust:1.97-alpine
@@ -23,7 +19,7 @@ RUN apk add --no-cache musl-dev pkgconfig openssl-dev curl bash
 RUN cargo install spacetimedb-cli --version 2.6.0 --locked
 
 WORKDIR /module
-COPY --from=builder /module /module
+COPY --from=source /module /module
 
 # The entrypoint waits for STDB to be ready, builds, and publishes
 COPY <<'SCRIPT' /entrypoint.sh
@@ -31,7 +27,7 @@ COPY <<'SCRIPT' /entrypoint.sh
 set -e
 
 STDB_HOST="${STDB_HOST:-spacetimedb:3001}"
-DB_NAME="${DB_NAME:-spacetime_wiki}"
+DB_NAME="${DB_NAME:-spacetime-wiki}"
 
 echo "Waiting for STDB at ${STDB_HOST}..."
 until curl -s "http://${STDB_HOST}/health" > /dev/null 2>&1; do
