@@ -64,15 +64,23 @@ describe('SamlCallback', () => {
     vi.spyOn(Storage.prototype, 'removeItem').mockImplementation((key: string) => {
       delete store[key];
     });
+    // Default URLSearchParams spy returns null for everything
+    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation(() => null);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('shows error when no SAMLResponse param', async () => {
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation(() => null);
+  /** Set URL query params for the SAML callback page. Each key-value pair becomes a param. */
+  function setUrlParams(entries: Record<string, string>) {
+    (URLSearchParams.prototype.get as Mock).mockImplementation((key: string) => {
+      if (key in entries) return entries[key];
+      return null;
+    });
+  }
 
+  it('shows error when no SAMLResponse param', async () => {
     render(
       <BrowserRouter>
         <SamlCallback />
@@ -84,10 +92,7 @@ describe('SamlCallback', () => {
   });
 
   it('shows error when SAMLResponse is invalid base64', async () => {
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return '!!!invalid-base64!!!';
-      return null;
-    });
+    setUrlParams({ SAMLResponse: '!!!invalid-base64!!!' });
 
     render(
       <BrowserRouter>
@@ -100,18 +105,13 @@ describe('SamlCallback', () => {
   });
 
   it('shows error when provider cannot be determined', async () => {
-    // Build a SAMLResponse with an Issuer that doesn't match any SAML provider
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
   xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
   <saml:Issuer>https://unknown.idp.com</saml:Issuer>
 </samlp:Response>`;
     const samlResponse = btoa(xml);
-
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return samlResponse;
-      return null;
-    });
+    setUrlParams({ SAMLResponse: samlResponse });
 
     __mockApi.saml.list.mockResolvedValue([{ id: 'saml-okta', entity_id: 'https://okta.com' }]);
 
@@ -132,11 +132,7 @@ describe('SamlCallback', () => {
   <saml:Issuer>https://some.idp.com</saml:Issuer>
 </samlp:Response>`);
 
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return samlResponse;
-      if (key === 'RelayState') return 'saml-direct';
-      return null;
-    });
+    setUrlParams({ SAMLResponse: samlResponse, RelayState: 'saml-direct' });
 
     __mockApi.saml.get.mockResolvedValue({
       id: 'saml-direct',
@@ -161,11 +157,7 @@ describe('SamlCallback', () => {
   <saml:Issuer>https://idp.com</saml:Issuer>
 </samlp:Response>`);
 
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return samlResponse;
-      if (key === 'RelayState') return 'saml-missing';
-      return null;
-    });
+    setUrlParams({ SAMLResponse: samlResponse, RelayState: 'saml-missing' });
 
     __mockApi.saml.list.mockResolvedValue([{ id: 'saml-missing', entity_id: 'https://idp.com' }]);
     __mockApi.saml.get.mockResolvedValue(null);
@@ -181,7 +173,6 @@ describe('SamlCallback', () => {
   });
 
   it('shows error when no email in attributes', async () => {
-    // Build a SAML response with NO Subject/NameID and no email attributes
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
   xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
@@ -192,11 +183,7 @@ describe('SamlCallback', () => {
   </saml:Assertion>
 </samlp:Response>`;
     const resp = btoa(xml);
-
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return resp;
-      return null;
-    });
+    setUrlParams({ SAMLResponse: resp });
 
     __mockApi.saml.list.mockResolvedValue([
       { id: 'saml-1', entity_id: 'https://saml.idp.example.com' },
@@ -219,11 +206,7 @@ describe('SamlCallback', () => {
 
   it('signs in existing user via NameID', async () => {
     const resp = makeSamlResponse({}, 'existing@saml.idp.com');
-
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return resp;
-      return null;
-    });
+    setUrlParams({ SAMLResponse: resp });
 
     __mockApi.saml.list.mockResolvedValue([
       { id: 'saml-1', entity_id: 'https://saml.idp.example.com' },
@@ -248,11 +231,7 @@ describe('SamlCallback', () => {
 
   it('registers new user when auto_register is true', async () => {
     const resp = makeSamlResponse({ email: 'new@saml.idp.com', name: 'SAML User' });
-
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return resp;
-      return null;
-    });
+    setUrlParams({ SAMLResponse: resp });
 
     __mockApi.saml.list.mockResolvedValue([
       { id: 'saml-1', entity_id: 'https://saml.idp.example.com' },
@@ -278,11 +257,7 @@ describe('SamlCallback', () => {
 
   it("shows error when auto_register is false and user doesn't exist", async () => {
     const resp = makeSamlResponse({ email: 'new@saml.idp.com' });
-
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return resp;
-      return null;
-    });
+    setUrlParams({ SAMLResponse: resp });
 
     __mockApi.saml.list.mockResolvedValue([
       { id: 'saml-1', entity_id: 'https://saml.idp.example.com' },
@@ -306,11 +281,7 @@ describe('SamlCallback', () => {
 
   it('shows error on fetch failure', async () => {
     const resp = makeSamlResponse({});
-
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return resp;
-      return null;
-    });
+    setUrlParams({ SAMLResponse: resp });
 
     __mockApi.saml.list.mockRejectedValue(new Error('API unavailable'));
 
@@ -325,15 +296,10 @@ describe('SamlCallback', () => {
   });
 
   it('uses mapped attribute names from provider config', async () => {
-    // Test with non-standard attribute names
     const resp = makeSamlResponse({
       'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress': 'mapped@idp.com',
     });
-
-    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
-      if (key === 'SAMLResponse') return resp;
-      return null;
-    });
+    setUrlParams({ SAMLResponse: resp });
 
     __mockApi.saml.list.mockResolvedValue([
       { id: 'saml-1', entity_id: 'https://saml.idp.example.com' },
