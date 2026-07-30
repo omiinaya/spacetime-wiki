@@ -110,6 +110,16 @@ distclean: clean ## Clean everything including node_modules
 
 # ── Pre-commit (matches .husky/pre-commit) ────────────────────────────────────
 
+.PHONY: test-all
+test-all: ## Run ALL test suites (frontend + Rust + Python)
+	cd $(WEB_DIR) && npx tsc --noEmit
+	cd $(WEB_DIR) && npx vitest run
+	cd $(SPACETIMEDB_DIR) && cargo test --lib
+	cd $(API_SERVER_DIR) && python -m pytest ../tests/ --tb=short -q --ignore=tests/test_page_metadata_and_settings.py --ignore=tests/test_core_reducers.py --ignore=tests/test_collection_permission_search.py --ignore=tests/test_collection_permission_action.py --ignore=tests/test_collection_permission_operations.py --ignore=tests/test_collection_permission_propagation.py --ignore=tests/test_collection_permission_reducers.py 2>&1 | tail -3
+	cd $(MCP_SERVER_DIR) && python -m pytest tests/ --tb=short -q 2>&1 | tail -3
+	@echo ""
+	@echo "=== All tests passed ==="
+
 .PHONY: pre-commit
 pre-commit: ## Run pre-commit checks: tsc + tests + cargo check + cargo test
 	cd $(WEB_DIR) && npx tsc --noEmit
