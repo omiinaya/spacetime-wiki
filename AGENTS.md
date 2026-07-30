@@ -267,7 +267,7 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | **Rust Tests** | 201 unit ✅ |
 | **Python Unit Tests** | 329 (211 API server + 118 MCP server) ✅ |
 | **Frontend Test Files** | 57 |
-| **Frontend Tests** | 1,207 (Vitest) ✅ |
+| **Frontend Tests** | 1,205 of 1,207 (2 flaky SamlCallback race condition) |
 | **E2E Spec Files** | 14 |
 | **E2E Test Cases** | 79 |
 | **API Endpoints** | 52 (FastAPI REST gateway) |
@@ -304,8 +304,9 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | `app_settings.rs` | 87 | Global app configuration |
 | `collection_members.rs` | 101 | Collection user/group membership |
 | `collaboration.rs` | 316 | Real-time Yjs collab: broadcast/join/leave/cursor, stale session cleanup |
+| `helpers.rs` | 608 | Auth hashing (argon2, sha2 0.11, hmac 0.13, sha1 0.11), slug generation, IDs |
 
-**Total lines of Rust:** 7,543
+**Total lines of Rust:** 7,535
 
 
 ## Module Map

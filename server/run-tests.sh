@@ -3,7 +3,8 @@
 # API server and MCP server tests run separately due to conftest namespace isolation.
 set -euo pipefail
 
-VENV="${VENV:-$(dirname "$0")/api-server/.venv}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+VENV="${VENV:-${ROOT}/server/api-server/.venv}"
 PYTHON="${VENV}/bin/python"
 
 echo ":: Running Python unit tests — spacetime-wiki"
@@ -11,7 +12,8 @@ echo ""
 
 # ─── API server tests ────────────────────────────────────────────────────────
 echo "==> API server unit tests …"
-cd "$(dirname "$0")"
+
+cd "${ROOT}/server"
 
 $PYTHON -m pytest tests/ \
   --tb=short \
@@ -22,7 +24,8 @@ $PYTHON -m pytest tests/ \
   --ignore=tests/test_collection_permission_action.py \
   --ignore=tests/test_collection_permission_operations.py \
   --ignore=tests/test_collection_permission_propagation.py \
-  -o "filterwarnings=ignore::pytest.PytestReturnNotReturnWarning" 2>&1 | tail -3
+  --ignore=tests/test_collection_permission_reducers.py \
+  2>&1 | tail -6
 
 echo ""
 

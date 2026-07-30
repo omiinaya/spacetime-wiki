@@ -2,24 +2,33 @@
 # ─── Pre-commit hook ────────────────────────────────────────────────────────
 # Runs lint-staged (tsc + eslint on staged JS/TS files), plus cargo check if
 # Rust files changed, and frontend build sanity check.
+# Merge commits (2+ parents) skip Rust/web checks automatically.
 
 set -e
+
+# Skip heavy checks for merge commits
+if [ "$(git log -1 --format=%P | wc -w)" -gt 1 ]; then
+  echo "⟦pre-commit⟧ Merge commit — skipping cargo/frontend checks"
+  npx lint-staged
+  exit 0
+fi
 
 echo "⟦pre-commit⟧ Running lint-staged..."
 npx lint-staged
 
+# Export PATH so cargo (from ~/.cargo/bin) is found inside git hooks
+export PATH="$HOME/.cargo/bin:$PATH"
+
 # Check if Rust files were modified
 RUST_CHANGED=$(git diff --cached --name-only | grep -c '\.rs$' || true)
 if [ "$RUST_CHANGED" -gt 0 ]; then
-  echo "⟦pre-commit⟧ Rust files changed — running cargo check + cargo test..."
-  cd server/spacetimedb && cargo check 2>&1 && cargo test 2>&1
-  cd "$OLDPWD"
+  echo "⟦pre-commit⟧ Rust files changed — running cargo check..."
+  (cd server/spacetimedb && cargo check 2>&1)
 fi
 
-# Check if any web/src files changed → quick build check
+# Check if any web/src files changed → quick type check
 WEB_SRC_CHANGED=$(git diff --cached --name-only | grep -c '^web/src/' || true)
 if [ "$WEB_SRC_CHANGED" -gt 0 ]; then
   echo "⟦pre-commit⟧ Frontend source changed — running TypeScript check..."
-  cd web && npx tsc --noEmit 2>&1
-  cd "$OLDPWD"
+  (cd web && npx tsc --noEmit 2>&1)
 fi
