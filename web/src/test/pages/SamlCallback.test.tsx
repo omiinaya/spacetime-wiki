@@ -167,9 +167,7 @@ describe('SamlCallback', () => {
       return null;
     });
 
-    __mockApi.saml.list.mockResolvedValue([
-      { id: 'saml-missing', entity_id: 'https://idp.com' },
-    ]);
+    __mockApi.saml.list.mockResolvedValue([{ id: 'saml-missing', entity_id: 'https://idp.com' }]);
     __mockApi.saml.get.mockResolvedValue(null);
 
     render(

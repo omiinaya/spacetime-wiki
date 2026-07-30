@@ -1,31 +1,34 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 
 /**
  * Page view tests — work with any DB state (fresh or seeded).
  * Navigate from home to the first available page, then verify structure.
  */
-test.describe("Page view", () => {
+test.describe('Page view', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("load");
+    await page.goto('/');
+    await page.waitForLoadState('load');
     // Navigate to first available page or create one
-    const firstPage = page.locator("main button").filter({ hasText: /Updated/ }).first();
+    const firstPage = page
+      .locator('main button')
+      .filter({ hasText: /Updated/ })
+      .first();
     await expect(firstPage).toBeVisible({ timeout: 5000 });
     await firstPage.click();
     await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/);
-    await expect(page.locator("main")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
   });
 
-  test("main content renders", async ({ page }) => {
-    await expect(page.locator("main")).toBeVisible({ timeout: 5000 });
+  test('main content renders', async ({ page }) => {
+    await expect(page.locator('main')).toBeVisible({ timeout: 5000 });
   });
 
-  test("shows Edit button in page toolbar", async ({ page }) => {
+  test('shows Edit button in page toolbar', async ({ page }) => {
     const editBtn = page.locator('button[title="Edit"]');
     await expect(editBtn).toBeVisible({ timeout: 3000 });
   });
 
-  test("shows toolbar buttons", async ({ page }) => {
+  test('shows toolbar buttons', async ({ page }) => {
     const toolbarButtons = [
       'button[title="Edit"]',
       'button[title="History"]',
@@ -40,13 +43,13 @@ test.describe("Page view", () => {
     }
   });
 
-  test("shows metadata (word count or reading time)", async ({ page }) => {
+  test('shows metadata (word count or reading time)', async ({ page }) => {
     const wordCount = page.getByText(/words?/i);
     const readTime = page.getByText(/min read/i);
     await expect(wordCount.or(readTime).first()).toBeVisible({ timeout: 3000 });
   });
 
-  test("clicking Edit navigates to editor", async ({ page }) => {
+  test('clicking Edit navigates to editor', async ({ page }) => {
     const editBtn = page.locator('button[title="Edit"]');
     await expect(editBtn).toBeVisible({ timeout: 3000 });
     await editBtn.click();
@@ -54,14 +57,18 @@ test.describe("Page view", () => {
   });
 });
 
-test.describe("Page view — page not found", () => {
-  test("shows page not found for nonexistent page", async ({ page }) => {
-    await page.goto("/page/nonexistent_page_xyz");
-    await expect(page.getByText(/Page not found|Not found|404/).first()).toBeVisible({ timeout: 10000 });
+test.describe('Page view — page not found', () => {
+  test('shows page not found for nonexistent page', async ({ page }) => {
+    await page.goto('/page/nonexistent_page_xyz');
+    await expect(page.getByText(/Page not found|Not found|404/).first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
-  test("shows go home link on error", async ({ page }) => {
-    await page.goto("/page/nonexistent_page_xyz");
-    await expect(page.getByText(/Go home|Back to home|Home/).first()).toBeVisible({ timeout: 10000 });
+  test('shows go home link on error', async ({ page }) => {
+    await page.goto('/page/nonexistent_page_xyz');
+    await expect(page.getByText(/Go home|Back to home|Home/).first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 });

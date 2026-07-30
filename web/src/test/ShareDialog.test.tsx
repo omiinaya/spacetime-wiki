@@ -3,10 +3,24 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ShareDialog } from '../components/ShareDialog';
 
 const mockShareLinks = [
-  { id: 's1', token: 'abc123def456', expires_at: 2000000, visit_count: 5,
-    password_hash: '', brand_title: null, brand_logo_url: null },
-  { id: 's2', token: 'xyz789uvw012', expires_at: 3000000, visit_count: 0,
-    password_hash: 'hash1', brand_title: 'My Brand', brand_logo_url: 'https://example.com/logo.png' },
+  {
+    id: 's1',
+    token: 'abc123def456',
+    expires_at: 2000000,
+    visit_count: 5,
+    password_hash: '',
+    brand_title: null,
+    brand_logo_url: null,
+  },
+  {
+    id: 's2',
+    token: 'xyz789uvw012',
+    expires_at: 3000000,
+    visit_count: 0,
+    password_hash: 'hash1',
+    brand_title: 'My Brand',
+    brand_logo_url: 'https://example.com/logo.png',
+  },
 ];
 
 describe('ShareDialog', () => {
@@ -104,7 +118,9 @@ describe('ShareDialog', () => {
 
   it('calls onUpdateBranding when Save branding is clicked', () => {
     const onUpdateBranding = vi.fn();
-    render(<ShareDialog {...baseProps} editBrandShareId="s1" onUpdateBranding={onUpdateBranding} />);
+    render(
+      <ShareDialog {...baseProps} editBrandShareId="s1" onUpdateBranding={onUpdateBranding} />,
+    );
     fireEvent.click(screen.getByText('Save branding'));
     expect(onUpdateBranding).toHaveBeenCalledWith('s1');
   });

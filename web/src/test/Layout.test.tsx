@@ -113,7 +113,13 @@ const mockLayoutState = vi.hoisted(() => ({
   createFromTemplate: vi.fn(),
   colDialogOpen: false,
   setColDialogOpen: vi.fn(),
-  editingCol: null as { id: string; name: string; description: string; icon: string; color: string } | null,
+  editingCol: null as {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    color: string;
+  } | null,
   colName: '',
   setColName: vi.fn(),
   colDesc: '',

@@ -183,7 +183,11 @@ describe('BulkExport', () => {
     URL.createObjectURL = vi.fn(() => 'blob:http://test');
     URL.revokeObjectURL = vi.fn();
     window.open = vi.fn(
-      () => ({ document: { write: vi.fn(), close: vi.fn() }, focus: vi.fn() }) as unknown as () => Window,
+      () =>
+        ({
+          document: { write: vi.fn(), close: vi.fn() },
+          focus: vi.fn(),
+        }) as unknown as () => Window,
     );
   });
 

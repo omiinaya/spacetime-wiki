@@ -20,10 +20,10 @@
  * published and the API server is healthy.
  */
 
-import type { FullConfig } from "@playwright/test";
+import type { FullConfig } from '@playwright/test';
 
-const STDB_HOST = process.env.STDB_HOST || "localhost:3001";
-const DB_NAME = process.env.STDB_DATABASE || process.env.STDB_DB || "spacetime-wiki";
+const STDB_HOST = process.env.STDB_HOST || 'localhost:3001';
+const DB_NAME = process.env.STDB_DATABASE || process.env.STDB_DB || 'spacetime-wiki';
 
 function genId(prefix: string): string {
   const ts = Date.now();
@@ -34,8 +34,8 @@ function genId(prefix: string): string {
 async function callReducer(reducer: string, args: unknown[]): Promise<void> {
   const url = `http://${STDB_HOST}/v1/database/${DB_NAME}/call/${reducer}`;
   const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(args),
   });
   if (!response.ok) {
@@ -47,12 +47,12 @@ async function callReducer(reducer: string, args: unknown[]): Promise<void> {
 async function sqlExists(sql: string): Promise<boolean> {
   const url = `http://${STDB_HOST}/v1/database/${DB_NAME}/sql`;
   const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
     body: sql,
   });
   if (!response.ok) return false;
-  const data = await response.json() as Array<{ rows?: unknown[][] }>;
+  const data = (await response.json()) as Array<{ rows?: unknown[][] }>;
   const rows = data[0]?.rows || [];
   return rows.length > 0;
 }
@@ -62,7 +62,9 @@ async function stdbHealthCheck(): Promise<boolean> {
     // STDB 2.6+ uses /v1/health; fall back to /health for older versions
     const res = await fetch(`http://${STDB_HOST}/v1/health`, { signal: AbortSignal.timeout(3000) });
     if (res.ok) return true;
-    const resLegacy = await fetch(`http://${STDB_HOST}/health`, { signal: AbortSignal.timeout(2000) });
+    const resLegacy = await fetch(`http://${STDB_HOST}/health`, {
+      signal: AbortSignal.timeout(2000),
+    });
     return resLegacy.ok;
   } catch {
     return false;
@@ -74,7 +76,7 @@ async function globalSetup(_config: FullConfig): Promise<void> {
   // publish + API server start — short-circuit here to avoid racing with
   // startup (globalSetup runs before webServer processes).
   if (process.env.CI) {
-    console.log("[e2e-setup] CI mode: seeding deferred to webServer (setup-e2e-deps.sh).");
+    console.log('[e2e-setup] CI mode: seeding deferred to webServer (setup-e2e-deps.sh).');
     return;
   }
 
@@ -91,110 +93,110 @@ async function globalSetup(_config: FullConfig): Promise<void> {
 
   // ── Check if seed data already exists ───────────────────────────────────
   const adminExists = await sqlExists(
-    `SELECT id FROM "user" WHERE email = 'admin@spacetimewiki.local'`
+    `SELECT id FROM "user" WHERE email = 'admin@spacetimewiki.local'`,
   );
   if (adminExists) {
-    console.log("[e2e-setup] Seed data already exists, skipping.");
+    console.log('[e2e-setup] Seed data already exists, skipping.');
     return;
   }
 
-  console.log("[e2e-setup] Seeding E2E test data...");
+  console.log('[e2e-setup] Seeding E2E test data...');
 
   // ── 1. Create admin user ────────────────────────────────────────────────
-  const adminId = genId("user");
-  await callReducer("register_user", [
+  const adminId = genId('user');
+  await callReducer('register_user', [
     adminId,
-    "Admin",
-    "admin@spacetimewiki.local",
-    "admin123",
-    "admin",
+    'Admin',
+    'admin@spacetimewiki.local',
+    'admin123',
+    'admin',
   ]);
   console.log(`[e2e-setup] Admin user created: ${adminId}`);
 
   // ── 2. Create Uncategorized collection ──────────────────────────────────
-  const collId = genId("col");
-  await callReducer("create_collection", [
+  const collId = genId('col');
+  await callReducer('create_collection', [
     collId,
-    "Uncategorized",
-    "Default collection for uncategorized pages",
-    "",
-    "\ud83d\udcc4",
-    "#808080",
+    'Uncategorized',
+    'Default collection for uncategorized pages',
+    '',
+    '\ud83d\udcc4',
+    '#808080',
     adminId,
   ]);
   console.log(`[e2e-setup] Collection created: ${collId}`);
 
   // ── 3. Create sample pages (published + draft) ──────────────────────────
-  const page1Id = genId("page");
-  await callReducer("create_page", [
+  const page1Id = genId('page');
+  await callReducer('create_page', [
     page1Id,
-    "Welcome to SpacetimeWiki",
+    'Welcome to SpacetimeWiki',
     JSON.stringify({
-      type: "doc",
+      type: 'doc',
       content: [
         {
-          type: "paragraph",
+          type: 'paragraph',
           content: [
             {
-              type: "text",
-              text: "Welcome to SpacetimeWiki \u2014 a collaborative wiki powered by SpacetimeDB.",
+              type: 'text',
+              text: 'Welcome to SpacetimeWiki \u2014 a collaborative wiki powered by SpacetimeDB.',
             },
           ],
         },
       ],
     }),
     collId,
-    "",
+    '',
     adminId,
   ]);
-  await callReducer("set_page_status", [page1Id, "published"]);
+  await callReducer('set_page_status', [page1Id, 'published']);
   console.log(`[e2e-setup] Published page created: ${page1Id}`);
 
-  const page2Id = genId("page");
-  await callReducer("create_page", [
+  const page2Id = genId('page');
+  await callReducer('create_page', [
     page2Id,
-    "Draft Page Example",
+    'Draft Page Example',
     JSON.stringify({
-      type: "doc",
+      type: 'doc',
       content: [
         {
-          type: "paragraph",
-          content: [{ type: "text", text: "This is a draft page for E2E testing." }],
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'This is a draft page for E2E testing.' }],
         },
       ],
     }),
     collId,
-    "",
+    '',
     adminId,
   ]);
   console.log(`[e2e-setup] Draft page created: ${page2Id}`);
 
-  const page3Id = genId("page");
-  await callReducer("create_page", [
+  const page3Id = genId('page');
+  await callReducer('create_page', [
     page3Id,
-    "Getting Started Guide",
+    'Getting Started Guide',
     JSON.stringify({
-      type: "doc",
+      type: 'doc',
       content: [
         {
-          type: "paragraph",
+          type: 'paragraph',
           content: [
             {
-              type: "text",
-              text: "This guide helps you get started with SpacetimeWiki.",
+              type: 'text',
+              text: 'This guide helps you get started with SpacetimeWiki.',
             },
           ],
         },
       ],
     }),
     collId,
-    "",
+    '',
     adminId,
   ]);
-  await callReducer("set_page_status", [page3Id, "published"]);
+  await callReducer('set_page_status', [page3Id, 'published']);
   console.log(`[e2e-setup] Published page created: ${page3Id}`);
 
-  console.log("[e2e-setup] Seed data created successfully.");
+  console.log('[e2e-setup] Seed data created successfully.');
 }
 
 export default globalSetup;

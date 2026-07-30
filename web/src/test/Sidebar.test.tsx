@@ -278,7 +278,9 @@ describe('Sidebar', () => {
 
   it('shows clear search button when searchQuery has value', () => {
     const setSearchQuery = vi.fn();
-    const { container } = render(<Sidebar {...defaultProps} searchQuery="test" setSearchQuery={setSearchQuery} />);
+    const { container } = render(
+      <Sidebar {...defaultProps} searchQuery="test" setSearchQuery={setSearchQuery} />,
+    );
     // Find the clear button inside the search container (has "right-2" class)
     const clearBtns = container.querySelectorAll('.absolute.right-2');
     expect(clearBtns.length).toBeGreaterThan(0);

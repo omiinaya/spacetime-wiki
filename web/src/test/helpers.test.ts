@@ -128,7 +128,13 @@ describe('htmlToProseMirror', () => {
     const result = htmlToProseMirror(html);
     const para = result.content[0];
     const texts = para.content.map((c: Record<string, unknown>) => (c as { text?: string }).text);
-    const marks = para.content.map((c: Record<string, unknown>) => ((c as { marks?: Array<Record<string, unknown>> }).marks?.[0] as Record<string, unknown> | undefined)?.type);
+    const marks = para.content.map(
+      (c: Record<string, unknown>) =>
+        (
+          (c as { marks?: Array<Record<string, unknown>> }).marks?.[0] as
+            Record<string, unknown> | undefined
+        )?.type,
+    );
     expect(texts).toEqual(expect.arrayContaining(['Bold', 'Italic', 'Code', 'Strike', 'Link']));
     expect(marks).toContain('bold');
     expect(marks).toContain('italic');
@@ -143,7 +149,13 @@ describe('htmlToProseMirror', () => {
     const para = result.content[0];
     // Space text nodes get trimmed; B should be the marked italic element
     expect(para.content[0]).toMatchObject({ type: 'text', text: 'A', marks: [{ type: 'bold' }] });
-    const italicTexts = para.content.filter((c: Record<string, unknown>) => ((c as { marks?: Array<Record<string, unknown>> }).marks?.[0] as Record<string, unknown> | undefined)?.type === 'italic');
+    const italicTexts = para.content.filter(
+      (c: Record<string, unknown>) =>
+        (
+          (c as { marks?: Array<Record<string, unknown>> }).marks?.[0] as
+            Record<string, unknown> | undefined
+        )?.type === 'italic',
+    );
     expect(italicTexts).toHaveLength(1);
     expect(italicTexts[0]).toMatchObject({ text: 'B' });
   });
@@ -197,7 +209,15 @@ describe('markdownToProseMirror', () => {
     const result = markdownToProseMirror('**B** _I_ `C` ~~S~~ [L](https://x.com)');
     const para = result.content[0];
     // The addParagraph function inserts spaces as separate text nodes
-    const marks = para.content.filter((c: Record<string, unknown>) => (c as { marks?: Array<Record<string, unknown>> }).marks).map((c: Record<string, unknown>) => ((c as { marks: Array<Record<string, unknown>> }).marks[0] as Record<string, unknown>).type);
+    const marks = para.content
+      .filter(
+        (c: Record<string, unknown>) => (c as { marks?: Array<Record<string, unknown>> }).marks,
+      )
+      .map(
+        (c: Record<string, unknown>) =>
+          ((c as { marks: Array<Record<string, unknown>> }).marks[0] as Record<string, unknown>)
+            .type,
+      );
     expect(marks).toContain('bold');
     expect(marks).toContain('italic');
     expect(marks).toContain('code');

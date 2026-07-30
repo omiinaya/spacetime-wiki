@@ -48,7 +48,9 @@ describe('CommandPalette', () => {
 
   it('renders search input with placeholder', () => {
     render(<CommandPalette {...baseProps} />);
-    expect(screen.getByPlaceholderText('Search pages, collections, or actions...')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Search pages, collections, or actions...'),
+    ).toBeInTheDocument();
   });
 
   it('renders all items', () => {

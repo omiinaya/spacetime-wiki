@@ -8,17 +8,47 @@ vi.mock('../components/Toast', () => ({
 }));
 
 const mockPages = [
-  { id: 'p1', title: 'Welcome Page', slug: 'welcome', content: '', text_content: '',
-    collection_id: 'c1', parent_page_id: '', status: 'active', icon: '', color: '',
-    full_width: false, is_pinned: false, is_template: false, template_id: '',
-    sort_order: 0, created_by: 'u1', updated_by: 'u1', created_at: 1000,
-    updated_at: 1000, published_at: 0, deleted_at: 0, direction: '', status_color: '' },
+  {
+    id: 'p1',
+    title: 'Welcome Page',
+    slug: 'welcome',
+    content: '',
+    text_content: '',
+    collection_id: 'c1',
+    parent_page_id: '',
+    status: 'active',
+    icon: '',
+    color: '',
+    full_width: false,
+    is_pinned: false,
+    is_template: false,
+    template_id: '',
+    sort_order: 0,
+    created_by: 'u1',
+    updated_by: 'u1',
+    created_at: 1000,
+    updated_at: 1000,
+    published_at: 0,
+    deleted_at: 0,
+    direction: '',
+    status_color: '',
+  },
 ];
 
 const mockCollections = [
-  { id: 'c1', name: 'Engineering', slug: 'eng', description: '', parent_id: '',
-    icon: '', color: '#3b82f6', sort_order: 0, created_by: 'u1',
-    created_at: 500, updated_at: 500 },
+  {
+    id: 'c1',
+    name: 'Engineering',
+    slug: 'eng',
+    description: '',
+    parent_id: '',
+    icon: '',
+    color: '#3b82f6',
+    sort_order: 0,
+    created_by: 'u1',
+    created_at: 500,
+    updated_at: 500,
+  },
 ];
 
 describe('PageContextMenu — page context', () => {

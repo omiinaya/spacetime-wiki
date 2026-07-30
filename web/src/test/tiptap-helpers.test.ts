@@ -525,7 +525,11 @@ describe('markdownToProseMirror', () => {
     const result = markdownToProseMirror('**B** _I_ `C`');
     const marks = result.content[0].content
       .filter((c: Record<string, unknown>) => (c as { marks?: unknown }).marks)
-      .map((c: Record<string, unknown>) => ((c as { marks: Array<Record<string, unknown>> }).marks[0] as Record<string, unknown>).type);
+      .map(
+        (c: Record<string, unknown>) =>
+          ((c as { marks: Array<Record<string, unknown>> }).marks[0] as Record<string, unknown>)
+            .type,
+      );
     expect(marks).toContain('bold');
     expect(marks).toContain('italic');
     expect(marks).toContain('code');

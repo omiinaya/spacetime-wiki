@@ -47,7 +47,9 @@ const mockCreateShareLink = vi.hoisted(() => vi.fn());
 const mockDeleteShareLink = vi.hoisted(() => vi.fn());
 
 const mockAccessRequestCreate = vi.hoisted(() => vi.fn());
-const mockResolveContentAttachments = vi.hoisted(() => async (content: unknown, cache: unknown) => content);
+const mockResolveContentAttachments = vi.hoisted(
+  () => async (content: unknown, cache: unknown) => content,
+);
 const mockResolveTransclusions = vi.hoisted(() => async (content: unknown) => content);
 
 // ─── Mock the API module (hoisted to top by Vitest) ───────────────────────────
