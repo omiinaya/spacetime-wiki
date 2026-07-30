@@ -1,0 +1,26 @@
+---
+name: Config Change Request
+description: Request changes to the Swarms configuration
+title: "[Config]: "
+labels: ["config"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to request changes to swarms config or any system configuration.
+  - type: textarea
+    id: config_change
+    attributes:
+      label: What configuration needs to change?
+      description: Describe the current and desired state
+      placeholder: Describe the current and desired state
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason for change
+      description: Why is this change needed?
+    validations:
+      required: true
