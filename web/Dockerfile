@@ -16,17 +16,16 @@ ARG VITE_API_BASE
 
 RUN npm run build
 
-# ─── Serve stage with Node runtime ──────────────────────────────────────────
-FROM node:26-alpine
+# ─── Serve stage with nginx ────────────────────────────────────────────────
+FROM nginx:alpine
 
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
+# Copy nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-RUN npm install -g serve
+# Copy built assets from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 5184
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "const http=require('http');http.get('http://localhost:5184',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
-
-CMD ["serve", "dist", "-l", "5184"]
+  CMD wget -qO- http://localhost:5184/health || exit 1
