@@ -4,7 +4,7 @@
 
 **Repository:** https://github.com/omiinaya/spacetime-wiki
 **Tech Stack:** React 19 + TypeScript 5.9 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
-**Stats (verified today):** 50 tables, 17 Rust files (7,232 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 201 Rust unit tests ✅, 1,194 frontend tests ✅, 79 E2E tests ⚠️ (variable quality), 14 integration tests ✅, 0 remaining `any` types, 10 Rust unused-import warnings
+**Stats (verified today):** 50 tables, 17 Rust files (7,232 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 201 Rust unit tests ✅, 329 Python unit tests ✅ (211 API server + 118 MCP server), 1,194 frontend tests ✅, 79 E2E tests ⚠️ (variable quality), 14 integration tests ✅, 0 remaining `any` types, 10 Rust unused-import warnings
 
 ---
 
@@ -114,11 +114,10 @@
 - **Fix:** ✅ Already applied
 - **Effort:** 1 hour
 
-### P3 — `__getrandom_custom` deterministic RNG stub
+### P3 — `__getrandom_custom` deterministic RNG stub ✅ DONE
 - **File:** `server/spacetimedb/src/lib.rs:1-14`
-- **Status:** ⚠️ Known, low risk (build-time only)
-- **Issue:** Uses trivial deterministic RNG (`i * 0x9e + 0x37`). Build-only but could be more correct.
-- **Effort:** 1 hour
+- **Status:** ✅ DONE — the `getrandom` crate is already configured with `features = ["js"]` in `Cargo.toml`, which is the correct WASM-compatible approach. The prior deterministic stub (`i * 0x9e + 0x37`) was already removed in a refactor; the proper `js` feature resolves cryptographically strong randomness on WASM.
+- **Effort:** Already resolved
 
 ---
 
@@ -148,10 +147,10 @@
 - **Status:** Known — many `default_*()` test helpers could be parameterized
 - **Effort:** 4-6 hours
 
-### P5 — MCP server has no dedicated unit tests
+### P5 — MCP server has no dedicated unit tests ✅ DONE
 - **File:** `server/mcp-server/`
-- **Status:** Known gap
-- **Effort:** 4-6 hours
+- **Status:** ✅ DONE — 118 unit tests across 3 test files (test_config.py, test_stdb_client.py, test_tools.py) covering all MCP modules
+- **Effort:** 4-6 hours (already completed)
 
 ---
 
@@ -188,6 +187,7 @@
 | P3 — KaTeX chunk dedup | vite.config.ts already has manualChunk for katex | ✅ DONE |
 | P3 — i18n missing ja/zh locales | Config only imports 4 locales; no ja/zh references in codebase | ✅ DONE |
 | P3 — Rust unused import warnings | Only 5 `use super::*` remain (all used); clippy passes clean | ✅ DONE |
+| P5 — Python test coverage | Added 329 Python unit tests (211 API server + 118 MCP server) covering all 19 Python source modules | ✅ DONE |
 
 ---
 

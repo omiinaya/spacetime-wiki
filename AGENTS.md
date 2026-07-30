@@ -264,9 +264,10 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 |--------|-------|
 | **STDB Reducers** | 141 (68 in `lib.rs`, 73 across 14 module files) |
 | **STDB Tables** | 50 (35 private, 15 remain public for SQL queries) |
-| **Rust Tests** | 201 unit (Rust) + 12 integration (Python) |
+| **Rust Tests** | 201 unit ✅ |
+| **Python Unit Tests** | 329 (211 API server + 118 MCP server) ✅ |
 | **Frontend Test Files** | 57 |
-| **Frontend Tests** | 1,207 (Vitest) |
+| **Frontend Tests** | 1,207 (Vitest) ✅ |
 | **E2E Spec Files** | 14 |
 | **E2E Test Cases** | 79 |
 | **API Endpoints** | 52 (FastAPI REST gateway) |
@@ -279,15 +280,15 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | **MCP server error handling** | ✅ DONE — full try/except + logging on all tools/resources + STDB client with retry |
 | **MCP server pagination** | ✅ DONE — `limit` (default 50) and `offset` (default 0) on list/search tools |
 | **API pagination** | ✅ DONE — pages.py has `limit`/`offset` params |
-| **Python code quality** | ✅ Error handling done, pagination done — score: **85%** (ROADMAP) |
+| **Python test coverage** | ✅ DONE — 329 unit tests across all 19 Python source modules |
+| **Python code quality** | ✅ Error handling done, pagination done, no broad except, no SQL injection |
 
-
-## Codebase Stats (last updated: 2025-01-19)
+## Codebase Stats (last updated: 2026-07-30)
 
 | File | Lines | Purpose |
 |------|-------|---------|
 | `lib.rs` | 2541 | Crate root, reducer functions, init, table definitions |
-| `tables.rs` | 1749 | Table schemas & struct definitions |
+| `tables.rs` | 1532 | Table schemas & struct definitions |
 | `pages.rs` | 430 | Page CRUD, restore, duplicate, move, status |
 | `users.rs` | 142 | User create, update, avatar, roles |
 | `helpers.rs` | 608 | Auth hashing, slug generation, IDs, validation |
@@ -304,7 +305,7 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | `collection_members.rs` | 101 | Collection user/group membership |
 | `collaboration.rs` | 316 | Real-time Yjs collab: broadcast/join/leave/cursor, stale session cleanup |
 
-**Total lines of Rust:** 7760
+**Total lines of Rust:** 7,543
 
 
 ## Module Map

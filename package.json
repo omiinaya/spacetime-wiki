@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "SpacetimeDB-powered knowledge wiki — Outline-inspired with feature parity",
   "private": true,
+  "workspaces": ["web"],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
@@ -13,8 +14,8 @@
   },
   "lint-staged": {
     "web/src/**/*.{ts,tsx,js,jsx,json,css,md}": [
-      "node /home/user/spacetime-wiki/web/node_modules/.bin/prettier --write",
-      "bash -c 'cd web && node /home/user/spacetime-wiki/web/node_modules/.bin/vitest run --changed --reporter=verbose --no-color 2>&1 | tail -5'"
+      "node node_modules/.bin/prettier --write",
+      "bash -c 'cd web && node ../node_modules/.bin/vitest run --changed --reporter=verbose --no-color 2>&1 | tail -5'"
     ],
     "server/spacetimedb/src/**/*.rs": []
   },

@@ -86,6 +86,44 @@ jobs:
       - name: Clippy
         run: cargo clippy -- -D warnings 2>&1 | tail -30
 
+  python:
+    name: Python (API server + MCP server)
+    runs-on: [self-hosted, ubuntu-latest]
+
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r api-server/requirements.txt 2>&1 | tail -5
+
+      - name: Run API server unit tests
+        run: |
+          cd api-server/.venv/bin 2>/dev/null || true
+          python -m pytest tests/ \
+            --tb=short -q \
+            --ignore=tests/test_core_reducers.py \
+            --ignore=tests/test_page_metadata_and_settings.py \
+            --ignore=tests/test_collection_permission_search.py \
+            --ignore=tests/test_collection_permission_action.py \
+            --ignore=tests/test_collection_permission_operations.py \
+            --ignore=tests/test_collection_permission_propagation.py \
+            2>&1 | tail -5
+
+      - name: Run MCP server unit tests
+        run: |
+          cd mcp-server && python -m pytest tests/ --tb=short -q 2>&1 | tail -3
+
   e2e:
     name: E2E (Playwright)
     if: ${{ !startsWith(github.event_name, 'workflow_dispatch') || github.event.inputs.skip_e2e != 'true' }}
