@@ -31,7 +31,7 @@ WORKDIR /app
 
 # Copy installed packages from builder (system site-packages, not a venv)
 # This avoids venv symlink breakage across stages and is the standard pattern
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code only
