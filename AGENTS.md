@@ -155,15 +155,15 @@ logic is split across topic modules:
 ### API Routes (FastAPI)
 | File | Route Prefix |
 |------|-------------|
-| `server/api-server/routers/pages.py` | `/api/v1/pages` |
+| `server/api-server/routers/pages.py` | `/api/v1/pages` (includes comments, tags, attachments, share-links, revisions) |
 | `server/api-server/routers/collections.py` | `/api/v1/collections` |
 | `server/api-server/routers/search.py` | `/api/v1/search` |
 | `server/api-server/routers/auth.py` | `/api/v1/auth` |
-| `server/api-server/routers/users.py` | `/api/v1/users` |
-| `server/api-server/routers/tags.py` | `/api/v1/tags` |
-| `server/api-server/routers/attachments.py` | `/api/v1/attachments` |
-| `server/api-server/routers/webhooks.py` | `/api/v1/webhooks` |
-| `server/api-server/routers/admin.py` | `/api/v1/admin` |
+| `server/api-server/routers/oauth.py` | `/api/v1/oauth` |
+| `server/api-server/routers/webauthn.py` | `/api/v1/webauthn` |
+| `server/api-server/routers/ldap_auth.py` | `/api/v1/auth/ldap` |
+| `server/api-server/routers/scim.py` | `/api/v1/scim` |
+| `server/api-server/routers/imports.py` | `/api/v1/imports` |
 
 ### MCP Server (AI Agent Access)
 | File | Responsibility |
