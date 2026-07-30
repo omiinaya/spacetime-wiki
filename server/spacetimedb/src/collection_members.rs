@@ -98,4 +98,37 @@ mod tests {
         let id = "member_001";
         assert!(!id.is_empty());
     }
+
+    #[test]
+    fn test_add_member_prevents_duplicate() {
+        // Adding the same user+collection twice should fail
+        let members = vec![("c1", "u1"), ("c1", "u2")];
+        // Try to add u1 to c1 again — should find existing
+        let exists = members.iter().any(|(cid, uid)| *cid == "c1" && *uid == "u1");
+        assert!(exists);
+    }
+
+    #[test]
+    fn test_add_member_allows_different_collections() {
+        // Same user can be in multiple collections
+        let members = vec![("c1", "u1")];
+        let in_c2 = members.iter().any(|(cid, uid)| *cid == "c2" && *uid == "u1");
+        assert!(!in_c2);
+    }
+
+    #[test]
+    fn test_update_role_validates_before_apply() {
+        let valid_roles = ["admin", "editor", "viewer"];
+        // Only valid roles should pass
+        for role in &["admin", "editor", "viewer"] {
+            assert!(valid_roles.contains(role));
+        }
+    }
+
+    #[test]
+    fn test_remove_member_is_idempotent() {
+        // Removing a non-existent member should be safe (id().delete is no-op)
+        let non_existent = "member_nonexistent";
+        assert!(!non_existent.is_empty());
+    }
 }

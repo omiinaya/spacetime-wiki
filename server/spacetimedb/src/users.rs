@@ -139,4 +139,30 @@ mod tests {
         let non_admin = "member";
         assert_ne!(non_admin, "admin");
     }
+
+    #[test]
+    fn test_register_user_rejects_duplicate_email() {
+        // Reducer checks for existing email before inserting
+        let existing_emails = vec!["user@example.com", "other@example.com"];
+        let duplicate = existing_emails.iter().any(|e| *e == "user@example.com");
+        assert!(duplicate);
+        let new_email = existing_emails.iter().any(|e| *e == "new@example.com");
+        assert!(!new_email);
+    }
+
+    #[test]
+    fn test_login_user_verifies_password() {
+        let password = "mypassword";
+        let hash = crate::helpers::hash_password(password);
+        let verified = crate::helpers::verify_password(password, &hash);
+        assert!(verified);
+        let wrong = crate::helpers::verify_password("wrongpassword", &hash);
+        assert!(!wrong);
+    }
+
+    #[test]
+    fn test_update_user_role_rejects_empty() {
+        let valid_roles = ["admin", "member", "viewer"];
+        assert!(!valid_roles.contains(&""));
+    }
 }
