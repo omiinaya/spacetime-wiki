@@ -3,8 +3,8 @@
 > **Generated 2026-07-10 by full codebase audit.** Every item verified against actual source. All prior roadmap claims re-checked — many were stale; this replaces them.
 
 **Repository:** https://github.com/omiinaya/spacetime-wiki
-**Tech Stack:** React 19 + TypeScript 5.9 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
-**Stats (verified 2026-07-30):** 50 tables, 17 Rust files (7,535 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 201 Rust unit tests ✅, 329 Python unit tests ✅ (211 API server + 118 MCP server), **1,316 frontend tests** ✅ (up from 1,194 — all 25 TSX components now have coverage), 0 remaining `any` types ✅, 0 Rust warnings ✅, 109 new tests covering 8 previously untested UI components ✅
+**Tech Stack:** React 19 + TypeScript 7.0 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
+**Stats (verified 2026-07-30):** 50 tables, 17 Rust files (7,535 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 246 Rust unit tests ✅, 329 Python unit tests ✅ (211 API server + 118 MCP server), **1,385 frontend tests** ✅ (up from 1,194 — all 25 TSX components + 7 Tiptap extension test files now have coverage), 0 remaining `any` types ✅, 0 Rust warnings ✅, 1,370 component tests + 69 extension/helper tests covering all 14 Tiptap extensions ✅
 
 ---
 
@@ -68,10 +68,10 @@
 - **Status:** ✅ DONE — coverage step already present (`npx vitest run --coverage`)
 - **Effort:** 1 hour (done in prior commit)
 
-### P2 — No Rust doc generation in CI
-- **Status:** ❌ Not done
-- **Fix:** Add `cargo doc --no-deps` to CI
-- **Effort:** 1 hour
+### P2 — No Rust doc generation in CI ✅ DONE
+- **Status:** ✅ DONE — `cargo doc --no-deps` added to Rust CI job earlier this session
+- **Fix:** Already added
+- **Effort:** 1 hour ✅
 
 ---
 
