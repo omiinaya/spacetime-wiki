@@ -110,6 +110,24 @@ function renderGraph() {
   return render(<GraphView />);
 }
 
+// ─── Helper: wait for D3 circles to render ───────────────────────────────────
+
+/**
+ * Wait for the graph to load AND D3 to finish initial rendering.
+ * D3 runs in a separate useEffect that fires after the "Graph View" text
+ * appears, so we must wait for SVG circles to exist before interacting.
+ */
+async function waitForGraph(container: HTMLElement): Promise<void> {
+  await waitFor(() => {
+    expect(screen.getByText('Graph View')).toBeInTheDocument();
+  });
+  // D3 creates circles inside SVG after commit — wait for them
+  await waitFor(() => {
+    const circles = container.querySelectorAll('svg circle');
+    expect(circles.length).toBeGreaterThan(0);
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Tests
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -154,14 +172,12 @@ describe('GraphView', () => {
     });
   });
 
-  // ─── Rendered state ───────────────────────────────────────────────────────────
+  // ─── Rendered state ─────────────────────────────────────────────────────────--
 
   it('renders Graph View title and header when data loads', async () => {
     setupMocks();
-    renderGraph();
-    await waitFor(() => {
-      expect(screen.getByText('Graph View')).toBeInTheDocument();
-    });
+    const { container } = renderGraph();
+    await waitForGraph(container);
   });
 
   it('shows node and link counts in header', async () => {
@@ -230,16 +246,17 @@ describe('GraphView', () => {
   it('opens info panel when clicking on a collection node', async () => {
     setupMocks();
     const { container } = renderGraph();
-    // Wait for data to load and D3 to render circles
+    // Wait for D3 circles to render
     await waitFor(() => {
       expect(screen.getByText('Graph View')).toBeInTheDocument();
     });
-    // D3 creates circles inside SVG — click the first collection circle (r=18)
-    const circles = container.querySelectorAll('svg circle');
-    expect(circles.length).toBeGreaterThan(0);
-    // The collection node has radius 18
-    const colCircle = Array.from(circles).find((c) => c.getAttribute('r') === '18');
-    expect(colCircle).toBeTruthy();
+    // D3 circle rendering may be async — wait for them in the find
+    let colCircle: Element | undefined;
+    await waitFor(() => {
+      const circles = container.querySelectorAll('svg circle');
+      colCircle = Array.from(circles).find((c) => c.getAttribute('r') === '18');
+      expect(colCircle).toBeTruthy();
+    });
     fireEvent.click(colCircle!);
     // Info panel should appear — look for the "Close" button inside it
     await waitFor(() => {
@@ -254,13 +271,15 @@ describe('GraphView', () => {
   it("info panel shows 'Open page' button for page nodes", async () => {
     setupMocks();
     const { container } = renderGraph();
+    let pageCircle: Element | undefined;
     await waitFor(() => {
       expect(screen.getByText('Graph View')).toBeInTheDocument();
     });
-    // Click a page node (r=10)
-    const circles = container.querySelectorAll('svg circle');
-    const pageCircle = Array.from(circles).find((c) => c.getAttribute('r') === '10');
-    expect(pageCircle).toBeTruthy();
+    await waitFor(() => {
+      const circles = container.querySelectorAll('svg circle');
+      pageCircle = Array.from(circles).find((c) => c.getAttribute('r') === '10');
+      expect(pageCircle).toBeTruthy();
+    });
     fireEvent.click(pageCircle!);
     await waitFor(() => {
       expect(screen.getByText('Open page')).toBeInTheDocument();
@@ -270,12 +289,15 @@ describe('GraphView', () => {
   it('navigates to page on double-click of a page node', async () => {
     setupMocks();
     const { container } = renderGraph();
+    let pageCircle: Element | undefined;
     await waitFor(() => {
       expect(screen.getByText('Graph View')).toBeInTheDocument();
     });
-    const circles = container.querySelectorAll('svg circle');
-    const pageCircle = Array.from(circles).find((c) => c.getAttribute('r') === '10');
-    expect(pageCircle).toBeTruthy();
+    await waitFor(() => {
+      const circles = container.querySelectorAll('svg circle');
+      pageCircle = Array.from(circles).find((c) => c.getAttribute('r') === '10');
+      expect(pageCircle).toBeTruthy();
+    });
     fireEvent.dblClick(pageCircle!);
     expect(mockNavigate).toHaveBeenCalledWith('/page/page1');
   });
@@ -283,12 +305,16 @@ describe('GraphView', () => {
   it('does not navigate on double-click of a collection node', async () => {
     setupMocks();
     const { container } = renderGraph();
+    let colCircle: Element | undefined;
     await waitFor(() => {
       expect(screen.getByText('Graph View')).toBeInTheDocument();
     });
-    const circles = container.querySelectorAll('svg circle');
-    const colCircle = Array.from(circles).find((c) => c.getAttribute('r') === '18');
-    expect(colCircle).toBeTruthy();
+    // D3 force simulation may take a frame to render circles — wait for them
+    await waitFor(() => {
+      const circles = container.querySelectorAll('svg circle');
+      colCircle = Array.from(circles).find((c) => c.getAttribute('r') === '18');
+      expect(colCircle).toBeTruthy();
+    });
     fireEvent.dblClick(colCircle!);
     // Collections should NOT navigate - isCollection=true prevents it
     const pageNavCalls = mockNavigate.mock.calls.filter(
@@ -300,12 +326,16 @@ describe('GraphView', () => {
   it("navigates via 'Open page' button in info panel", async () => {
     setupMocks();
     const { container } = renderGraph();
+    let pageCircle: Element | undefined;
     await waitFor(() => {
       expect(screen.getByText('Graph View')).toBeInTheDocument();
     });
+    await waitFor(() => {
+      const circles = container.querySelectorAll('svg circle');
+      pageCircle = Array.from(circles).find((c) => c.getAttribute('r') === '10');
+      expect(pageCircle).toBeTruthy();
+    });
     // Click a page node to open info panel
-    const circles = container.querySelectorAll('svg circle');
-    const pageCircle = Array.from(circles).find((c) => c.getAttribute('r') === '10');
     fireEvent.click(pageCircle!);
     await waitFor(() => {
       expect(screen.getByText('Open page')).toBeInTheDocument();
@@ -317,12 +347,16 @@ describe('GraphView', () => {
   it("closes info panel via 'Close' button", async () => {
     setupMocks();
     const { container } = renderGraph();
+    let pageCircle: Element | undefined;
     await waitFor(() => {
       expect(screen.getByText('Graph View')).toBeInTheDocument();
     });
+    await waitFor(() => {
+      const circles = container.querySelectorAll('svg circle');
+      pageCircle = Array.from(circles).find((c) => c.getAttribute('r') === '10');
+      expect(pageCircle).toBeTruthy();
+    });
     // Select a node to open panel
-    const circles = container.querySelectorAll('svg circle');
-    const pageCircle = Array.from(circles).find((c) => c.getAttribute('r') === '10');
     fireEvent.click(pageCircle!);
     await waitFor(() => {
       expect(screen.getByText('Open page')).toBeInTheDocument();

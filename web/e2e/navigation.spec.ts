@@ -75,10 +75,13 @@ test.describe("Sidebar navigation", () => {
 
   test("theme toggle toggles between light and dark mode", async ({ page }) => {
     const themeButton = page.locator("aside").getByRole("button", { name: /Light mode|Dark mode/i });
-    const currentLabel = await themeButton.getAttribute("aria-label") || await themeButton.getAttribute("title") || "";
+    const initialLabel = await themeButton.getAttribute("aria-label") || await themeButton.getAttribute("title") || "";
     await themeButton.click();
     await page.waitForTimeout(500);
-    // Button should have a different state after toggle
+    // Button label should have changed after toggle
+    const newLabel = await themeButton.getAttribute("aria-label") || await themeButton.getAttribute("title") || "";
+    expect(newLabel).not.toBe(initialLabel);
+    expect(newLabel).toMatch(/Light mode|Dark mode|Toggle/i);
   });
 
   test("keyboard shortcuts button opens modal", async ({ page }) => {

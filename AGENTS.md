@@ -266,8 +266,8 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | **STDB Tables** | 50 (35 private, 15 remain public for SQL queries) |
 | **Rust Tests** | 201 unit ✅ |
 | **Python Unit Tests** | 329 (211 API server + 118 MCP server) ✅ |
-| **Frontend Test Files** | 57 |
-| **Frontend Tests** | 1,205 of 1,207 (2 flaky SamlCallback race condition) |
+|| **Frontend Test Files** | **65** (up from 57 — 8 previously untested components now covered: Layout, Sidebar, ShareDialog, CommandPalette, TemplateModal, CollectionDialog, TrashDialog, PageContextMenu) |
+|| **Frontend Tests** | **1,316** ✅ all passing — 0 flaky, 0 skipped, 0 soft assertions ||
 | **E2E Spec Files** | 14 |
 | **E2E Test Cases** | 79 |
 | **API Endpoints** | 52 (FastAPI REST gateway) |

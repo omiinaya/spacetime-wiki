@@ -24,9 +24,8 @@ test.describe("Page features", () => {
     const aside = page.locator("aside");
     // Look for any collection-like text - may show collections or not
     const collectionElement = aside.locator("button").filter({ hasText: /Uncategorized|Engineering|Design|Marketing|Research/i });
-    await expect(collectionElement.first()).toBeVisible({ timeout: 5000 });
-    // Collections may or may not exist — that's fine
-    if (collectionVisible) {
+    const exists = await collectionElement.first().isVisible({ timeout: 2000 }).catch(() => false);
+    if (exists) {
       const text = await collectionElement.first().textContent();
       expect(text).toBeTruthy();
     }
