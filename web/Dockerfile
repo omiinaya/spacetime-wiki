@@ -1,5 +1,5 @@
 # ─── Build stage ─────────────────────────────────────────────────────────────
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -17,7 +17,7 @@ ARG VITE_API_BASE
 RUN npm run build
 
 # ─── Serve stage with Node runtime ──────────────────────────────────────────
-FROM node:22-alpine
+FROM node:26-alpine
 
 WORKDIR /app
 COPY --from=builder /app/dist ./dist

@@ -1,5 +1,5 @@
 # ─── Builder stage ──────────────────────────────────────────────────────────
-FROM python:3.12-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /build
 
@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir --no-compile --upgrade pip setuptools wheel \
     && rm -rf /root/.cache/pip
 
 # ─── Final stage ────────────────────────────────────────────────────────────
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 # Create a non-root user for runtime security and install runtime utilities
 RUN addgroup --system --gid 1001 app \
