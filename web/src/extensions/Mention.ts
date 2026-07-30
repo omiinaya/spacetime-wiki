@@ -25,7 +25,7 @@ export const Mention = Node.create<MentionOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
-      renderLabel: ({ node }) => `@${node.attrs.label}`,
+      renderLabel: ({ node }) => `@${(node as { attrs: { label: string } }).attrs.label}`,
     };
   },
 

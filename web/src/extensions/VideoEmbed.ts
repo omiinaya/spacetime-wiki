@@ -70,18 +70,6 @@ const PROVIDERS: VideoProvider[] = [
     embedUrl: (id) => `https://player.twitch.tv/?video=${id}&parent=localhost`,
     allowFullScreen: true,
   },
-  {
-    id: 'vimeo',
-    name: 'Vimeo',
-    icon: '🎥',
-    urlPattern: /vimeo\.com\/(\d+)/,
-    extractId: (url) => {
-      const match = url.match(/vimeo\.com\/(\d+)/);
-      return match ? match[1] : null;
-    },
-    embedUrl: (id) => `https://player.vimeo.com/video/${id}`,
-    allowFullScreen: true,
-  },
 ];
 
 // Remove duplicate Vimeo entry — keep it clean

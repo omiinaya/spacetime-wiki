@@ -385,6 +385,7 @@ export function buildEmbedUrl(
   url: string,
 ): { provider: EmbedProvider; embedSrc: string | null } | null {
   for (const provider of UNIQUE_PROVIDERS) {
+    if (!provider.urlPattern.test(url)) continue;
     const embedSrc = provider.embedUrl(url);
     if (embedSrc || provider.richCard) {
       return { provider, embedSrc };

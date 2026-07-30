@@ -4,7 +4,7 @@
 # Rust files changed, and frontend build sanity check.
 # Merge commits (2+ parents) skip Rust/web checks automatically.
 
-set -e
+set -eo pipefail
 
 # Skip heavy checks for merge commits
 if [ "$(git log -1 --format=%P | wc -w)" -gt 1 ]; then
