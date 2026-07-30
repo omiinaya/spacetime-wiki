@@ -17,3 +17,26 @@ server/api-server/.venv
 
 # Coverage
 .coverage
+coverage/
+htmlcov/
+
+# Python
+*.egg-info/
+*.egg
+.venv/
+server/mcp-server/.venv/
+server/api-server/.venv/
+
+# Editor
+*.swp
+*.swo
+*.swn
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
