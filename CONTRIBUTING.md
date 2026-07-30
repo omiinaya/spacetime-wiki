@@ -19,11 +19,11 @@ Thanks for your interest in contributing! This project is an Outline-inspired kn
 
 1. **Prerequisites**: Node.js 22+, Rust 1.85+, Docker (optional), SpacetimeDB CLI 2.6.0
 2. **Fork & clone** this repository
-3. **Branch off `master`**: `git checkout -b feat/my-feature`
+3. **Branch off `dev`**: `git checkout -b feat/my-feature dev`
 4. **Install dependencies**: `cd web && npm install`
 5. **Start development** (see [README.md](README.md#quick-start) for full instructions)
 
-New to the project? Check [IMPROVEMENTS.md](./IMPROVEMENTS.md) for good first issues (P5 items are ideal starting points).
+New to the project? Check [ROADMAP.md](./ROADMAP.md) for improvement items and good first issues (P4-P5 items are ideal starting points).
 
 ---
 
