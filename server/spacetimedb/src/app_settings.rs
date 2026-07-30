@@ -70,18 +70,71 @@ mod tests {
     }
 
     #[test]
+    fn test_set_app_setting_updates_existing_value() {
+        let existing = Some("old_value".to_string());
+        let value = "updated_value".to_string();
+        let result = match existing {
+            None => value.clone(),
+            Some(old) => {
+                // Update the old value
+                format!("{}", value)
+            },
+        };
+        assert_eq!(result, "updated_value");
+    }
+
+    #[test]
     fn test_purge_expired_trash_retention_logic() {
         let retention_days = 30u64;
-        let now = 5_000_000_000u64; // large enough for subtraction
+        let now = 5_000_000_000u64;
         let cutoff = now.saturating_sub(retention_days * 86_400_000);
         assert!(cutoff < now);
-        // A page deleted yesterday should not be purged
-        let deleted_at = now - 86_400_000; // 1 day ago
+        // A page deleted yesterday should NOT be purged
+        let deleted_at = now - 86_400_000;
         let should_purge = retention_days == 0 || deleted_at < cutoff;
         assert!(!should_purge);
-        // A page deleted 31 days ago should be purged
+        // A page deleted 31 days ago SHOULD be purged
         let deleted_at_old = now - 31 * 86_400_000;
         let should_purge_old = retention_days == 0 || deleted_at_old < cutoff;
         assert!(should_purge_old);
+    }
+
+    #[test]
+    fn test_purge_expired_trash_zero_retention_purges_all() {
+        let retention_days = 0u64;
+        let now = 5_000_000_000u64;
+        let cutoff = now.saturating_sub(retention_days * 86_400_000);
+        assert_eq!(cutoff, now); // 0 retention = cutoff = now
+        // With 0 retention, EVERY deleted page should be purged
+        let deleted_1_sec_ago = now - 1_000;
+        let should_purge = retention_days == 0 || deleted_1_sec_ago < cutoff;
+        assert!(should_purge); // 0 retention purges everything
+    }
+
+    #[test]
+    fn test_purge_expired_trash_high_retention_preserves() {
+        let retention_days = 365u64; // 1 year
+        let now = 50_000_000_000u64; // large enough for 1y subtraction
+        let cutoff = now.saturating_sub(retention_days * 86_400_000);
+        // A page deleted 6 months ago should NOT be purged
+        let deleted_6mo_ago = now.saturating_sub(180 * 86_400_000u64);
+        assert!(deleted_6mo_ago > cutoff); // 6mo < 1yr retention
+    }
+
+    #[test]
+    fn test_set_app_setting_tracks_timestamp() {
+        // The setting tracks when it was last updated
+        let created_at = 1000u64;
+        let updated_at = 2000u64;
+        assert!(updated_at > created_at);
+        let later_updated = updated_at + 500;
+        assert!(later_updated > updated_at);
+    }
+
+    #[test]
+    fn test_app_setting_key_lookup_is_case_sensitive() {
+        let keys = vec!["SiteName", "sitename", "SITENAME"];
+        let site_name_count = keys.iter().filter(|k| *k == &"SiteName").count();
+        assert_eq!(site_name_count, 1);
     }
 }

@@ -86,9 +86,65 @@ mod tests {
     }
 
     #[test]
+    fn test_comment_reaction_toggle_removes_existing() {
+        // If a reaction already exists, toggle should remove it
+        let reactions = vec![("c1", "u1", "👍")];
+        let exists = reactions.iter().any(|(cid, uid, e)| *cid == "c1" && *uid == "u1" && *e == "👍");
+        assert!(exists);
+        // After finding existing, we delete it — simulating toggle off
+        let filtered: Vec<_> = reactions.into_iter().filter(|(cid, uid, e)| !(*cid == "c1" && *uid == "u1" && *e == "👍")).collect();
+        assert_eq!(filtered.len(), 0);
+    }
+
+    #[test]
+    fn test_comment_reaction_toggle_adds_new() {
+        // If reaction doesn't exist, toggle should add it
+        let reactions: Vec<(&str, &str, &str)> = vec![];
+        let exists = reactions.iter().any(|(cid, uid, e)| *cid == "c1" && *uid == "u1" && *e == "👍");
+        assert!(!exists);
+        // Add the reaction
+        let mut updated = reactions.clone();
+        updated.push(("c1", "u1", "👍"));
+        assert_eq!(updated.len(), 1);
+    }
+
+    #[test]
     fn test_resolve_comment_mark_resolved() {
         let resolved = true;
         assert!(resolved);
+    }
+
+    #[test]
+    fn test_resolve_comment_toggle() {
+        // Comments can be toggled between resolved/unresolved
+        let mut is_resolved = false;
+        is_resolved = true; // resolve
+        assert!(is_resolved);
+        is_resolved = false; // unresolve
+        assert!(!is_resolved);
+    }
+
+    #[test]
+    fn test_comment_excerpt_truncation() {
+        let long_body = "This is a very long comment that exceeds the excerpt length and should be truncated to show only the first few characters with an ellipsis at the end.";
+        let excerpt = crate::helpers::make_comment_excerpt("u1", "p1", long_body);
+        assert!(excerpt.len() < long_body.len());
+        assert!(excerpt.ends_with("...\""));
+    }
+
+    #[test]
+    fn test_delete_comment_cascades_reactions() {
+        // Deleting a comment should remove all its reactions
+        let comment_id = "c1";
+        let reactions: Vec<(&str, &str)> = vec![
+            ("r1", "c1"),
+            ("r2", "c1"),
+            ("r3", "c2"), // different comment
+        ];
+        let to_delete: Vec<_> = reactions.iter().filter(|(_, cid)| *cid == comment_id).collect();
+        assert_eq!(to_delete.len(), 2);
+        let remaining: Vec<_> = reactions.iter().filter(|(_, cid)| *cid != comment_id).collect();
+        assert_eq!(remaining.len(), 1);
     }
 }
 

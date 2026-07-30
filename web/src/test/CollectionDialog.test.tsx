@@ -34,7 +34,12 @@ describe('CollectionDialog', () => {
   });
 
   it('shows "Edit collection" heading when editing', () => {
-    render(<CollectionDialog {...baseProps} editingCol={{ id: 'c1', name: 'Test', description: '', icon: '', color: '' }} />);
+    render(
+      <CollectionDialog
+        {...baseProps}
+        editingCol={{ id: 'c1', name: 'Test', description: '', icon: '', color: '' }}
+      />,
+    );
     expect(screen.getByText('Edit collection')).toBeInTheDocument();
   });
 
@@ -47,7 +52,12 @@ describe('CollectionDialog', () => {
   });
 
   it('shows sort mode options when editing', () => {
-    render(<CollectionDialog {...baseProps} editingCol={{ id: 'c1', name: 'Test', description: '', icon: '', color: '' }} />);
+    render(
+      <CollectionDialog
+        {...baseProps}
+        editingCol={{ id: 'c1', name: 'Test', description: '', icon: '', color: '' }}
+      />,
+    );
     expect(screen.getByText('Page sort order')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Manual (drag to reorder)')).toBeInTheDocument();
   });
@@ -90,7 +100,12 @@ describe('CollectionDialog', () => {
   });
 
   it('shows "Save" button text when editing', () => {
-    render(<CollectionDialog {...baseProps} editingCol={{ id: 'c1', name: 'Test', description: '', icon: '', color: '' }} />);
+    render(
+      <CollectionDialog
+        {...baseProps}
+        editingCol={{ id: 'c1', name: 'Test', description: '', icon: '', color: '' }}
+      />,
+    );
     expect(screen.getByText('Save')).toBeInTheDocument();
   });
 

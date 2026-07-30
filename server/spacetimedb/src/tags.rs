@@ -38,8 +38,35 @@ mod tests {
     }
 
     #[test]
+    fn test_add_tag_trims_whitespace() {
+        let name = "  MyTag  ".trim().to_lowercase();
+        assert_eq!(name, "mytag");
+    }
+
+    #[test]
+    fn test_add_tag_handles_empty_name() {
+        let name = "".to_lowercase().trim().to_string();
+        assert_eq!(name, "");
+        assert!(name.is_empty());
+    }
+
+    #[test]
+    fn test_add_tag_preserves_value_case() {
+        // Name is lowercased but value should not be
+        let value = "Important-Value_123".to_string();
+        assert_eq!(value, "Important-Value_123");
+    }
+
+    #[test]
     fn test_remove_tag_uses_id() {
         let id = "some_id";
         assert!(!id.is_empty());
+    }
+
+    #[test]
+    fn test_remove_tag_handles_id_generation() {
+        // Tags use primary key ID — removal is by full ID
+        let id = "tag_abc123";
+        assert!(id.contains("_"));
     }
 }

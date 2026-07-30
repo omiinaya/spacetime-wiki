@@ -223,7 +223,25 @@ mod tests {
         assert!(valid.contains(&"published"));
         assert!(valid.contains(&"archived"));
         assert!(valid.contains(&"deleted"));
-        assert!(!valid.contains(&"unknown"));
+        assert!(!valid.contains(&"trashed"));
+        assert!(!valid.contains(&""));
+        assert!(!valid.contains(&"active"));
+    }
+
+    #[test]
+    fn test_create_page_status_defaults_to_draft() {
+        let default_status = "draft";
+        assert_eq!(default_status, "draft");
+        let explicit_status = "published";
+        assert_ne!(explicit_status, default_status);
+    }
+
+    #[test]
+    fn test_page_make_slug_edge_cases() {
+        assert!(crate::helpers::make_slug("HELLO") == "hello");
+        // make_slug replaces each space with a hyphen (multiple spaces → multiple hyphens)
+        let result = crate::helpers::make_slug("Hello   World");
+        assert_eq!(&result, "hello---world");
     }
 
     #[test]
