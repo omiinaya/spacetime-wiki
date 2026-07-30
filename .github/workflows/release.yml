@@ -132,6 +132,7 @@ jobs:
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
           fi
+          echo "sans_v=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -144,13 +145,13 @@ jobs:
             ## Docker Images
 
             - `ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}`
-            - `ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name#v }}`
+            - `ghcr.io/${{ github.repository }}/frontend:${{ steps.version.outputs.sans_v }}`
             - `ghcr.io/${{ github.repository }}/frontend:latest`
             - `ghcr.io/${{ github.repository }}/api-server:${{ github.ref_name }}`
-            - `ghcr.io/${{ github.repository }}/api-server:${{ github.ref_name#v }}`
+            - `ghcr.io/${{ github.repository }}/api-server:${{ steps.version.outputs.sans_v }}`
             - `ghcr.io/${{ github.repository }}/api-server:latest`
             - `ghcr.io/${{ github.repository }}/module-publisher:${{ github.ref_name }}`
-            - `ghcr.io/${{ github.repository }}/module-publisher:${{ github.ref_name#v }}`
+            - `ghcr.io/${{ github.repository }}/module-publisher:${{ steps.version.outputs.sans_v }}`
             - `ghcr.io/${{ github.repository }}/module-publisher:latest`
           prerelease: ${{ steps.version.outputs.prerelease }}
           generate_release_notes: false
