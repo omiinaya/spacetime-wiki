@@ -17,7 +17,8 @@
       "node node_modules/.bin/prettier --write",
       "bash -c 'cd web && node ../node_modules/.bin/vitest run --changed --reporter=verbose --no-color 2>&1'"
     ],
-    "server/spacetimedb/src/**/*.rs": []
+    "server/spacetimedb/src/**/*.rs": [],
+    "*.md": "node node_modules/.bin/prettier --write"
   },
   "repository": {
     "type": "git",
