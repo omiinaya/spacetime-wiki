@@ -74,7 +74,13 @@ describe('SamlCallback', () => {
 
   /** Set URL query params for the SAML callback page. Each key-value pair becomes a param. */
   function setUrlParams(entries: Record<string, string>) {
-    (URLSearchParams.prototype.get as Mock).mockImplementation((key: string) => {
+    // Restore previous spy first, then create a new one
+    try {
+      (URLSearchParams.prototype.get as Mock).mockRestore();
+    } catch {
+      /* no-op */
+    }
+    vi.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key: string) => {
       if (key in entries) return entries[key];
       return null;
     });
