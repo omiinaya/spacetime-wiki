@@ -266,8 +266,8 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | **STDB Tables** | 50 (35 private, 15 remain public for SQL queries) |
 | **Rust Tests** | 246 unit ✅ |
 | **Python Unit Tests** | 329 (211 API server + 118 MCP server) ✅ |
-|| **Frontend Test Files** | **72** (up from 57 — 8 component files + 7 Tiptap extension test files) |
-|| **Frontend Tests** | **1,385** ✅ (1,316 component tests + 69 extension/helper tests) — 0 flaky, 0 skipped, 0 soft assertions ||
+|| **Frontend Test Files** | **71** (65 component + 6 Tiptap extension test files) |
+|| **Frontend Tests** | **1,365** ✅ (1,296 component + 69 extension/helper tests) — 0 flaky, 0 skipped, 0 soft assertions ||
 | **E2E Spec Files** | 14 |
 | **E2E Test Cases** | 79 |
 | **API Endpoints** | 52 (FastAPI REST gateway) |
