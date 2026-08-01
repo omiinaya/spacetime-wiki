@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, KeyRound, Loader2, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import { API_BASE } from '../../lib/api';
 import { useToast } from '../Toast';
@@ -41,44 +41,50 @@ export function AgentAccessPanel() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [adminKey, setAdminKey] = useState(
-    () => sessionStorage.getItem('adminKey') || '',
-  );
+  const [adminKey, setAdminKey] = useState(() => sessionStorage.getItem('adminKey') || '');
   const [pendingKey, setPendingKey] = useState('');
   const [actingDid, setActingDid] = useState<string | null>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
 
-  const headers: Record<string, string> = adminKey
-    ? { 'X-Admin-Key': adminKey }
-    : {};
+  const headers = useMemo<Record<string, string>>(
+    () => (adminKey ? { 'X-Admin-Key': adminKey } : {}),
+    [adminKey],
+  );
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(
-        `${API_BASE}/api/v1/admin/hermes-id/agents?status=pending`,
-        { headers },
-      );
-      if (res.status === 403) {
-        // Key missing/wrong — drop it so the key prompt reappears
-        setAdminKey('');
-        sessionStorage.removeItem('adminKey');
-        throw new Error('Invalid or missing admin key — please re-enter it.');
-      }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as AgentListResponse;
-      setAgents(data.agents ?? []);
-      setTotal(data.total ?? 0);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to load agents');
-    } finally {
-      setLoading(false);
-    }
-  }, [headers]);
-
+  // Load pending agents. All state updates happen after an await so the
+  // effect never sets state synchronously (react-hooks/set-state-in-effect).
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    let cancelled = false;
+    const load = async () => {
+      setError('');
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/v1/admin/hermes-id/agents?status=pending`,
+          { headers },
+        );
+        if (cancelled) return;
+        if (res.status === 403) {
+          // Key missing/wrong — drop it so the key prompt reappears
+          setAdminKey('');
+          sessionStorage.removeItem('adminKey');
+          throw new Error('Invalid or missing admin key — please re-enter it.');
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as AgentListResponse;
+        if (cancelled) return;
+        setAgents(data.agents ?? []);
+        setTotal(data.total ?? 0);
+      } catch (e: unknown) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load agents');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [headers, reloadNonce]);
 
   const submitKey = () => {
     sessionStorage.setItem('adminKey', pendingKey);
@@ -141,7 +147,10 @@ export function AgentAccessPanel() {
           </p>
         </div>
         <button
-          onClick={refresh}
+          onClick={() => {
+            setLoading(true);
+            setReloadNonce((n) => n + 1);
+          }}
           disabled={loading}
           className="h-7 px-2 rounded-md text-[10px] font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 flex items-center gap-1"
         >
@@ -156,8 +165,8 @@ export function AgentAccessPanel() {
             <KeyRound className="h-3.5 w-3.5 text-primary" /> Admin key required
           </p>
           <p className="text-[10px] text-muted-foreground/60 mb-2">
-            Enter the HERMES_ID_ADMIN_KEY to manage agent access. Stored in
-            sessionStorage for this tab only.
+            Enter the HERMES_ID_ADMIN_KEY to manage agent access. Stored in sessionStorage for this
+            tab only.
           </p>
           <div className="flex gap-2">
             <input
@@ -182,9 +191,7 @@ export function AgentAccessPanel() {
       )}
 
       {error && (
-        <div className="px-3 py-2 rounded-md bg-red-500/10 text-red-400 text-xs">
-          {error}
-        </div>
+        <div className="px-3 py-2 rounded-md bg-red-500/10 text-red-400 text-xs">{error}</div>
       )}
 
       {loading ? (
