@@ -20,6 +20,7 @@ SKIP_PATHS = {
     "/api/v1/auth/register-key",
     "/api/v1/webauthn",
     "/hermes-id",  # hermes-id agent auth routes handle their own auth
+    "/api/v1/admin/hermes-id",  # hermes-id admin proxy — gated by X-Admin-Key dependency
 }
 
 

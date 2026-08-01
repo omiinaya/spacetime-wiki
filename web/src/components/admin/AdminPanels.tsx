@@ -1,9 +1,10 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { X, Shield, Users, Send, CheckSquare, Download, Mail, Trash2 } from 'lucide-react';
+import { X, Shield, Users, Send, CheckSquare, Download, Mail, Trash2, ShieldCheck } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useToast } from '../Toast';
 import { WebhookSettings } from '../WebhookSettings';
+import { AgentAccessPanel } from './AgentAccessPanel';
 import { FeatureFlags } from './FeatureFlags';
 import { BulkExport } from './BulkExport';
 import { ScimSettings } from './ScimSettings';
@@ -35,7 +36,8 @@ type AdminTab =
   | 'access_requests'
   | 'mfa'
   | 'ldap'
-  | 'oauth';
+  | 'oauth'
+  | 'agent_access';
 
 interface User {
   id: string;
@@ -133,6 +135,7 @@ export function AdminPanels({ userId, allUsers, setAllUsers }: AdminPanelsProps)
     { key: 'mfa', label: 'MFA' },
     { key: 'oauth', label: 'OAuth' },
     { key: 'ldap', label: 'LDAP' },
+    { key: 'agent_access', label: 'Agent Access', icon: <ShieldCheck className="h-3 w-3" /> },
   ];
 
   return (
@@ -200,6 +203,7 @@ export function AdminPanels({ userId, allUsers, setAllUsers }: AdminPanelsProps)
         {adminTab === 'mfa' && <MfaSettings userId={userId} />}
         {adminTab === 'ldap' && <LdapSettings userId={userId} />}
         {adminTab === 'oauth' && <OAuthSettings userId={userId} />}
+        {adminTab === 'agent_access' && <AgentAccessPanel />}
       </div>
     </div>
   );

@@ -20,6 +20,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from models import HealthResponse
 from routers.auth import router as auth_router
 from routers.collections import router as collections_router
+from routers.hermes_id_agents import router as hermes_id_admin_router
 from routers.imports import router as imports_router
 from routers.ldap_auth import router as ldap_router
 from routers.oauth import router as oauth_router
@@ -117,7 +118,7 @@ app.add_middleware(
     allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-API-Key", "Accept", "Origin", "X-Requested-With"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Admin-Key", "Accept", "Origin", "X-Requested-With"],
 )
 
 # Security headers
@@ -149,6 +150,7 @@ app.include_router(webauthn_router)
 app.include_router(imports_router)
 app.include_router(ldap_router)
 app.include_router(oauth_router)
+app.include_router(hermes_id_admin_router)
 
 
 # ─── Health ────────────────────────────────────────────────────────────────────
