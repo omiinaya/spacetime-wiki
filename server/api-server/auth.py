@@ -19,6 +19,7 @@ SKIP_PATHS = {
     "/health", "/openapi-spec.json",
     "/api/v1/auth/register-key",
     "/api/v1/webauthn",
+    "/hermes-id",  # hermes-id agent auth routes handle their own auth
 }
 
 

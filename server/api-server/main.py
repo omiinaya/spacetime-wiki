@@ -87,6 +87,11 @@ app = FastAPI(
     docs_url="/docs",
 )
 
+# hermes-id agent authentication (env: HERMES_AUTH_SERVER_URL / HERMES_AUTH_PROJECT / HERMES_AUTH_VERIFY)
+from hermes_id.fastapi_plugin import install_agent_auth
+
+install_agent_auth(app)
+
 # Rate-limit handler
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
