@@ -89,10 +89,15 @@ mod tests {
     fn test_comment_reaction_toggle_removes_existing() {
         // If a reaction already exists, toggle should remove it
         let reactions = vec![("c1", "u1", "👍")];
-        let exists = reactions.iter().any(|(cid, uid, e)| *cid == "c1" && *uid == "u1" && *e == "👍");
+        let exists = reactions
+            .iter()
+            .any(|(cid, uid, e)| *cid == "c1" && *uid == "u1" && *e == "👍");
         assert!(exists);
         // After finding existing, we delete it — simulating toggle off
-        let filtered: Vec<_> = reactions.into_iter().filter(|(cid, uid, e)| !(*cid == "c1" && *uid == "u1" && *e == "👍")).collect();
+        let filtered: Vec<_> = reactions
+            .into_iter()
+            .filter(|(cid, uid, e)| !(*cid == "c1" && *uid == "u1" && *e == "👍"))
+            .collect();
         assert_eq!(filtered.len(), 0);
     }
 
@@ -100,7 +105,9 @@ mod tests {
     fn test_comment_reaction_toggle_adds_new() {
         // If reaction doesn't exist, toggle should add it
         let reactions: Vec<(&str, &str, &str)> = vec![];
-        let exists = reactions.iter().any(|(cid, uid, e)| *cid == "c1" && *uid == "u1" && *e == "👍");
+        let exists = reactions
+            .iter()
+            .any(|(cid, uid, e)| *cid == "c1" && *uid == "u1" && *e == "👍");
         assert!(!exists);
         // Add the reaction
         let mut updated = reactions.clone();
@@ -141,9 +148,15 @@ mod tests {
             ("r2", "c1"),
             ("r3", "c2"), // different comment
         ];
-        let to_delete: Vec<_> = reactions.iter().filter(|(_, cid)| *cid == comment_id).collect();
+        let to_delete: Vec<_> = reactions
+            .iter()
+            .filter(|(_, cid)| *cid == comment_id)
+            .collect();
         assert_eq!(to_delete.len(), 2);
-        let remaining: Vec<_> = reactions.iter().filter(|(_, cid)| *cid != comment_id).collect();
+        let remaining: Vec<_> = reactions
+            .iter()
+            .filter(|(_, cid)| *cid != comment_id)
+            .collect();
         assert_eq!(remaining.len(), 1);
     }
 }

@@ -58,10 +58,9 @@ export function AgentAccessPanel() {
     const load = async () => {
       setError('');
       try {
-        const res = await fetch(
-          `${API_BASE}/api/v1/admin/hermes-id/agents?status=pending`,
-          { headers },
-        );
+        const res = await fetch(`${API_BASE}/api/v1/admin/hermes-id/agents?status=pending`, {
+          headers,
+        });
         if (cancelled) return;
         if (res.status === 403) {
           // Key missing/wrong — drop it so the key prompt reappears

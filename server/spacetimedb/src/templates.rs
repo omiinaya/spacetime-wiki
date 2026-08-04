@@ -67,11 +67,7 @@ mod tests {
     fn test_create_from_template_requires_valid_template() {
         // Template lookup must find a page where is_template == true
         // — this test validates the filter logic
-        let pages = vec![
-            ("p1", false),
-            ("p2", true),
-            ("p3", false),
-        ];
+        let pages = vec![("p1", false), ("p2", true), ("p3", false)];
         let found = pages.iter().find(|(id, is_tpl)| *id == "p1" && *is_tpl);
         assert!(found.is_none());
         let found = pages.iter().find(|(id, is_tpl)| *id == "p2" && *is_tpl);

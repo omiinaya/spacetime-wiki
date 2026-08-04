@@ -109,11 +109,11 @@ export interface ShareLink {
   id: string;
   page_id: string;
   token: string;
-  password_hash: string;
   created_by: string;
   expires_at: number;
   created_at: number;
   visit_count: number;
+  has_password: boolean;
   brand_title: string | null;
   brand_logo_url: string | null;
 }
@@ -122,7 +122,6 @@ export interface ApiKey {
   id: string;
   user_id: string;
   name: string;
-  key_hash: string;
   key_prefix: string;
   last_used_at: number;
   created_at: number;

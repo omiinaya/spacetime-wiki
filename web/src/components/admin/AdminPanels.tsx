@@ -1,6 +1,16 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { X, Shield, Users, Send, CheckSquare, Download, Mail, Trash2, ShieldCheck } from 'lucide-react';
+import {
+  X,
+  Shield,
+  Users,
+  Send,
+  CheckSquare,
+  Download,
+  Mail,
+  Trash2,
+  ShieldCheck,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 import { useToast } from '../Toast';
 import { WebhookSettings } from '../WebhookSettings';

@@ -78,7 +78,7 @@ mod tests {
             Some(_old) => {
                 // Update the old value
                 format!("{}", value)
-            },
+            }
         };
         assert_eq!(result, "updated_value");
     }
@@ -105,7 +105,7 @@ mod tests {
         let now = 5_000_000_000u64;
         let cutoff = now.saturating_sub(retention_days * 86_400_000);
         assert_eq!(cutoff, now); // 0 retention = cutoff = now
-        // With 0 retention, EVERY deleted page should be purged
+                                 // With 0 retention, EVERY deleted page should be purged
         let deleted_1_sec_ago = now - 1_000;
         let should_purge = retention_days == 0 || deleted_1_sec_ago < cutoff;
         assert!(should_purge); // 0 retention purges everything

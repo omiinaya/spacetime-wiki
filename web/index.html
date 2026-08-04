@@ -6,24 +6,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="SpacetimeDB-powered knowledge wiki — Outline-inspired" />
     <meta property="og:title" content="Spacetime Wiki" />
-    <meta property="og:description" content="Real-time collaborative knowledge wiki powered by SpacetimeDB" />
+    <meta
+      property="og:description"
+      content="Real-time collaborative knowledge wiki powered by SpacetimeDB"
+    />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Spacetime Wiki" />
-    <meta name="twitter:description" content="Real-time collaborative knowledge wiki powered by SpacetimeDB" />
+    <meta
+      name="twitter:description"
+      content="Real-time collaborative knowledge wiki powered by SpacetimeDB"
+    />
     <meta name="theme-color" content="#7c3aed" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <title>Spacetime Wiki</title>
     <script>
       window.__caught_errors = [];
-      window.onerror = function(msg, url, line, col, err) {
-        window.__caught_errors.push({msg: String(msg), url: url, line: line, col: col, stack: err?.stack?.slice(0,1000) || ''});
+      window.onerror = function (msg, url, line, col, err) {
+        window.__caught_errors.push({
+          msg: String(msg),
+          url: url,
+          line: line,
+          col: col,
+          stack: err?.stack?.slice(0, 1000) || '',
+        });
         return true;
       };
-      window.addEventListener('unhandledrejection', function(e) {
-        window.__caught_errors.push({type: 'promise', reason: String(e.reason), stack: e.reason?.stack?.slice(0,1000) || ''});
+      window.addEventListener('unhandledrejection', function (e) {
+        window.__caught_errors.push({
+          type: 'promise',
+          reason: String(e.reason),
+          stack: e.reason?.stack?.slice(0, 1000) || '',
+        });
       });
     </script>
   </head>

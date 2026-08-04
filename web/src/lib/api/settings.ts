@@ -67,13 +67,33 @@ export async function setAiConfig(key: string, value: string): Promise<void> {
 }
 
 // ─── AI Chat Sessions ─────────────────────────────────────────────────────────
+// ai_chat_session / ai_chat_message are PRIVATE tables — reads go through
+// the read bridge (content is bridged, which the chat UI needs; there are
+// no secrets in these tables).
 
 export async function getAiChatSessions(userId: string): Promise<AiChatSession[]> {
-  return tableQuery(`SELECT * FROM ai_chat_session WHERE user_id = '${userId}'`, mapAiChatSession);
+  const rows = await bridgeQueryAll<Record<string, unknown>>('ai_chat_session', { user_id: userId });
+  return rows.map((r) => ({
+    id: String(r.id ?? ''),
+    user_id: String(r.user_id ?? ''),
+    title: String(r.title ?? ''),
+    page_context_id: String(r.page_context_id ?? ''),
+    created_at: Number(r.created_at) || 0,
+    updated_at: Number(r.updated_at) || 0,
+  }));
 }
 
 export async function getAiChatSession(id: string): Promise<AiChatSession | null> {
-  return tableQueryOne(`SELECT * FROM ai_chat_session WHERE id = '${id}'`, mapAiChatSession);
+  const row = await bridgeQueryOne<Record<string, unknown>>('ai_chat_session', { id });
+  if (!row) return null;
+  return {
+    id: String(row.id ?? ''),
+    user_id: String(row.user_id ?? ''),
+    title: String(row.title ?? ''),
+    page_context_id: String(row.page_context_id ?? ''),
+    created_at: Number(row.created_at) || 0,
+    updated_at: Number(row.updated_at) || 0,
+  };
 }
 
 export async function createAiChatSession(
@@ -92,10 +112,14 @@ export async function deleteAiChatSession(id: string): Promise<void> {
 // ─── AI Chat Messages ─────────────────────────────────────────────────────────
 
 export async function getAiChatMessages(sessionId: string): Promise<AiChatMessage[]> {
-  return tableQuery(
-    `SELECT * FROM ai_chat_message WHERE session_id = '${sessionId}'`,
-    mapAiChatMessage,
-  );
+  const rows = await bridgeQueryAll<Record<string, unknown>>('ai_chat_message', { session_id: sessionId });
+  return rows.map((r) => ({
+    id: String(r.id ?? ''),
+    session_id: String(r.session_id ?? ''),
+    role: String(r.role ?? ''),
+    content: String(r.content ?? ''),
+    created_at: Number(r.created_at) || 0,
+  }));
 }
 
 export async function addAiChatMessage(
@@ -327,14 +351,29 @@ export async function toggleWatch(
 }
 
 export async function getWatchByUser(userId: string): Promise<Watch[]> {
-  return tableQuery(`SELECT * FROM watch WHERE user_id = '${userId}'`, mapWatch);
+  // watch is PRIVATE — read through the bridge
+  const rows = await bridgeQueryAll<Record<string, unknown>>('watch', { user_id: userId });
+  return rows.map((r) => ({
+    id: String(r.id ?? ''),
+    user_id: String(r.user_id ?? ''),
+    target_type: String(r.target_type ?? ''),
+    target_id: String(r.target_id ?? ''),
+    created_at: Number(r.created_at) || 0,
+  }));
 }
 
 export async function getWatchByTarget(targetType: string, targetId: string): Promise<Watch[]> {
-  return tableQuery(
-    `SELECT * FROM watch WHERE target_type = '${targetType}' AND target_id = '${targetId}'`,
-    mapWatch,
-  );
+  const rows = await bridgeQueryAll<Record<string, unknown>>('watch', {
+    target_type: targetType,
+    target_id: targetId,
+  });
+  return rows.map((r) => ({
+    id: String(r.id ?? ''),
+    user_id: String(r.user_id ?? ''),
+    target_type: String(r.target_type ?? ''),
+    target_id: String(r.target_id ?? ''),
+    created_at: Number(r.created_at) || 0,
+  }));
 }
 
 export async function isWatching(
@@ -342,9 +381,11 @@ export async function isWatching(
   targetType: string,
   targetId: string,
 ): Promise<boolean> {
-  const rows = await sqlQuery(
-    `SELECT id FROM watch WHERE user_id = '${userId}' AND target_type = '${targetType}' AND target_id = '${targetId}'`,
-  );
+  const rows = await bridgeQueryAll<Record<string, unknown>>('watch', {
+    user_id: userId,
+    target_type: targetType,
+    target_id: targetId,
+  });
   return rows.length > 0;
 }
 

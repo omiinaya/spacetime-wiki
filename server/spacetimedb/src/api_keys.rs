@@ -18,17 +18,55 @@ pub fn create_api_key(
     let expires_at = calc_expiry_ms(now, expires_days);
     if ctx.db.api_key().id().find(&id).is_none() {
         ctx.db.api_key().insert(ApiKey {
-            id,
+            id: id.clone(),
             user_id,
             name,
-            key_hash,
             key_prefix,
             last_used_at: 0,
             created_at: now,
             expires_at,
             is_revoked: false,
         });
+        ctx.db.api_key_credential().insert(ApiKeyCredential {
+            api_key_id: id,
+            key_hash,
+        });
     }
+    Ok(())
+}
+
+/// Verify an API key against its stored hash. The key hash lives in the
+/// PRIVATE api_key_credential table, so the Python middleware calls this
+/// reducer instead of reading the hash via SQL.
+#[reducer]
+pub fn verify_api_key(
+    ctx: &ReducerContext,
+    key_prefix: String,
+    key_hash: String,
+) -> Result<(), String> {
+    let key = ctx
+        .db
+        .api_key()
+        .iter()
+        .find(|k| k.key_prefix == key_prefix && !k.is_revoked)
+        .ok_or_else(|| "Invalid or revoked API key".to_string())?;
+    let cred = ctx
+        .db
+        .api_key_credential()
+        .api_key_id()
+        .find(&key.id)
+        .ok_or_else(|| "Invalid API key".to_string())?;
+    if cred.key_hash != key_hash {
+        return Err("API key does not match".into());
+    }
+    let now = now_ms(ctx);
+    if key.expires_at > 0 && now > key.expires_at {
+        return Err("API key has expired".into());
+    }
+    // Touch last_used_at
+    let mut key_mut = key;
+    key_mut.last_used_at = now;
+    ctx.db.api_key().id().update(key_mut);
     Ok(())
 }
 

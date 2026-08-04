@@ -86,7 +86,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
       }
 
       // If password protected, show password prompt
-      if (link.password_hash && link.password_hash.length > 0) {
+      if (link.has_password) {
         setPasswordRequired(true);
         setLoading(false);
         return;

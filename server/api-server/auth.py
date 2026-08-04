@@ -12,7 +12,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 logger = logging.getLogger(__name__)
 
 from config import settings
-from stdb_client import map_api_key, sql_query
+from stdb_client import call_reducer, map_api_key, sql_query
 
 SKIP_PATHS = {
     "/docs", "/openapi.json", "/redoc",
@@ -25,7 +25,12 @@ SKIP_PATHS = {
 
 
 class ApiKeyMiddleware(BaseHTTPMiddleware):
-    """Validates X-API-Key header against STDB api_key table."""
+    """Validates X-API-Key header against STDB api_key table.
+
+    The key hash lives in the PRIVATE api_key_credential table, so the
+    hash comparison is done inside the verify_api_key reducer — never via
+    SQL. The public api_key table only holds metadata (prefix, expiry).
+    """
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -54,18 +59,14 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
 
             key_record = map_api_key(rows[0])
             key_hash = hashlib.sha256(api_key.encode()).hexdigest()
-            if key_record["key_hash"] != key_hash:
-                return JSONResponse(
-                    status_code=401,
-                    content={"detail": "API key does not match."},
-                )
 
-            # Check expiry
-            expires = key_record["expires_at"]
-            if expires and expires > 0 and expires < int(datetime.now(timezone.utc).timestamp() * 1000):
+            # Verify the hash inside the reducer (private table lookup)
+            try:
+                await call_reducer("verify_api_key", [prefix, key_hash])
+            except Exception:
                 return JSONResponse(
                     status_code=401,
-                    content={"detail": "API key has expired."},
+                    content={"detail": "Invalid or revoked API key."},
                 )
 
             # Attach key info to request state

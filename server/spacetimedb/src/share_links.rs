@@ -25,18 +25,23 @@ pub fn create_share_link(
     } else {
         hash_password(&password)
     };
+    let has_password = !password.is_empty();
     if ctx.db.share_link().id().find(&id).is_none() {
         ctx.db.share_link().insert(ShareLink {
-            id,
+            id: id.clone(),
             page_id,
             token,
-            password_hash,
             created_by,
             expires_at,
             created_at: now,
             visit_count: 0,
+            has_password,
             brand_title: None,
             brand_logo_url: None,
+        });
+        ctx.db.share_link_credential().insert(ShareLinkCredential {
+            share_link_id: id,
+            password_hash,
         });
     }
     Ok(())
@@ -83,7 +88,13 @@ pub fn verify_share_password(
     if share.expires_at > 0 && now > share.expires_at {
         return Err("Share link has expired".into());
     }
-    if !share.password_hash.is_empty() && !verify_password(&password, &share.password_hash) {
+    let cred = ctx
+        .db
+        .share_link_credential()
+        .share_link_id()
+        .find(&share.id)
+        .ok_or_else(|| "Invalid share link".to_string())?;
+    if !cred.password_hash.is_empty() && !verify_password(&password, &cred.password_hash) {
         return Err("Incorrect password".into());
     }
     // Increment visit count
@@ -105,7 +116,13 @@ pub fn visit_share_link(ctx: &ReducerContext, token: String) -> Result<(), Strin
     if share.expires_at > 0 && now > share.expires_at {
         return Err("Share link has expired".into());
     }
-    if !share.password_hash.is_empty() {
+    let cred = ctx
+        .db
+        .share_link_credential()
+        .share_link_id()
+        .find(&share.id)
+        .ok_or_else(|| "Invalid share link".to_string())?;
+    if !cred.password_hash.is_empty() {
         return Err("Password required".into());
     }
     let mut share_mut = share;

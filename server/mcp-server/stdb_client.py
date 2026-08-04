@@ -539,8 +539,8 @@ def map_user(row: list) -> dict:
         "id": _str(row, 0),
         "name": _str(row, 1),
         "email": _str(row, 2),
-        "role": _str(row, 4),
-        "created_at": _int(row, 6),
+        "role": _str(row, 3),
+        "created_at": _int(row, 5),
     }
 
 

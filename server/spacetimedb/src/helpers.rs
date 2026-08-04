@@ -124,7 +124,7 @@ pub(crate) fn base32_decode(input: &str) -> Option<Vec<u8>> {
 /// Verify a TOTP code using HMAC-SHA1 (RFC 6238).
 /// Checks the current 30-second window and adjacent windows (±1) for clock drift.
 pub(crate) fn verify_totp_code(secret: &[u8], code: u32, now_ms: u64) -> bool {
-    use hmac::{Hmac, Mac, KeyInit};
+    use hmac::{Hmac, KeyInit, Mac};
     use sha1::Sha1;
 
     type HmacSha1 = Hmac<Sha1>;

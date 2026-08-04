@@ -17,22 +17,30 @@ def hash_token(token: str) -> str:
 
 
 async def _get_provider(request: Request) -> str | None:
-    """Validate Authorization header against active SCIM providers."""
+    """Validate Authorization header against active SCIM providers.
+
+    The token hash lives in the PRIVATE scim_provider_credential table, so
+    the comparison is done inside the verify_scim_token reducer — never via
+    SQL. We list active providers (public metadata), then verify the token
+    against each via the reducer.
+    """
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         return None
     token = auth[7:]
-    token_hash = hash_token(token)
     rows = await sql_query("SELECT * FROM scim_provider WHERE is_active = true")
     for row in (rows or []):
         if isinstance(row, dict):
-            stored_hash = str(row.get("api_token_hash", ""))
+            pid = str(row.get("id", ""))
         else:
-            stored_hash = str(row[4] if len(row) > 4 else "")
-        if stored_hash == token_hash:
-            if isinstance(row, list):
-                return str(row[0])
-            return str(row.get("id", ""))
+            pid = str(row[0]) if len(row) > 0 else ""
+        if not pid:
+            continue
+        try:
+            await call_reducer("verify_scim_token", [pid, token])
+            return pid
+        except RuntimeError:
+            continue  # wrong token for this provider — try next
     return None
 
 
@@ -280,8 +288,8 @@ async def create_user(request: Request):
         default_role = str(pr.get("default_role", "member"))
         auto_register = bool(pr.get("auto_register", True))
     else:
-        default_role = str(pr[6] if len(pr) > 6 else "member")
-        auto_register = bool(pr[7] if len(pr) > 7 else True)
+        default_role = str(pr[4] if len(pr) > 4 else "member")
+        auto_register = bool(pr[5] if len(pr) > 5 else True)
 
     if not auto_register:
         raise HTTPException(status_code=400, detail="Auto-provisioning is disabled")

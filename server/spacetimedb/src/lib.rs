@@ -16,6 +16,7 @@ mod collection_members;
 mod comments;
 mod favorites;
 mod permissions;
+mod read_bridge;
 mod share_links;
 mod sso;
 mod tags;
@@ -810,10 +811,9 @@ pub fn add_scim_provider(
     let now = now_ms(ctx);
     if ctx.db.scim_provider().id().find(&id).is_none() {
         ctx.db.scim_provider().insert(ScimProvider {
-            id,
+            id: id.clone(),
             name,
             slug,
-            api_token_hash,
             is_active: true,
             default_role: role_clean,
             auto_register,
@@ -823,6 +823,12 @@ pub fn add_scim_provider(
             created_at: now,
             updated_at: now,
         });
+        ctx.db
+            .scim_provider_credential()
+            .insert(ScimProviderCredential {
+                scim_provider_id: id,
+                api_token_hash,
+            });
     }
     Ok(())
 }
@@ -856,7 +862,27 @@ pub fn update_scim_provider(
     provider.name = name;
     provider.slug = slug;
     if !api_token.is_empty() {
-        provider.api_token_hash = hash_password(&api_token);
+        let new_hash = hash_password(&api_token);
+        // Upsert the credential in the private table
+        if let Some(mut cred) = ctx
+            .db
+            .scim_provider_credential()
+            .scim_provider_id()
+            .find(&provider.id)
+        {
+            cred.api_token_hash = new_hash;
+            ctx.db
+                .scim_provider_credential()
+                .scim_provider_id()
+                .update(cred);
+        } else {
+            ctx.db
+                .scim_provider_credential()
+                .insert(ScimProviderCredential {
+                    scim_provider_id: provider.id.clone(),
+                    api_token_hash: new_hash,
+                });
+        }
     }
     let valid_roles = ["admin", "member", "viewer"];
     let role_clean = if valid_roles.contains(&default_role.as_str()) {
@@ -892,6 +918,95 @@ pub fn delete_scim_provider(ctx: &ReducerContext, id: String) -> Result<(), Stri
         ctx.db.scim_event().id().delete(&eid);
     }
     ctx.db.scim_provider().id().delete(&id);
+    Ok(())
+}
+
+/// Verify a SCIM bearer token against the PRIVATE scim_provider_credential
+/// table. The Python SCIM middleware calls this reducer instead of reading
+/// the token hash via SQL. Uses Argon2 verification (matches how the token
+/// hash is stored), fixing the old sha256-vs-argon2 mismatch.
+#[reducer]
+pub fn verify_scim_token(
+    ctx: &ReducerContext,
+    provider_id: String,
+    api_token: String,
+) -> Result<(), String> {
+    let provider = ctx
+        .db
+        .scim_provider()
+        .id()
+        .find(&provider_id)
+        .ok_or_else(|| "SCIM provider not found".to_string())?;
+    if !provider.is_active {
+        return Err("SCIM provider is inactive".into());
+    }
+    let cred = ctx
+        .db
+        .scim_provider_credential()
+        .scim_provider_id()
+        .find(&provider_id)
+        .ok_or_else(|| "SCIM token not configured".to_string())?;
+    if cred.api_token_hash.is_empty() || !verify_password(&api_token, &cred.api_token_hash) {
+        return Err("Invalid SCIM token".into());
+    }
+    Ok(())
+}
+
+/// Fetch an OAuth provider's client secret for the Python callback flow.
+/// Reducers cannot return values, so this writes the secret into the
+/// PUBLIC oauth_secret_bridge table keyed by a random request_id that the
+/// caller generated. The caller reads it back with the request_id, then
+/// clears it via clear_oauth_secret_bridge. Without the request_id the
+/// row is unreachable; the window is a single callback exchange.
+#[reducer]
+pub fn get_oauth_provider_secret(
+    ctx: &ReducerContext,
+    provider_id: String,
+    request_id: String,
+) -> Result<(), String> {
+    let provider = ctx
+        .db
+        .oauth_provider()
+        .id()
+        .find(&provider_id)
+        .ok_or_else(|| "OAuth provider not found".to_string())?;
+    if !provider.is_active {
+        return Err("OAuth provider is inactive".into());
+    }
+    let cred = ctx
+        .db
+        .oauth_provider_credential()
+        .oauth_provider_id()
+        .find(&provider_id)
+        .ok_or_else(|| "OAuth client secret not configured".to_string())?;
+    if cred.client_secret.is_empty() {
+        return Err("OAuth client secret is empty".into());
+    }
+    // Remove any stale bridge row with the same request_id (idempotent)
+    if let Some(old) = ctx.db.oauth_secret_bridge().request_id().find(&request_id) {
+        ctx.db
+            .oauth_secret_bridge()
+            .request_id()
+            .delete(&old.request_id);
+    }
+    ctx.db.oauth_secret_bridge().insert(OauthSecretBridge {
+        request_id,
+        oauth_provider_id: provider_id,
+        client_secret: cred.client_secret,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+/// Clear a consumed OAuth secret bridge row after the callback exchange.
+#[reducer]
+pub fn clear_oauth_secret_bridge(ctx: &ReducerContext, request_id: String) -> Result<(), String> {
+    if let Some(row) = ctx.db.oauth_secret_bridge().request_id().find(&request_id) {
+        ctx.db
+            .oauth_secret_bridge()
+            .request_id()
+            .delete(&row.request_id);
+    }
     Ok(())
 }
 
@@ -959,15 +1074,19 @@ pub fn scim_sync_user(
     let user_id = make_id("scim_user", ctx);
     // Generate a random password for SCIM-provisioned users (they'll use SSO)
     let random_password = format!("scim_{:x}", now);
+    let password_hash = hash_password(&random_password);
     ctx.db.user().insert(User {
         id: user_id.clone(),
         name,
         email,
-        password_hash: hash_password(&random_password),
         role: role_clean,
         avatar_url: String::new(),
         created_at: now,
         updated_at: now,
+    });
+    ctx.db.user_credential().insert(UserCredential {
+        user_id,
+        password_hash,
     });
     Ok(())
 }
@@ -2190,21 +2309,50 @@ pub fn deny_access_request(
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-
 // ─── Admin Dashboard Stats ─────────────────────────────────────────
 
 #[reducer]
 pub fn get_dashboard_stats(ctx: &ReducerContext) -> Result<(), String> {
-    let total_pages = ctx.db.page().iter().filter(|p| p.status != "deleted").count() as u64;
+    let total_pages = ctx
+        .db
+        .page()
+        .iter()
+        .filter(|p| p.status != "deleted")
+        .count() as u64;
     let total_users = ctx.db.user().iter().count() as u64;
     let total_collections = ctx.db.collection().iter().count() as u64;
     let total_comments = ctx.db.comment().iter().count() as u64;
     let total_attachments = ctx.db.attachment().iter().count() as u64;
-    let published_pages = ctx.db.page().iter().filter(|p| p.status == "published").count() as u64;
-    let draft_pages = ctx.db.page().iter().filter(|p| p.status == "draft" || p.status == "private" || p.status.is_empty()).count() as u64;
-    let archived_pages = ctx.db.page().iter().filter(|p| p.status == "archived").count() as u64;
-    let deleted_pages = ctx.db.page().iter().filter(|p| p.status == "deleted").count() as u64;
-    let total_storage_bytes = ctx.db.attachment().iter().map(|a| a.size_bytes).sum::<u64>();
+    let published_pages = ctx
+        .db
+        .page()
+        .iter()
+        .filter(|p| p.status == "published")
+        .count() as u64;
+    let draft_pages = ctx
+        .db
+        .page()
+        .iter()
+        .filter(|p| p.status == "draft" || p.status == "private" || p.status.is_empty())
+        .count() as u64;
+    let archived_pages = ctx
+        .db
+        .page()
+        .iter()
+        .filter(|p| p.status == "archived")
+        .count() as u64;
+    let deleted_pages = ctx
+        .db
+        .page()
+        .iter()
+        .filter(|p| p.status == "deleted")
+        .count() as u64;
+    let total_storage_bytes = ctx
+        .db
+        .attachment()
+        .iter()
+        .map(|a| a.size_bytes)
+        .sum::<u64>();
 
     // Store stats in AppSetting for frontend to read via subscription
     // Using a more stable approach: directly readable from the frontend

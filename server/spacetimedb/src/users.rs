@@ -21,26 +21,34 @@ pub fn register_user(
     let now = now_ms(ctx);
     let password_hash = hash_password(&password);
     ctx.db.user().insert(User {
-        id,
+        id: id.clone(),
         name,
         email,
-        password_hash,
         role: role_clean,
         avatar_url: String::new(),
         created_at: now,
         updated_at: now,
+    });
+    ctx.db.user_credential().insert(UserCredential {
+        user_id: id,
+        password_hash,
     });
     Ok(())
 }
 
 #[reducer]
 pub fn login_user(ctx: &ReducerContext, email: String, password: String) -> Result<(), String> {
-    let found = ctx
+    let found = ctx.db.user().iter().find(|u| u.email == email);
+    let Some(user) = found else {
+        return Err("Invalid email or password".into());
+    };
+    let cred = ctx
         .db
-        .user()
-        .iter()
-        .find(|u| u.email == email && verify_password(&password, &u.password_hash));
-    if found.is_none() {
+        .user_credential()
+        .user_id()
+        .find(&user.id)
+        .ok_or_else(|| "Invalid email or password".to_string())?;
+    if !verify_password(&password, &cred.password_hash) {
         return Err("Invalid email or password".into());
     }
     Ok(())

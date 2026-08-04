@@ -94,9 +94,9 @@ export function mapUser(row: unknown[]): User {
     id: String(row[0] ?? ''),
     name: String(row[1] ?? ''),
     email: String(row[2] ?? ''),
-    role: String(row[4] ?? ''),
-    avatar_url: String(row[5] ?? ''),
-    created_at: Number(row[6]) || 0,
+    role: String(row[3] ?? ''),
+    avatar_url: String(row[4] ?? ''),
+    created_at: Number(row[5]) || 0,
   };
 }
 export function mapRevision(row: unknown[]): PageRevision {
@@ -167,11 +167,11 @@ export function mapShareLink(row: unknown[]): ShareLink {
     id: String(row[0] ?? ''),
     page_id: String(row[1] ?? ''),
     token: String(row[2] ?? ''),
-    password_hash: String(row[3] ?? ''),
-    created_by: String(row[4] ?? ''),
-    expires_at: Number(row[5]) || 0,
-    created_at: Number(row[6]) || 0,
-    visit_count: Number(row[7]) || 0,
+    created_by: String(row[3] ?? ''),
+    expires_at: Number(row[4]) || 0,
+    created_at: Number(row[5]) || 0,
+    visit_count: Number(row[6]) || 0,
+    has_password: Boolean(row[7]),
     brand_title: row[8] ? String(row[8]) : null,
     brand_logo_url: row[9] ? String(row[9]) : null,
   };
@@ -181,12 +181,11 @@ export function mapApiKey(row: unknown[]): ApiKey {
     id: String(row[0] ?? ''),
     user_id: String(row[1] ?? ''),
     name: String(row[2] ?? ''),
-    key_hash: String(row[3] ?? ''),
-    key_prefix: String(row[4] ?? ''),
-    last_used_at: Number(row[5]) || 0,
-    created_at: Number(row[6]) || 0,
-    expires_at: Number(row[7]) || 0,
-    is_revoked: Boolean(row[8]),
+    key_prefix: String(row[3] ?? ''),
+    last_used_at: Number(row[4]) || 0,
+    created_at: Number(row[5]) || 0,
+    expires_at: Number(row[6]) || 0,
+    is_revoked: Boolean(row[7]),
   };
 }
 export function mapGroup(row: unknown[]): Group {

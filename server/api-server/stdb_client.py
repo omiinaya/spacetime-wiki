@@ -209,8 +209,8 @@ def map_collection(row: list) -> dict:
 def map_user(row: list) -> dict:
     return {
         "id": _str(row, 0), "name": _str(row, 1), "email": _str(row, 2),
-        "role": _str(row, 4), "avatar_url": _str(row, 5),
-        "created_at": _int(row, 6),
+        "role": _str(row, 3), "avatar_url": _str(row, 4),
+        "created_at": _int(row, 5),
     }
 
 
@@ -250,16 +250,16 @@ def map_attachment(row: list) -> dict:
 def map_share_link(row: list) -> dict:
     return {
         "id": _str(row, 0), "page_id": _str(row, 1),
-        "token": _str(row, 2), "password_hash": _str(row, 3),
-        "created_by": _str(row, 4), "expires_at": _int(row, 5),
-        "created_at": _int(row, 6), "visit_count": _int(row, 7),
+        "token": _str(row, 2),
+        "created_by": _str(row, 3), "expires_at": _int(row, 4),
+        "created_at": _int(row, 5), "visit_count": _int(row, 6),
     }
 
 
 def map_api_key(row: list) -> dict:
     return {
         "id": _str(row, 0), "user_id": _str(row, 1), "name": _str(row, 2),
-        "key_hash": _str(row, 3), "key_prefix": _str(row, 4),
-        "last_used_at": _int(row, 5), "created_at": _int(row, 6),
-        "expires_at": _int(row, 7), "is_revoked": _bool(row, 8),
+        "key_prefix": _str(row, 3),
+        "last_used_at": _int(row, 4), "created_at": _int(row, 5),
+        "expires_at": _int(row, 6), "is_revoked": _bool(row, 7),
     }

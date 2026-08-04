@@ -392,7 +392,7 @@ async def auth_complete(request: Request, body: dict):
             "id": str(user_row[0]),
             "name": str(user_row[1]),
             "email": str(user_row[2]),
-            "role": str(user_row[4]) if len(user_row) > 4 else "member",
+            "role": str(user_row[3]) if len(user_row) > 3 else "member",
         }
 
         return {"status": "ok", "user": user_data}

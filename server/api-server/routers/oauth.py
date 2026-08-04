@@ -5,6 +5,7 @@ and user info retrieval. Supports auto-registration for new users.
 """
 
 import logging
+import uuid
 
 from fastapi import APIRouter, HTTPException, Query
 from models import (
@@ -193,9 +194,33 @@ async def oauth_callback(body: dict):
 
     raw = rows[0]
     provider = _map_oauth_provider(raw)
-    client_secret = _str(raw, 9)  # Access client_secret from raw row data
 
-    # 2. Exchange authorization code for access token
+    # 2. Fetch the client secret from the PRIVATE table via the reducer
+    #    bridge (reducers cannot return values, so the secret is written to
+    #    the oauth_secret_bridge table keyed by a random request_id, read
+    #    back here, then cleared).
+    request_id = str(uuid.uuid4())
+    try:
+        await call_reducer("get_oauth_provider_secret", [provider_id, request_id])
+    except RuntimeError:
+        raise HTTPException(status_code=500, detail="Failed to load OAuth client secret")
+    secret_rows = await sql_query(
+        "SELECT * FROM oauth_secret_bridge WHERE request_id = ?", request_id
+    )
+    if not secret_rows:
+        raise HTTPException(status_code=500, detail="OAuth client secret not configured")
+    bridge = secret_rows[0]
+    client_secret = (
+        str(bridge.get("client_secret", "")) if isinstance(bridge, dict)
+        else str(bridge[2] if len(bridge) > 2 else "")
+    )
+    # Clear the bridge immediately after reading
+    try:
+        await call_reducer("clear_oauth_secret_bridge", [request_id])
+    except RuntimeError:
+        logger.exception("Failed to clear oauth secret bridge")
+
+    # 3. Exchange authorization code for access token
     import httpx
 
     token_data = {

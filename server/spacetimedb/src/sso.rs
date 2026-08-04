@@ -445,7 +445,7 @@ pub fn add_oauth_provider(
     let provider_type_clone = provider_type.clone();
     if ctx.db.oauth_provider().id().find(&id).is_none() {
         ctx.db.oauth_provider().insert(OauthProvider {
-            id,
+            id: id.clone(),
             name,
             slug,
             provider_type,
@@ -454,7 +454,6 @@ pub fn add_oauth_provider(
             userinfo_url,
             scope: scopes_clean,
             client_id,
-            client_secret,
             icon: if icon.is_empty() {
                 provider_type_clone.clone()
             } else {
@@ -467,6 +466,12 @@ pub fn add_oauth_provider(
             created_at: now,
             updated_at: now,
         });
+        ctx.db
+            .oauth_provider_credential()
+            .insert(OauthProviderCredential {
+                oauth_provider_id: id,
+                client_secret,
+            });
     }
     Ok(())
 }
@@ -509,7 +514,26 @@ pub fn update_oauth_provider(
     }
     provider.client_id = client_id;
     if !client_secret.is_empty() {
-        provider.client_secret = client_secret;
+        // Upsert the credential in the private table
+        if let Some(mut cred) = ctx
+            .db
+            .oauth_provider_credential()
+            .oauth_provider_id()
+            .find(&provider.id)
+        {
+            cred.client_secret = client_secret;
+            ctx.db
+                .oauth_provider_credential()
+                .oauth_provider_id()
+                .update(cred);
+        } else {
+            ctx.db
+                .oauth_provider_credential()
+                .insert(OauthProviderCredential {
+                    oauth_provider_id: provider.id.clone(),
+                    client_secret,
+                });
+        }
     }
     provider.icon = if icon.is_empty() {
         provider.provider_type.clone()

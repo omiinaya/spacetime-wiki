@@ -14,6 +14,7 @@ import type {
   OauthUser,
 } from './types';
 import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId } from './client';
+import { bridgeQueryAll, bridgeQueryOne } from './bridge';
 import {
   mapOidcProvider,
   mapSamlProvider,
@@ -27,17 +28,38 @@ import {
 } from './mappers';
 
 // ─── OIDC Providers ────────────────────────────────────────────────────────────
+// oidc_provider is a PRIVATE table — reads go through the read bridge so the
+// client_secret is never exposed via SQL.
 
 export async function getOidcProviders(): Promise<OidcProvider[]> {
-  return tableQuery('SELECT * FROM oidc_provider', mapOidcProvider);
+  const rows = await bridgeQueryAll<Record<string, unknown>>('oidc_provider', {});
+  return rows.map(mapOidcProviderJson);
 }
 
 export async function getOidcProvider(id: string): Promise<OidcProvider | null> {
-  return tableQueryOne(`SELECT * FROM oidc_provider WHERE id = '${id}'`, mapOidcProvider);
+  const row = await bridgeQueryOne<Record<string, unknown>>('oidc_provider', { id });
+  return row ? mapOidcProviderJson(row) : null;
 }
 
 export async function listActiveOidcProviders(): Promise<OidcProvider[]> {
-  return tableQuery('SELECT * FROM oidc_provider WHERE is_active = true', mapOidcProvider);
+  const rows = await bridgeQueryAll<Record<string, unknown>>('oidc_provider', { is_active: true });
+  return rows.map(mapOidcProviderJson);
+}
+
+function mapOidcProviderJson(o: Record<string, unknown>): OidcProvider {
+  return {
+    id: String(o.id ?? ''),
+    name: String(o.name ?? ''),
+    slug: String(o.slug ?? ''),
+    issuer_url: String(o.issuer_url ?? ''),
+    client_id: String(o.client_id ?? ''),
+    client_secret: String(o.client_secret ?? ''),
+    scopes: String(o.scopes ?? ''),
+    is_active: Boolean(o.is_active),
+    created_by: String(o.created_by ?? ''),
+    created_at: Number(o.created_at) || 0,
+    updated_at: Number(o.updated_at) || 0,
+  };
 }
 
 export async function addOidcProvider(
@@ -368,17 +390,35 @@ export async function verifyMfaBackupCode(userId: string, code: string): Promise
 }
 
 export async function getMfaMethod(userId: string): Promise<MfaMethod | null> {
-  return tableQueryOne(`SELECT * FROM mfa_method WHERE user_id = '${userId}'`, mapMfaMethod);
+  // mfa_method is PRIVATE — read through the bridge (totp_secret never bridged)
+  const row = await bridgeQueryOne<Record<string, unknown>>('mfa_method', { user_id: userId });
+  if (!row) return null;
+  return {
+    id: String(row.id ?? ''),
+    user_id: String(row.user_id ?? ''),
+    method_type: String(row.method_type ?? ''),
+    is_enabled: Boolean(row.is_enabled),
+    created_at: Number(row.created_at) || 0,
+    updated_at: Number(row.updated_at) || 0,
+  };
 }
 
 export async function getMfaBackupCodes(userId: string): Promise<MfaBackupCode[]> {
-  return tableQuery(`SELECT * FROM mfa_backup_code WHERE user_id = '${userId}'`, mapMfaBackupCode);
+  // mfa_backup_code is PRIVATE — read through the bridge (code_hash never bridged)
+  const rows = await bridgeQueryAll<Record<string, unknown>>('mfa_backup_code', { user_id: userId });
+  return rows.map((r) => ({
+    id: String(r.id ?? ''),
+    user_id: String(r.user_id ?? ''),
+    used: Boolean(r.used),
+    created_at: Number(r.created_at) || 0,
+  }));
 }
 
 export async function isMfaEnabled(userId: string): Promise<boolean> {
-  const rows = await sqlQuery(
-    `SELECT id FROM mfa_method WHERE user_id = '${userId}' AND is_enabled = true`,
-  );
+  const rows = await bridgeQueryAll<Record<string, unknown>>('mfa_method', {
+    user_id: userId,
+    is_enabled: true,
+  });
   return rows.length > 0;
 }
 
