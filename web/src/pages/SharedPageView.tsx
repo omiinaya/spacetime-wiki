@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { sqlQuery } from '../lib/api';
+import { sqlQuery, sqlLit } from '../lib/api';
 import { PageView } from './PageView';
 
 // ─── Types ─────────────────────────────────────────────────���────────���───────
@@ -61,7 +61,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
     try {
       setLoading(true);
       const rows = (await sqlQuery(
-        `SELECT * FROM share_link WHERE token = '${tok.replace(/'/g, "''")}'`,
+        `SELECT * FROM share_link WHERE token = ${sqlLit(tok)}`,
       )) as unknown[][];
       if (rows.length === 0) {
         setError('Share link not found');
@@ -129,7 +129,7 @@ export default function SharedPageView({ userId }: { userId: string | null }) {
       }
       // Password correct — load page
       const rows = (await sqlQuery(
-        `SELECT * FROM share_link WHERE token = '${token.replace(/'/g, "''")}'`,
+        `SELECT * FROM share_link WHERE token = ${sqlLit(token)}`,
       )) as unknown[][];
       if (rows.length > 0) {
         const link = mapShareLink(rows[0]);

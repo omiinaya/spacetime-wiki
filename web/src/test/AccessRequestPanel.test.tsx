@@ -13,6 +13,8 @@ const mockSqlQuery = vi.hoisted(() => vi.fn());
 vi.mock('../lib/api', () => ({
   accessRequestApi: mockAccessRequestApi,
   sqlQuery: mockSqlQuery,
+  // Real implementation — the component uses it to safely quote SQL values.
+  sqlLit: (v: string) => `'${v.replace(/\\/g, '\\\\').replace(/'/g, "''")}'`,
 }));
 
 import AccessRequestPanel from '../components/AccessRequestPanel';

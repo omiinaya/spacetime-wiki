@@ -10,6 +10,8 @@ const mockSqlQuery = vi.hoisted(() => vi.fn());
 
 vi.mock('../lib/api', () => ({
   sqlQuery: mockSqlQuery,
+  // Real implementation — SharedPageView uses it to safely quote share tokens.
+  sqlLit: (v: string) => `'${v.replace(/\\/g, '\\\\').replace(/'/g, "''")}'`,
 }));
 
 import SharedPageView from '../pages/SharedPageView';

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Shield, Check, X, Clock, Eye, User, FileText } from 'lucide-react';
-import { accessRequestApi, sqlQuery, type AccessRequest } from '../lib/api';
+import { accessRequestApi, sqlQuery, sqlLit, type AccessRequest } from '../lib/api';
 import { timeAgo } from '../lib/utils';
 
 // ─── Access Request Management Panel (for admin dashboard) ───────────────────
@@ -27,13 +27,15 @@ export default function AccessRequestPanel({ userId }: { userId: string | null }
           let pageTitle = 'Unknown page';
           let requesterName = 'Unknown user';
           try {
-            const pageRows = await sqlQuery(`SELECT title FROM page WHERE id = '${req.page_id}'`);
+            const pageRows = await sqlQuery(
+              `SELECT title FROM page WHERE id = ${sqlLit(req.page_id)}`,
+            );
             if (pageRows.length > 0)
               pageTitle = String((pageRows[0] as unknown).title || 'Unknown page');
           } catch {}
           try {
             const userRows = await sqlQuery(
-              `SELECT name FROM \`user\` WHERE id = '${req.requester_id}'`,
+              `SELECT name FROM \`user\` WHERE id = ${sqlLit(req.requester_id)}`,
             );
             if (userRows.length > 0)
               requesterName = String((userRows[0] as unknown).name || 'Unknown user');
