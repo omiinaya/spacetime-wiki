@@ -1,0 +1,9 @@
+# Development/test dependencies for the Python side (API server + MCP server).
+# Install with:  pip install -r requirements-dev.txt
+-r api-server/requirements.txt
+-r mcp-server/requirements.txt
+
+pytest>=8.0
+pytest-asyncio>=0.24
+pytest-cov>=5.0
+pytest-timeout>=2.3

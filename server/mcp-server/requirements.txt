@@ -1,0 +1,7 @@
+# Runtime dependencies for the MCP server (stdio, talks to STDB over HTTP).
+# NOTE: pinned to the 1.x line — server.py uses the mcp 1.x decorator API
+# (Server.app.list_resources()/read_resource()/list_resource_templates()/
+# list_tools()). mcp 2.x removed these decorators and broke the server, so
+# keep this on 1.x until server.py is migrated.
+mcp>=1.12,<2.0
+httpx>=0.28.1
