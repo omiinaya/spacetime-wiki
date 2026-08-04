@@ -63,8 +63,11 @@ toBeInTheDocument`) — every commit touching `web/src` failed the hook.
 ### Test status (verified 2026-08-04)
 
 - Rust unit: 210 ✅ · clippy: 0 warnings ✅
-- Python: 217 API unit + 118 MCP unit + 86 live-STDB integration ✅
-- Frontend Vitest: 1,365 ✅ · Playwright E2E: 44 (webkit) ✅
+- Python: 217 API unit + 118 MCP unit + 303 API-server router/unit tests + 86 live-STDB integration ✅
+- Frontend Vitest: 1,377 ✅ (72 files) · tsc clean ✅
+- Playwright E2E: runs chromium/firefox/webkit with an error-capturing
+  fixture — chromium full suite green, cross-browser verified on the
+  previously-flaky specs ✅
 
 ## [1.0.0] — 2026-08-03 — Initial public release
 
