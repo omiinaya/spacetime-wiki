@@ -1,6 +1,6 @@
 ---
 name: SpacetimeWiki
-description: "SpacetimeDB-powered knowledge wiki — Outline-inspired UI with Tiptap editor, feature parity with Outline, Docmost, Wiki.js, BookStack"
+description: 'SpacetimeDB-powered knowledge wiki — Outline-inspired UI with Tiptap editor, feature parity with Outline, Docmost, Wiki.js, BookStack'
 stack: [rust, react, typescript, tiptap]
 ports:
   frontend: 5184
@@ -35,9 +35,9 @@ spacetime-wiki/
 │   ├── src/
 │   │   ├── App.tsx               # Router, sidebar, layout, global state
 │   │   ├── main.tsx              # STDB connection init, error boundary
-│   │   ├── components/           # ~20 reusable UI components
+│   │   ├── components/           # ~27 reusable UI components
 │   │   ├── pages/                # Route-level page components
-│   │   ├── extensions/           # 14 custom Tiptap extensions
+│   │   ├── extensions/           # 15 custom Tiptap extensions
 │   │   ├── lib/                  # API client, helpers, Y.js STDB provider
 │   │   ├── i18n/                 # i18next translations
 │   │   ├── module_bindings/      # Auto-generated STDB TS bindings
@@ -56,7 +56,7 @@ spacetime-wiki/
 │   │   ├── auth.py               # Bearer + API key auth
 │   │   └── config.py             # Env-based config
 │   ├── spacetimedb/              # Rust module — tables + reducers
-│   │   ├── src/lib.rs            # 2541 lines: tables, reducers, logic
+│   │   ├── src/lib.rs            # 2703 lines: tables, reducers, logic
 │   │   ├── src/tables.rs         # Table schemas (pages, collections, users...)
 │   │   ├── src/pages.rs          # Page CRUD reducers
 │   │   ├── src/users.rs          # User management reducers
@@ -90,87 +90,95 @@ spacetime-wiki/
 ## 3. Task-to-File Mapping
 
 ### STDB Reducers (SpacetimeDB Rust module)
-All `#[spacetimedb::reducer]` functions, init, table definitions — `server/spacetimedb/src/lib.rs` (2541 lines). Additional
+
+All `#[spacetimedb::reducer]` functions, init, table definitions — `server/spacetimedb/src/lib.rs` (2703 lines). Additional
 logic is split across topic modules:
 
-| File | Responsibility |
-|------|---------------|
-| `lib.rs` | All `#[spacetimedb::reducer]` functions, init, table definitions |
-| `tables.rs` | Table schemas & struct definitions |
-| `pages.rs` | Page creation, update, delete, restore, duplicate, move, status |
-| `users.rs` | User create, update, avatar, roles |
-| `helpers.rs` | Auth hashing, slug generation, IDs, validation (~41 tests) |
-| `permissions.rs` | RBAC, per-page ACL, collection-level permissions |
-| `attachments.rs` | File refs, blob storage, URL generation |
-| `share_links.rs` | Public share links with password + expiration |
-| `templates.rs` | Page template CRUD |
-| `tags.rs` | Tag add/remove, batch operations |
-| `comments.rs` | Comment CRUD on pages |
-| `favorites.rs` | Favorite/unfavorite toggle |
-| `api_keys.rs` | API key generate, revoke, hash validation |
-| `sso.rs` | SSO/OAuth/OIDC/SAML/LDAP identity linking |
-| `app_settings.rs` | Global app configuration |
-| `collection_members.rs` | Collection user/group membership |
-| `collaboration.rs` | Real-time Yjs collab: broadcast/join/leave/cursor, stale session & old update cleanup |
+| File                    | Responsibility                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `lib.rs`                | All `#[spacetimedb::reducer]` functions, init, table definitions                      |
+| `tables.rs`             | Table schemas & struct definitions                                                    |
+| `pages.rs`              | Page creation, update, delete, restore, duplicate, move, status                       |
+| `users.rs`              | User create, update, avatar, roles                                                    |
+| `helpers.rs`            | Auth hashing, slug generation, IDs, validation (~41 tests)                            |
+| `permissions.rs`        | RBAC, per-page ACL, collection-level permissions                                      |
+| `attachments.rs`        | File refs, blob storage, URL generation                                               |
+| `share_links.rs`        | Public share links with password + expiration                                         |
+| `templates.rs`          | Page template CRUD                                                                    |
+| `tags.rs`               | Tag add/remove, batch operations                                                      |
+| `comments.rs`           | Comment CRUD on pages                                                                 |
+| `favorites.rs`          | Favorite/unfavorite toggle                                                            |
+| `api_keys.rs`           | API key generate, revoke, hash validation                                             |
+| `sso.rs`                | SSO/OAuth/OIDC/SAML/LDAP identity linking                                             |
+| `app_settings.rs`       | Global app configuration                                                              |
+| `read_bridge.rs`        | Private-table read bridge: `bridge_read` reducer + safe-column whitelist              |
+| `collection_members.rs` | Collection user/group membership                                                      |
+| `collaboration.rs`      | Real-time Yjs collab: broadcast/join/leave/cursor, stale session & old update cleanup |
 
 ### Tiptap Editor (Frontend)
-| File | Responsibility |
-|------|---------------|
-| `web/src/pages/PageEditor.tsx` | Main editor wrapper component |
-| `web/src/extensions/*.tsx` | Custom Tiptap extensions (14 files) |
-| `web/src/extensions/Mermaid.tsx` | Mermaid diagram rendering |
-| `web/src/extensions/Math.tsx` | KaTeX math rendering |
-| `web/src/extensions/Callout.ts` | Info/warning/success/error admonitions |
-| `web/src/extensions/DatabaseBase.tsx` | Inline editable spreadsheets |
+
+| File                                  | Responsibility                         |
+| ------------------------------------- | -------------------------------------- |
+| `web/src/pages/PageEditor.tsx`        | Main editor wrapper component          |
+| `web/src/extensions/*.tsx`            | Custom Tiptap extensions (15 files)    |
+| `web/src/extensions/Mermaid.tsx`      | Mermaid diagram rendering              |
+| `web/src/extensions/Math.tsx`         | KaTeX math rendering                   |
+| `web/src/extensions/Callout.ts`       | Info/warning/success/error admonitions |
+| `web/src/extensions/DatabaseBase.tsx` | Inline editable spreadsheets           |
 
 ### Wiki Pages & Collections
-| File | Responsibility |
-|------|---------------|
-| `web/src/pages/PageView.tsx` | Published page view component |
-| `web/src/pages/HomeView.tsx` | Home/landing page |
-| `web/src/components/GraphView.tsx` | Force-directed collection graph |
-| `web/src/components/PageTags.tsx` | Tag management UI |
-| `server/api-server/routers/pages.py` | Page REST routes |
-| `server/api-server/routers/collections.py` | Collection REST routes |
+
+| File                                       | Responsibility                  |
+| ------------------------------------------ | ------------------------------- |
+| `web/src/pages/PageView.tsx`               | Published page view component   |
+| `web/src/pages/HomeView.tsx`               | Home/landing page               |
+| `web/src/components/GraphView.tsx`         | Force-directed collection graph |
+| `web/src/components/PageTags.tsx`          | Tag management UI               |
+| `server/api-server/routers/pages.py`       | Page REST routes                |
+| `server/api-server/routers/collections.py` | Collection REST routes          |
 
 ### Authentication
-| File | Responsibility |
-|------|---------------|
-| `server/spacetimedb/src/users.rs` | User reducers (create, auth) |
-| `server/spacetimedb/src/sso.rs` | SSO/OAuth/OIDC/SAML/LDAP |
-| `server/spacetimedb/src/api_keys.rs` | API key management |
-| `server/spacetimedb/src/permissions.rs` | RBAC + ACL |
-| `server/api-server/auth.py` | Bearer token + API key middleware |
-| `web/src/pages/LoginView.tsx` | Login/register UI |
-| `web/src/components/AdminDashboard.tsx` | User/role admin UI |
+
+| File                                    | Responsibility                    |
+| --------------------------------------- | --------------------------------- |
+| `server/spacetimedb/src/users.rs`       | User reducers (create, auth)      |
+| `server/spacetimedb/src/sso.rs`         | SSO/OAuth/OIDC/SAML/LDAP          |
+| `server/spacetimedb/src/api_keys.rs`    | API key management                |
+| `server/spacetimedb/src/permissions.rs` | RBAC + ACL                        |
+| `server/api-server/auth.py`             | Bearer token + API key middleware |
+| `web/src/pages/LoginView.tsx`           | Login/register UI                 |
+| `web/src/components/AdminDashboard.tsx` | User/role admin UI                |
 
 ### Search
-| File | Responsibility |
-|------|---------------|
-| `server/spacetimedb/src/lib.rs` | STDB full-text search reducers |
-| `server/api-server/routers/search.py` | Search REST endpoint |
-| `server/mcp-server/server.py` | `wiki_search` MCP tool |
-| `web/src/components/SearchFilters.tsx` | Search UI with filters |
+
+| File                                   | Responsibility                 |
+| -------------------------------------- | ------------------------------ |
+| `server/spacetimedb/src/lib.rs`        | STDB full-text search reducers |
+| `server/api-server/routers/search.py`  | Search REST endpoint           |
+| `server/mcp-server/server.py`          | `wiki_search` MCP tool         |
+| `web/src/components/SearchFilters.tsx` | Search UI with filters         |
 
 ### API Routes (FastAPI)
-| File | Route Prefix |
-|------|-------------|
-| `server/api-server/routers/pages.py` | `/api/v1/pages` (includes comments, tags, attachments, share-links, revisions) |
-| `server/api-server/routers/collections.py` | `/api/v1/collections` |
-| `server/api-server/routers/search.py` | `/api/v1/search` |
-| `server/api-server/routers/auth.py` | `/api/v1/auth` |
-| `server/api-server/routers/oauth.py` | `/api/v1/oauth` |
-| `server/api-server/routers/webauthn.py` | `/api/v1/webauthn` |
-| `server/api-server/routers/ldap_auth.py` | `/api/v1/auth/ldap` |
-| `server/api-server/routers/scim.py` | `/api/v1/scim` |
-| `server/api-server/routers/imports.py` | `/api/v1/imports` |
+
+| File                                       | Route Prefix                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------------ |
+| `server/api-server/routers/pages.py`       | `/api/v1/pages` (includes comments, tags, attachments, share-links, revisions) |
+| `server/api-server/routers/collections.py` | `/api/v1/collections`                                                          |
+| `server/api-server/routers/search.py`      | `/api/v1/search`                                                               |
+| `server/api-server/routers/auth.py`        | `/api/v1/auth`                                                                 |
+| `server/api-server/routers/oauth.py`       | `/api/v1/oauth`                                                                |
+| `server/api-server/routers/webauthn.py`    | `/api/v1/webauthn`                                                             |
+| `server/api-server/routers/ldap_auth.py`   | `/api/v1/auth/ldap`                                                            |
+| `server/api-server/routers/scim.py`        | `/api/v1/scim`                                                                 |
+| `server/api-server/routers/imports.py`     | `/api/v1/imports`                                                              |
 
 ### MCP Server (AI Agent Access)
-| File | Responsibility |
-|------|---------------|
-| `server/mcp-server/server.py` | MCP tools + resource handlers |
-| `server/mcp-server/stdb_client.py` | STDB HTTP client for MCP |
-| `server/mcp-server/config.py` | Configuration |
+
+| File                               | Responsibility                |
+| ---------------------------------- | ----------------------------- |
+| `server/mcp-server/server.py`      | MCP tools + resource handlers |
+| `server/mcp-server/stdb_client.py` | STDB HTTP client for MCP      |
+| `server/mcp-server/config.py`      | Configuration                 |
 
 MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 `wiki_list_pages`, `wiki_get_backlinks`, `wiki_get_linked_pages`.
@@ -179,14 +187,14 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 
 ## 4. Ports Table
 
-| Service | Port(s) | Protocol | Notes |
-|---------|---------|----------|-------|
-| Vite dev server | 5184 | HTTP/HMR | `npm run dev` |
-| nginx (Docker frontend) | 5184 | HTTP | Production SPA |
-| SpacetimeDB WS | 3000 | WebSocket | Real-time sync |
-| SpacetimeDB HTTP | 3001 | HTTP | REST/queries |
-| FastAPI API server | 8711 | HTTP | REST gateway |
-| MCP server | stdio | — | Stdio transport |
+| Service                 | Port(s) | Protocol  | Notes           |
+| ----------------------- | ------- | --------- | --------------- |
+| Vite dev server         | 5184    | HTTP/HMR  | `npm run dev`   |
+| nginx (Docker frontend) | 5184    | HTTP      | Production SPA  |
+| SpacetimeDB WS          | 3000    | WebSocket | Real-time sync  |
+| SpacetimeDB HTTP        | 3001    | HTTP      | REST/queries    |
+| FastAPI API server      | 8711    | HTTP      | REST gateway    |
+| MCP server              | stdio   | —         | Stdio transport |
 
 ---
 
@@ -204,22 +212,26 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 ## 6. Conventions
 
 ### TypeScript
+
 - Strict mode, no `any` without justification
 - Functional components with hooks
 - Tailwind utility classes only (no raw CSS)
 - i18n via `react-i18next`
 
 ### Rust
+
 - `clippy`-clean, no `#[allow(dead_code)]` on unused items
 - Reducers in `lib.rs` with `#[spacetimedb::reducer]`
 - Tests via `#[cfg(test)] mod tests { ... }`
 
 ### Python
+
 - Type hints everywhere
 - FastAPI patterns (Pydantic models, router modules)
 - Async-first where possible
 
 ### Testing
+
 - New components: include `vitest-axe` a11y assertions
 - Run: `make test` (Vitest), `make module-test` (Rust), `make test-e2e` (Playwright)
 - Pre-commit: `tsc --noEmit + vitest + cargo check`
@@ -245,72 +257,70 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 
 ## 8. Doc Index
 
-| Document | What It Covers |
-|----------|---------------|
-| [README.md](README.md) | Full project docs, quick start, features, API |
-| [ROADMAP.md](ROADMAP.md) | Feature parity matrix with Outline/Docmost/Wiki.js/BookStack |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Human + AI contribution guide |
-| [CLAUDE.md](CLAUDE.md) | Short signpost for AI coding assistants |
-| `.env.example` | All environment variables documented |
-| `docker-compose.yml` | Service definitions and ports |
-| `.github/workflows/ci.yml` | CI pipeline (tsc + tests + Rust build) |
-| `server/api-server/openapi.json` | Full OpenAPI spec (when generated) |
+| Document                           | What It Covers                                               |
+| ---------------------------------- | ------------------------------------------------------------ |
+| [README.md](README.md)             | Full project docs, quick start, features, API                |
+| [ROADMAP.md](ROADMAP.md)           | Feature parity matrix with Outline/Docmost/Wiki.js/BookStack |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Human + AI contribution guide                                |
+| [CLAUDE.md](CLAUDE.md)             | Short signpost for AI coding assistants                      |
+| `.env.example`                     | All environment variables documented                         |
+| `docker-compose.yml`               | Service definitions and ports                                |
+| `.github/workflows/ci.yml`         | CI pipeline (tsc + tests + Rust build)                       |
+| `server/api-server/openapi.json`   | Full OpenAPI spec (when generated)                           |
 
 ---
 
 ## 9. Project Stats
 
-| Metric | Count |
-|--------|-------|
-| **STDB Reducers** | 141 (68 in `lib.rs`, 73 across 14 module files) |
-| **STDB Tables** | 50 (35 private, 15 remain public for SQL queries) |
-| **Rust Tests** | 246 unit ✅ |
-| **Python Unit Tests** | 329 (211 API server + 118 MCP server) ✅ |
-|| **Frontend Test Files** | **71** (65 component + 6 Tiptap extension test files) |
-|| **Frontend Tests** | **1,365** ✅ (1,296 component + 69 extension/helper tests) — 0 flaky, 0 skipped, 0 soft assertions ||
-| **E2E Spec Files** | 14 |
-| **E2E Test Cases** | 79 |
-| **API Endpoints** | 52 (FastAPI REST gateway) |
-| **MCP Tools** | 7 (`wiki_health`, `wiki_search`, `wiki_read_page`, `wiki_list_collections`, `wiki_list_pages`, `wiki_get_backlinks`, `wiki_get_linked_pages`) |
+| Metric                | Count                                                                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **STDB Reducers**     | 152 (72 in `lib.rs`, 80 across 17 module files)                                                                                               |
+| **STDB Tables**       | 59 (credential split: 14 private tables + secret bridges; public read-bridge pattern)                                                         |
+| **Rust Tests**        | 246 unit ✅                                                                                                                                   |
+| **Python Unit Tests** | 329 (211 API server + 118 MCP server) ✅                                                                                                      |
+|                       | **Frontend Test Files**                                                                                                                       | **71** (65 component + 6 Tiptap extension test files)                                              |
+|                       | **Frontend Tests**                                                                                                                            | **1,365** ✅ (1,296 component + 69 extension/helper tests) — 0 flaky, 0 skipped, 0 soft assertions |     |
+| **E2E Spec Files**    | 14                                                                                                                                            |
+| **E2E Test Cases**    | 79                                                                                                                                            |
+| **API Endpoints**     | 52 (FastAPI REST gateway)                                                                                                                     |
+| **MCP Tools**         | 7 (`wiki_health`, `wiki_search`, `wiki_read_page`, `wiki_list_collections`, `wiki_list_pages`, `wiki_get_backlinks`, `wiki_get_linked_pages`) |
 
 ### Python / MCP Server Quality
 
-| Component | Status |
-|-----------|--------|
+| Component                     | Status                                                                              |
+| ----------------------------- | ----------------------------------------------------------------------------------- |
 | **MCP server error handling** | ✅ DONE — full try/except + logging on all tools/resources + STDB client with retry |
-| **MCP server pagination** | ✅ DONE — `limit` (default 50) and `offset` (default 0) on list/search tools |
-| **API pagination** | ✅ DONE — pages.py has `limit`/`offset` params |
-| **Python test coverage** | ✅ DONE — 329 unit tests across all 19 Python source modules |
-| **Python code quality** | ✅ Error handling done, pagination done, no broad except, no SQL injection |
+| **MCP server pagination**     | ✅ DONE — `limit` (default 50) and `offset` (default 0) on list/search tools        |
+| **API pagination**            | ✅ DONE — pages.py has `limit`/`offset` params                                      |
+| **Python test coverage**      | ✅ DONE — 329 unit tests across all 19 Python source modules                        |
+| **Python code quality**       | ✅ Error handling done, pagination done, no broad except, no SQL injection          |
 
-## Codebase Stats (last updated: 2026-07-30)
+## Codebase Stats (last updated: 2026-08-04)
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| `lib.rs` | 2541 | Crate root, reducer functions, init, table definitions |
-| `tables.rs` | 1532 | Table schemas & struct definitions |
-| `pages.rs` | 430 | Page CRUD, restore, duplicate, move, status |
-| `users.rs` | 142 | User create, update, avatar, roles |
-| `helpers.rs` | 608 | Auth hashing, slug generation, IDs, validation |
-| `permissions.rs` | 441 | RBAC, per-page ACL, collection-level permissions |
-| `attachments.rs` | 55 | File refs, blob storage, URL generation |
-| `share_links.rs` | 156 | Public share links with password + expiration |
-| `templates.rs` | 65 | Page template CRUD |
-| `tags.rs` | 45 | Tag add/remove, batch operations |
-| `comments.rs` | 136 | Comment CRUD on pages |
-| `favorites.rs` | 48 | Favorite/unfavorite toggle |
-| `api_keys.rs` | 82 | API key generate, revoke, hash validation |
-| `sso.rs` | 758 | SSO/OAuth/OIDC/SAML/LDAP identity linking |
-| `app_settings.rs` | 87 | Global app configuration |
-| `collection_members.rs` | 101 | Collection user/group membership |
-| `collaboration.rs` | 316 | Real-time Yjs collab: broadcast/join/leave/cursor, stale session cleanup |
-| `helpers.rs` | 608 | Auth hashing (argon2, sha2 0.11, hmac 0.13, sha1 0.11), slug generation, IDs |
+| File                    | Lines | Purpose                                                                      |
+| ----------------------- | ----- | ---------------------------------------------------------------------------- |
+| `lib.rs`                | 2703  | Crate root, reducer functions, init, table definitions                       |
+| `tables.rs`             | 1745  | Table schemas & struct definitions                                           |
+| `sso.rs`                | 890   | SSO/OAuth/OIDC/SAML/LDAP identity linking                                    |
+| `helpers.rs`            | 610   | Auth hashing (argon2, sha2 0.11, hmac 0.13, sha1 0.11), slug generation, IDs |
+| `read_bridge.rs`        | 477   | Private-table read bridge: `bridge_read` reducer + safe-column whitelist     |
+| `pages.rs`              | 448   | Page CRUD, restore, duplicate, move, status                                  |
+| `permissions.rs`        | 441   | RBAC, per-page ACL, collection-level permissions                             |
+| `collaboration.rs`      | 316   | Real-time Yjs collab: broadcast/join/leave/cursor, stale session cleanup     |
+| `share_links.rs`        | 209   | Public share links with password + expiration                                |
+| `comments.rs`           | 205   | Comment CRUD on pages                                                        |
+| `users.rs`              | 176   | User create, update, avatar, roles                                           |
+| `api_keys.rs`           | 158   | API key generate, revoke, hash validation                                    |
+| `app_settings.rs`       | 140   | Global app configuration                                                     |
+| `collection_members.rs` | 138   | Collection user/group membership                                             |
+| `attachments.rs`        | 109   | File refs, blob storage, URL generation                                      |
+| `templates.rs`          | 101   | Page template CRUD                                                           |
+| `favorites.rs`          | 85    | Favorite/unfavorite toggle                                                   |
+| `tags.rs`               | 72    | Tag add/remove, batch operations                                             |
 
-**Total lines of Rust:** 7,535
-
+**Total lines of Rust:** 9,023
 
 ## Module Map
-
 
 server/spacetimedb/src/
 ├── lib.rs
@@ -324,6 +334,7 @@ server/spacetimedb/src/
 ├── helpers.rs
 ├── pages.rs
 ├── permissions.rs
+├── read_bridge.rs
 ├── share_links.rs
 ├── sso.rs
 ├── tables.rs
