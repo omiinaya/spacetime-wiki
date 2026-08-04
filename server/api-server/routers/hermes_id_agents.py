@@ -6,8 +6,8 @@ These endpoints are gated by an ``X-Admin-Key`` header check against that
 same env var — the api-server has no human JWT admin gate, so the header
 comparison is the gate.
 
-The auth server env vars come from the systemd EnvironmentFile
-(``/home/user/.hermes/auth/projects/spacetime-wiki.env``):
+The auth server env vars are provided by the deployment environment
+(e.g. a systemd EnvironmentFile or the process environment):
 
     HERMES_AUTH_SERVER_URL, HERMES_AUTH_PROJECT, HERMES_AUTH_VERIFY,
     HERMES_ID_ADMIN_KEY

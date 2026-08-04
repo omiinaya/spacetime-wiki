@@ -27,7 +27,7 @@ npm install
 
 # Configure (via environment variables)
 export API_PORT=3002                          # default: 3002
-export STDB_HOST=127.0.0.1:3001            # default: 127.0.0.1:3001
+export STDB_HOST=localhost:3001            # default: localhost:3001
 export STDB_DB_ID=your_database_id            # default: project DB ID
 
 # Start
@@ -131,7 +131,7 @@ KEY_HASH=$(echo -n "$RAW_KEY" | sha256sum | cut -d' ' -f1)
 
 # Call the reducer (using STDB HTTP API directly)
 curl -X POST \
-  http://127.0.0.1:3001/v1/database/{DB_ID}/call/create_api_key \
+  http://localhost:3001/v1/database/{DB_ID}/call/create_api_key \
   -H "Content-Type: application/json" \
   -d '["apk_xxx", "user_id_here", "My API Key", "'"$KEY_HASH"'", "'"$KEY_PREFIX"'", 365]'
 

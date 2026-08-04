@@ -72,7 +72,7 @@
 
 ## Notes
 
-- The app connects directly to STDB (`127.0.0.1:3001`) for SQL queries and reducer calls, bypassing the API proxy entirely. This is why core features (create page, save, activity feed) work despite BUG-2.
+- The app connects directly to STDB (`localhost:3001`) for SQL queries and reducer calls, bypassing the API proxy entirely. This is why core features (create page, save, activity feed) work despite BUG-2.
 - The Vite proxy bug only affects features that go through the Python API server (e.g., Admin dashboard stats, non-STDB API calls).
 - 3 existing test pages exist: "E2E Test Page from Browser" (published), "E2E Browser Test Page" (published, marked as template), "E2E Test Page" (draft).
 - 7 pages total in STDB.
