@@ -238,7 +238,7 @@ async def list_users(
         bind_args.append(email)
 
     # Get total count
-    count_sql = "SELECT COUNT(*) FROM user"
+    count_sql = "SELECT COUNT(*) AS n FROM user"
     if filter and "userName eq" in filter:
         count_sql += " WHERE email = ?"
     count_rows = await sql_query(count_sql, *bind_args)
@@ -425,7 +425,7 @@ async def list_groups(
         bind_args.append(name)
 
     # Get total count
-    count_sql = "SELECT COUNT(*) FROM \"group\""
+    count_sql = "SELECT COUNT(*) AS n FROM \"group\""
     if filter and "displayName eq" in filter:
         count_sql += " WHERE name = ?"
     count_rows = await sql_query(count_sql, *bind_args)

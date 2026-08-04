@@ -78,7 +78,7 @@ async def search(
 
     # Get total count for pagination
     count_rows = await sql_query(
-        "SELECT COUNT(*) FROM search_result WHERE search_token = ?",
+        "SELECT COUNT(*) AS n FROM search_result WHERE search_token = ?",
         search_token,
     )
     total = count_rows[0][0] if count_rows else 0
@@ -175,7 +175,7 @@ async def autocomplete(
     ])
     # Get total count for pagination
     count_rows = await sql_query(
-        "SELECT COUNT(*) FROM search_result WHERE search_token = ?",
+        "SELECT COUNT(*) AS n FROM search_result WHERE search_token = ?",
         search_token,
     )
     total = count_rows[0][0] if count_rows else 0

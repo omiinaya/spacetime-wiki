@@ -18,7 +18,7 @@ async def list_collections(
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List all collections."""
-    count_rows = await sql_query("SELECT COUNT(*) FROM collection")
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM collection")
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM collection LIMIT ?i OFFSET ?i", limit, offset)
     return {

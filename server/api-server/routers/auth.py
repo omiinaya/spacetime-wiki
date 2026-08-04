@@ -14,7 +14,7 @@ async def list_api_keys(
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List all registered API keys (without the raw key, only metadata)."""
-    count_rows = await sql_query("SELECT COUNT(*) FROM api_key")
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM api_key")
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM api_key LIMIT ?i OFFSET ?i", limit, offset)
     keys = []

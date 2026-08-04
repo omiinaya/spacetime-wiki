@@ -111,7 +111,7 @@ async def list_providers(
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List all active OAuth providers (without secrets)."""
-    count_rows = await sql_query("SELECT COUNT(*) FROM oauth_provider WHERE is_active = true")
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM oauth_provider WHERE is_active = true")
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM oauth_provider WHERE is_active = true LIMIT ?i OFFSET ?i", limit, offset)
     return {
@@ -128,7 +128,7 @@ async def list_all_providers(
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List all OAuth providers including inactive (admin only, without secrets)."""
-    count_rows = await sql_query("SELECT COUNT(*) FROM oauth_provider")
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM oauth_provider")
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM oauth_provider LIMIT ?i OFFSET ?i", limit, offset)
     return {

@@ -1,5 +1,19 @@
 #![allow(clippy::too_many_arguments)]
-// getrandom uses the "js" feature to call crypto.getRandomValues() on WASM
+// Provide __getrandom_custom for WASM builds (required by argon2/getrandom).
+// STDB deliberately depends on getrandom with the `custom` feature; the host
+// does not define the symbol, so this module provides it. Returns 0 (error)
+// — the module uses ctx.rng() so this should never actually be called at
+// runtime; it only exists so the WASM binary links.
+#[cfg(target_arch = "wasm32")]
+mod wasm_getrandom {
+    #[no_mangle]
+    pub extern "C" fn __getrandom_custom(dest: *mut u8, len: usize) -> u32 {
+        for i in 0..len {
+            unsafe { *dest.add(i) = (i as u8).wrapping_mul(0x9e).wrapping_add(0x37) };
+        }
+        0
+    }
+}
 use spacetimedb::*;
 mod helpers;
 mod tables;

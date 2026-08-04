@@ -39,7 +39,7 @@ async def list_pages(
         where += " AND collection_id = ?"
         args.append(collection_id)
 
-    count_rows = await sql_query("SELECT COUNT(*) FROM page WHERE " + where, *args)
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM page WHERE " + where, *args)
     total = count_rows[0][0] if count_rows else 0
 
     rows = await sql_query("SELECT * FROM page WHERE " + where + " LIMIT ?i OFFSET ?i", *args, limit, offset)
@@ -102,7 +102,7 @@ async def list_revisions(
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List page revision history."""
-    count_rows = await sql_query("SELECT COUNT(*) FROM revision WHERE page_id = ?", page_id)
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM revision WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM revision WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
     return {
@@ -125,7 +125,7 @@ async def list_comments(
 ):
     """List comments on a page."""
     await check_page_access(request, page_id, "viewer")
-    count_rows = await sql_query("SELECT COUNT(*) FROM comment WHERE page_id = ?", page_id)
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM comment WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM comment WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
     return {
@@ -156,7 +156,7 @@ async def list_tags(
 ):
     """List tags on a page."""
     await check_page_access(request, page_id, "viewer")
-    count_rows = await sql_query("SELECT COUNT(*) FROM page_tag WHERE page_id = ?", page_id)
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM page_tag WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM page_tag WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
     return {
@@ -187,7 +187,7 @@ async def list_attachments(
 ):
     """List attachments on a page."""
     await check_page_access(request, page_id, "viewer")
-    count_rows = await sql_query("SELECT COUNT(*) FROM attachment WHERE page_id = ?", page_id)
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM attachment WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM attachment WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
     return {
@@ -210,7 +210,7 @@ async def list_share_links(
 ):
     """List share links for a page."""
     await check_page_access(request, page_id, "viewer")
-    count_rows = await sql_query("SELECT COUNT(*) FROM share_link WHERE page_id = ?", page_id)
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM share_link WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
     rows = await sql_query("SELECT * FROM share_link WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
     return {

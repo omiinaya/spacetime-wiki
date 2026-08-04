@@ -1,6 +1,7 @@
 """SpacetimeDB HTTP client — wraps SQL queries and reducer calls."""
 
 import logging
+import re
 
 import httpx
 from config import settings
@@ -114,9 +115,22 @@ async def sql_query(sql: str, *args: object) -> list[list]:
     Supports ? placeholders for safe value insertion (see _build_safe_sql).
     When no placeholders are needed, pass the SQL string directly.
 
+    STDB v2.6.1's HTTP /sql endpoint does NOT support OFFSET — it is stripped
+    here and pagination is applied in Python, so callers can keep the
+    familiar `LIMIT ?i OFFSET ?i` API.
+
     Returns rows as arrays (list of lists).
     """
     final_sql = _build_safe_sql(sql, *args) if args else sql
+    offset = None
+    m = re.search(r"\sOFFSET\s+(?:\?i|:offset|\d+)\s*$", final_sql)
+    if m:
+        offset_val = m.group(0).strip().split()[-1]
+        try:
+            offset = int(offset_val)
+        except ValueError:
+            offset = None
+        final_sql = final_sql[: m.start()]
     url = f"http://{STDB_HOST}/v1/database/{DB_ID}/sql"
     try:
         async with httpx.AsyncClient(timeout=30) as client:
@@ -126,7 +140,10 @@ async def sql_query(sql: str, *args: object) -> list[list]:
                 logger.warning("STDB SQL error (%s) on: %.200s", resp.status_code, final_sql)
                 raise RuntimeError(f"STDB SQL error ({resp.status_code}): {detail}")
             data = resp.json()
-            return (data[0] or {}).get("rows", [])
+            rows = (data[0] or {}).get("rows", [])
+            if offset:
+                return rows[offset:]
+            return rows
     except httpx.TimeoutException:
         logger.error("STDB SQL timeout on: %.200s", final_sql)
         raise RuntimeError("STDB query timed out")

@@ -139,6 +139,7 @@ app.add_middleware(
     allowed_hosts=[
         "localhost",
         "127.0.0.1",
+        "192.168.1.10",
         "*.local",
         "spacetime-wiki",
         "api-server",
