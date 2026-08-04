@@ -30,20 +30,26 @@ export default defineConfig({
     chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
-        manualChunks(id: string) {
-          if (
-            id.includes('node_modules/react') ||
-            id.includes('node_modules/react-dom') ||
-            id.includes('node_modules/react-router')
-          ) {
-            return 'vendor';
-          }
-          if (id.includes('@tiptap') || id.includes('prosemirror')) {
-            return 'editor';
-          }
-          if (id.includes('node_modules/katex')) {
-            return 'katex';
-          }
+        // rolldown-vite: `advancedChunks` groups are honored for SHARED modules
+        // (function-form `manualChunks` is only a soft hint — React core was
+        // being hoisted into the `editor` chunk, making the 600 kB editor
+        // bundle eager on every page load). Grouping React into `vendor`
+        // FIRST keeps jsx-runtime etc. out of the lazy editor chunk.
+        advancedChunks: {
+          groups: [
+            {
+              name: 'vendor',
+              test: /\/node_modules\/(react(-dom)?|react-router|scheduler|react-is)\//,
+            },
+            {
+              name: 'editor',
+              test: /\/node_modules\/(@tiptap|prosemirror)\//,
+            },
+            {
+              name: 'katex',
+              test: /\/node_modules\/katex\//,
+            },
+          ],
         },
       },
     },

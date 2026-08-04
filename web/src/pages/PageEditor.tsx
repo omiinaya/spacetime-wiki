@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
+import 'prosemirror-view/style/prosemirror.css';
 
 import { createPortal } from 'react-dom';
 import StarterKit from '@tiptap/starter-kit';

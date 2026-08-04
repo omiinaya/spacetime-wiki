@@ -2,7 +2,10 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import React from 'react';
 import { ToastProvider } from './components/Toast';
 import { Layout } from './components/Layout';
-import SharedPageView from './pages/SharedPageView';
+
+// Lazy-load SharedPageView (and its heavy PageView → Tiptap/ProseMirror chain)
+// so the editor bundle isn't downloaded for the initial shell.
+const SharedPageView = React.lazy(() => import('./pages/SharedPageView'));
 
 export default function App() {
   return (
