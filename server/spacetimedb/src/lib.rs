@@ -2380,11 +2380,25 @@ pub fn get_dashboard_stats(ctx: &ReducerContext) -> Result<(), String> {
     // Using a more stable approach: directly readable from the frontend.
     // NOTE: `key().update()` panics if the row doesn't exist (errno 15) —
     // upsert like set_app_setting does.
-    let stats_value = format!(r#"{{"total_pages":{},"total_users":{},"total_collections":{},"total_comments":{},"total_attachments":{},"published_pages":{},"draft_pages":{},"archived_pages":{},"deleted_pages":{},"total_storage_bytes":{}}}"#,
-        total_pages, total_users, total_collections, total_comments, total_attachments,
-        published_pages, draft_pages, archived_pages, deleted_pages, total_storage_bytes);
+    let stats_value = format!(
+        r#"{{"total_pages":{},"total_users":{},"total_collections":{},"total_comments":{},"total_attachments":{},"published_pages":{},"draft_pages":{},"archived_pages":{},"deleted_pages":{},"total_storage_bytes":{}}}"#,
+        total_pages,
+        total_users,
+        total_collections,
+        total_comments,
+        total_attachments,
+        published_pages,
+        draft_pages,
+        archived_pages,
+        deleted_pages,
+        total_storage_bytes
+    );
     let now = now_ms(ctx);
-    let existing = ctx.db.app_setting().iter().find(|s| s.key == "dashboard_stats");
+    let existing = ctx
+        .db
+        .app_setting()
+        .iter()
+        .find(|s| s.key == "dashboard_stats");
     if let Some(mut setting) = existing {
         setting.value = stats_value;
         setting.updated_at = now;

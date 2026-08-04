@@ -1,8 +1,5 @@
 use spacetimedb::*;
 
-// Allow dead code in default test constructors (only used in #[cfg(test)])
-// Each default_* function below is annotated individually.
-
 // ─── Audit Event Log ─────────────────────────────────────────────────────────
 
 /// Records administrative and security events in the wiki.
@@ -1028,7 +1025,10 @@ mod tests {
             ("AuditEvent", AuditEvent::default().id),
             ("Group", Group::default().id),
             ("GroupMember", GroupMember::default().id),
-            ("CollectionGroupPermission", CollectionGroupPermission::default().id),
+            (
+                "CollectionGroupPermission",
+                CollectionGroupPermission::default().id,
+            ),
             ("User", User::default().id),
             ("UserCredential", UserCredential::default().user_id),
             ("Collection", Collection::default().id),
@@ -1041,13 +1041,19 @@ mod tests {
             ("Favorite", Favorite::default().id),
             ("CommentReaction", CommentReaction::default().id),
             ("ShareLink", ShareLink::default().id),
-            ("ShareLinkCredential", ShareLinkCredential::default().share_link_id),
+            (
+                "ShareLinkCredential",
+                ShareLinkCredential::default().share_link_id,
+            ),
             ("PagePermission", PagePermission::default().id),
             ("ApiKey", ApiKey::default().id),
             ("ApiKeyCredential", ApiKeyCredential::default().api_key_id),
             ("Webhook", Webhook::default().id),
             ("WebhookEvent", WebhookEvent::default().id),
-            ("CollectionSortRule", CollectionSortRule::default().collection_id),
+            (
+                "CollectionSortRule",
+                CollectionSortRule::default().collection_id,
+            ),
             ("SearchResult", SearchResult::default().id),
             ("SamlProvider", SamlProvider::default().id),
             ("OidcProvider", OidcProvider::default().id),
@@ -1061,7 +1067,10 @@ mod tests {
             ("AiChatSession", AiChatSession::default().id),
             ("AiChatMessage", AiChatMessage::default().id),
             ("ScimProvider", ScimProvider::default().id),
-            ("ScimProviderCredential", ScimProviderCredential::default().scim_provider_id),
+            (
+                "ScimProviderCredential",
+                ScimProviderCredential::default().scim_provider_id,
+            ),
             ("ScimEvent", ScimEvent::default().id),
             ("PasskeyCredential", PasskeyCredential::default().id),
             ("PasskeyChallenge", PasskeyChallenge::default().challenge),
@@ -1078,7 +1087,10 @@ mod tests {
             ("Notification", Notification::default().id),
             ("AccessRequest", AccessRequest::default().id),
             ("OauthProvider", OauthProvider::default().id),
-            ("OauthProviderCredential", OauthProviderCredential::default().oauth_provider_id),
+            (
+                "OauthProviderCredential",
+                OauthProviderCredential::default().oauth_provider_id,
+            ),
             ("OauthSecretBridge", OauthSecretBridge::default().request_id),
             ("ReadBridge", ReadBridge::default().request_id),
             ("OidcSecretBridge", OidcSecretBridge::default().request_id),
@@ -1086,7 +1098,11 @@ mod tests {
             ("OauthUser", OauthUser::default().id),
         ];
         for (name, pk) in cases {
-            assert!(pk.is_empty(), "{} primary key should default to empty", name);
+            assert!(
+                pk.is_empty(),
+                "{} primary key should default to empty",
+                name
+            );
         }
     }
 }
