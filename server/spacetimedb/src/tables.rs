@@ -1016,7 +1016,6 @@ pub struct OauthUser {
 /// Default constructors for use in #[cfg(test)] blocks.
 /// Each creates a struct filled with default values, letting callers
 /// override only the fields they care about via `..default_*()`.
-
 // We define each helper individually so IDE go-to-definition works.
 #[cfg(test)]
 fn default_group() -> Group {
@@ -1173,42 +1172,6 @@ fn default_oauth_provider() -> OauthProvider {
 #[cfg(test)]
 fn default_oauth_user() -> OauthUser {
     OauthUser::default()
-}
-#[cfg(test)]
-fn default_user_credential() -> UserCredential {
-    UserCredential::default()
-}
-#[cfg(test)]
-fn default_api_key_credential() -> ApiKeyCredential {
-    ApiKeyCredential::default()
-}
-#[cfg(test)]
-fn default_share_link_credential() -> ShareLinkCredential {
-    ShareLinkCredential::default()
-}
-#[cfg(test)]
-fn default_scim_provider_credential() -> ScimProviderCredential {
-    ScimProviderCredential::default()
-}
-#[cfg(test)]
-fn default_oauth_provider_credential() -> OauthProviderCredential {
-    OauthProviderCredential::default()
-}
-#[cfg(test)]
-fn default_oauth_secret_bridge() -> OauthSecretBridge {
-    OauthSecretBridge::default()
-}
-#[cfg(test)]
-fn default_oidc_secret_bridge() -> OidcSecretBridge {
-    OidcSecretBridge::default()
-}
-#[cfg(test)]
-fn default_ldap_bind_bridge() -> LdapBindBridge {
-    LdapBindBridge::default()
-}
-#[cfg(test)]
-fn default_read_bridge() -> ReadBridge {
-    ReadBridge::default()
 }
 
 #[cfg(test)]

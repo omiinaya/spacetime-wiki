@@ -49,7 +49,7 @@ mod tests {
     #[test]
     fn test_toggle_favorite_respects_user_scoping() {
         // Each user has their own favorites — user u2 shouldn't affect u1
-        let storage = vec![("u1", "p1"), ("u2", "p1"), ("u1", "p2")];
+        let storage = [("u1", "p1"), ("u2", "p1"), ("u1", "p2")];
         let u1_favs: Vec<_> = storage.iter().filter(|(uid, _)| *uid == "u1").collect();
         assert_eq!(u1_favs.len(), 2);
         let u2_favs: Vec<_> = storage.iter().filter(|(uid, _)| *uid == "u2").collect();

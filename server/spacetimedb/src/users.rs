@@ -151,10 +151,10 @@ mod tests {
     #[test]
     fn test_register_user_rejects_duplicate_email() {
         // Reducer checks for existing email before inserting
-        let existing_emails = vec!["user@example.com", "other@example.com"];
-        let duplicate = existing_emails.iter().any(|e| *e == "user@example.com");
+        let existing_emails = ["user@example.com", "other@example.com"];
+        let duplicate = existing_emails.contains(&"user@example.com");
         assert!(duplicate);
-        let new_email = existing_emails.iter().any(|e| *e == "new@example.com");
+        let new_email = existing_emails.contains(&"new@example.com");
         assert!(!new_email);
     }
 

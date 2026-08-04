@@ -77,7 +77,7 @@ mod tests {
             None => value.clone(),
             Some(_old) => {
                 // Update the old value
-                format!("{}", value)
+                value.to_string()
             }
         };
         assert_eq!(result, "updated_value");
@@ -133,7 +133,7 @@ mod tests {
 
     #[test]
     fn test_app_setting_key_lookup_is_case_sensitive() {
-        let keys = vec!["SiteName", "sitename", "SITENAME"];
+        let keys = ["SiteName", "sitename", "SITENAME"];
         let site_name_count = keys.iter().filter(|k| *k == &"SiteName").count();
         assert_eq!(site_name_count, 1);
     }

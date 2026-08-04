@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn test_add_member_prevents_duplicate() {
         // Adding the same user+collection twice should fail
-        let members = vec![("c1", "u1"), ("c1", "u2")];
+        let members = [("c1", "u1"), ("c1", "u2")];
         // Try to add u1 to c1 again — should find existing
         let exists = members
             .iter()
@@ -113,7 +113,7 @@ mod tests {
     #[test]
     fn test_add_member_allows_different_collections() {
         // Same user can be in multiple collections
-        let members = vec![("c1", "u1")];
+        let members = [("c1", "u1")];
         let in_c2 = members
             .iter()
             .any(|(cid, uid)| *cid == "c2" && *uid == "u1");
