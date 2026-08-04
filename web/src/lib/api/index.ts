@@ -59,6 +59,8 @@ export {
   API_BASE,
   genId,
   sqlQuery,
+  sqlLit,
+  sqlInt,
   callReducer,
   MAX_IMAGE_BYTES,
   isAttachmentUrl,
