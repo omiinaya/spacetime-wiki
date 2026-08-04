@@ -1010,736 +1010,83 @@ pub struct OauthUser {
     pub created_at: u64,
     pub updated_at: u64,
 }
-
-// ─── Test helpers ──────────────────────────────────────────────────────────────
-
-/// Default constructors for use in #[cfg(test)] blocks.
-/// Each creates a struct filled with default values, letting callers
-/// override only the fields they care about via `..default_*()`.
-// We define each helper individually so IDE go-to-definition works.
-#[cfg(test)]
-fn default_group() -> Group {
-    Group::default()
-}
-#[cfg(test)]
-fn default_collection() -> Collection {
-    Collection::default()
-}
-#[cfg(test)]
-fn default_page() -> Page {
-    Page::default()
-}
-#[cfg(test)]
-fn default_page_revision() -> PageRevision {
-    PageRevision::default()
-}
-#[cfg(test)]
-fn default_comment() -> Comment {
-    Comment::default()
-}
-#[cfg(test)]
-fn default_attachment() -> Attachment {
-    Attachment::default()
-}
-#[cfg(test)]
-fn default_page_tag() -> PageTag {
-    PageTag::default()
-}
-#[cfg(test)]
-fn default_favorite() -> Favorite {
-    Favorite::default()
-}
-#[cfg(test)]
-fn default_share_link() -> ShareLink {
-    ShareLink::default()
-}
-#[cfg(test)]
-fn default_page_permission() -> PagePermission {
-    PagePermission::default()
-}
-#[cfg(test)]
-fn default_api_key() -> ApiKey {
-    ApiKey::default()
-}
-#[cfg(test)]
-fn default_webhook() -> Webhook {
-    Webhook::default()
-}
-#[cfg(test)]
-fn default_webhook_event() -> WebhookEvent {
-    WebhookEvent::default()
-}
-#[cfg(test)]
-fn default_collection_sort_rule() -> CollectionSortRule {
-    CollectionSortRule::default()
-}
-#[cfg(test)]
-fn default_search_result() -> SearchResult {
-    SearchResult::default()
-}
-#[cfg(test)]
-fn default_saml_provider() -> SamlProvider {
-    SamlProvider::default()
-}
-#[cfg(test)]
-fn default_oidc_provider() -> OidcProvider {
-    OidcProvider::default()
-}
-#[cfg(test)]
-fn default_ldap_provider() -> LdapProvider {
-    LdapProvider::default()
-}
-#[cfg(test)]
-fn default_ldap_user() -> LdapUser {
-    LdapUser::default()
-}
-#[cfg(test)]
-fn default_page_view() -> PageView {
-    PageView::default()
-}
-#[cfg(test)]
-fn default_app_setting() -> AppSetting {
-    AppSetting::default()
-}
-#[cfg(test)]
-fn default_collab_update() -> CollabUpdate {
-    CollabUpdate::default()
-}
-#[cfg(test)]
-fn default_collab_session() -> CollabSession {
-    CollabSession::default()
-}
-#[cfg(test)]
-fn default_ai_config() -> AiConfig {
-    AiConfig::default()
-}
-#[cfg(test)]
-fn default_ai_chat_message() -> AiChatMessage {
-    AiChatMessage::default()
-}
-#[cfg(test)]
-fn default_scim_provider() -> ScimProvider {
-    ScimProvider::default()
-}
-#[cfg(test)]
-fn default_passkey_credential() -> PasskeyCredential {
-    PasskeyCredential::default()
-}
-#[cfg(test)]
-fn default_passkey_challenge() -> PasskeyChallenge {
-    PasskeyChallenge::default()
-}
-#[cfg(test)]
-fn default_db_base() -> DbBase {
-    DbBase::default()
-}
-#[cfg(test)]
-fn default_db_column() -> DbColumn {
-    DbColumn::default()
-}
-#[cfg(test)]
-fn default_db_cell() -> DbCell {
-    DbCell::default()
-}
-#[cfg(test)]
-fn default_invitation() -> Invitation {
-    Invitation::default()
-}
-#[cfg(test)]
-fn default_synced_block() -> SyncedBlock {
-    SyncedBlock::default()
-}
-#[cfg(test)]
-fn default_mfa_method() -> MfaMethod {
-    MfaMethod::default()
-}
-#[cfg(test)]
-fn default_watch() -> Watch {
-    Watch::default()
-}
-#[cfg(test)]
-fn default_notification() -> Notification {
-    Notification::default()
-}
-#[cfg(test)]
-fn default_access_request() -> AccessRequest {
-    AccessRequest::default()
-}
-#[cfg(test)]
-fn default_oauth_provider() -> OauthProvider {
-    OauthProvider::default()
-}
-#[cfg(test)]
-fn default_oauth_user() -> OauthUser {
-    OauthUser::default()
-}
-
+// ─── Default-constructibility smoke test ────────────────────────────────────────
+//
+// Every table struct derives `Default` in test builds. These one-line
+// constructors are the only thing the ~700-line `default_*()` helper +
+// per-struct construction-test scaffolding ever verified (struct literals
+// round-tripping values the compiler already type-checks). A single
+// parameterized test keeps the signal: all structs remain default-
+// constructible, with their primary keys starting empty.
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // ─── AuditEvent ──────────────────────────────────────────────────────────
-
     #[test]
-    fn test_audit_event_construction() {
-        let event = AuditEvent {
-            id: "ae_1".into(),
-            event_type: "user.login".into(),
-            actor_id: "u_1".into(),
-            target_id: "u_1".into(),
-            target_name: "admin".into(),
-            metadata: "{}".into(),
-            created_at: 1000,
-        };
-        assert_eq!(event.id, "ae_1");
-        assert_eq!(event.event_type, "user.login");
-    }
-
-    // ─── Group ───────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_group_construction() {
-        let group = Group {
-            name: "Editors".into(),
-            description: "Can edit all pages".into(),
-            created_by: "u_1".into(),
-            created_at: 1000,
-            updated_at: 1000,
-            ..default_group()
-        };
-        assert_eq!(group.name, "Editors");
-    }
-
-    // ─── Collection ──────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_collection_slug_format() {
-        let col = Collection {
-            name: "Engineering Wiki".into(),
-            slug: "engineering-wiki".into(),
-            icon: "🚀".into(),
-            color: "#00ff00".into(),
-            created_by: "u_1".into(),
-            created_at: 1000,
-            updated_at: 1000,
-            ..default_collection()
-        };
-        assert_eq!(col.slug, "engineering-wiki");
-        assert!(!col.slug.contains(' '), "Slug must not contain spaces");
-    }
-
-    // ─── Page ────────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_page_default_status_is_draft() {
-        let page = Page {
-            title: "Getting Started".into(),
-            slug: "getting-started".into(),
-            collection_id: "c_1".into(),
-            status: "draft".into(),
-            created_by: "u_1".into(),
-            updated_by: "u_1".into(),
-            created_at: 1000,
-            updated_at: 1000,
-            ..default_page()
-        };
-        assert_eq!(page.status, "draft");
-        assert!(!page.full_width);
-        assert!(!page.is_pinned);
-    }
-
-    #[test]
-    fn test_page_revision_numbering() {
-        let rev = PageRevision {
-            page_id: "p_1".into(),
-            title: "Old Title".into(),
-            content: "# Old Content".into(),
-            edited_by: "u_1".into(),
-            revision_number: 1,
-            ..default_page_revision()
-        };
-        assert_eq!(rev.revision_number, 1);
-    }
-
-    // ─── Comment ─────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_comment_default_resolved() {
-        let comment = Comment {
-            page_id: "p_1".into(),
-            user_id: "u_1".into(),
-            body: "Great point!".into(),
-            is_resolved: false,
-            ..default_comment()
-        };
-        assert!(!comment.is_resolved);
-    }
-
-    // ─── Attachment ──────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_attachment_file_extension() {
-        let att = Attachment {
-            filename: "report.pdf".into(),
-            mime_type: "application/pdf".into(),
-            size_bytes: 1024,
-            storage_key: "attachments/p_1/report.pdf".into(),
-            uploaded_by: "u_1".into(),
-            ..default_attachment()
-        };
-        assert!(att.filename.ends_with(".pdf"));
-        assert_eq!(att.mime_type, "application/pdf");
-    }
-
-    // ─── PageTag ─────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_page_tag_kv() {
-        let tag = PageTag {
-            page_id: "p_1".into(),
-            name: "status".into(),
-            value: "active".into(),
-            ..default_page_tag()
-        };
-        assert_eq!(tag.name, "status");
-        assert_eq!(tag.value, "active");
-    }
-
-    // ─── Favorite ────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_favorite_links_user_to_page() {
-        let fav = Favorite {
-            user_id: "u_1".into(),
-            page_id: "p_1".into(),
-            ..default_favorite()
-        };
-        assert_eq!(fav.page_id, "p_1");
-        assert_eq!(fav.user_id, "u_1");
-    }
-
-    // ─── ShareLink ───────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_share_link_default_no_password() {
-        let link = ShareLink {
-            token: "abc123".into(),
-            created_by: "u_1".into(),
-            visit_count: 0,
-            brand_title: None,
-            brand_logo_url: None,
-            ..default_share_link()
-        };
-        assert_eq!(link.visit_count, 0);
-        assert!(link.brand_title.is_none());
-    }
-
-    // ─── PagePermission ──────────────────────────────────────────────────────
-
-    #[test]
-    fn test_page_permission_role() {
-        let perm = PagePermission {
-            page_id: "p_1".into(),
-            user_id: "u_1".into(),
-            role: "editor".into(),
-            ..default_page_permission()
-        };
-        assert_eq!(perm.role, "editor");
-    }
-
-    // ─── ApiKey ──────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_api_key_not_revoked_by_default() {
-        let key = ApiKey {
-            user_id: "u_1".into(),
-            name: "CI Token".into(),
-            key_prefix: "sw_".into(),
-            is_revoked: false,
-            ..default_api_key()
-        };
-        assert!(!key.is_revoked);
-    }
-
-    // ─── Webhook ─────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_webhook_https_url() {
-        let wh = Webhook {
-            name: "Slack".into(),
-            url: "https://hooks.slack.com/xxx".into(),
-            is_active: true,
-            ..default_webhook()
-        };
-        assert!(wh.is_active);
-        assert!(wh.url.starts_with("https://"));
-    }
-
-    #[test]
-    fn test_webhook_event_pending() {
-        let we = WebhookEvent {
-            webhook_id: "wh_1".into(),
-            event_type: "page.create".into(),
-            status: "pending".into(),
-            ..default_webhook_event()
-        };
-        assert_eq!(we.status, "pending");
-        assert_eq!(we.response_code, 0);
-    }
-
-    // ─── CollectionSortRule ──────────────────────────────────────────────────
-
-    #[test]
-    fn test_collection_sort_rule_asc() {
-        let rule = CollectionSortRule {
-            collection_id: "c_1".into(),
-            sort_field: "title".into(),
-            sort_direction: "asc".into(),
-            auto_apply: true,
-            ..default_collection_sort_rule()
-        };
-        assert!(rule.auto_apply);
-    }
-
-    // ─── SearchResult ────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_search_result_match_type() {
-        let sr = SearchResult {
-            search_token: "tok_1".into(),
-            page_id: "p_1".into(),
-            title: "Getting Started".into(),
-            slug: "getting-started".into(),
-            excerpt: "To get started...".into(),
-            match_type: "title".into(),
-            ..default_search_result()
-        };
-        assert_eq!(sr.match_type, "title");
-    }
-
-    // ─── SAML Provider ───────────────────────────────────────────────────────
-
-    #[test]
-    fn test_saml_provider_construction() {
-        let sp = SamlProvider {
-            name: "Azure AD".into(),
-            slug: "azure-ad".into(),
-            entity_id: "https://sts.windows.net/xxx".into(),
-            sso_url: "https://login.microsoftonline.com/xxx/saml2".into(),
-            certificate: "MIID...".into(),
-            auto_register: true,
-            is_active: true,
-            ..default_saml_provider()
-        };
-        assert!(sp.is_active);
-        assert!(sp.sso_url.contains("saml"));
-    }
-
-    // ─── OIDC Provider ───────────────────────────────────────────────────────
-
-    #[test]
-    fn test_oidc_provider_construction() {
-        let oidc = OidcProvider {
-            name: "Google".into(),
-            slug: "google".into(),
-            issuer_url: "https://accounts.google.com".into(),
-            scopes: "openid profile email".into(),
-            is_active: true,
-            ..default_oidc_provider()
-        };
-        assert!(oidc.is_active);
-        assert!(oidc.issuer_url.contains("google"));
-    }
-
-    // ─── LDAP Provider ───────────────────────────────────────────────────────
-
-    #[test]
-    fn test_ldap_provider_secure_port() {
-        let ldap = LdapProvider {
-            name: "Company LDAP".into(),
-            slug: "company-ldap".into(),
-            host: "ldap.company.com".into(),
-            port: 636,
-            is_secure: true,
-            ..default_ldap_provider()
-        };
-        assert_eq!(ldap.port, 636);
-        assert!(ldap.is_secure);
-    }
-
-    #[test]
-    fn test_ldap_user_dn_format() {
-        let lu = LdapUser {
-            user_id: "u_1".into(),
-            dn: "cn=Alice,ou=Users,dc=company,dc=com".into(),
-            ..default_ldap_user()
-        };
-        assert!(lu.dn.contains("cn="));
-    }
-
-    // ─── PageView ────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_page_view_construction() {
-        let pv = PageView {
-            page_id: "p_1".into(),
-            user_id: "u_1".into(),
-            viewer: "Alice".into(),
-            ..default_page_view()
-        };
-        assert_eq!(pv.viewer, "Alice");
-    }
-
-    // ─── AppSetting ──────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_app_setting_kv() {
-        let setting = AppSetting {
-            key: "site_name".into(),
-            value: "My Wiki".into(),
-            ..default_app_setting()
-        };
-        assert_eq!(setting.value, "My Wiki");
-    }
-
-    // ─── Collab ──────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_collab_update_construction() {
-        let cu = CollabUpdate {
-            page_id: "p_1".into(),
-            update_data: "yjs-update-data".into(),
-            user_id: "u_1".into(),
-            ..default_collab_update()
-        };
-        assert_eq!(cu.page_id, "p_1");
-    }
-
-    #[test]
-    fn test_collab_session_color_format() {
-        let cs = CollabSession {
-            page_id: "p_1".into(),
-            user_id: "u_1".into(),
-            user_name: "Alice".into(),
-            color: "#ff6600".into(),
-            ..default_collab_session()
-        };
-        assert_eq!(cs.color, "#ff6600");
-        assert!(cs.last_seen_at >= cs.joined_at);
-    }
-
-    // ─── AI ──────────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_ai_config_kv() {
-        let cfg = AiConfig {
-            key: "model".into(),
-            value: "gpt-4".into(),
-            ..default_ai_config()
-        };
-        assert_eq!(cfg.value, "gpt-4");
-    }
-
-    #[test]
-    fn test_ai_chat_message_role() {
-        let msg = AiChatMessage {
-            session_id: "ai_s_1".into(),
-            role: "assistant".into(),
-            content: "Here's how...".into(),
-            ..default_ai_chat_message()
-        };
-        assert_eq!(msg.role, "assistant");
-    }
-
-    // ─── SCIM ────────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_scim_provider_construction() {
-        let sp = ScimProvider {
-            name: "Azure SCIM".into(),
-            slug: "azure-scim".into(),
-            is_active: true,
-            sync_groups: true,
-            deprovision_behavior: "disable".into(),
-            ..default_scim_provider()
-        };
-        assert!(sp.is_active);
-        assert!(sp.sync_groups);
-    }
-
-    // ─── Passkey ─────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_passkey_credential_construction() {
-        let pc = PasskeyCredential {
-            user_id: "u_1".into(),
-            credential_id: "cred_abc".into(),
-            counter: 0,
-            device_name: "YubiKey 5".into(),
-            ..default_passkey_credential()
-        };
-        assert_eq!(pc.counter, 0);
-    }
-
-    #[test]
-    fn test_passkey_challenge_expiry() {
-        let challenge = PasskeyChallenge {
-            challenge: "ch_abc".into(),
-            purpose: "registration".into(),
-            expires_at: 1000 + 300000,
-            ..default_passkey_challenge()
-        };
-        assert_eq!(challenge.purpose, "registration");
-        assert!(challenge.expires_at > challenge.created_at);
-    }
-
-    // ─── Database (inline tables) ────────────────────────────────────────────
-
-    #[test]
-    fn test_db_base_view_type() {
-        let base = DbBase {
-            page_id: "p_1".into(),
-            title: "Tasks".into(),
-            view_type: "table".into(),
-            created_by: "u_1".into(),
-            ..default_db_base()
-        };
-        assert_eq!(base.view_type, "table");
-    }
-
-    #[test]
-    fn test_db_column_field_type() {
-        let col = DbColumn {
-            base_id: "db_1".into(),
-            name: "Status".into(),
-            field_type: "text".into(),
-            ..default_db_column()
-        };
-        assert_eq!(col.field_type, "text");
-    }
-
-    #[test]
-    fn test_db_cell_value() {
-        let cell = DbCell {
-            row_id: "drow_1".into(),
-            column_id: "dcol_1".into(),
-            value: "Done".into(),
-            ..default_db_cell()
-        };
-        assert_eq!(cell.value, "Done");
-    }
-
-    // ─── Invitation ──────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_invitation_pending_status() {
-        let inv = Invitation {
-            email: "newuser@example.com".into(),
-            role: "member".into(),
-            token: "tok_abc".into(),
-            status: "pending".into(),
-            ..default_invitation()
-        };
-        assert_eq!(inv.status, "pending");
-        assert_eq!(inv.email, "newuser@example.com");
-    }
-
-    // ─── SyncedBlock ─────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_synced_block_construction() {
-        let sb = SyncedBlock {
-            title: "Footer Notice".into(),
-            content: "© 2026 Acme Corp".into(),
-            created_by: "u_1".into(),
-            updated_by: "u_1".into(),
-            ..default_synced_block()
-        };
-        assert_eq!(sb.title, "Footer Notice");
-    }
-
-    // ─── MFA ─────────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_mfa_method_totp_type() {
-        let mfa = MfaMethod {
-            user_id: "u_1".into(),
-            method_type: "totp".into(),
-            is_enabled: false,
-            ..default_mfa_method()
-        };
-        assert!(!mfa.is_enabled);
-        assert_eq!(mfa.method_type, "totp");
-    }
-
-    // ─── Watch / Notifications ───────────────────────────────────────────────
-
-    #[test]
-    fn test_watch_target_type() {
-        let watch = Watch {
-            user_id: "u_1".into(),
-            target_type: "page".into(),
-            target_id: "p_1".into(),
-            ..default_watch()
-        };
-        assert_eq!(watch.target_type, "page");
-    }
-
-    #[test]
-    fn test_notification_unread() {
-        let notif = Notification {
-            user_id: "u_1".into(),
-            event_type: "page.updated".into(),
-            target_id: "p_1".into(),
-            title: "Page Updated".into(),
-            message: "Alice updated Getting Started".into(),
-            actor_id: "u_2".into(),
-            is_read: false,
-            ..default_notification()
-        };
-        assert!(!notif.is_read);
-    }
-
-    // ─── AccessRequest ───────────────────────────────────────────────────────
-
-    #[test]
-    fn test_access_request_pending() {
-        let req = AccessRequest {
-            page_id: "p_1".into(),
-            requester_id: "u_2".into(),
-            reason: "I need to edit this page".into(),
-            status: "pending".into(),
-            ..default_access_request()
-        };
-        assert_eq!(req.status, "pending");
-    }
-
-    // ─── OAuth ───────────────────────────────────────────────────────────────
-
-    #[test]
-    fn test_oauth_provider_construction() {
-        let oauth = OauthProvider {
-            name: "GitHub".into(),
-            slug: "github".into(),
-            provider_type: "github".into(),
-            authorize_url: "https://github.com/login/oauth/authorize".into(),
-            scope: "read:user".into(),
-            is_active: true,
-            auto_register: true,
-            ..default_oauth_provider()
-        };
-        assert!(oauth.is_active);
-        assert_eq!(oauth.provider_type, "github");
-    }
-
-    #[test]
-    fn test_oauth_user_linking() {
-        let ou = OauthUser {
-            user_id: "u_1".into(),
-            external_username: "alice".into(),
-            external_email: "alice@github.com".into(),
-            ..default_oauth_user()
-        };
-        assert_eq!(ou.external_username, "alice");
+    fn all_table_structs_are_default_constructible() {
+        let cases: &[(&str, String)] = &[
+            ("AuditEvent", AuditEvent::default().id),
+            ("Group", Group::default().id),
+            ("GroupMember", GroupMember::default().id),
+            ("CollectionGroupPermission", CollectionGroupPermission::default().id),
+            ("User", User::default().id),
+            ("UserCredential", UserCredential::default().user_id),
+            ("Collection", Collection::default().id),
+            ("CollectionMember", CollectionMember::default().id),
+            ("Page", Page::default().id),
+            ("PageRevision", PageRevision::default().id),
+            ("Comment", Comment::default().id),
+            ("Attachment", Attachment::default().id),
+            ("PageTag", PageTag::default().id),
+            ("Favorite", Favorite::default().id),
+            ("CommentReaction", CommentReaction::default().id),
+            ("ShareLink", ShareLink::default().id),
+            ("ShareLinkCredential", ShareLinkCredential::default().share_link_id),
+            ("PagePermission", PagePermission::default().id),
+            ("ApiKey", ApiKey::default().id),
+            ("ApiKeyCredential", ApiKeyCredential::default().api_key_id),
+            ("Webhook", Webhook::default().id),
+            ("WebhookEvent", WebhookEvent::default().id),
+            ("CollectionSortRule", CollectionSortRule::default().collection_id),
+            ("SearchResult", SearchResult::default().id),
+            ("SamlProvider", SamlProvider::default().id),
+            ("OidcProvider", OidcProvider::default().id),
+            ("LdapProvider", LdapProvider::default().id),
+            ("LdapUser", LdapUser::default().id),
+            ("PageView", PageView::default().id),
+            ("AppSetting", AppSetting::default().key),
+            ("CollabUpdate", CollabUpdate::default().id),
+            ("CollabSession", CollabSession::default().id),
+            ("AiConfig", AiConfig::default().key),
+            ("AiChatSession", AiChatSession::default().id),
+            ("AiChatMessage", AiChatMessage::default().id),
+            ("ScimProvider", ScimProvider::default().id),
+            ("ScimProviderCredential", ScimProviderCredential::default().scim_provider_id),
+            ("ScimEvent", ScimEvent::default().id),
+            ("PasskeyCredential", PasskeyCredential::default().id),
+            ("PasskeyChallenge", PasskeyChallenge::default().challenge),
+            ("DbBase", DbBase::default().id),
+            ("DbColumn", DbColumn::default().id),
+            ("DbRow", DbRow::default().id),
+            ("DbCell", DbCell::default().id),
+            ("Invitation", Invitation::default().id),
+            ("SyncedBlock", SyncedBlock::default().id),
+            ("SyncedBlockRef", SyncedBlockRef::default().id),
+            ("MfaMethod", MfaMethod::default().id),
+            ("MfaBackupCode", MfaBackupCode::default().id),
+            ("Watch", Watch::default().id),
+            ("Notification", Notification::default().id),
+            ("AccessRequest", AccessRequest::default().id),
+            ("OauthProvider", OauthProvider::default().id),
+            ("OauthProviderCredential", OauthProviderCredential::default().oauth_provider_id),
+            ("OauthSecretBridge", OauthSecretBridge::default().request_id),
+            ("ReadBridge", ReadBridge::default().request_id),
+            ("OidcSecretBridge", OidcSecretBridge::default().request_id),
+            ("LdapBindBridge", LdapBindBridge::default().request_id),
+            ("OauthUser", OauthUser::default().id),
+        ];
+        for (name, pk) in cases {
+            assert!(pk.is_empty(), "{} primary key should default to empty", name);
+        }
     }
 }

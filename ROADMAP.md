@@ -4,19 +4,18 @@
 
 **Repository:** https://github.com/omiinaya/spacetime-wiki
 **Tech Stack:** React 19 + TypeScript 7.0 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
-**Stats (verified 2026-08-04):** 59 tables, 18 Rust files (9,023 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 249 Rust unit tests ✅, 300 Python API tests ✅ (214 unit + 86 live-STDB integration) + 118 MCP server tests ✅, **1,365 frontend tests** ✅, 0 remaining `any` types ✅, 0 Rust warnings ✅, covering all 15 Tiptap extensions ✅
+**Stats (verified 2026-08-04):** 59 tables, 18 Rust files (9,023 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 210 Rust unit tests ✅, 300 Python API tests ✅ (214 unit + 86 live-STDB integration) + 118 MCP server tests ✅, **1,365 frontend tests** ✅, 0 remaining `any` types ✅, 0 Rust warnings ✅, covering all 15 Tiptap extensions ✅
 
 ---
 
 ## 🔴 Critical (P0-P1) — Security, stability, blockers
 
-### P0 — 50/50 tables are PUBLIC — 35 now PRIVATE ⚡
+### P0 — 44/59 tables are PUBLIC — sensitive tables private ⚡
 
-- **File:** `server/spacetimedb/src/tables.rs` (all 50 tables)
-- **Status:** ✅ PARTIAL FIX — 35 sensitive tables made private (MFA TOTP seeds, OAuth tokens, LDAP passwords, SSO secrets, etc.). 15 tables remain public as they are queried via raw SQL by the API server.
-- **Fix needed:** Route remaining 15 public table queries through STDB reducers instead of raw SQL for complete security.
-- **Effort:** 12-20 hours (major refactor) (architectural — API server uses `SELECT *` SQL queries that don't work with private STDB tables; needs reducer-based read access)
-- **Note:** `PRIVACY-AUDIT.md` referenced in prior roadmap doesn't exist
+- **File:** `server/spacetimedb/src/tables.rs` (all 59 tables)
+- **Status:** ⚠️ PARTIAL — 15 tables carry no `public` marker (private by default: MFA TOTP seeds, OAuth tokens, LDAP passwords, SSO secrets, etc.). 44 tables remain explicitly `public` because they are queried via raw SQL by the API server.
+- **Fix needed:** Route public-table queries through STDB reducers (or the `read_bridge` reducer) instead of raw SQL for complete security.
+- **Effort:** 12-20 hours (major refactor — architectural: API server uses `SELECT *` SQL queries that don't work with private STDB tables; needs reducer-based read access)
 
 ### P0 — CORS config is spec-invalid
 
@@ -162,8 +161,7 @@
 ### P5 — Repetitive struct-construction tests (~2,000 lines)
 
 - **File:** `server/spacetimedb/src/tables.rs`
-- **Status:** Known — many `default_*()` test helpers could be parameterized
-- **Effort:** 4-6 hours
+- **Status:** ✅ DONE (2026-08-04) — deleted 39 `default_*()` helpers (pure `X::default()` wrappers, redundant with `cfg_attr(test, derive(Default))`) and all 40 per-struct construction tests (they only ever asserted literals just written — zero behavioral value). Replaced with one parameterized default-constructibility smoke test covering all 59 structs. tables.rs: 1,745 → ~1,093 lines. Rust tests: 246 → 210, clippy still clean.
 
 ### P5 — MCP server has no dedicated unit tests ✅ DONE
 
