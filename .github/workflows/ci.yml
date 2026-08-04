@@ -105,19 +105,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      # actions/setup-python@v5 cannot provision prebuilt runtimes on
+      # Debian-based self-hosted runners ("version '3.11' ... was not found
+      # for Debian 12"). The runner carries system Python 3.11 — use it.
+      - name: Use system Python 3.11
+        run: |
+          python3 --version
+          python3 -m pip --version
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          python3 -m pip install --upgrade pip
           # requirements-dev.txt pulls in both runtime requirements files
           # (api-server + mcp-server) plus the declared test deps
           # (pytest, pytest-asyncio, pytest-cov, pytest-timeout). This keeps
           # the job hermetic instead of relying on preinstalled runner packages.
-          pip install -r requirements-dev.txt
+          python3 -m pip install -r requirements-dev.txt
 
       - name: Run API server unit tests
         run: |
@@ -125,7 +128,7 @@ jobs:
           # test_page_metadata_and_settings, test_collection_permission_*)
           # require a live STDB with the module published — they run in the
           # dedicated `python-integration` job below (self-hosted runner).
-          python -m pytest tests/ \
+          python3 -m pytest tests/ \
             --tb=short -q \
             --ignore=tests/test_core_reducers.py \
             --ignore=tests/test_page_metadata_and_settings.py \
@@ -135,7 +138,7 @@ jobs:
 
       - name: Run MCP server unit tests
         run: |
-          cd mcp-server && python -m pytest tests/ --tb=short -q
+          cd mcp-server && python3 -m pytest tests/ --tb=short -q
 
   python-integration:
     name: Python integration (live STDB)
@@ -154,19 +157,24 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      # actions/setup-python@v5 cannot provision prebuilt runtimes on
+      # Debian-based self-hosted runners ("version '3.11' ... was not found
+      # for Debian 12"). The runner carries system Python 3.11 — use it.
+      - name: Use system Python 3.11
+        run: |
+          python3 --version
+          python3 -m pip --version
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r api-server/requirements.txt
+          python3 -m pip install --upgrade pip
+          # requirements-dev.txt pulls in the API runtime deps plus the test
+          # deps (pytest, pytest-asyncio) the reducer suites need.
+          python3 -m pip install -r requirements-dev.txt
 
       - name: Run reducer integration tests against live STDB
         run: |
-          python -m pytest tests/test_core_reducers.py \
+          python3 -m pytest tests/test_core_reducers.py \
             tests/test_misc_reducers.py \
             tests/test_page_metadata_and_settings.py \
             tests/test_collection_permission_reducers.py \
