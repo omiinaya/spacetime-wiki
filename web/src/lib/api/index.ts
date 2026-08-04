@@ -394,17 +394,22 @@ import { accessRequestApi } from './access-requests';
 const analyticsApi = {
   recordView: (pageId: string, viewer: string) => callReducer('record_page_view', [pageId, viewer]),
   getViewCount: (pageId: string) =>
-    sqlQuery(`SELECT COUNT(*) FROM page_view WHERE page_id = '${pageId}'`).then((rows) =>
+    sqlQuery(`SELECT COUNT(*) AS n FROM page_view WHERE page_id = '${pageId}'`).then((rows) =>
       Number((rows[0]?.[0] as unknown) ?? 0),
     ),
-  getTrending: (limit: number = 8) =>
-    sqlQuery('SELECT page_id, COUNT(*) AS view_count FROM page_view ' + 'GROUP BY page_id').then(
-      (rows) =>
-        rows.slice(0, limit).map((r) => ({
-          page_id: String(r[0] ?? ''),
-          views: Number(r[1] ?? 0),
-        })),
-    ),
+  getTrending: async (limit: number = 8) => {
+    // STDB has no GROUP BY — fetch rows and aggregate client-side.
+    const rows = (await sqlQuery('SELECT page_id FROM page_view')) as unknown[][];
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      const pid = String(r[0] ?? '');
+      counts.set(pid, (counts.get(pid) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([page_id, views]) => ({ page_id, views }));
+  },
 };
 
 // ─── Revisions section ──────────────────────────────────────────────────────

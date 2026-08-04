@@ -440,7 +440,7 @@ export async function getUnreadNotifications(
 
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   const rows = await sqlQuery(
-    `SELECT COUNT(*) FROM notification WHERE user_id = '${userId}' AND is_read = false`,
+    `SELECT COUNT(*) AS n FROM notification WHERE user_id = '${userId}' AND is_read = false`,
   );
   return Number(rows[0]?.[0] ?? 0);
 }
