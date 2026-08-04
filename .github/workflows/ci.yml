@@ -180,8 +180,9 @@ jobs:
 
       - name: Publish module to live STDB
         run: |
-          export PATH="$HOME/.cargo/bin:$PATH"
+          export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
           cd spacetimedb
+          which spacetime
           cargo build --release --target=wasm32-unknown-unknown
           # Prefer the newest wasm artifact (avoid stale .opt.wasm).
           WASM=$(ls -t target/wasm32-unknown-unknown/release/spacetime_wiki*.wasm | head -1)
