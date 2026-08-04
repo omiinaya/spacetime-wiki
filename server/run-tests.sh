@@ -21,9 +21,6 @@ $PYTHON -m pytest tests/ \
   --ignore=tests/test_page_metadata_and_settings.py \
   --ignore=tests/test_core_reducers.py \
   --ignore=tests/test_collection_permission_search.py \
-  --ignore=tests/test_collection_permission_action.py \
-  --ignore=tests/test_collection_permission_operations.py \
-  --ignore=tests/test_collection_permission_propagation.py \
   --ignore=tests/test_collection_permission_reducers.py \
   --ignore=tests/test_misc_reducers.py
 
