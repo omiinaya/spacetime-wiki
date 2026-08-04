@@ -8,6 +8,7 @@ Implements circuit breaker pattern to prevent cascading failures.
 import asyncio
 import json
 import logging
+import re
 import time
 import uuid
 from contextvars import ContextVar
@@ -209,9 +210,17 @@ def _safe_quote(val: str) -> str:
 def _build_safe_sql(sql: str, *args: object) -> str:
     """Build a safe SQL string by substituting ? placeholders.
 
-    Supports:
-        ?   — string literal (auto-quoted and escaped via _safe_quote)
-        ?s  — same as ? (for clarity)
+    Supported placeholders:
+        ?  — string literal (auto-quoted and escaped via _safe_quote)
+        ?s — same as ? (for clarity)
+        ?i — integer literal (raises if arg is not int)
+        ?f — float literal (raises if arg is not float)
+        ?b — boolean literal (true/false)
+
+    Mirrors server/api-server/stdb_client.py::_build_safe_sql so both Python
+    services accept the same typed placeholders. Without the type suffixes,
+    a numeric ``LIMIT ?i`` would be injected as a *string* literal, producing
+    malformed SQL that STDB rejects ("Expected end of statement, found: i").
 
     Raises ``ValueError`` when the number of placeholders != number of args.
     """
@@ -223,12 +232,45 @@ def _build_safe_sql(sql: str, *args: object) -> str:
         )
     result = [parts[0]]
     for i, arg in enumerate(args):
+        placeholder: str | None = None
+        # Detect a type suffix (s/i/f/b) on the placeholder in the next part.
         part = parts[i + 1]
-        if arg is None:
-            result.append("NULL")
-        else:
-            result.append(_safe_quote(str(arg)))
-        result.append(part)
+        trimmed = part
+        if trimmed.startswith("s"):
+            placeholder = "string"
+            trimmed = trimmed[1:]
+        elif trimmed.startswith("i"):
+            placeholder = "int"
+            trimmed = trimmed[1:]
+        elif trimmed.startswith("f"):
+            placeholder = "float"
+            trimmed = trimmed[1:]
+        elif trimmed.startswith("b"):
+            placeholder = "bool"
+            trimmed = trimmed[1:]
+
+        if placeholder is None:
+            # plain ? — default to string
+            placeholder = "string"
+
+        if placeholder == "string":
+            if arg is None:
+                result.append("NULL")
+            else:
+                result.append(_safe_quote(str(arg)))
+        elif placeholder == "int":
+            if not isinstance(arg, int) or isinstance(arg, bool):
+                raise TypeError(f"Expected int for ?i, got {type(arg).__name__}")
+            result.append(str(arg))
+        elif placeholder == "float":
+            if not isinstance(arg, float):
+                raise TypeError(f"Expected float for ?f, got {type(arg).__name__}")
+            result.append(str(arg))
+        elif placeholder == "bool":
+            result.append("true" if arg else "false")
+
+        result.append(trimmed)
+
     return "".join(result)
 
 
@@ -414,19 +456,58 @@ async def _execute_with_retry(sql: str) -> list[list]:
 # ─── Public query helper with circuit breaker ────────────────────────────────
 
 
+def resolve_statement_offset(statement: str) -> tuple[str, int | None]:
+    """Strip a trailing ``OFFSET`` from a SQL statement for STDB v2.6.x.
+
+    STDB v2.6.1's HTTP /sql endpoint does NOT support OFFSET (returns a 400
+    ``Unsupported: ... OFFSET n``). To preserve the familiar
+    ``LIMIT ?i OFFSET ?i`` API, rewrite ``LIMIT n OFFSET m`` → ``LIMIT n+m``
+    and return the offset so the caller can slice ``rows[m:]`` in Python.
+
+    If there is no preceding LIMIT, the trailing ``OFFSET n`` is simply
+    removed. Returns ``(statement, offset)``; ``offset`` is None when the
+    statement has no OFFSET.
+    """
+    # `LIMIT n OFFSET m` → `LIMIT n+m`, slice [m:]
+    m = re.search(r"\sLIMIT\s+(\d+)\s+OFFSET\s+(\d+)\s*$", statement)
+    if m:
+        limit = int(m.group(1))
+        offset = int(m.group(2))
+        return f"{statement[: m.start()]} LIMIT {limit + offset}", offset
+    # Bare trailing OFFSET without a preceding LIMIT — strip it.
+    m = re.search(r"\sOFFSET\s+(?:\?i|:offset|\d+)\s*$", statement)
+    if m:
+        offset_val = m.group(0).strip().split()[-1]
+        try:
+            offset = int(offset_val)
+        except ValueError:
+            offset = None
+        return statement[: m.start()], offset
+    return statement, None
+
+
 async def sql_query(sql: str, *args: object) -> list[list]:
     """Execute a parameterized SQL query against STDB and return rows as arrays.
 
     When no placeholders are needed, pass the SQL string directly.
 
+    STDB v2.6.1's HTTP /sql endpoint does NOT support OFFSET (it returns an
+    ``Unsupported: ... OFFSET n`` 400). Trailing ``OFFSET`` is stripped here
+    and pagination applied in Python, so callers can keep the familiar
+    ``LIMIT ?i OFFSET ?i`` API — mirroring server/api-server/stdb_client.py.
+
     On total STDB failure after all retries, returns an empty list instead of
     crashing — callers should check for empty results.
     """
     final_sql = _build_safe_sql(sql, *args) if args else sql
+    final_sql, offset = resolve_statement_offset(final_sql)
     logger.debug("STDB query (cid=%s): %s", get_correlation_id(), _truncate_log(final_sql))
 
     async def _execute():
-        return await _execute_with_retry(final_sql)
+        rows = await _execute_with_retry(final_sql)
+        if offset is not None:
+            return rows[offset:]
+        return rows
 
     try:
         return await _circuit_breaker.execute_with_breaker(_execute)
@@ -558,7 +639,7 @@ def map_tag(row: list) -> dict:
 # ─── Input validation helpers ────────────────────────────────────────────────
 
 
-_INVALID_ID_CHARS = frozenset(";'\"\\%_()--/*")
+_INVALID_ID_CHARS = frozenset(";'\"\\%()--/*")
 
 
 def _validate_id(id_str: str, label: str = "id") -> None:
@@ -684,17 +765,22 @@ async def get_backlinks(page_id: str, limit: int = 20, offset: int = 0) -> list[
     """Find pages that link to the given page by searching for its ID in text_content.
 
     Raises ``ValueError`` for invalid *page_id*.
+
+    NOTE: STDB v2.6.x rejects ``text_content LIKE ?`` (``Unsupported
+    expression``), so matching is done in Python over the non-deleted pages —
+    the same pattern ``search_pages`` uses.
     """
     _validate_id(page_id, "page_id")
     limit = _clamp_int(limit, "limit", 20, 1, 50)
     offset = _clamp_int(offset, "offset", 0, 0, 9999)
-    rows = await sql_query(
-        "SELECT * FROM page WHERE status != 'deleted' AND id != ? AND text_content LIKE ? LIMIT ?i OFFSET ?i",
-        page_id,
-        f"%{page_id}%",
-        limit, offset,
-    )
-    return [map_page(r) for r in rows]
+    rows = await sql_query("SELECT * FROM page WHERE status != 'deleted'")
+    needle = page_id.lower()
+    filtered = []
+    for r in rows:
+        page = map_page(r)
+        if str(page["id"]) != page_id and needle in page["text_content"].lower():
+            filtered.append(page)
+    return filtered[offset:offset + limit]
 
 
 async def list_page_tags(page_id: str, limit: int = 50, offset: int = 0) -> list[dict]:
@@ -716,6 +802,10 @@ async def get_linked_pages(page_id: str, limit: int = 20, offset: int = 0) -> li
     """Find pages referenced via internal links in other pages' text_content.
 
     Raises ``ValueError`` for invalid *page_id*.
+
+    NOTE: STDB v2.6.x rejects ``text_content LIKE ?`` (``Unsupported
+    expression``), so matching is done in Python over the non-deleted pages —
+    the same pattern ``search_pages`` uses.
     """
     _validate_id(page_id, "page_id")
     limit = _clamp_int(limit, "limit", 20, 1, 50)
@@ -724,23 +814,19 @@ async def get_linked_pages(page_id: str, limit: int = 20, offset: int = 0) -> li
     if not page:
         return []
     slug = page.get("slug", "")
-    conditions = []
-    args: list[object] = []
-    conditions.append("text_content LIKE ?")
-    args.append(f"%{page_id}%")
+    needles = [page_id.lower()]
     if slug:
-        conditions.append("text_content LIKE ?")
-        args.append(f"%{slug}%")
-    where = " OR ".join(conditions)
-    sql = (
-        "SELECT * FROM page\n"
-        "WHERE status != 'deleted'\n"
-        f"  AND id != ?\n"
-        f"  AND ({where})\n"
-        "LIMIT ?i OFFSET ?i\n"
-    )
-    rows = await sql_query(sql, page_id, *args, limit, offset)
-    return [map_page(r) for r in rows]
+        needles.append(slug.lower())
+    rows = await sql_query("SELECT * FROM page WHERE status != 'deleted'")
+    filtered = []
+    for r in rows:
+        candidate = map_page(r)
+        if str(candidate["id"]) == page_id:
+            continue
+        text = candidate["text_content"].lower()
+        if any(needle in text for needle in needles):
+            filtered.append(candidate)
+    return filtered[offset:offset + limit]
 
 
 async def get_collection(collection_id: str) -> dict | None:

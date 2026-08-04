@@ -26,13 +26,44 @@ from stdb_client import (
     map_share_link,
     map_api_key,
     _TABLE_NAMES,
+    resolve_statement_offset,
 )
+
+
+class TestResolveStatementOffset:
+    def test_no_offset(self):
+        stmt, off = resolve_statement_offset("SELECT * FROM page LIMIT 5")
+        assert off is None
+        assert "LIMIT 5" in stmt
+
+    def test_limit_offset_rewrites_limit(self):
+        stmt, off = resolve_statement_offset(
+            "SELECT * FROM page WHERE status != 'deleted' LIMIT 10 OFFSET 5"
+        )
+        assert off == 5
+        assert stmt == "SELECT * FROM page WHERE status != 'deleted' LIMIT 15"
+        assert "OFFSET" not in stmt
+
+    def test_zero_offset_still_rewrites(self):
+        stmt, off = resolve_statement_offset("SELECT * FROM page LIMIT 10 OFFSET 0")
+        assert off == 0
+        assert stmt == "SELECT * FROM page LIMIT 10"
+
+    def test_bare_offset_stripped(self):
+        stmt, off = resolve_statement_offset("SELECT * FROM page OFFSET 3")
+        assert off == 3
+        assert stmt == "SELECT * FROM page"
+        assert "OFFSET" not in stmt
+
+    def test_trailing_whitespace_allowed(self):
+        stmt, off = resolve_statement_offset("SELECT * FROM page LIMIT 10 OFFSET 20\n")
+        assert off == 20
+        assert stmt == "SELECT * FROM page LIMIT 30"
 
 
 class TestSafeQuote:
     def test_basic(self):
         assert _safe_quote("hello") == "'hello'"
-
     def test_with_single_quote(self):
         assert _safe_quote("it's") == "'it''s'"
 

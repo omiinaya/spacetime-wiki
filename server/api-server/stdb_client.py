@@ -109,6 +109,36 @@ def _build_safe_sql(sql: str, *args: object) -> str:
     return "".join(result)
 
 
+def resolve_statement_offset(statement: str) -> tuple[str, int | None]:
+    """Strip a trailing ``OFFSET`` from a SQL statement for STDB v2.6.x.
+
+    STDB v2.6.1's HTTP /sql endpoint does NOT support OFFSET (returns a 400
+    ``Unsupported: ... OFFSET n``). To preserve the familiar
+    ``LIMIT ?i OFFSET ?i`` API, rewrite ``LIMIT n OFFSET m`` → ``LIMIT n+m``
+    and return the offset so the caller can slice ``rows[m:]`` in Python.
+
+    If there is no preceding LIMIT, the trailing ``OFFSET n`` is simply
+    removed. Returns ``(statement, offset)``; ``offset`` is None when the
+    statement has no OFFSET.
+    """
+    # `LIMIT n OFFSET m` → `LIMIT n+m`, slice [m:]
+    m = re.search(r"\sLIMIT\s+(\d+)\s+OFFSET\s+(\d+)\s*$", statement)
+    if m:
+        limit = int(m.group(1))
+        offset = int(m.group(2))
+        return f"{statement[: m.start()]} LIMIT {limit + offset}", offset
+    # Bare trailing OFFSET without a preceding LIMIT — strip it.
+    m = re.search(r"\sOFFSET\s+(?:\?i|:offset|\d+)\s*$", statement)
+    if m:
+        offset_val = m.group(0).strip().split()[-1]
+        try:
+            offset = int(offset_val)
+        except ValueError:
+            offset = None
+        return statement[: m.start()], offset
+    return statement, None
+
+
 async def sql_query(sql: str, *args: object) -> list[list]:
     """Execute a parameterized SQL query against STDB and return rows.
 
@@ -122,15 +152,7 @@ async def sql_query(sql: str, *args: object) -> list[list]:
     Returns rows as arrays (list of lists).
     """
     final_sql = _build_safe_sql(sql, *args) if args else sql
-    offset = None
-    m = re.search(r"\sOFFSET\s+(?:\?i|:offset|\d+)\s*$", final_sql)
-    if m:
-        offset_val = m.group(0).strip().split()[-1]
-        try:
-            offset = int(offset_val)
-        except ValueError:
-            offset = None
-        final_sql = final_sql[: m.start()]
+    final_sql, offset = resolve_statement_offset(final_sql)
     url = f"http://{STDB_HOST}/v1/database/{DB_ID}/sql"
     try:
         async with httpx.AsyncClient(timeout=30) as client:

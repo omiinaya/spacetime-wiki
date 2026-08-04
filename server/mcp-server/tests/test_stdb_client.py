@@ -27,6 +27,7 @@ from stdb_client import (
     _validate_id,
     _validate_non_empty_string,
     map_collection,
+    resolve_statement_offset,
     map_page,
     map_tag,
     map_user,
@@ -77,6 +78,63 @@ class TestBuildSafeSQL:
         with pytest.raises(ValueError, match="Expected"):
             _build_safe_sql("SELECT * FROM page WHERE id = ?", "a", "b")
 
+    def test_int_placeholder(self):
+        sql = _build_safe_sql(
+            "SELECT * FROM page WHERE status != 'deleted' LIMIT ?i OFFSET ?i",
+            25, 5,
+        )
+        assert sql == "SELECT * FROM page WHERE status != 'deleted' LIMIT 25 OFFSET 5"
+
+    def test_int_placeholder_rejects_string(self):
+        with pytest.raises(TypeError, match="Expected int for \\?i"):
+            _build_safe_sql("LIMIT ?i", "25")
+
+    def test_float_placeholder(self):
+        sql = _build_safe_sql("SELECT * FROM page WHERE score > ?f", 1.5)
+        assert sql == "SELECT * FROM page WHERE score > 1.5"
+
+    def test_bool_placeholder(self):
+        sql = _build_safe_sql("SELECT * FROM page WHERE is_pinned = ?b", True)
+        assert sql == "SELECT * FROM page WHERE is_pinned = true"
+
+    def test_string_suffix_placeholder(self):
+        sql = _build_safe_sql("SELECT * FROM page WHERE title = ?s", "Hello")
+        assert sql == "SELECT * FROM page WHERE title = 'Hello'"
+
+
+class TestResolveStatementOffset:
+    def test_no_offset(self):
+        stmt, off = resolve_statement_offset(
+            "SELECT * FROM page WHERE status != 'deleted' LIMIT 5"
+        )
+        assert off is None
+        assert "LIMIT 5" in stmt
+
+    def test_limit_offset_rewrites_limit(self):
+        stmt, off = resolve_statement_offset(
+            "SELECT * FROM page WHERE status != 'deleted' LIMIT 10 OFFSET 5"
+        )
+        assert off == 5
+        # STDB can't accept OFFSET; we fetch limit+offset rows and slice.
+        assert stmt == "SELECT * FROM page WHERE status != 'deleted' LIMIT 15"
+        assert "OFFSET" not in stmt
+
+    def test_zero_offset_still_rewrites(self):
+        stmt, off = resolve_statement_offset("SELECT * FROM page LIMIT 10 OFFSET 0")
+        assert off == 0
+        assert stmt == "SELECT * FROM page LIMIT 10"
+
+    def test_bare_offset_stripped(self):
+        stmt, off = resolve_statement_offset("SELECT * FROM page OFFSET 3")
+        assert off == 3
+        assert "OFFSET" not in stmt
+        assert stmt == "SELECT * FROM page"
+
+    def test_trailing_whitespace_allowed(self):
+        stmt, off = resolve_statement_offset("SELECT * FROM page LIMIT 10 OFFSET 20\n")
+        assert off == 20
+        assert stmt == "SELECT * FROM page LIMIT 30"
+
     def test_quote_escaping(self):
         sql = _build_safe_sql("SELECT * FROM page WHERE title = ?", "it's a test")
         assert "it''s" in sql
@@ -88,6 +146,14 @@ class TestValidateId:
 
     def test_valid_hex(self):
         _validate_id("a1b2c3d4e5f6")
+
+    def test_valid_underscore_prefix_id(self):
+        # The real genId format is `<prefix>_<hex>` (e.g. page_1a2b3c, user_9f8e) —
+        # underscore is a legal, common part of these IDs. It must NOT be
+        # rejected (it is only dangerous in LIKE patterns, which this code no
+        # longer uses).
+        _validate_id("page_a1b2c3d4e5f6")
+        _validate_id("user_9f8e7d6c5b4a")
 
     def test_empty_raises(self):
         with pytest.raises(ValueError, match="must not be empty"):
