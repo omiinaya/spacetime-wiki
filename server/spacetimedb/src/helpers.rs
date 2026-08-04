@@ -17,13 +17,15 @@ pub(crate) fn make_id(prefix: &str, ctx: &ReducerContext) -> String {
 /// Hash a password using Argon2id (PHC string format).
 /// Produces a string like `$argon2id$v=19$m=19456,t=2,p=1$<salt>$<hash>`.
 /// Automatically used for all new registrations and password changes.
-pub(crate) fn hash_password(password: &str) -> String {
+/// Returns Err instead of panicking (Argon2 only fails on >4 GB input, but a
+/// panic would abort the reducer transaction — surface as a reducer error).
+pub(crate) fn hash_password(password: &str) -> Result<String, String> {
     let salt = SaltString::generate(&mut rand::rngs::OsRng);
     let argon2 = Argon2::default();
     argon2
         .hash_password(password.as_bytes(), &salt)
-        .expect("Argon2 hashing should not fail")
-        .to_string()
+        .map(|h| h.to_string())
+        .map_err(|e| format!("password hashing failed: {e}"))
 }
 
 /// Verify a password against a stored hash (supports both Argon2 PHC strings
@@ -312,7 +314,7 @@ mod tests {
 
     #[test]
     fn test_hash_password_argon2_format() {
-        let hash = hash_password("hello");
+        let hash = hash_password("hello").unwrap();
         // Argon2 PHC strings start with $argon2id$v=19$m=...
         assert!(
             hash.starts_with("$argon2id$"),
@@ -330,7 +332,7 @@ mod tests {
 
     #[test]
     fn test_hash_password_empty() {
-        let hash = hash_password("");
+        let hash = hash_password("").unwrap();
         assert!(
             hash.starts_with("$argon2id$"),
             "Empty password should also produce Argon2 PHC"
@@ -351,7 +353,7 @@ mod tests {
                 .unwrap()
                 .as_nanos()
         );
-        let hash = hash_password(&password);
+        let hash = hash_password(&password).unwrap();
         assert!(
             verify_password(&password, &hash),
             "Should verify correct password against Argon2 hash"
@@ -379,8 +381,8 @@ mod tests {
     #[test]
     fn test_hash_produces_unique_per_call() {
         // Argon2 uses random salts, so two hashes of the same password differ
-        let h1 = hash_password("same_password");
-        let h2 = hash_password("same_password");
+        let h1 = hash_password("same_password").unwrap();
+        let h2 = hash_password("same_password").unwrap();
         assert_ne!(h1, h2, "Argon2 hashes should be unique due to random salt");
         // But both should verify against the password
         assert!(verify_password("same_password", &h1));

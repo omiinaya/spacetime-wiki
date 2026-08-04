@@ -8,6 +8,7 @@ from models import (
     PaginatedResponse,
 )
 from stdb_client import call_reducer, map_collection, sql_query
+from rate_limit import limiter
 
 router = APIRouter(prefix="/api/v1/collections", tags=["collections"])
 
@@ -38,11 +39,20 @@ async def get_collection(request: Request, collection_id: str):
     return map_collection(rows[0])
 
 
+@limiter.limit("60/minute")
 @router.post("", response_model=CollectionCreateResponse)
-async def create_collection(name: str, description: str = "", icon: str = "", color: str = ""):
-    """Create a new collection via reducer."""
-    result = await call_reducer("create_collection", [name, description, icon, color])
-    return result or {"status": "created"}
+async def create_collection(request: Request, name: str, description: str = "", icon: str = "", color: str = ""):
+    """Create a new collection via reducer.
+
+    The reducer signature is create_collection(id, name, description,
+    parent_id, icon, color, created_by). The API generates the id and binds
+    created_by to the AUTHENTICATED caller.
+    """
+    import uuid
+    coll_id = f"col_{uuid.uuid4().hex[:12]}"
+    created_by = getattr(request.state, "api_user_id", "")
+    await call_reducer("create_collection", [coll_id, name, description, "", icon, color, created_by])
+    return {"status": "created", "id": coll_id}
 
 
 @router.put("/{collection_id}", response_model=CollectionUpdateResponse)

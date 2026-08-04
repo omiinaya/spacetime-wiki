@@ -532,11 +532,18 @@ pub fn search_pages(
         let excerpt = if match_type == "title" {
             page.title.clone()
         } else {
-            // Try to find the match position and show surrounding text
+            // Try to find the match position and show surrounding text.
+            // NOTE: `find` on the LOWERCASED string returns a byte offset into
+            // content_lower, which is NOT a valid byte boundary in the original
+            // text_content (lowercasing can change byte lengths, e.g. İ→i̇,
+            // ẞ→ß). Slicing the original at that offset would panic on a
+            // mid-codepoint boundary — do char-indexed slicing instead.
             if let Some(pos) = content_lower.find(query_trimmed) {
-                let start = pos.saturating_sub(80);
-                let end = std::cmp::min(start + 200, page.text_content.len());
-                let excerpt_raw = &page.text_content[start..end];
+                let char_pos = content_lower[..pos].chars().count();
+                let chars: Vec<char> = page.text_content.chars().collect();
+                let start_char = char_pos.saturating_sub(80);
+                let end_char = std::cmp::min(start_char + 200, chars.len());
+                let excerpt_raw: String = chars[start_char..end_char].iter().collect();
                 format!("...{}...", excerpt_raw.trim())
             } else {
                 // Fallback: first 200 chars
@@ -821,7 +828,7 @@ pub fn add_scim_provider(
     } else {
         "member".into()
     };
-    let api_token_hash = hash_password(&api_token);
+    let api_token_hash = hash_password(&api_token)?;
     let now = now_ms(ctx);
     if ctx.db.scim_provider().id().find(&id).is_none() {
         ctx.db.scim_provider().insert(ScimProvider {
@@ -876,7 +883,7 @@ pub fn update_scim_provider(
     provider.name = name;
     provider.slug = slug;
     if !api_token.is_empty() {
-        let new_hash = hash_password(&api_token);
+        let new_hash = hash_password(&api_token)?;
         // Upsert the credential in the private table
         if let Some(mut cred) = ctx
             .db
@@ -1088,7 +1095,7 @@ pub fn scim_sync_user(
     let user_id = make_id("scim_user", ctx);
     // Generate a random password for SCIM-provisioned users (they'll use SSO)
     let random_password = format!("scim_{:x}", now);
-    let password_hash = hash_password(&random_password);
+    let password_hash = hash_password(&random_password)?;
     ctx.db.user().insert(User {
         id: user_id.clone(),
         name,
@@ -1850,7 +1857,7 @@ pub fn enable_totp(
     // Store backup codes (hashed)
     for code in &backup_codes {
         if !code.is_empty() {
-            let code_hash = hash_password(code);
+            let code_hash = hash_password(code)?;
             let bid = format!(
                 "mbc_{:x}",
                 now_ms(ctx) + ctx.db.mfa_backup_code().iter().count() as u64

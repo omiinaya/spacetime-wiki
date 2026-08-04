@@ -23,7 +23,7 @@ pub fn create_share_link(
     let password_hash = if password.is_empty() {
         String::new()
     } else {
-        hash_password(&password)
+        hash_password(&password)?
     };
     let has_password = !password.is_empty();
     if ctx.db.share_link().id().find(&id).is_none() {
@@ -144,7 +144,7 @@ mod tests {
     #[test]
     fn test_create_share_link_password_hashing() {
         let password = "secret123";
-        let hash = crate::helpers::hash_password(password);
+        let hash = crate::helpers::hash_password(password).unwrap();
         assert!(
             hash.starts_with("$argon2id$"),
             "Hash should be Argon2 PHC format"

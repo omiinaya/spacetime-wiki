@@ -7,7 +7,9 @@ and user info retrieval. Supports auto-registration for new users.
 import logging
 import uuid
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
+
+from rate_limit import limiter
 from models import (
     OAuthCallbackResponse,
     OAuthLoginResponse,
@@ -163,8 +165,9 @@ async def list_user_links(
     }
 
 
+@limiter.limit("30/minute")
 @router.post("/login", response_model=OAuthLoginResponse)
-async def oauth_login(body: dict):
+async def oauth_login(request: Request, body: dict):
     """Initiate OAuth login. Returns provider config for the frontend to build the redirect URL.
 
     The frontend should:

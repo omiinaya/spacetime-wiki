@@ -28,9 +28,11 @@ from routers.pages import router as pages_router
 from routers.scim import router as scim_router
 from routers.search import router as search_router
 from routers.webauthn import router as webauthn_router
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+
+from rate_limit import limiter
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -75,8 +77,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 # ─── App ──────────────────────────────────────────────────────────────────────
-
-limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="SpacetimeWiki REST API",

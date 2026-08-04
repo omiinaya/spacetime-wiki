@@ -21,6 +21,8 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request
 
+from rate_limit import limiter
+
 logger = logging.getLogger(__name__)
 from models import (
     WebAuthnAuthCompleteResponse,
@@ -140,6 +142,7 @@ def parse_transports(transports_str: str) -> list[str]:
 # ─── Registration ──────────────────────────────────────────────────────────────
 
 
+@limiter.limit("30/minute")
 @router.get("/register/begin", response_model=WebAuthnBeginRegisterResponse)
 async def register_begin(request: Request, email: str, display_name: str = ""):
     """Generate WebAuthn registration options.

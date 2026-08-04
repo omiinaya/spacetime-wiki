@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     )
     api_port: int = int(os.getenv("API_PORT", "8711"))
     api_key_header: str = "X-API-Key"
+    # Bootstrap secret for the FIRST API key creation on a fresh install.
+    # When set, POST /api/v1/auth/register-key accepts an X-Bootstrap-Secret
+    # header (matching this value) to mint the initial key. When unset,
+    # register-key requires an existing authenticated API key, so keys can
+    # never be minted anonymously.
+    api_bootstrap_secret: str = os.getenv("API_BOOTSTRAP_SECRET", "")
     rate_limit: str = os.getenv("RATE_LIMIT", "100/minute")
     auto_star_repo: bool = os.getenv("AUTO_STAR_REPO", "false").lower() in ("1", "true", "yes")
     debug: bool = os.getenv("DEBUG", "true").lower() in ("1", "true", "yes", "")

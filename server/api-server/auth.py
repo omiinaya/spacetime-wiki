@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import os
 import secrets
 from datetime import datetime, timezone
 
@@ -17,11 +18,19 @@ from stdb_client import call_reducer, map_api_key, sql_query
 SKIP_PATHS = {
     "/docs", "/openapi.json", "/redoc",
     "/health", "/openapi-spec.json",
-    "/api/v1/auth/register-key",
     "/api/v1/webauthn",
     "/hermes-id",  # hermes-id agent auth routes handle their own auth
     "/api/v1/admin/hermes-id",  # hermes-id admin proxy — gated by X-Admin-Key dependency
 }
+
+# register-key is NOT in SKIP_PATHS on purpose: minting an API key is a
+# privileged operation. Two authorized paths exist:
+#   1. An existing valid X-API-Key (binds the new key to that caller)
+#   2. The configured X-Bootstrap-Secret (fresh-install first key only,
+#      binds to the bootstrap admin user id)
+# Anything else gets a 401 from the middleware below.
+
+BOOTSTRAP_ADMIN_USER_ID = os.getenv("BOOTSTRAP_ADMIN_USER_ID", "user-admin")
 
 
 class ApiKeyMiddleware(BaseHTTPMiddleware):
@@ -35,11 +44,31 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # Skip docs, health, and key registration
+        # Skip docs, health (but NOT register-key — see SKIP_PATHS comment)
         if any(path.startswith(p) for p in SKIP_PATHS):
             return await call_next(request)
 
         api_key = request.headers.get(settings.api_key_header)
+        api_user_id = None
+
+        # Bootstrap path: allow minting the FIRST key when the caller presents
+        # the configured bootstrap secret. Bind it to the bootstrap admin user.
+        if path == "/api/v1/auth/register-key":
+            supplied = request.headers.get("X-Bootstrap-Secret", "")
+            if supplied and settings.api_bootstrap_secret and supplied == settings.api_bootstrap_secret:
+                request.state.api_key_id = None
+                request.state.api_key_name = None
+                request.state.api_user_id = BOOTSTRAP_ADMIN_USER_ID
+                return await call_next(request)
+
+            # If no bootstrap secret supplied/configured, fall through to the
+            # normal API-key path so an authenticated caller can still mint a key.
+            if not api_key:
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Missing API key or bootstrap secret."},
+                )
+
         if not api_key:
             return JSONResponse(
                 status_code=401,

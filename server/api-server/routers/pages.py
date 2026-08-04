@@ -11,6 +11,7 @@ from models import (
     TagCreateResponse,
 )
 from permissions import check_page_access
+from rate_limit import limiter
 from stdb_client import (
     call_reducer,
     map_attachment,
@@ -61,6 +62,7 @@ async def get_page(request: Request, page_id: str):
     return map_page(rows[0])
 
 
+@limiter.limit("60/minute")
 @router.post("", response_model=PageCreateResponse)
 async def create_page(request: Request, 
     title: str,
@@ -69,11 +71,19 @@ async def create_page(request: Request,
     icon: str = "",
     is_template: bool = False,
 ):
-    """Create a new page via the create_page reducer."""
-    result = await call_reducer("create_page", [
-        title, collection_id or "", content, icon, is_template,
+    """Create a new page via the create_page reducer.
+
+    The reducer signature is create_page(id, title, content, collection_id,
+    parent_page_id, created_by). The API generates the id and binds
+    created_by to the AUTHENTICATED caller (never a client-supplied value).
+    """
+    import uuid
+    page_id = f"page_{uuid.uuid4().hex[:12]}"
+    created_by = getattr(request.state, "api_user_id", "")
+    await call_reducer("create_page", [
+        page_id, title, content, collection_id or "", "", created_by,
     ])
-    return result or {"status": "created"}
+    return {"status": "created", "id": page_id}
 
 
 @router.put("/{page_id}", response_model=PageUpdateResponse)

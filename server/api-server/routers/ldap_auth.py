@@ -2,7 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+
+from rate_limit import limiter
 from models import LDAPLoginResponse
 from stdb_client import bridge_read, call_reducer, sql_query
 
@@ -94,8 +96,9 @@ def _map_user(row: list) -> dict | None:
     }
 
 
+@limiter.limit("30/minute")
 @router.post("/login", response_model=LDAPLoginResponse)
-async def ldap_login(body: dict):
+async def ldap_login(request: Request, body: dict):
     """Authenticate a user against an LDAP directory."""
     provider_id = body.get("provider_id", "")
     username = body.get("username", "")

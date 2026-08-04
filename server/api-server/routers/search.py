@@ -2,8 +2,9 @@
 
 import time
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from models import PaginatedResponse, SearchResponse
+from rate_limit import limiter
 from stdb_client import call_reducer, sql_query
 
 router = APIRouter(prefix="/api/v1/search", tags=["search"])
@@ -16,9 +17,11 @@ def _gen_search_token() -> str:
     return f"search_{rand:x}"
 
 
+@limiter.limit("120/minute")
 @router.get("", response_model=SearchResponse)
 async def search(
-    q: str = Query(..., min_length=1, description="Free-text search query"),
+    request: Request,
+    q: str = Query(..., min_length=1, max_length=200, description="Free-text search query"),
     collection_id: str = Query("", description="Filter by collection ID"),
     author_id: str = Query("", description="Filter by author/user ID"),
     from_date: str = Query("", alias="from", description="Date range start (ms epoch or ISO date)"),

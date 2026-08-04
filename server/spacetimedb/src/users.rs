@@ -19,7 +19,7 @@ pub fn register_user(
     }
     let role_clean = sanitize_user_role(&role);
     let now = now_ms(ctx);
-    let password_hash = hash_password(&password);
+    let password_hash = hash_password(&password)?;
     ctx.db.user().insert(User {
         id: id.clone(),
         name,
@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_password_hash_consistency() {
-        let hash = crate::helpers::hash_password("testpass123");
+        let hash = crate::helpers::hash_password("testpass123").unwrap();
         assert!(
             hash.starts_with("$argon2id$"),
             "Hash should be Argon2 PHC format"
@@ -161,7 +161,7 @@ mod tests {
     #[test]
     fn test_login_user_verifies_password() {
         let password = "mypassword";
-        let hash = crate::helpers::hash_password(password);
+        let hash = crate::helpers::hash_password(password).unwrap();
         let verified = crate::helpers::verify_password(password, &hash);
         assert!(verified);
         let wrong = crate::helpers::verify_password("wrongpassword", &hash);
