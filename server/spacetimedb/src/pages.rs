@@ -14,6 +14,7 @@ pub fn create_page(
     parent_page_id: String,
     created_by: String,
 ) -> Result<(), String> {
+    validate_required_str(&title, "Page title", 500)?;
     let slug = make_slug(&title);
     let now = now_ms(ctx);
     let sort_order = next_sort_order(ctx, &collection_id, &parent_page_id);

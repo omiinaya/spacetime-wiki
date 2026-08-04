@@ -89,10 +89,19 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             key_record = map_api_key(rows[0])
             key_hash = hashlib.sha256(api_key.encode()).hexdigest()
 
-            # Verify the hash inside the reducer (private table lookup)
+            # Verify the hash inside the reducer (private table lookup).
+            # Distinguish an invalid key (401) from STDB being unavailable
+            # (503) so outages aren't masked as auth failures.
             try:
                 await call_reducer("verify_api_key", [prefix, key_hash])
-            except Exception:
+            except RuntimeError as exc:
+                msg = str(exc)
+                if "timed out" in msg or "ConnectError" in msg or "Connection" in msg:
+                    logger.error("STDB unavailable during key verification: %s", msg)
+                    return JSONResponse(
+                        status_code=503,
+                        content={"detail": "Authentication service temporarily unavailable."},
+                    )
                 return JSONResponse(
                     status_code=401,
                     content={"detail": "Invalid or revoked API key."},

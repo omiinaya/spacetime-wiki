@@ -99,12 +99,12 @@ async def test_create_user_duplicate(http_client, http_base):
 
 
 async def test_create_user_missing_fields(http_client, http_base):
-    """Registering a user with empty name should be accepted (STDB validates)."""
+    """Registering a user with an empty name should be REJECTED (validation)."""
     ok = await reducer_succeeds(
         http_client, http_base, "register_user",
         [f"tempty_{_RUN}", "", f"empty_{_RUN}@test.com", "password123", "member"],
     )
-    assert ok, "register_user with empty name should succeed"
+    assert not ok, "register_user with empty name should fail validation"
 
 
 async def test_user_password_stored(http_client, http_base):

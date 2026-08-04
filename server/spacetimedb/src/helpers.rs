@@ -235,6 +235,25 @@ pub(crate) fn extract_text_content(content: &str) -> String {
 
 // ─── Pure helper: role validation ────────────────────────────────────────────
 
+/// Validate a required text field: non-empty after trim, within max chars.
+/// Returns an error message when invalid. Centralizes the length caps so all
+/// mutating reducers apply the same input discipline (empty names/bodies and
+/// multi-MB strings must not reach the tables).
+pub(crate) fn validate_required_str(
+    field: &str,
+    label: &str,
+    max_chars: usize,
+) -> Result<(), String> {
+    let trimmed = field.trim();
+    if trimmed.is_empty() {
+        return Err(format!("{label} cannot be empty"));
+    }
+    if field.chars().count() > max_chars {
+        return Err(format!("{label} exceeds {max_chars} characters"));
+    }
+    Ok(())
+}
+
 pub(crate) fn is_valid_user_role(role: &str) -> bool {
     ["admin", "member", "viewer"].contains(&role)
 }

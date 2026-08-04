@@ -86,6 +86,7 @@ pub fn create_collection(
     color: String,
     created_by: String,
 ) -> Result<(), String> {
+    validate_required_str(&name, "Collection name", 200)?;
     let slug = name.to_lowercase().replace(' ', "-");
     let now = now_ms(ctx);
     let sort_order = next_col_sort_order(ctx, &parent_id);

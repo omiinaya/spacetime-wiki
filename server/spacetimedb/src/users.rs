@@ -13,6 +13,7 @@ pub fn register_user(
     password: String,
     role: String,
 ) -> Result<(), String> {
+    validate_required_str(&name, "User name", 200)?;
     let existing = ctx.db.user().iter().find(|u| u.email == email);
     if existing.is_some() {
         return Err("Email already registered".into());

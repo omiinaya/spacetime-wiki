@@ -15,6 +15,9 @@ pub fn add_comment(
     text_anchor: String,
 ) -> Result<(), String> {
     let now = now_ms(ctx);
+    if body.chars().count() > 100_000 {
+        return Err("Comment body exceeds 100000 characters".into());
+    }
     if ctx.db.comment().id().find(&id).is_some() {
         return Ok(());
     }
