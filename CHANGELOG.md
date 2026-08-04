@@ -35,6 +35,15 @@
 
 ### Changed
 
+- **Frontend SQL injection hardening** — all 68 string values interpolated
+  into STDB SQL queries across `src/lib/api/*.ts` (19 files) now go through
+  the new `sqlLit()` escaper (doubles `'` and `\`, mirroring the API
+  server's `_safe_quote`); all 7 numeric `LIMIT`/`OFFSET` slots use
+  `sqlInt()`, which rejects non-finite input. Previously user-controlled
+  input (page slugs from URLs, reaction emoji, settings keys, search
+  terms) was concatenated raw into SQL strings — a SQL injection surface
+  the Python backend had already closed with parameterized queries. New
+  `src/test/sql-safety.test.ts` (12 tests) locks in the escaping.
 - **Consolidated ~1,700 lines of repetitive Rust struct-construction tests**
   — deleted 39 `default_*()` helpers (pure `X::default()` wrappers) and 40
   per-struct construction tests that only re-asserted literals just written

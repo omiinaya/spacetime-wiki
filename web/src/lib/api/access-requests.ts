@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ISC
 
 import type { AccessRequest } from './types';
-import { tableQuery, callReducer } from './client';
+import { tableQuery, callReducer, sqlLit } from './client';
 import { mapAccessRequest } from './mappers';
 
 export const accessRequestApi = {
@@ -25,13 +25,13 @@ export const accessRequestApi = {
 
   /** Fetch access requests for a specific page */
   listByPage: (pageId: string): Promise<AccessRequest[]> => {
-    const sql = `SELECT * FROM access_request WHERE page_id = '${pageId}'`;
+    const sql = `SELECT * FROM access_request WHERE page_id = ${sqlLit(pageId)}`;
     return tableQuery(sql, mapAccessRequest);
   },
 
   /** Fetch access requests by a specific requester */
   listByRequester: (requesterId: string): Promise<AccessRequest[]> => {
-    const sql = `SELECT * FROM access_request WHERE requester_id = '${requesterId}'`;
+    const sql = `SELECT * FROM access_request WHERE requester_id = ${sqlLit(requesterId)}`;
     return tableQuery(sql, mapAccessRequest);
   },
 };

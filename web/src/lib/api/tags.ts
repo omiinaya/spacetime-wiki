@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: ISC
 
 import type { PageTag } from './types';
-import { tableQuery, callReducer, genId } from './client';
+import { tableQuery, callReducer, genId, sqlLit } from './client';
 import { mapTag } from './mappers';
 
 export async function getPageTags(pageId: string): Promise<PageTag[]> {
-  return tableQuery(`SELECT * FROM page_tag WHERE page_id = '${pageId}'`, mapTag);
+  return tableQuery(`SELECT * FROM page_tag WHERE page_id = ${sqlLit(pageId)}`, mapTag);
 }
 
 export async function listAllTags(): Promise<PageTag[]> {

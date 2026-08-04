@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: ISC
 
 import type { Comment, CommentReaction } from './types';
-import { tableQuery, sqlQuery, callReducer, genId } from './client';
+import { tableQuery, sqlQuery, callReducer, genId, sqlLit } from './client';
 import { mapComment, mapCommentReaction } from './mappers';
 
 export async function getComments(pageId: string): Promise<Comment[]> {
-  return tableQuery(`SELECT * FROM comment WHERE page_id = '${pageId}'`, mapComment);
+  return tableQuery(`SELECT * FROM comment WHERE page_id = ${sqlLit(pageId)}`, mapComment);
 }
 
 export async function addComment(
@@ -40,7 +40,7 @@ export async function addCommentReaction(
 
 export async function listCommentReactions(commentId: string): Promise<CommentReaction[]> {
   return tableQuery(
-    `SELECT * FROM comment_reaction WHERE comment_id = '${commentId}'`,
+    `SELECT * FROM comment_reaction WHERE comment_id = ${sqlLit(commentId)}`,
     mapCommentReaction,
   );
 }
@@ -51,7 +51,7 @@ export async function hasCommentReaction(
   emoji: string,
 ): Promise<boolean> {
   const rows = await sqlQuery(
-    `SELECT id FROM comment_reaction WHERE comment_id = '${commentId}' AND user_id = '${userId}' AND emoji = '${emoji}'`,
+    `SELECT id FROM comment_reaction WHERE comment_id = ${sqlLit(commentId)} AND user_id = ${sqlLit(userId)} AND emoji = ${sqlLit(emoji)}`,
   );
   return rows.length > 0;
 }

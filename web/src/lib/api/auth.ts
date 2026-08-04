@@ -13,7 +13,7 @@ import type {
   OauthProvider,
   OauthUser,
 } from './types';
-import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId } from './client';
+import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId, sqlLit } from './client';
 import { bridgeQueryAll, bridgeQueryOne } from './bridge';
 import {
   mapOidcProvider,
@@ -348,7 +348,7 @@ export async function linkLdapUser(providerId: string): Promise<LdapUser[]> {
 
 export async function getApiKeys(userId: string): Promise<ApiKey[]> {
   return tableQuery(
-    `SELECT * FROM api_key WHERE user_id = '${userId}' AND is_revoked = false`,
+    `SELECT * FROM api_key WHERE user_id = ${sqlLit(userId)} AND is_revoked = false`,
     mapApiKey,
   );
 }
@@ -374,7 +374,7 @@ export async function revokeApiKey(id: string): Promise<void> {
 
 export async function getPasskeyCredentials(userId: string): Promise<PasskeyCredential[]> {
   return tableQuery(
-    `SELECT * FROM passkey_credential WHERE user_id = '${userId}' `,
+    `SELECT * FROM passkey_credential WHERE user_id = ${sqlLit(userId)} `,
     mapPasskeyCredential,
   );
 }
@@ -421,7 +421,7 @@ export async function deletePasskeyCredential(id: string): Promise<void> {
 
 export async function getPasskeyChallenges(userId: string): Promise<PasskeyCredential[]> {
   return tableQuery(
-    `SELECT * FROM passkey_credential WHERE user_id = '${userId}'`,
+    `SELECT * FROM passkey_credential WHERE user_id = ${sqlLit(userId)}`,
     mapPasskeyCredential,
   );
 }

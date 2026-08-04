@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ISC
 
 import type { Page, PageRevision } from './types';
-import { typedQuery, typedQueryOne, callReducer, genId } from './client';
+import { typedQuery, typedQueryOne, callReducer, genId, sqlLit } from './client';
 
 // ─── Schema-based typed query helpers ──────────────────────────────────────
 // These use auto-generated module_bindings schemas via client.ts's lazy-loaded
@@ -33,8 +33,8 @@ export function clearPageCache(): void {
 export async function listPages(collectionId?: string, status?: string): Promise<Page[]> {
   let sql = 'SELECT * FROM page';
   const conditions: string[] = [];
-  if (collectionId) conditions.push(`collection_id = '${collectionId}'`);
-  if (status) conditions.push(`status = '${status}'`);
+  if (collectionId) conditions.push(`collection_id = ${sqlLit(collectionId)}`);
+  if (status) conditions.push(`status = ${sqlLit(status)}`);
   else conditions.push("status != 'deleted'");
   if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
   return typedQuery<Page>(sql, PageRowSchema);
@@ -46,15 +46,21 @@ export async function listDeletedPages(): Promise<Page[]> {
 
 export async function getPage(id: string): Promise<Page | null> {
   // Try as ID first, then as slug
-  let page = await typedQueryOne<Page>(`SELECT * FROM page WHERE id = '${id}'`, PageRowSchema);
+  let page = await typedQueryOne<Page>(
+    `SELECT * FROM page WHERE id = ${sqlLit(id)}`,
+    PageRowSchema,
+  );
   if (!page) {
-    page = await typedQueryOne<Page>(`SELECT * FROM page WHERE slug = '${id}'`, PageRowSchema);
+    page = await typedQueryOne<Page>(
+      `SELECT * FROM page WHERE slug = ${sqlLit(id)}`,
+      PageRowSchema,
+    );
   }
   return page;
 }
 
 export async function getPageBySlug(slug: string): Promise<Page | null> {
-  return typedQueryOne<Page>(`SELECT * FROM page WHERE slug = '${slug}'`, PageRowSchema);
+  return typedQueryOne<Page>(`SELECT * FROM page WHERE slug = ${sqlLit(slug)}`, PageRowSchema);
 }
 
 export async function createPage(
@@ -195,7 +201,7 @@ export async function batchAddTag(pageIds: string[], name: string, value: string
 
 export async function getPageRevisions(pageId: string): Promise<PageRevision[]> {
   return typedQuery<PageRevision>(
-    `SELECT * FROM page_revision WHERE page_id = '${pageId}'`,
+    `SELECT * FROM page_revision WHERE page_id = ${sqlLit(pageId)}`,
     PageRevisionRowSchema,
   );
 }

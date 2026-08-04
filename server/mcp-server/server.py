@@ -59,7 +59,7 @@ async def server_lifespan(server: Server) -> AsyncIterator[dict[str, Any]]:
     try:
         logger.info("Performing startup STDB connectivity check...")
         start = time.monotonic()
-        rows = await sql_query("SELECT 1 AS ok")
+        rows = await sql_query("SELECT COUNT(*) AS c FROM \"user\"")
         elapsed = time.monotonic() - start
         logger.info("STDB reachable (%d rows, %dms)", len(rows), int(elapsed * 1000))
     except STDBError as e:
@@ -578,7 +578,7 @@ async def _handle_wiki_health(arguments: dict[str, Any]) -> list[TextContent]:
     start = time.monotonic()
     stdb_status = "unknown"
     try:
-        rows = await sql_query("SELECT 1 AS ok")
+        rows = await sql_query("SELECT COUNT(*) AS c FROM \"user\"")
         elapsed = time.monotonic() - start
         stdb_status = f"reachable ({len(rows)} rows, {int(elapsed * 1000)}ms)"
     except STDBError as e:

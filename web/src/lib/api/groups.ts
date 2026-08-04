@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ISC
 
 import type { Group, GroupMember } from './types';
-import { tableQuery, tableQueryOne, callReducer, genId } from './client';
+import { tableQuery, tableQueryOne, callReducer, genId, sqlLit } from './client';
 import { mapGroup, mapGroupMember } from './mappers';
 
 export async function listGroups(): Promise<Group[]> {
@@ -9,7 +9,7 @@ export async function listGroups(): Promise<Group[]> {
 }
 
 export async function getGroup(id: string): Promise<Group | null> {
-  return tableQueryOne(`SELECT * FROM \`group\` WHERE id = '${id}'`, mapGroup);
+  return tableQueryOne(`SELECT * FROM \`group\` WHERE id = ${sqlLit(id)}`, mapGroup);
 }
 
 export async function createGroup(
@@ -30,7 +30,10 @@ export async function deleteGroup(id: string): Promise<void> {
 }
 
 export async function getGroupMembers(groupId: string): Promise<GroupMember[]> {
-  return tableQuery(`SELECT * FROM group_member WHERE group_id = '${groupId}'`, mapGroupMember);
+  return tableQuery(
+    `SELECT * FROM group_member WHERE group_id = ${sqlLit(groupId)}`,
+    mapGroupMember,
+  );
 }
 
 export async function addGroupMember(

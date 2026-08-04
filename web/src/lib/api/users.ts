@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ISC
 
 import type { User } from './types';
-import { tableQuery, tableQueryOne, callReducer, genId } from './client';
+import { tableQuery, tableQueryOne, callReducer, genId, sqlLit } from './client';
 import { mapUser } from './mappers';
 
 export async function listUsers(): Promise<User[]> {
@@ -9,11 +9,11 @@ export async function listUsers(): Promise<User[]> {
 }
 
 export async function getUser(id: string): Promise<User | null> {
-  return tableQueryOne(`SELECT * FROM user WHERE id = '${id}'`, mapUser);
+  return tableQueryOne(`SELECT * FROM user WHERE id = ${sqlLit(id)}`, mapUser);
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  return tableQueryOne(`SELECT * FROM user WHERE email = '${email}'`, mapUser);
+  return tableQueryOne(`SELECT * FROM user WHERE email = ${sqlLit(email)}`, mapUser);
 }
 
 export async function registerUser(
@@ -28,7 +28,7 @@ export async function registerUser(
 
 export async function loginUser(email: string, password: string): Promise<User | null> {
   await callReducer('login_user', [email, password]);
-  return tableQueryOne(`SELECT * FROM user WHERE email = '${email}'`, mapUser);
+  return tableQueryOne(`SELECT * FROM user WHERE email = ${sqlLit(email)}`, mapUser);
 }
 
 export async function updateUserRole(

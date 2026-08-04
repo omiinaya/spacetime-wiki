@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ISC
 
 import type { CollabSession, CollabUpdate } from './types';
-import { tableQuery, callReducer, genId } from './client';
+import { tableQuery, callReducer, genId, sqlLit } from './client';
 import { mapCollabSession, mapCollabUpdate } from './mappers';
 
 export async function joinCollabSession(
@@ -35,11 +35,17 @@ export async function broadcastCollabUpdate(
 }
 
 export async function getCollabSessions(pageId: string): Promise<CollabSession[]> {
-  return tableQuery(`SELECT * FROM collab_session WHERE page_id = '${pageId}'`, mapCollabSession);
+  return tableQuery(
+    `SELECT * FROM collab_session WHERE page_id = ${sqlLit(pageId)}`,
+    mapCollabSession,
+  );
 }
 
 export async function getCollabUpdates(pageId: string): Promise<CollabUpdate[]> {
-  return tableQuery(`SELECT * FROM collab_update WHERE page_id = '${pageId}'`, mapCollabUpdate);
+  return tableQuery(
+    `SELECT * FROM collab_update WHERE page_id = ${sqlLit(pageId)}`,
+    mapCollabUpdate,
+  );
 }
 
 export async function cleanupCollabSessions(): Promise<void> {

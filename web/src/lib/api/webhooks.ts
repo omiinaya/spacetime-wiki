@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ISC
 
 import type { Webhook, WebhookEvent } from './types';
-import { tableQuery, callReducer, genId } from './client';
+import { tableQuery, callReducer, genId, sqlLit } from './client';
 import { bridgeQueryAll, bridgeQueryOne } from './bridge';
 import { mapWebhookEvent } from './mappers';
 
@@ -59,7 +59,7 @@ export async function deleteWebhook(id: string): Promise<void> {
 
 export async function getWebhookEvents(webhookId: string): Promise<WebhookEvent[]> {
   return tableQuery(
-    `SELECT * FROM webhook_event WHERE webhook_id = '${webhookId}'`,
+    `SELECT * FROM webhook_event WHERE webhook_id = ${sqlLit(webhookId)}`,
     mapWebhookEvent,
   );
 }

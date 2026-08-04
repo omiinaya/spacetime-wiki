@@ -105,7 +105,7 @@ async def search(
                 if ":" in pair:
                     tag_name, tag_value = pair.split(":", 1)
                     tag_rows = await sql_query(
-                        "SELECT 1 FROM page_tag WHERE page_id = ? AND name = ? AND value = ?",
+                        "SELECT page_id FROM page_tag WHERE page_id = ? AND name = ? AND value = ?",
                         page_id, tag_name.strip(), tag_value.strip(),
                     )
                     if not tag_rows:
@@ -113,7 +113,7 @@ async def search(
                         break
                 else:
                     tag_rows = await sql_query(
-                        "SELECT 1 FROM page_tag WHERE page_id = ? AND name = ?",
+                        "SELECT page_id FROM page_tag WHERE page_id = ? AND name = ?",
                         page_id, pair.strip(),
                     )
                     if not tag_rows:

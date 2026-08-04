@@ -6,7 +6,7 @@ import type {
   CollectionGroupPermission,
   CollectionSortRule,
 } from './types';
-import { tableQuery, tableQueryOne, callReducer, genId } from './client';
+import { tableQuery, tableQueryOne, callReducer, genId, sqlLit } from './client';
 import {
   mapCollection,
   mapCollectionMember,
@@ -19,7 +19,7 @@ export async function listCollections(): Promise<Collection[]> {
 }
 
 export async function getCollection(id: string): Promise<Collection | null> {
-  return tableQueryOne(`SELECT * FROM collection WHERE id = '${id}'`, mapCollection);
+  return tableQueryOne(`SELECT * FROM collection WHERE id = ${sqlLit(id)}`, mapCollection);
 }
 
 export async function createCollection(
@@ -90,7 +90,7 @@ export async function getCollectionSortRule(
   collectionId: string,
 ): Promise<CollectionSortRule | null> {
   return tableQueryOne(
-    `SELECT * FROM collection_sort_rule WHERE collection_id = '${collectionId}'`,
+    `SELECT * FROM collection_sort_rule WHERE collection_id = ${sqlLit(collectionId)}`,
     mapCollectionSortRule,
   );
 }
@@ -121,7 +121,7 @@ export async function removeCollectionMember(id: string): Promise<void> {
 
 export async function listCollectionMembers(collectionId: string): Promise<CollectionMember[]> {
   return tableQuery(
-    `SELECT * FROM collection_member WHERE collection_id = '${collectionId}'`,
+    `SELECT * FROM collection_member WHERE collection_id = ${sqlLit(collectionId)}`,
     mapCollectionMember,
   );
 }
@@ -145,7 +145,7 @@ export async function listCollectionGroupPermissions(
   collectionId: string,
 ): Promise<CollectionGroupPermission[]> {
   return tableQuery(
-    `SELECT * FROM collection_group_permission WHERE collection_id = '${collectionId}'`,
+    `SELECT * FROM collection_group_permission WHERE collection_id = ${sqlLit(collectionId)}`,
     mapCollectionGroupPermission,
   );
 }

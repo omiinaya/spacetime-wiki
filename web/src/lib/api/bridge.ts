@@ -9,7 +9,7 @@
 // them. Secret columns (password hashes, tokens, secrets) are never
 // bridged.
 
-import { callReducer, sqlQuery } from './client';
+import { callReducer, sqlQuery, sqlLit } from './client';
 
 function genRequestId(): string {
   return `br_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
@@ -29,7 +29,7 @@ export async function bridgeQuery(
   const requestId = genRequestId();
   await callReducer('bridge_read', [requestId, table, JSON.stringify(filter)]);
   const rows = (await sqlQuery(
-    `SELECT * FROM read_bridge WHERE request_id = '${requestId.replace(/'/g, "''")}'`,
+    `SELECT * FROM read_bridge WHERE request_id = ${sqlLit(requestId)}`,
   )) as unknown[][];
   const out = rows.map((r) => ({
     request_id: String(r[0] ?? ''),
@@ -92,7 +92,7 @@ export async function fetchOidcClientSecret(providerId: string): Promise<string>
   }
   try {
     const rows = (await sqlQuery(
-      `SELECT * FROM oidc_secret_bridge WHERE request_id = '${requestId.replace(/'/g, "''")}'`,
+      `SELECT * FROM oidc_secret_bridge WHERE request_id = ${sqlLit(requestId)}`,
     )) as unknown[][];
     if (rows.length === 0) return '';
     return String(rows[0][2] ?? '');

@@ -19,7 +19,7 @@ import type {
   PagePermission,
   CollectionGroupPermission,
 } from './types';
-import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId } from './client';
+import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId, sqlLit, sqlInt } from './client';
 import { bridgeQueryAll, bridgeQueryOne } from './bridge';
 import {
   mapAiConfig,
@@ -44,7 +44,7 @@ import {
 // ─── App Settings ─────────────────────────────────────────────────────────────
 
 export async function getAppSetting(key: string): Promise<string> {
-  const rows = await sqlQuery(`SELECT * FROM app_setting WHERE key = '${key}'`);
+  const rows = await sqlQuery(`SELECT * FROM app_setting WHERE key = ${sqlLit(key)}`);
   return rows.length > 0 ? String(rows[0]?.[1] ?? '') : '';
 }
 
@@ -55,7 +55,7 @@ export async function setAppSetting(key: string, value: string): Promise<void> {
 // ─── AI Config ────────────────────────────────────────────────────────────────
 
 export async function getAiConfig(key: string): Promise<string> {
-  const rows = await sqlQuery(`SELECT * FROM ai_config WHERE key = '${key}'`);
+  const rows = await sqlQuery(`SELECT * FROM ai_config WHERE key = ${sqlLit(key)}`);
   return rows.length > 0 ? String(rows[0]?.[1] ?? '') : '';
 }
 
@@ -144,13 +144,13 @@ export async function deleteAiChatMessage(id: string): Promise<void> {
 
 export async function getDbBases(pageId?: string): Promise<DbBase[]> {
   let sql = 'SELECT * FROM db_base';
-  if (pageId) sql += ` WHERE page_id = '${pageId}'`;
+  if (pageId) sql += ` WHERE page_id = ${sqlLit(pageId)}`;
   sql += '';
   return tableQuery(sql, mapDbBase);
 }
 
 export async function getDbBase(id: string): Promise<DbBase | null> {
-  return tableQueryOne(`SELECT * FROM db_base WHERE id = '${id}'`, mapDbBase);
+  return tableQueryOne(`SELECT * FROM db_base WHERE id = ${sqlLit(id)}`, mapDbBase);
 }
 
 export async function createDbBase(
@@ -170,7 +170,7 @@ export async function deleteDbBase(id: string): Promise<void> {
 // ─── Database Columns ─────────────────────────────────────────────────────────
 
 export async function getDbColumns(baseId: string): Promise<DbColumn[]> {
-  return tableQuery(`SELECT * FROM db_column WHERE base_id = '${baseId}'`, mapDbColumn);
+  return tableQuery(`SELECT * FROM db_column WHERE base_id = ${sqlLit(baseId)}`, mapDbColumn);
 }
 
 export async function createDbColumn(
@@ -189,11 +189,11 @@ export async function createDbColumn(
 // ─── Database Rows ────────────────────────────────────────────────────────────
 
 export async function getDbRows(baseId: string): Promise<DbRow[]> {
-  return tableQuery(`SELECT * FROM db_row WHERE base_id = '${baseId}'`, mapDbRow);
+  return tableQuery(`SELECT * FROM db_row WHERE base_id = ${sqlLit(baseId)}`, mapDbRow);
 }
 
 export async function getDbRow(id: string): Promise<DbRow | null> {
-  return tableQueryOne(`SELECT * FROM db_row WHERE id = '${id}'`, mapDbRow);
+  return tableQueryOne(`SELECT * FROM db_row WHERE id = ${sqlLit(id)}`, mapDbRow);
 }
 
 export async function createDbRow(
@@ -216,12 +216,12 @@ export async function reorderDbRows(rowIds: string[], newSortOrders: number[]): 
 // ─── Database Cells ───────────────────────────────────────────────────────────
 
 export async function getDbCells(rowId: string): Promise<DbCell[]> {
-  return tableQuery(`SELECT * FROM db_cell WHERE row_id = '${rowId}'`, mapDbCell);
+  return tableQuery(`SELECT * FROM db_cell WHERE row_id = ${sqlLit(rowId)}`, mapDbCell);
 }
 
 export async function getDbCellsForBase(baseId: string): Promise<DbCell[]> {
   return tableQuery(
-    `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = '${baseId}'`,
+    `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = ${sqlLit(baseId)}`,
     mapDbCell,
   );
 }
@@ -242,7 +242,7 @@ export async function getSyncedBlocks(): Promise<SyncedBlock[]> {
 }
 
 export async function getSyncedBlock(id: string): Promise<SyncedBlock | null> {
-  return tableQueryOne(`SELECT * FROM synced_block WHERE id = '${id}'`, mapSyncedBlock);
+  return tableQueryOne(`SELECT * FROM synced_block WHERE id = ${sqlLit(id)}`, mapSyncedBlock);
 }
 
 export async function createSyncedBlock(
@@ -282,14 +282,14 @@ export async function removeSyncedBlockRef(id: string): Promise<void> {
 
 export async function listSyncedBlockRefs(blockId: string): Promise<SyncedBlockRef[]> {
   return tableQuery(
-    `SELECT * FROM synced_block_ref WHERE block_id = '${blockId}'`,
+    `SELECT * FROM synced_block_ref WHERE block_id = ${sqlLit(blockId)}`,
     mapSyncedBlockRef,
   );
 }
 
 export async function listSyncedBlockRefsByPage(pageId: string): Promise<SyncedBlockRef[]> {
   return tableQuery(
-    `SELECT * FROM synced_block_ref WHERE page_id = '${pageId}'`,
+    `SELECT * FROM synced_block_ref WHERE page_id = ${sqlLit(pageId)}`,
     mapSyncedBlockRef,
   );
 }
@@ -423,7 +423,7 @@ export async function getNotifications(
   limit: number = 50,
 ): Promise<Notification[]> {
   return tableQuery(
-    `SELECT * FROM notification WHERE user_id = '${userId}' LIMIT ${limit}`,
+    `SELECT * FROM notification WHERE user_id = ${sqlLit(userId)} LIMIT {{sqlInt(limit)}}`,
     mapNotification,
   );
 }
@@ -433,14 +433,14 @@ export async function getUnreadNotifications(
   limit: number = 50,
 ): Promise<Notification[]> {
   return tableQuery(
-    `SELECT * FROM notification WHERE user_id = '${userId}' AND is_read = false LIMIT ${limit}`,
+    `SELECT * FROM notification WHERE user_id = ${sqlLit(userId)} AND is_read = false LIMIT {{sqlInt(limit)}}`,
     mapNotification,
   );
 }
 
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   const rows = await sqlQuery(
-    `SELECT COUNT(*) AS n FROM notification WHERE user_id = '${userId}' AND is_read = false`,
+    `SELECT COUNT(*) AS n FROM notification WHERE user_id = ${sqlLit(userId)} AND is_read = false`,
   );
   return Number(rows[0]?.[0] ?? 0);
 }
@@ -543,7 +543,7 @@ export async function deleteScimProvider(id: string): Promise<void> {
 
 export async function getScimEvents(providerId?: string): Promise<ScimEvent[]> {
   let sql = 'SELECT * FROM scim_event';
-  if (providerId) sql += ` WHERE provider_id = '${providerId}'`;
+  if (providerId) sql += ` WHERE provider_id = ${sqlLit(providerId)}`;
   sql += ' LIMIT 100';
   return sqlQuery(sql).then((rows) => (rows as unknown[][]).map(mapScimEvent));
 }
@@ -571,7 +571,7 @@ export async function scimDeprovisionGroup(): Promise<void> {
 // ─── Favorites ────────────────────────────────────────────────────────────────
 
 export async function getFavorites(userId: string): Promise<unknown[][]> {
-  return sqlQuery(`SELECT * FROM favorite WHERE user_id = '${userId}'`);
+  return sqlQuery(`SELECT * FROM favorite WHERE user_id = ${sqlLit(userId)}`);
 }
 
 export async function toggleFavorite(userId: string, pageId: string): Promise<void> {
@@ -582,7 +582,7 @@ export async function toggleFavorite(userId: string, pageId: string): Promise<vo
 // ─── Page Permissions ─────────────────────────────────────────────────────────
 
 export async function getPagePermissions(pageId: string): Promise<PagePermission[]> {
-  return sqlQuery(`SELECT * FROM page_permission WHERE page_id = '${pageId}'`).then((rows) =>
+  return sqlQuery(`SELECT * FROM page_permission WHERE page_id = ${sqlLit(pageId)}`).then((rows) =>
     (rows as unknown[][]).map(mapPagePermission),
   );
 }

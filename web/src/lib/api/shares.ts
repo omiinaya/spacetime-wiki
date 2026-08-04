@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: ISC
 
 import type { ShareLink } from './types';
-import { tableQuery, callReducer, genId } from './client';
+import { tableQuery, callReducer, genId, sqlLit } from './client';
 import { mapShareLink } from './mappers';
 
 export async function getShareLinks(pageId: string): Promise<ShareLink[]> {
-  return tableQuery(`SELECT * FROM share_link WHERE page_id = '${pageId}'`, mapShareLink);
+  return tableQuery(`SELECT * FROM share_link WHERE page_id = ${sqlLit(pageId)}`, mapShareLink);
 }
 
 export async function createShareLink(

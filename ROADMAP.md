@@ -136,10 +136,11 @@
 
 ## 🟢 Low Priority (P4-P5) — Nice-to-haves, DX polish
 
-### P4 — Add WebKit and Firefox to E2E tests
+### P4 — Add WebKit and Firefox to E2E tests ✅ DONE
 
 - **File:** `web/playwright.config.ts`
-- **Effort:** 2 hours (may need browser-specific fixes)
+- **Status:** ✅ DONE (2026-08-04) — `projects` already defines chromium/firefox/webkit. Full 3-browser validation completed with the error-capturing fixture: chromium full suite 77 passed; the previously-failing navigation/public-sharing/comments specs pass 44/44 across firefox+webkit after cross-browser fixes (empty default admin password, async recent-pages race, aria-label vs text-content theme toggle, sequential-vs-combined import-button waits). CI runs all three browsers.
+- **Effort:** done
 
 ### P4 — Add E2E test retries for CI ✅ DONE
 

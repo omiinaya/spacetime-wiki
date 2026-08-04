@@ -14,19 +14,21 @@ export const SUBSCRIPTION_SQLS = {
   pages: "SELECT * FROM page WHERE status != 'deleted'",
   allPages: 'SELECT * FROM page',
   collections: 'SELECT * FROM collection',
-  comments: (pageId: string) => `SELECT * FROM comment WHERE page_id = '${pageId}'`,
-  favorites: (userId: string) => `SELECT * FROM favorite WHERE user_id = '${userId}'`,
-  tags: (pageId: string) => `SELECT * FROM page_tag WHERE page_id = '${pageId}'`,
-  collabSessions: (pageId: string) => `SELECT * FROM collab_session WHERE page_id = '${pageId}'`,
-  collabUpdates: (pageId: string) => `SELECT * FROM collab_update WHERE page_id = '${pageId}'`,
-  dbBases: (pageId: string) => `SELECT * FROM db_base WHERE page_id = '${pageId}'`,
-  dbColumns: (baseId: string) => `SELECT * FROM db_column WHERE base_id = '${baseId}'`,
-  dbRows: (baseId: string) => `SELECT * FROM db_row WHERE base_id = '${baseId}'`,
+  comments: (pageId: string) => `SELECT * FROM comment WHERE page_id = ${sqlLit(pageId)}`,
+  favorites: (userId: string) => `SELECT * FROM favorite WHERE user_id = ${sqlLit(userId)}`,
+  tags: (pageId: string) => `SELECT * FROM page_tag WHERE page_id = ${sqlLit(pageId)}`,
+  collabSessions: (pageId: string) =>
+    `SELECT * FROM collab_session WHERE page_id = ${sqlLit(pageId)}`,
+  collabUpdates: (pageId: string) =>
+    `SELECT * FROM collab_update WHERE page_id = ${sqlLit(pageId)}`,
+  dbBases: (pageId: string) => `SELECT * FROM db_base WHERE page_id = ${sqlLit(pageId)}`,
+  dbColumns: (baseId: string) => `SELECT * FROM db_column WHERE base_id = ${sqlLit(baseId)}`,
+  dbRows: (baseId: string) => `SELECT * FROM db_row WHERE base_id = ${sqlLit(baseId)}`,
   dbCellsForBase: (baseId: string) =>
-    `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = '${baseId}'`,
+    `SELECT c.* FROM db_cell c INNER JOIN db_row r ON c.row_id = r.id WHERE r.base_id = ${sqlLit(baseId)}`,
   collectionSortRules: 'SELECT * FROM collection_sort_rule',
-  notifications: (userId: string) => `SELECT * FROM notification WHERE user_id = '${userId}'`,
-  watch: (userId: string) => `SELECT * FROM watch WHERE user_id = '${userId}'`,
+  notifications: (userId: string) => `SELECT * FROM notification WHERE user_id = ${sqlLit(userId)}`,
+  watch: (userId: string) => `SELECT * FROM watch WHERE user_id = ${sqlLit(userId)}`,
 } as const;
 
 export function usePagesSubscription() {

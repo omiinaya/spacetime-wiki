@@ -91,6 +91,34 @@ export async function sqlScalar<T = string>(sql: string): Promise<T | undefined>
 }
 
 /**
+ * Escape and single-quote a string value for safe SQL interpolation.
+ *
+ * Mirrors the API server's `_safe_quote` (server/api-server/stdb_client.py):
+ * both `'` → `''` and `\` → `\\` are escaped, the two characters that can
+ * break out of a SQL string literal. Use this for EVERY user- or DB-derived
+ * value interpolated into a query string; never interpolate raw values.
+ *
+ * ```ts
+ * const rows = await sqlQuery(`SELECT * FROM page WHERE slug = ${sqlLit(slug)}`);
+ * ```
+ */
+export function sqlLit(value: string): string {
+  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "''")}'`;
+}
+
+/**
+ * Render a numeric value for safe SQL interpolation. Rejects non-finite /
+ * non-numeric input so a value can never smuggle SQL via a `limit`/`offset`/
+ * ID-style numeric slot.
+ */
+export function sqlInt(value: number): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`sqlInt: expected a finite number, got ${String(value)}`);
+  }
+  return String(Math.trunc(value));
+}
+
+/**
  * Generate a unique ID string with the given prefix.
  * Based on current timestamp + pseudo-random bits.
  */
@@ -190,7 +218,7 @@ export async function resolveContentAttachments(
   if (needed.size > 0) {
     for (const id of needed) {
       try {
-        const rows = await sqlQuery(`SELECT * FROM attachment WHERE id = '${id}'`);
+        const rows = await sqlQuery(`SELECT * FROM attachment WHERE id = ${sqlLit(id)}`);
         if (rows.length > 0) {
           const row = rows[0];
           const storageKey = String(row[5] ?? '');

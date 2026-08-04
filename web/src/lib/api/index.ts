@@ -358,7 +358,7 @@ export {
 // ─── API object assembly ─────────────────────────────────────────────────────
 
 import type { AiChatMessage, Page } from './types';
-import { callReducer, sqlQuery } from './client';
+import { callReducer, sqlQuery, sqlLit } from './client';
 import { getPage as _getPage } from './pages';
 import { getAiConfig as _getAiConfig, getAiChatMessages as _getAiChatMessages } from './settings';
 import { pagesApi, getPageRevisions, getPageFromCache, setPageCache } from './pages';
@@ -394,7 +394,7 @@ import { accessRequestApi } from './access-requests';
 const analyticsApi = {
   recordView: (pageId: string, viewer: string) => callReducer('record_page_view', [pageId, viewer]),
   getViewCount: (pageId: string) =>
-    sqlQuery(`SELECT COUNT(*) AS n FROM page_view WHERE page_id = '${pageId}'`).then((rows) =>
+    sqlQuery(`SELECT COUNT(*) AS n FROM page_view WHERE page_id = ${sqlLit(pageId)}`).then((rows) =>
       Number((rows[0]?.[0] as unknown) ?? 0),
     ),
   getTrending: async (limit: number = 8) => {
