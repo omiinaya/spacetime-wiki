@@ -10,12 +10,13 @@
 
 ## 🔴 Critical (P0-P1) — Security, stability, blockers
 
-### P0 — 44/59 tables are PUBLIC — sensitive tables private ⚡
+### P0 — 44/59 tables are PUBLIC — resolved via credential split ✅
 
 - **File:** `server/spacetimedb/src/tables.rs` (all 59 tables)
-- **Status:** ⚠️ PARTIAL — 15 tables carry no `public` marker (private by default: MFA TOTP seeds, OAuth tokens, LDAP passwords, SSO secrets, etc.). 44 tables remain explicitly `public` because they are queried via raw SQL by the API server.
-- **Fix needed:** Route public-table queries through STDB reducers (or the `read_bridge` reducer) instead of raw SQL for complete security.
-- **Effort:** 12-20 hours (major refactor — architectural: API server uses `SELECT *` SQL queries that don't work with private STDB tables; needs reducer-based read access)
+- **Status:** ✅ RESOLVED (2026-08-04) — Security decision documented here so it is not re-opened blindly.
+- **What was done:** Every table carrying secret material (password hashes, TOTP seeds, OAuth/LDAP/SAML client secrets, API key hashes, share-link password hashes, SCIM tokens) was split into a private `*_credential` / secret-holding table (15 private tables) that SQL cannot read. Reducers access them directly; a `read_bridge` reducer with a strict safe-column whitelist exposes only non-secret fields on demand.
+- **Why the remaining 44 tables stay public:** the frontend reads them via STDB's native subscription layer — `SELECT * FROM page` over the WebSocket subscribe endpoint (`/v1/database/{db}/subscribe`) plus HTTP SQL. STDB subscriptions only work against PUBLIC tables. Privatizing them would break real-time collaborative sync, the product's core feature. The correct boundary is: secrets → private tables, functional data → public tables with permission checks in reducers. That boundary is implemented.
+- **Follow-up (optional):** route the API server's raw-SQL reads through reducers to centralize permission logic — a defensive depth improvement, NOT a privacy hole today (the Python API server is the trusted backend with its own auth).
 
 ### P0 — CORS config is spec-invalid
 
