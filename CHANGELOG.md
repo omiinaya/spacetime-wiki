@@ -20,6 +20,12 @@
 
 ### Fixed
 
+- **Remaining raw-SQL interpolation outside lib/api closed** — the sqlLit
+  sweep covered `src/lib/api/*.ts` but missed direct SQL builders in
+  `AccessRequestPanel.tsx` (unescaped page_id/requester_id) and
+  `SharedPageView.tsx` (manual `.replace` escaping). Both now use `sqlLit()`;
+  a repo-wide scan confirms zero raw `${identifier}` SQL interpolations
+  remain in `web/src`. Test mocks updated to provide `sqlLit`.
 - **Frontend double-brace sqlInt leak** — the sqlInt hardening sweep emitted
   `{{sqlInt(limit)}}` (double braces) in audit.ts (4 sites) and settings.ts
   (2 sites). In a template literal `{{` renders literally, so the built SQL
