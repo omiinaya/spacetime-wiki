@@ -14,7 +14,10 @@ import { expect } from '@playwright/test';
 
 /** Default admin credentials from global seed */
 export const ADMIN_EMAIL = 'admin@spacetimewiki.local';
-export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+// Default matches the password used by global-setup.ts / seed-e2e-data.py so
+// tests are hermetic with zero environment setup. Override via ADMIN_PASSWORD
+// when the seed is customized. (login.spec.ts already hardcodes 'admin123'.)
+export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 /**
  * Sign in as the admin user. Navigates to /login, fills credentials,
@@ -40,8 +43,15 @@ export async function navigateToFirstPage(page: Page): Promise<string | null> {
   await page.goto('/');
   await page.waitForLoadState('load');
 
-  // Try to find and click an existing page
+  // Try to find and click an existing page. The recent-pages list is
+  // populated via an STDB subscription, so wait for it to sync before
+  // concluding there are no pages (avoids needless createPage fallbacks).
   const pageEntries = page.locator('main button').filter({ hasText: /Updated/ });
+  try {
+    await pageEntries.first().waitFor({ state: 'visible', timeout: 10000 });
+  } catch {
+    // Fall through to page creation below.
+  }
   const count = await pageEntries.count();
 
   if (count > 0) {
@@ -97,8 +107,16 @@ export async function createPage(
   await editor.fill(content);
   await page.waitForTimeout(1000);
 
-  // Get the page URL
-  await page.waitForURL(/\/page\/[a-zA-Z0-9_]+|\/new/);
+  // Save the page — the Save button creates the page (for a new page) and
+  // navigates to the view route /page/{id}. Without this the editor stays on
+  // /new and page-view-only elements (e.g. the Share button) never appear.
+  const saveBtn = page.getByRole('button', { name: 'Save', exact: true });
+  if (await isVisible(saveBtn, 3000)) {
+    await saveBtn.click();
+  }
+
+  // Wait for navigation to the created page view
+  await page.waitForURL(/\/page\/[a-zA-Z0-9_]+$/, { timeout: 20000 });
   return page.url();
 }
 

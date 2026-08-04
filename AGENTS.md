@@ -91,7 +91,7 @@ spacetime-wiki/
 
 ### STDB Reducers (SpacetimeDB Rust module)
 
-All `#[spacetimedb::reducer]` functions, init, table definitions — `server/spacetimedb/src/lib.rs` (2703 lines). Additional
+All `#[spacetimedb::reducer]` functions, init, table definitions — `server/spacetimedb/src/lib.rs` (2782 lines). Additional
 logic is split across topic modules:
 
 | File                    | Responsibility                                                                        |

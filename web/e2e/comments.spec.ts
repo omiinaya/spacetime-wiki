@@ -42,8 +42,9 @@ test.describe('Comments — viewing and creating', () => {
 
     // Try to add a comment
     const commentInput = page.getByPlaceholder(/comment|write|add/i).first();
-    const commentInputVisible = await commentInput.isVisible({ timeout: 3000 });
-    expect(commentInputVisible).toBeTruthy();
+    // Use expect() auto-retry (15s) — the lazy-loaded PageView renders the
+    // comments section asynchronously and a manual isVisible(3s) races it.
+    await expect(commentInput).toBeVisible({ timeout: 15000 });
     await commentInput.fill('E2E test comment');
     const submitBtn = page.getByRole('button', { name: /send|submit|post|add/i }).first();
     await expect(submitBtn).toBeVisible({ timeout: 3000 });

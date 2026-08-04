@@ -81,19 +81,22 @@ test.describe('Sidebar navigation', () => {
     const themeButton = page
       .locator('aside')
       .getByRole('button', { name: /Light mode|Dark mode/i });
+
+    // The button has no aria-label/title — its accessible name comes from its
+    // text content ("Light mode" / "Dark mode"). Read that instead, which is
+    // consistent across chromium/firefox/webkit.
     const initialLabel =
-      (await themeButton.getAttribute('aria-label')) ||
-      (await themeButton.getAttribute('title')) ||
-      '';
+      ((await themeButton.textContent()) || '').trim();
+    expect(initialLabel).toMatch(/Light mode|Dark mode/i);
+
     await themeButton.click();
     await page.waitForTimeout(500);
-    // Button label should have changed after toggle
+
+    // Button label should flip to the opposite theme.
     const newLabel =
-      (await themeButton.getAttribute('aria-label')) ||
-      (await themeButton.getAttribute('title')) ||
-      '';
+      ((await themeButton.textContent()) || '').trim();
     expect(newLabel).not.toBe(initialLabel);
-    expect(newLabel).toMatch(/Light mode|Dark mode|Toggle/i);
+    expect(newLabel).toMatch(/Light mode|Dark mode/i);
   });
 
   test('keyboard shortcuts button opens modal', async ({ page }) => {
@@ -115,17 +118,13 @@ test.describe('Import buttons', () => {
 
   test('sidebar has Import buttons', async ({ page }) => {
     const aside = page.locator('aside');
-    // These may be in a submenu or dropdown — check loosely
-    const importMd = aside.getByRole('button', { name: /Import.*MD|Import.*Markdown/i });
-    const importWiki = aside.getByRole('button', { name: /Import.*Wiki/i });
-    const importConfluence = aside.getByRole('button', { name: /Import.*Confluence/i });
-
-    // At least some import buttons should exist
-    // At least some import button should exist and be clickable
-    const hasImportMd = await importMd.isVisible({ timeout: 2000 });
-    const hasImportWiki = await importWiki.isVisible({ timeout: 2000 });
-    const hasImportConfluence = await importConfluence.isVisible({ timeout: 2000 });
-    const hasImport = hasImportMd || hasImportWiki || hasImportConfluence;
-    expect(hasImport).toBeTruthy();
+    // These may be in a submenu or dropdown — check loosely. Combine the
+    // locators so Playwright waits once for ANY of them instead of running
+    // three sequential 2s timeouts (which raced under load).
+    const anyImport = aside
+      .getByRole('button', { name: /Import.*MD|Import.*Markdown/i })
+      .or(aside.getByRole('button', { name: /Import.*Wiki/i }))
+      .or(aside.getByRole('button', { name: /Import.*Confluence/i }));
+    await expect(anyImport.first()).toBeVisible({ timeout: 10000 });
   });
 });
