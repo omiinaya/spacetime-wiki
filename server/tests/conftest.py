@@ -10,7 +10,7 @@ import httpx
 import pytest
 
 STDB_HOST = os.environ.get("STDB_HOST", "localhost:3001")
-DB_NAME = os.environ.get("DB_NAME", "spacetime_wiki")
+DB_NAME = os.environ.get("DB_NAME", "spacetime-wiki")
 
 
 @pytest.fixture(scope="session")
