@@ -28,8 +28,16 @@ def http_base(stdb_host: str) -> str:
     return f"http://{stdb_host}/v1/database/{DB_NAME}"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 async def http_client() -> AsyncIterator[httpx.AsyncClient]:
+    """Function-scoped HTTP client.
+
+    Session-scoped async fixtures bind the httpx client to the SESSION event
+    loop, but pytest-asyncio runs each test on a FUNCTION loop — calls from
+    the test then raise 'Event loop is closed' / cross-loop RuntimeError.
+    Function scope gives every test a client on its own loop (slightly more
+    setup cost, but correct).
+    """
     async with httpx.AsyncClient(timeout=30) as client:
         yield client
 
@@ -67,7 +75,7 @@ async def sql_query(
 
 async def count_rows(client: httpx.AsyncClient, base: str, table: str) -> int:
     """Count all rows in a table."""
-    rows = await sql_query(client, base, f"SELECT COUNT(*) FROM {table}")
+    rows = await sql_query(client, base, f"SELECT COUNT(*) AS n FROM {table}")
     return int(rows[0][0]) if rows else 0
 
 

@@ -2,9 +2,15 @@
 
 Tests cover the init reducer, user/collection/page CRUD, and basic
 queries against the running STDB instance.
+
+NOTE: these are integration tests — they require a live STDB instance with the
+spacetime-wiki module published (see docker-compose.yml tests profile). They
+call reducers directly via the STDB HTTP API and assert on the resulting rows.
 """
 
 from __future__ import annotations
+
+import time
 
 import pytest
 
@@ -21,6 +27,11 @@ from .conftest import (
 
 pytestmark = pytest.mark.asyncio
 
+# Unique per-run suffix so these integration tests are idempotent against a
+# persistent STDB (re-running without --delete-data must not collide with rows
+# from a previous run).
+_RUN = f"{int(time.time() * 1000):x}"
+
 
 # ─── System ────────────────────────────────────────────────────────────────────
 
@@ -32,10 +43,9 @@ async def test_health(http_client, http_base):
 
 async def test_init_success(http_client, http_base):
     """The init reducer creates default app settings."""
-    # init is idempotent — call it and verify settings exist
-    ok = await reducer_succeeds(http_client, http_base, "init", [])
-    assert ok, "init reducer failed"
-
+    # init is a #[reducer(init)] — it runs automatically on publish, it is NOT
+    # callable via /call (that returns 400). Verify its EFFECT: app settings
+    # exist after publish.
     rows = await sql_query(http_client, http_base, "SELECT * FROM app_setting")
     assert_gt(len(rows), 0)
     keys = {r[0] for r in rows}
@@ -46,21 +56,21 @@ async def test_init_success(http_client, http_base):
 # ─── Users ─────────────────────────────────────────────────────────────────────
 
 async def test_create_user(http_client, http_base):
-    """Create a user with required fields and verify it exists."""
-    user_id = "test_user_001"
+    """Register a user with required fields and verify it exists."""
+    user_id = f"tuser_{_RUN}"
     name = "Test User"
-    email = "test@example.com"
+    email = f"test_{_RUN}@example.com"
     password = "supersecret123!"
 
     ok = await reducer_succeeds(
-        http_client, http_base, "create_user",
-        [user_id, name, email, password],
+        http_client, http_base, "register_user",
+        [user_id, name, email, password, "member"],
     )
-    assert ok, "create_user reducer failed"
+    assert ok, "register_user reducer failed"
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT id, name, email FROM user WHERE id = 'test_user_001'",
+        f"SELECT id, name, email FROM \"user\" WHERE id = '{user_id}'",
     )
     assert_row_count(rows, 1)
     assert rows[0][0] == user_id
@@ -69,65 +79,75 @@ async def test_create_user(http_client, http_base):
 
 
 async def test_create_user_duplicate(http_client, http_base):
-    """Creating the same user ID twice should not error (idempotent)."""
+    """Registering the same email twice should error (email uniqueness)."""
     ok1 = await reducer_succeeds(
-        http_client, http_base, "create_user",
-        ["test_user_dup", "Dup User", "dup@test.com", "password123"],
+        http_client, http_base, "register_user",
+        [f"dup1_{_RUN}", "Dup User", f"dup_{_RUN}@test.com", "password123", "member"],
     )
     ok2 = await reducer_succeeds(
-        http_client, http_base, "create_user",
-        ["test_user_dup", "Dup User", "dup@test.com", "password123"],
+        http_client, http_base, "register_user",
+        [f"dup2_{_RUN}", "Dup User", f"dup_{_RUN}@test.com", "password123", "member"],
     )
-    assert ok1 and ok2, "Idempotent create_user failed on second call"
+    assert ok1, "First register_user should succeed"
+    assert not ok2, "Duplicate email register_user should fail"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id FROM user WHERE id = 'test_user_dup'",
+        f"SELECT id FROM \"user\" WHERE email = 'dup_{_RUN}@test.com'",
     )
     assert_row_count(rows, 1)
 
 
 async def test_create_user_missing_fields(http_client, http_base):
-    """Creating a user with empty name should be accepted (STDB validates)."""
+    """Registering a user with empty name should be accepted (STDB validates)."""
     ok = await reducer_succeeds(
-        http_client, http_base, "create_user",
-        ["test_user_empty", "", "empty@test.com", "password123"],
+        http_client, http_base, "register_user",
+        [f"tempty_{_RUN}", "", f"empty_{_RUN}@test.com", "password123", "member"],
     )
-    assert ok, "create_user with empty name should succeed"
+    assert ok, "register_user with empty name should succeed"
 
 
 async def test_user_password_stored(http_client, http_base):
-    """A created user stores a password_hash field."""
-    uid = "test_user_pw"
+    """A registered user stores a password hash in the private credential table."""
+    uid = f"tpw_{_RUN}"
+    email = f"pw_{_RUN}@test.com"
     await reducer_succeeds(
-        http_client, http_base, "create_user",
-        [uid, "PW Test", "pw@test.com", "hunter2"],
+        http_client, http_base, "register_user",
+        [uid, "PW Test", email, "hunter2", "member"],
     )
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT password_hash FROM user WHERE id = '{uid}'",
+        f"SELECT id FROM \"user\" WHERE id = '{uid}'",
     )
     assert_row_count(rows, 1)
-    pw_hash = rows[0][0]
-    assert pw_hash and len(pw_hash) > 10, f"password_hash too short: {pw_hash}"
-    # Argon2 PHC strings start with $argon2
-    assert pw_hash.startswith("$argon2") if pw_hash else True, "password should be argon2"
+    # login should succeed with the right password (proves the hash roundtrip)
+    ok = await reducer_succeeds(
+        http_client, http_base, "login_user",
+        [email, "hunter2"],
+    )
+    assert ok, "login with correct password should succeed"
+    bad = await reducer_succeeds(
+        http_client, http_base, "login_user",
+        [email, "wrong"],
+    )
+    assert not bad, "login with wrong password should fail"
 
 
 # ─── Collections ───────────────────────────────────────────────────────────────
 
 async def test_create_collection(http_client, http_base):
     """Create a collection and verify it exists."""
+    coll_id = f"tcoll_{_RUN}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_collection",
-        ["test_coll_001", "Test Collection", "A test collection",
-         "", "📚", "#ff0000", "test_user_001"],
+        [coll_id, "Test Collection", "A test collection",
+         "", "📚", "#ff0000", f"tuser_{_RUN}"],
     )
     assert ok, "create_collection failed"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id, name FROM collection WHERE id = 'test_coll_001'",
+        f"SELECT id, name FROM collection WHERE id = '{coll_id}'",
     )
     assert_row_count(rows, 1)
     assert rows[0][1] == "Test Collection"
@@ -137,18 +157,16 @@ async def test_create_collection(http_client, http_base):
 
 async def test_create_page(http_client, http_base):
     """Create a page within a collection and verify it exists."""
-    page_id = "test_page_001"
+    page_id = f"tpage_{_RUN}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_page",
-        [page_id, "Test Page", "test-page", "# Hello World",
-         "Hello World", "test_coll_001", "",
-         "published", "", "", False, False, "", 0, "test_user_001"],
+        [page_id, "Test Page", "# Hello World", f"tcoll_{_RUN}", "", f"tuser_{_RUN}"],
     )
     assert ok, "create_page failed"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id, title FROM page WHERE id = 'test_page_001'",
+        f"SELECT id, title FROM page WHERE id = '{page_id}'",
     )
     assert_row_count(rows, 1)
     assert rows[0][1] == "Test Page"
@@ -156,53 +174,94 @@ async def test_create_page(http_client, http_base):
 
 async def test_create_page_content_persisted(http_client, http_base):
     """Page content is stored correctly."""
-    page_id = "test_page_content"
+    page_id = f"tpagec_{_RUN}"
     content = "# My Heading\n\nSome **bold** text and *italic* text."
     await reducer_succeeds(
         http_client, http_base, "create_page",
-        [page_id, "Content Test", "content-test", content,
-         "My Heading\n\nSome bold text and italic text.",
-         "test_coll_001", "",
-         "published", "", "", False, False, "", 0, "test_user_001"],
+        [page_id, "Content Test", content, f"tcoll_{_RUN}", "", f"tuser_{_RUN}"],
     )
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT title, content FROM page WHERE id = '{page_id}'",
+        f"SELECT id, text_content FROM page WHERE id = '{page_id}'",
     )
     assert_row_count(rows, 1)
-    assert rows[0][1] == content
+    assert content in rows[0][1], "Page text_content should contain the content"
 
 
 # ─── Search ────────────────────────────────────────────────────────────────────
 
 async def test_search_basic(http_client, http_base):
-    """Basic text search returns matching pages."""
+    """Basic text search returns matching pages (via the search_pages reducer)."""
+    # Self-contained: create a page, then search for it.
+    owner = f"srchuser_{_RUN}"
+    coll = f"srchcoll_{_RUN}"
+    page = f"srchpage_{_RUN}"
+    await reducer_succeeds(
+        http_client, http_base, "register_user",
+        [owner, "Search User", f"{owner}@test.com", "password123", "member"],
+    )
+    await reducer_succeeds(
+        http_client, http_base, "create_collection",
+        [coll, "Search Coll", "", "", "", "", owner],
+    )
+    await reducer_succeeds(
+        http_client, http_base, "create_page",
+        [page, "Test Page", "# Hello World", coll, "", owner],
+    )
+    token = f"srch_{_RUN}"
+    ok = await reducer_succeeds(
+        http_client, http_base, "search_pages",
+        [token, "Hello", "", "", 0, 0],
+    )
+    assert ok, "search_pages failed"
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id, title FROM page WHERE title LIKE '%Test%'",
+        f"SELECT title FROM search_result WHERE search_token = '{token}'",
     )
-    # There should be at least the pages we created above
-    titles = {r[1] for r in rows}
-    assert "Test Page" in titles, "Search didn't find Test Page"
+    titles = {r[0] for r in rows}
+    assert "Test Page" in titles, f"Search didn't find Test Page in {titles}"
 
 
 # ─── Data consistency ──────────────────────────────────────────────────────────
 
 async def test_no_orphan_pages(http_client, http_base):
     """Every page should belong to an existing collection."""
+    # STDB v2.6.1 /sql rejects non-inner joins — two queries instead.
+    # Only check pages created by THIS run (self-contained, no stale data).
+    owner = f"orphuser_{_RUN}"
+    coll = f"orphcoll_{_RUN}"
+    page = f"orphpage_{_RUN}"
+    await reducer_succeeds(
+        http_client, http_base, "register_user",
+        [owner, "Orphan User", f"{owner}@test.com", "password123", "member"],
+    )
+    await reducer_succeeds(
+        http_client, http_base, "create_collection",
+        [coll, "Orphan Coll", "", "", "", "", owner],
+    )
+    await reducer_succeeds(
+        http_client, http_base, "create_page",
+        [page, "Orphan Page", "# x", coll, "", owner],
+    )
     pages = await sql_query(
         http_client, http_base,
-        "SELECT p.id, p.collection_id FROM page p "
-        "LEFT JOIN collection c ON p.collection_id = c.id "
-        "WHERE c.id IS NULL",
+        f"SELECT collection_id FROM page WHERE id = '{page}'",
     )
-    assert_row_count(pages, 0)
+    assert_row_count(pages, 1)
+    coll_ids = [r[0] for r in pages]
+    colls = await sql_query(
+        http_client, http_base,
+        f"SELECT id FROM collection WHERE id = '{coll}'",
+    )
+    existing = {r[0] for r in colls}
+    orphans = [cid for cid in coll_ids if cid and cid not in existing]
+    assert not orphans, f"Pages reference missing collections: {orphans}"
 
 
 async def test_tables_have_data(http_client, http_base):
     """Core tables should have at least some rows after test data insertion."""
     checks = [
-        ("user", 1),
+        ("\"user\"", 1),
         ("collection", 1),
         ("page", 1),
     ]

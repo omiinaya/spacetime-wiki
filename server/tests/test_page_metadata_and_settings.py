@@ -11,9 +11,14 @@ Tests cover:
   - Notifications: create_notification, delete_notification, mark_notification_read
   - Templates: mark_as_template
   - Recording: record_page_view
+
+Every object id is derived from a per-test `run` suffix so the suite is
+idempotent against a persistent STDB (no --delete-data needed between runs).
 """
 
 from __future__ import annotations
+
+import uuid
 
 import pytest
 
@@ -33,34 +38,34 @@ pytestmark = pytest.mark.asyncio
 
 # --- Fixtures ---
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def test_user(http_client, http_base):
-    uid = "meta_test_user"
-    await reducer_succeeds(
-        http_client, http_base, "create_user",
-        [uid, "MetaTest User", "meta@test.com", "password123", "admin"],
-    )
+    run = uuid.uuid4().hex[:10]
+    uid = f"meta_user_{run}"
+    assert await reducer_succeeds(
+        http_client, http_base, "register_user",
+        [uid, "MetaTest User", f"{uid}@test.com", "password123", "admin"],
+    ), f"register_user {uid} failed"
     return uid
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def test_collection(http_client, http_base, test_user):
-    coll_id = "meta_test_coll"
-    await reducer_succeeds(
+    coll_id = f"meta_coll_{test_user}"
+    assert await reducer_succeeds(
         http_client, http_base, "create_collection",
-        [coll_id, "Meta Test Collection", "meta-test", "", "", "", "", "", test_user],
-    )
+        [coll_id, "Meta Test Collection", "meta-test", "", "", "", test_user],
+    ), f"create_collection {coll_id} failed"
     return coll_id
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def test_page(http_client, http_base, test_collection, test_user):
-    page_id = "meta_test_page"
-    await reducer_succeeds(
+    page_id = f"meta_page_{test_user}"
+    assert await reducer_succeeds(
         http_client, http_base, "create_page",
-        [page_id, "Meta Test Page", "meta-test-page", "# Meta",
-         "Meta", test_collection, "", "published", "", "", False, False, "", 0, test_user],
-    )
+        [page_id, "Meta Test Page", "# Meta", test_collection, "", test_user],
+    ), f"create_page {page_id} failed"
     return page_id
 
 
@@ -157,7 +162,7 @@ async def test_set_page_direction(http_client, http_base, test_page):
 # --- Tags ---
 
 async def test_add_tag(http_client, http_base, test_page):
-    tag_id = "meta_tag_1"
+    tag_id = f"meta_tag_1_{test_page}"
     ok = await reducer_succeeds(
         http_client, http_base, "add_tag",
         [tag_id, test_page, "priority", "high"],
@@ -165,7 +170,7 @@ async def test_add_tag(http_client, http_base, test_page):
     assert ok
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT name, value FROM tag WHERE id = '{tag_id}'",
+        f"SELECT name, value FROM page_tag WHERE id = '{tag_id}'",
     )
     assert_row_count(rows, 1)
     assert rows[0][0] == "priority"
@@ -173,7 +178,7 @@ async def test_add_tag(http_client, http_base, test_page):
 
 
 async def test_remove_tag(http_client, http_base, test_page):
-    tag_id = "meta_tag_to_remove"
+    tag_id = f"meta_tag_rm_{test_page}"
     await reducer_succeeds(
         http_client, http_base, "add_tag",
         [tag_id, test_page, "status", "done"],
@@ -184,7 +189,7 @@ async def test_remove_tag(http_client, http_base, test_page):
     assert ok
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT id FROM tag WHERE id = '{tag_id}'",
+        f"SELECT id FROM page_tag WHERE id = '{tag_id}'",
     )
     assert_row_count(rows, 0)
 
@@ -192,7 +197,7 @@ async def test_remove_tag(http_client, http_base, test_page):
 # --- Favorites ---
 
 async def test_toggle_favorite(http_client, http_base, test_page, test_user):
-    fav_id = "meta_fav_1"
+    fav_id = f"meta_fav_1_{test_page}"
     ok = await reducer_succeeds(
         http_client, http_base, "toggle_favorite",
         [fav_id, test_user, test_page],
@@ -225,7 +230,7 @@ async def test_set_app_setting(http_client, http_base):
 # --- API Keys ---
 
 async def test_create_api_key(http_client, http_base, test_user):
-    key_id = "meta_api_key_1"
+    key_id = f"meta_api_key_1_{test_user}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_api_key",
         [key_id, test_user, "Test Key", "hash123", "sk_test", 30],
@@ -241,7 +246,7 @@ async def test_create_api_key(http_client, http_base, test_user):
 
 
 async def test_revoke_api_key(http_client, http_base, test_user):
-    key_id = "meta_api_key_revoke"
+    key_id = f"meta_api_key_rv_{test_user}"
     await reducer_succeeds(
         http_client, http_base, "create_api_key",
         [key_id, test_user, "Revoke Key", "hash456", "sk_revoke", 30],
@@ -283,45 +288,59 @@ async def test_record_page_view(http_client, http_base, test_page, test_user):
 
 
 async def test_duplicate_page(http_client, http_base, test_collection, test_user):
-    source_id = "meta_dup_source"
+    source_id = f"meta_dup_src_{test_user}"
     await reducer_succeeds(
         http_client, http_base, "create_page",
-        [source_id, "Duplicate Source", "dup-source", "# Orig",
-         "Orig", test_collection, "", "published", "", "", False, False, "", 0, test_user],
+        [source_id, "Duplicate Source", "# Orig", test_collection, "", test_user],
     )
-    new_id = "meta_dup_target"
+    new_id = f"meta_dup_tgt_{test_user}"
     ok = await reducer_succeeds(
         http_client, http_base, "duplicate_page",
         [new_id, source_id, test_user],
     )
     assert ok
-    rows = await sql_query(
+    src_rows = await sql_query(
         http_client, http_base,
-        f"SELECT id, title FROM page WHERE id IN ('{source_id}', '{new_id}')",
+        f"SELECT id FROM page WHERE id = '{source_id}'",
     )
-    assert len(rows) == 2
+    assert_row_count(src_rows, 1)
+    tgt_rows = await sql_query(
+        http_client, http_base,
+        f"SELECT id FROM page WHERE id = '{new_id}'",
+    )
+    assert_row_count(tgt_rows, 1)
 
 
 async def test_restore_page(http_client, http_base, test_collection, test_user):
-    page_id = "meta_restore_test"
+    page_id = f"meta_restore_{test_user}"
     await reducer_succeeds(
         http_client, http_base, "create_page",
-        [page_id, "Restore Test", "restore-test", "# Restore",
-         "Restore", test_collection, "", "published", "", "", False, False, "", 0, test_user],
+        [page_id, "Restore Test", "# Restore", test_collection, "", test_user],
+    )
+    # restore_page requires the page to be in the trash (status = deleted)
+    await reducer_succeeds(
+        http_client, http_base, "set_page_status",
+        [page_id, "deleted"],
     )
     ok = await reducer_succeeds(
         http_client, http_base, "restore_page", [page_id],
     )
     assert ok
+    rows = await sql_query(
+        http_client, http_base,
+        f"SELECT status FROM page WHERE id = '{page_id}'",
+    )
+    assert_row_count(rows, 1)
+    assert rows[0][0] != "deleted", "Page should be restored out of trash"
 
 
 # --- Collection Operations ---
 
 async def test_delete_collection(http_client, http_base, test_user):
-    coll_id = "meta_del_coll"
+    coll_id = f"meta_del_coll_{test_user}"
     await reducer_succeeds(
         http_client, http_base, "create_collection",
-        [coll_id, "To Delete", "to-delete", "", "", "", "", "", test_user],
+        [coll_id, "To Delete", "to-delete", "", "", "", test_user],
     )
     ok = await reducer_succeeds(
         http_client, http_base, "delete_collection", [coll_id],
@@ -350,15 +369,15 @@ async def test_set_collection_sort_rule(http_client, http_base, test_collection,
 
 
 async def test_reorder_collections(http_client, http_base, test_user):
-    coll_a = "meta_reorder_a"
-    coll_b = "meta_reorder_b"
+    coll_a = f"meta_reorder_a_{test_user}"
+    coll_b = f"meta_reorder_b_{test_user}"
     await reducer_succeeds(
         http_client, http_base, "create_collection",
-        [coll_a, "Reorder A", "reorder-a", "", "", "", "", "", test_user],
+        [coll_a, "Reorder A", "reorder-a", "", "", "", test_user],
     )
     await reducer_succeeds(
         http_client, http_base, "create_collection",
-        [coll_b, "Reorder B", "reorder-b", "", "", "", "", "", test_user],
+        [coll_b, "Reorder B", "reorder-b", "", "", "", test_user],
     )
     ok = await reducer_succeeds(
         http_client, http_base, "reorder_collections",
@@ -370,10 +389,10 @@ async def test_reorder_collections(http_client, http_base, test_user):
 # --- Notifications ---
 
 async def test_create_notification(http_client, http_base, test_user):
-    notif_id = "meta_notif_1"
+    notif_id = f"meta_notif_1_{test_user}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_notification",
-        [notif_id, test_user, "mention", "page_123", "You were mentioned",
+        [notif_id, test_user, "page.create", "page_123", "You were mentioned",
          "Someone mentioned you in a page", "user_abc", "bell"],
     )
     assert ok
@@ -382,14 +401,14 @@ async def test_create_notification(http_client, http_base, test_user):
         f"SELECT event_type, title FROM notification WHERE id = '{notif_id}'",
     )
     assert_row_count(rows, 1)
-    assert rows[0][0] == "mention"
+    assert rows[0][0] == "page.create"
 
 
 async def test_mark_notification_read(http_client, http_base, test_user):
-    notif_id = "meta_notif_read"
+    notif_id = f"meta_notif_read_{test_user}"
     await reducer_succeeds(
         http_client, http_base, "create_notification",
-        [notif_id, test_user, "mention", "page_123", "Read Test",
+        [notif_id, test_user, "page.update", "page_123", "Read Test",
          "Test message", "user_abc", "bell"],
     )
     ok = await reducer_succeeds(
@@ -405,10 +424,10 @@ async def test_mark_notification_read(http_client, http_base, test_user):
 
 
 async def test_delete_notification(http_client, http_base, test_user):
-    notif_id = "meta_notif_del"
+    notif_id = f"meta_notif_del_{test_user}"
     await reducer_succeeds(
         http_client, http_base, "create_notification",
-        [notif_id, test_user, "mention", "page_123", "Delete Test",
+        [notif_id, test_user, "page.delete", "page_123", "Delete Test",
          "Test message", "user_abc", "bell"],
     )
     ok = await reducer_succeeds(

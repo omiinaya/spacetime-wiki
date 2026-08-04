@@ -2376,14 +2376,25 @@ pub fn get_dashboard_stats(ctx: &ReducerContext) -> Result<(), String> {
         .sum::<u64>();
 
     // Store stats in AppSetting for frontend to read via subscription
-    // Using a more stable approach: directly readable from the frontend
-    ctx.db.app_setting().key().update(AppSetting {
-        key: "dashboard_stats".to_string(),
-        value: format!(r#"{{"total_pages":{},"total_users":{},"total_collections":{},"total_comments":{},"total_attachments":{},"published_pages":{},"draft_pages":{},"archived_pages":{},"deleted_pages":{},"total_storage_bytes":{}}}"#,
-            total_pages, total_users, total_collections, total_comments, total_attachments,
-            published_pages, draft_pages, archived_pages, deleted_pages, total_storage_bytes),
-        updated_at: now_ms(ctx),
-    });
+    // Using a more stable approach: directly readable from the frontend.
+    // NOTE: `key().update()` panics if the row doesn't exist (errno 15) —
+    // upsert like set_app_setting does.
+    let stats_value = format!(r#"{{"total_pages":{},"total_users":{},"total_collections":{},"total_comments":{},"total_attachments":{},"published_pages":{},"draft_pages":{},"archived_pages":{},"deleted_pages":{},"total_storage_bytes":{}}}"#,
+        total_pages, total_users, total_collections, total_comments, total_attachments,
+        published_pages, draft_pages, archived_pages, deleted_pages, total_storage_bytes);
+    let now = now_ms(ctx);
+    let existing = ctx.db.app_setting().iter().find(|s| s.key == "dashboard_stats");
+    if let Some(mut setting) = existing {
+        setting.value = stats_value;
+        setting.updated_at = now;
+        ctx.db.app_setting().key().update(setting);
+    } else {
+        ctx.db.app_setting().insert(AppSetting {
+            key: "dashboard_stats".to_string(),
+            value: stats_value,
+            updated_at: now,
+        });
+    }
 
     Ok(())
 }
@@ -2706,5 +2717,51 @@ mod tests {
         assert!(id.len() < 5);
         let id2 = "abc_1";
         assert!(id2.len() >= 5);
+    }
+}
+
+#[cfg(test)]
+mod search_excerpt_tests {
+    #[test]
+    fn test_excerpt_ascii_content() {
+        // mimic the search_pages excerpt logic
+        let text_content = "# Hello World\n\nSome content here".to_string();
+        let content_lower = text_content.to_lowercase();
+        let query_trimmed = "hello";
+        let pos = content_lower.find(query_trimmed).unwrap();
+        let char_pos = content_lower[..pos].chars().count();
+        let chars: Vec<char> = text_content.chars().collect();
+        let start_char = char_pos.saturating_sub(80);
+        let end_char = std::cmp::min(start_char + 200, chars.len());
+        let excerpt_raw: String = chars[start_char..end_char].iter().collect();
+        assert!(excerpt_raw.to_lowercase().contains("hello"));
+    }
+
+    #[test]
+    fn test_excerpt_unicode_lowercase_boundary() {
+        // The panic case: İ (U+0130) lowercases to i̇ (2 chars) — byte length changes
+        let text_content = "İstanbul content with ẞ characters".to_string();
+        let content_lower = text_content.to_lowercase();
+        let query_trimmed = "stanbul";
+        let pos = content_lower.find(query_trimmed).unwrap();
+        let char_pos = content_lower[..pos].chars().count();
+        let chars: Vec<char> = text_content.chars().collect();
+        let start_char = char_pos.saturating_sub(80);
+        let end_char = std::cmp::min(start_char + 200, chars.len());
+        let excerpt_raw: String = chars[start_char..end_char].iter().collect();
+        assert!(!excerpt_raw.is_empty());
+    }
+
+    #[test]
+    fn test_excerpt_match_at_start() {
+        let text_content = "Hello world".to_string();
+        let content_lower = text_content.to_lowercase();
+        let pos = content_lower.find("hello").unwrap();
+        let char_pos = content_lower[..pos].chars().count();
+        let chars: Vec<char> = text_content.chars().collect();
+        let start_char = char_pos.saturating_sub(80);
+        let end_char = std::cmp::min(start_char + 200, chars.len());
+        let excerpt_raw: String = chars[start_char..end_char].iter().collect();
+        assert!(excerpt_raw.to_lowercase().contains("hello"));
     }
 }

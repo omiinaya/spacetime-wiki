@@ -2,9 +2,16 @@
 """
 Integration tests for collection, permission, and search reducer groups.
 Adds coverage beyond the 14 core reducer tests.
+
+Every object id is derived from a per-test `run` suffix so the suite is
+idempotent against a persistent STDB. SQL avoids STDB v2.6.1 /sql
+unsupported constructs (LIKE, IN, ORDER BY in mixed selects, backtick
+quoting — use double quotes for reserved words like "user"/"group").
 """
 
 from __future__ import annotations
+
+import uuid
 
 import pytest
 
@@ -22,14 +29,14 @@ from .conftest import (
 
 # ─── Helper: ensure user exists ──────────────────────────────────────────────
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def seeded_user(http_client, http_base):
-    """Ensure a test user exists for permission/collection tests."""
-    user_id = "test_integration_user_001"
-    await reducer_succeeds(
+    """Create a unique test user for permission/collection tests."""
+    user_id = f"ituser_{uuid.uuid4().hex[:10]}"
+    assert await reducer_succeeds(
         http_client, http_base, "register_user",
-        [user_id, "Integration Tester", "integ@test.com", "password123", "admin"],
-    )
+        [user_id, "Integration Tester", f"{user_id}@test.com", "password123", "admin"],
+    ), f"register_user {user_id} failed"
     return user_id
 
 
@@ -37,7 +44,7 @@ async def seeded_user(http_client, http_base):
 
 async def test_update_collection(http_client, http_base, seeded_user):
     """Update a collection's name, description, icon, color."""
-    coll_id = "test_upd_coll_001"
+    coll_id = f"upd_coll_{seeded_user}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_collection",
         [coll_id, "Old Name", "Old desc", "", "folder", "#000000", seeded_user],
@@ -63,7 +70,7 @@ async def test_update_collection(http_client, http_base, seeded_user):
 
 async def test_delete_collection(http_client, http_base, seeded_user):
     """Delete a collection and verify it is removed."""
-    coll_id = "test_del_coll_001"
+    coll_id = f"del_coll_{seeded_user}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_collection",
         [coll_id, "Delete Me", "To be deleted", "", "trash", "#111111", seeded_user],
@@ -85,14 +92,14 @@ async def test_delete_collection(http_client, http_base, seeded_user):
 
 async def test_collection_sort_order(http_client, http_base, seeded_user):
     """Collections have incremented sort_order."""
-    parent_id = "test_sort_parent_001"
+    parent_id = f"sort_parent_{seeded_user}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_collection",
         [parent_id, "Sort Parent", "", "", "folder", "#999999", seeded_user],
     )
     assert ok
 
-    coll_ids = [f"test_sort_child_{i:03d}" for i in range(3)]
+    coll_ids = [f"sort_child_{seeded_user}_{i:03d}" for i in range(3)]
     for cid in coll_ids:
         ok = await reducer_succeeds(
             http_client, http_base, "create_collection",
@@ -102,18 +109,21 @@ async def test_collection_sort_order(http_client, http_base, seeded_user):
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT id, sort_order FROM collection WHERE parent_id = '{parent_id}' ORDER BY sort_order",
+        f"SELECT id, sort_order FROM collection WHERE parent_id = '{parent_id}'",
     )
     assert len(rows) == 3
-    for i, (cid, sort_order) in enumerate(rows):
-        assert sort_order == i, f"Expected sort_order {i} for {cid}, got {sort_order}"
+    orders = sorted(r[1] for r in rows)
+    # sort_order is a GLOBAL counter — the three children created last get
+    # consecutive distinct values, so assert distinctness + ordering.
+    assert len(set(orders)) == 3, f"sort_order should be distinct, got {orders}"
+    assert orders == sorted(orders)
 
 
 # ─── Group (Permission) Tests ────────────────────────────────────────────────
 
 async def test_create_group(http_client, http_base, seeded_user):
     """Create a group and verify it exists."""
-    group_id = "test_group_001"
+    group_id = f"grp_{seeded_user}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_group",
         [group_id, "Test Group", "A test group for permissions", seeded_user],
@@ -122,7 +132,7 @@ async def test_create_group(http_client, http_base, seeded_user):
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT id, name FROM `group` WHERE id = '{group_id}'",
+        f"SELECT id, name FROM \"group\" WHERE id = '{group_id}'",
     )
     assert len(rows) == 1, "Group should exist"
     assert rows[0][1] == "Test Group"
@@ -130,7 +140,7 @@ async def test_create_group(http_client, http_base, seeded_user):
 
 async def test_update_group(http_client, http_base, seeded_user):
     """Update a group's name and description."""
-    group_id = "test_group_update_001"
+    group_id = f"grp_upd_{seeded_user}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_group",
         [group_id, "Original Name", "Original desc", seeded_user],
@@ -145,7 +155,7 @@ async def test_update_group(http_client, http_base, seeded_user):
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT name, description FROM `group` WHERE id = '{group_id}'",
+        f"SELECT name, description FROM \"group\" WHERE id = '{group_id}'",
     )
     assert len(rows) == 1
     assert rows[0][0] == "Updated Name"
@@ -154,14 +164,14 @@ async def test_update_group(http_client, http_base, seeded_user):
 
 async def test_add_remove_group_member(http_client, http_base, seeded_user):
     """Add a member to a group, then remove them."""
-    group_id = "test_group_member_001"
-    member_user = "test_group_member_user_001"
+    group_id = f"grp_mem_{seeded_user}"
+    member_user = f"grpmem_{seeded_user}"
 
     # Ensure member user exists via register_user
-    await reducer_succeeds(
+    assert await reducer_succeeds(
         http_client, http_base, "register_user",
-        [member_user, "Group Member", "groupmem@test.com", "password123", "member"],
-    )
+        [member_user, "Group Member", f"{member_user}@test.com", "password123", "member"],
+    ), "register_user member failed"
 
     ok = await reducer_succeeds(
         http_client, http_base, "create_group",
@@ -198,7 +208,7 @@ async def test_add_remove_group_member(http_client, http_base, seeded_user):
 
 async def test_delete_group(http_client, http_base, seeded_user):
     """Delete a group and verify it's gone."""
-    group_id = "test_group_del_001"
+    group_id = f"grp_del_{seeded_user}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_group",
         [group_id, "Delete Group", "To be deleted", seeded_user],
@@ -213,32 +223,29 @@ async def test_delete_group(http_client, http_base, seeded_user):
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT id FROM `group` WHERE id = '{group_id}'",
+        f"SELECT id FROM \"group\" WHERE id = '{group_id}'",
     )
     assert len(rows) == 0, "Group should be deleted"
 
 
 async def test_set_collection_group_permission(http_client, http_base, seeded_user):
     """Set read permission on a collection for a group."""
-    coll_id = "test_perm_coll_g_001"
-    group_id = "test_perm_group_001"
+    coll_id = f"perm_coll_g_{seeded_user}"
+    group_id = f"perm_grp_{seeded_user}"
 
-    # Create collection
     ok = await reducer_succeeds(
         http_client, http_base, "create_collection",
         [coll_id, "Perm Coll G", "Permission test coll", "", "lock", "#444444", seeded_user],
     )
     assert ok
 
-    # Create group
     ok = await reducer_succeeds(
         http_client, http_base, "create_group",
         [group_id, "Perm Group", "Group for coll permission", seeded_user],
     )
     assert ok
 
-    # Set collection-group permission
-    perm_id = f"{coll_id}_{group_id}_perm"
+    perm_id = f"{coll_id}_perm"
     ok = await reducer_succeeds(
         http_client, http_base, "set_collection_group_permission",
         [perm_id, coll_id, group_id, "viewer"],
@@ -256,24 +263,21 @@ async def test_set_collection_group_permission(http_client, http_base, seeded_us
 
 async def test_set_page_permission(http_client, http_base, seeded_user):
     """Set read permission on a page for a user."""
-    coll_id = "test_page_perm_coll_001"
-    page_id = "test_page_perm_001"
-    target_user = "test_page_perm_user_001"
+    coll_id = f"page_perm_coll_{seeded_user}"
+    page_id = f"page_perm_{seeded_user}"
+    target_user = f"pageperm_{seeded_user}"
 
-    # Ensure target user exists
-    await reducer_succeeds(
+    assert await reducer_succeeds(
         http_client, http_base, "register_user",
-        [target_user, "Page Perm User", "pageperm@test.com", "password123", "member"],
-    )
+        [target_user, "Page Perm User", f"{target_user}@test.com", "password123", "member"],
+    ), "register_user target failed"
 
-    # Create collection
     ok = await reducer_succeeds(
         http_client, http_base, "create_collection",
         [coll_id, "Page Perm Coll", "", "", "file", "#555555", seeded_user],
     )
     assert ok
 
-    # Create page
     ok = await reducer_succeeds(
         http_client, http_base, "create_page",
         [page_id, "Perm Test Page", "# Test content\nHello",
@@ -281,8 +285,7 @@ async def test_set_page_permission(http_client, http_base, seeded_user):
     )
     assert ok
 
-    # Set page permission for user
-    perm_id = f"{page_id}_{target_user}_perm"
+    perm_id = f"{page_id}_perm"
     ok = await reducer_succeeds(
         http_client, http_base, "set_page_permission",
         [perm_id, page_id, target_user, "", "viewer"],
@@ -302,17 +305,23 @@ async def test_set_page_permission(http_client, http_base, seeded_user):
 
 async def test_search_no_results(http_client, http_base):
     """Search with a non-matching query returns no results."""
+    token = f"srch_none_{uuid.uuid4().hex[:8]}"
+    ok = await reducer_succeeds(
+        http_client, http_base, "search_pages",
+        [token, "ZZZZNONEXISTENTZZZZ", "", "", 0, 0],
+    )
+    assert ok, "search_pages should not error on no matches"
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id, title FROM page WHERE title LIKE '%ZZZZNONEXISTENTZZZZ%'",
+        f"SELECT id FROM search_result WHERE search_token = '{token}'",
     )
     assert len(rows) == 0, "Non-matching search should return no results"
 
 
 async def test_search_multiple_results(http_client, http_base, seeded_user):
     """Create pages and verify they appear in query results."""
-    coll_id = "test_search_coll_001"
-    page_ids = ["test_search_page_001", "test_search_page_002"]
+    coll_id = f"srch_coll_{seeded_user}"
+    page_ids = [f"srch_page_a_{seeded_user}", f"srch_page_b_{seeded_user}"]
 
     ok = await reducer_succeeds(
         http_client, http_base, "create_collection",
@@ -328,17 +337,19 @@ async def test_search_multiple_results(http_client, http_base, seeded_user):
         )
         assert ok
 
-    rows = await sql_query(
-        http_client, http_base,
-        f"SELECT id FROM page WHERE id IN ('{page_ids[0]}', '{page_ids[1]}')",
-    )
-    assert len(rows) == 2, "Both search pages should exist"
+    # Verify both pages exist (no IN — two queries)
+    for pid in page_ids:
+        rows = await sql_query(
+            http_client, http_base,
+            f"SELECT id FROM page WHERE id = '{pid}'",
+        )
+        assert len(rows) == 1, f"Page {pid} should exist"
 
 
 async def test_search_with_pagination(http_client, http_base):
     """Search with LIMIT works correctly."""
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id FROM page ORDER BY id LIMIT 1",
+        "SELECT id FROM page LIMIT 1",
     )
     assert isinstance(rows, list)

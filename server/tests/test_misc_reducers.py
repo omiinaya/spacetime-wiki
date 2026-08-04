@@ -1,10 +1,16 @@
-"""Integration tests for miscellaneous SpacetimeDB reducers.
+"""Integration tests for misc SpacetimeDB reducers (comments, shares, tags, favorites).
 
-Covers comments, share links, tags, and favorites — features commonly
-used in regression testing that were previously untested at integration level.
+NOTE: these are integration tests — they require a live STDB instance with the
+spacetime-wiki module published (see docker-compose.yml tests profile). They
+call reducers directly via the STDB HTTP API and assert on the resulting rows.
+
+Every object id is derived from a per-test `run` suffix so the suite is
+idempotent against a persistent STDB (no --delete-data needed between runs).
 """
 
 from __future__ import annotations
+
+import uuid
 
 import pytest
 
@@ -24,35 +30,44 @@ pytestmark = pytest.mark.asyncio
 
 # ─── Setup: shared test data ──────────────────────────────────────────────────
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def shared_data(http_client, http_base):
-    """Create reusable test users, collection, and page for misc reducer tests."""
+    """Create reusable test users, collection, and page for misc reducer tests.
+
+    Function-scoped with a unique suffix PER CALL so each test gets fresh
+    rows (module-scope would collide on the second test since register_user
+    rejects duplicate emails).
+    """
+    run = uuid.uuid4().hex[:10]
+    owner = f"misc_owner_{run}"
+    other = f"misc_other_{run}"
+    coll = f"misc_coll_{run}"
+    page = f"misc_page_{run}"
     # Create users
-    await reducer_succeeds(
-        http_client, http_base, "create_user",
-        ["misc_owner", "Misc Owner", "misc_owner@test.com", "password123"],
-    )
-    await reducer_succeeds(
-        http_client, http_base, "create_user",
-        ["misc_other", "Misc Other", "misc_other@test.com", "password456"],
-    )
+    assert await reducer_succeeds(
+        http_client, http_base, "register_user",
+        [owner, "Misc Owner", f"{owner}@test.com", "password123", "member"],
+    ), f"register_user {owner} failed"
+    assert await reducer_succeeds(
+        http_client, http_base, "register_user",
+        [other, "Misc Other", f"{other}@test.com", "password456", "member"],
+    ), f"register_user {other} failed"
     # Create collection
-    await reducer_succeeds(
+    assert await reducer_succeeds(
         http_client, http_base, "create_collection",
-        ["misc_coll", "Misc Collection", "For misc tests", "", "🧪", "#00ff00", "misc_owner"],
-    )
+        [coll, "Misc Collection", "For misc tests", "", "🧪", "#00ff00", owner],
+    ), f"create_collection {coll} failed"
     # Create a page to attach comments/shares/tags/favorites to
-    await reducer_succeeds(
+    assert await reducer_succeeds(
         http_client, http_base, "create_page",
-        ["misc_page", "Misc Page", "misc-page", "# Misc Page Content",
-         "Misc Page Content", "misc_coll", "",
-         "published", "", "", False, False, "", 0, "misc_owner"],
-    )
+        [page, "Misc Page", "# Misc Page Content", coll, "", owner],
+    ), f"create_page {page} failed"
     return {
-        "owner_id": "misc_owner",
-        "other_id": "misc_other",
-        "collection_id": "misc_coll",
-        "page_id": "misc_page",
+        "run": run,
+        "owner_id": owner,
+        "other_id": other,
+        "collection_id": coll,
+        "page_id": page,
     }
 
 
@@ -61,15 +76,16 @@ async def shared_data(http_client, http_base):
 async def test_create_comment(http_client, http_base, shared_data):
     """Create a comment on a page and verify it exists."""
     page_id = shared_data["page_id"]
+    cid = f"misc_comment_001_{shared_data['run']}"
     ok = await reducer_succeeds(
-        http_client, http_base, "create_comment",
-        ["misc_comment_001", page_id, shared_data["owner_id"], "This is a test comment."],
+        http_client, http_base, "add_comment",
+        [cid, page_id, "", shared_data["owner_id"], "This is a test comment.", ""],
     )
-    assert ok, "create_comment failed"
+    assert ok, "add_comment failed"
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT id, content FROM page_comment WHERE id = 'misc_comment_001'",
+        f"SELECT id, body FROM comment WHERE id = '{cid}'",
     )
     assert_row_count(rows, 1)
     assert rows[0][1] == "This is a test comment."
@@ -77,49 +93,54 @@ async def test_create_comment(http_client, http_base, shared_data):
 
 async def test_create_comment_empty(http_client, http_base, shared_data):
     """Creating a comment with empty content should succeed (STDB may or may not validate)."""
+    cid = f"misc_comment_empty_{shared_data['run']}"
     ok = await reducer_succeeds(
-        http_client, http_base, "create_comment",
-        ["misc_comment_empty", shared_data["page_id"], shared_data["owner_id"], ""],
+        http_client, http_base, "add_comment",
+        [cid, shared_data["page_id"], "", shared_data["owner_id"], "", ""],
     )
-    assert ok, "create_comment with empty content failed"
+    assert ok, "add_comment with empty content failed"
 
 
 async def test_add_reaction(http_client, http_base, shared_data):
     """Add a reaction emoji to a comment."""
+    cid = f"misc_comment_rxn_{shared_data['run']}"
     await reducer_succeeds(
-        http_client, http_base, "create_comment",
-        ["misc_comment_rxn", shared_data["page_id"], shared_data["owner_id"], "React to me!"],
+        http_client, http_base, "add_comment",
+        [cid, shared_data["page_id"], "", shared_data["owner_id"], "React to me!", ""],
     )
     ok = await reducer_succeeds(
-        http_client, http_base, "add_reaction",
-        ["misc_comment_rxn", shared_data["owner_id"], "👍"],
+        http_client, http_base, "add_comment_reaction",
+        [f"misc_rxn_001_{shared_data['run']}", cid, shared_data["owner_id"], "👍"],
     )
-    assert ok, "add_reaction failed"
+    assert ok, "add_comment_reaction failed"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT emoji FROM comment_reaction WHERE comment_id = 'misc_comment_rxn'",
+        f"SELECT emoji FROM comment_reaction WHERE comment_id = '{cid}'",
     )
     emojis = {r[0] for r in rows}
     assert "👍" in emojis, "Reaction not found"
 
 
 async def test_remove_reaction(http_client, http_base, shared_data):
-    """Remove a reaction from a comment."""
-    comment_id = "misc_comment_rm_rxn"
+    """Remove a reaction from a comment (add_comment_reaction is a toggle)."""
+    run = shared_data["run"]
+    comment_id = f"misc_comment_rm_rxn_{run}"
     await reducer_succeeds(
-        http_client, http_base, "create_comment",
-        [comment_id, shared_data["page_id"], shared_data["owner_id"], "Remove reaction"],
+        http_client, http_base, "add_comment",
+        [comment_id, shared_data["page_id"], "", shared_data["owner_id"], "Remove reaction", ""],
     )
+    # Toggle ON
     await reducer_succeeds(
-        http_client, http_base, "add_reaction",
-        [comment_id, shared_data["owner_id"], "❤️"],
+        http_client, http_base, "add_comment_reaction",
+        [f"misc_rxn_rm_{run}", comment_id, shared_data["owner_id"], "❤️"],
     )
+    # Toggle OFF (same user + emoji removes it)
     ok = await reducer_succeeds(
-        http_client, http_base, "remove_reaction",
-        [comment_id, shared_data["owner_id"], "❤️"],
+        http_client, http_base, "add_comment_reaction",
+        [f"misc_rxn_rm_{run}", comment_id, shared_data["owner_id"], "❤️"],
     )
-    assert ok, "remove_reaction failed"
+    assert ok, "reaction toggle-off failed"
 
     rows = await sql_query(
         http_client, http_base,
@@ -130,19 +151,20 @@ async def test_remove_reaction(http_client, http_base, shared_data):
 
 async def test_resolve_comment(http_client, http_base, shared_data):
     """Resolve a comment."""
+    cid = f"misc_comment_resolve_{shared_data['run']}"
     await reducer_succeeds(
-        http_client, http_base, "create_comment",
-        ["misc_comment_resolve", shared_data["page_id"], shared_data["owner_id"], "Resolve me"],
+        http_client, http_base, "add_comment",
+        [cid, shared_data["page_id"], "", shared_data["owner_id"], "Resolve me", ""],
     )
     ok = await reducer_succeeds(
         http_client, http_base, "resolve_comment",
-        ["misc_comment_resolve", shared_data["owner_id"]],
+        [cid],
     )
     assert ok, "resolve_comment failed"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT resolved FROM page_comment WHERE id = 'misc_comment_resolve'",
+        f"SELECT is_resolved FROM comment WHERE id = '{cid}'",
     )
     assert_row_count(rows, 1)
     assert rows[0][0] is True, "Comment should be resolved"
@@ -150,19 +172,20 @@ async def test_resolve_comment(http_client, http_base, shared_data):
 
 async def test_delete_comment(http_client, http_base, shared_data):
     """Delete a comment from a page."""
+    cid = f"misc_comment_delete_{shared_data['run']}"
     await reducer_succeeds(
-        http_client, http_base, "create_comment",
-        ["misc_comment_delete", shared_data["page_id"], shared_data["owner_id"], "Delete me"],
+        http_client, http_base, "add_comment",
+        [cid, shared_data["page_id"], "", shared_data["owner_id"], "Delete me", ""],
     )
     ok = await reducer_succeeds(
         http_client, http_base, "delete_comment",
-        ["misc_comment_delete"],
+        [cid],
     )
     assert ok, "delete_comment failed"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id FROM page_comment WHERE id = 'misc_comment_delete'",
+        f"SELECT id FROM comment WHERE id = '{cid}'",
     )
     assert_row_count(rows, 0)
 
@@ -171,16 +194,17 @@ async def test_delete_comment(http_client, http_base, shared_data):
 
 async def test_create_share_link(http_client, http_base, shared_data):
     """Create a public share link for a page."""
+    run = shared_data["run"]
+    sid = f"misc_share_001_{run}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_share_link",
-        ["misc_share_001", shared_data["page_id"], shared_data["owner_id"],
-         "", "", False, 0],
+        [sid, shared_data["page_id"], f"tok_misc001_{run}", "", shared_data["owner_id"], 0],
     )
     assert ok, "create_share_link failed"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id, page_id FROM share_link WHERE id = 'misc_share_001'",
+        f"SELECT id, page_id FROM share_link WHERE id = '{sid}'",
     )
     assert_row_count(rows, 1)
     assert rows[0][1] == shared_data["page_id"]
@@ -188,55 +212,57 @@ async def test_create_share_link(http_client, http_base, shared_data):
 
 async def test_create_share_link_with_password(http_client, http_base, shared_data):
     """Create a password-protected share link."""
+    run = shared_data["run"]
+    sid = f"misc_share_pw_{run}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_share_link",
-        ["misc_share_pw", shared_data["page_id"], shared_data["owner_id"],
-         "hunter2", "", False, 0],
+        [sid, shared_data["page_id"], f"tok_miscpw_{run}", "hunter2", shared_data["owner_id"], 0],
     )
     assert ok, "create_share_link with password failed"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id, password_hash FROM share_link WHERE id = 'misc_share_pw'",
+        f"SELECT id, has_password FROM share_link WHERE id = '{sid}'",
     )
     assert_row_count(rows, 1)
-    assert rows[0][1] is not None, "Password hash should be set"
+    assert rows[0][1] is True, "has_password should be set for protected links"
 
 
 async def test_create_share_link_with_expiry(http_client, http_base, shared_data):
     """Create a share link with an expiration timestamp."""
-    future_ts = 9999999999  # Far future
+    run = shared_data["run"]
+    sid = f"misc_share_exp_{run}"
     ok = await reducer_succeeds(
         http_client, http_base, "create_share_link",
-        ["misc_share_exp", shared_data["page_id"], shared_data["owner_id"],
-         "", "", False, future_ts],
+        [sid, shared_data["page_id"], f"tok_miscexp_{run}", "", shared_data["owner_id"], 7],
     )
     assert ok, "create_share_link with expiry failed"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id, expires_at FROM share_link WHERE id = 'misc_share_exp'",
+        f"SELECT id, expires_at FROM share_link WHERE id = '{sid}'",
     )
     assert_row_count(rows, 1)
-    assert rows[0][1] == future_ts
+    assert rows[0][1] > 0, "expires_at should be set for 7-day expiry"
 
 
 async def test_delete_share_link(http_client, http_base, shared_data):
     """Delete a share link."""
+    run = shared_data["run"]
+    sid = f"misc_share_del_{run}"
     await reducer_succeeds(
         http_client, http_base, "create_share_link",
-        ["misc_share_del", shared_data["page_id"], shared_data["owner_id"],
-         "", "", False, 0],
+        [sid, shared_data["page_id"], f"tok_miscdel_{run}", "", shared_data["owner_id"], 0],
     )
     ok = await reducer_succeeds(
         http_client, http_base, "delete_share_link",
-        ["misc_share_del"],
+        [sid],
     )
     assert ok, "delete_share_link failed"
 
     rows = await sql_query(
         http_client, http_base,
-        "SELECT id FROM share_link WHERE id = 'misc_share_del'",
+        f"SELECT id FROM share_link WHERE id = '{sid}'",
     )
     assert_row_count(rows, 0)
 
@@ -245,30 +271,33 @@ async def test_delete_share_link(http_client, http_base, shared_data):
 
 async def test_add_tag(http_client, http_base, shared_data):
     """Add a tag to a page."""
+    run = shared_data["run"]
+    tid = f"misc_tag_001_{run}"
     ok = await reducer_succeeds(
         http_client, http_base, "add_tag",
-        [shared_data["page_id"], "integration-test"],
+        [tid, shared_data["page_id"], "integration-test", ""],
     )
     assert ok, "add_tag failed"
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT tag FROM page_tag WHERE page_id = '{shared_data['page_id']}' AND tag = 'integration-test'",
+        f"SELECT name FROM page_tag WHERE page_id = '{shared_data['page_id']}' AND name = 'integration-test'",
     )
     assert_row_count(rows, 1)
 
 
 async def test_add_tag_multiple(http_client, http_base, shared_data):
     """Add multiple tags to a page."""
-    for tag in ["alpha", "beta", "gamma"]:
-        await reducer_succeeds(
+    run = shared_data["run"]
+    for i, tag in enumerate(["alpha", "beta", "gamma"]):
+        assert await reducer_succeeds(
             http_client, http_base, "add_tag",
-            [shared_data["page_id"], tag],
-        )
+            [f"misc_tag_m{i}_{run}", shared_data["page_id"], tag, ""],
+        ), f"add_tag {tag} failed"
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT tag FROM page_tag WHERE page_id = '{shared_data['page_id']}'",
+        f"SELECT name FROM page_tag WHERE page_id = '{shared_data['page_id']}'",
     )
     tags = {r[0] for r in rows}
     for tag in ("alpha", "beta", "gamma"):
@@ -277,19 +306,21 @@ async def test_add_tag_multiple(http_client, http_base, shared_data):
 
 async def test_remove_tag(http_client, http_base, shared_data):
     """Remove a tag from a page."""
+    run = shared_data["run"]
+    tid = f"misc_tag_rm_{run}"
     await reducer_succeeds(
         http_client, http_base, "add_tag",
-        [shared_data["page_id"], "to-remove"],
+        [tid, shared_data["page_id"], "to-remove", ""],
     )
     ok = await reducer_succeeds(
         http_client, http_base, "remove_tag",
-        [shared_data["page_id"], "to-remove"],
+        [tid],
     )
     assert ok, "remove_tag failed"
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT tag FROM page_tag WHERE page_id = '{shared_data['page_id']}' AND tag = 'to-remove'",
+        f"SELECT name FROM page_tag WHERE page_id = '{shared_data['page_id']}' AND name = 'to-remove'",
     )
     assert_row_count(rows, 0)
 
@@ -298,11 +329,13 @@ async def test_remove_tag(http_client, http_base, shared_data):
 
 async def test_add_favorite(http_client, http_base, shared_data):
     """Add a page to favorites for a user."""
+    run = shared_data["run"]
+    fav_id = f"misc_fav_001_{run}"
     ok = await reducer_succeeds(
-        http_client, http_base, "add_favorite",
-        [shared_data["owner_id"], shared_data["page_id"]],
+        http_client, http_base, "toggle_favorite",
+        [fav_id, shared_data["owner_id"], shared_data["page_id"]],
     )
-    assert ok, "add_favorite failed"
+    assert ok, "toggle_favorite failed"
 
     rows = await sql_query(
         http_client, http_base,
@@ -312,33 +345,44 @@ async def test_add_favorite(http_client, http_base, shared_data):
 
 
 async def test_add_favorite_idempotent(http_client, http_base, shared_data):
-    """Adding the same favorite twice should not error (idempotent)."""
+    """Toggling the same favorite twice should remove it (toggle semantics)."""
+    run = shared_data["run"]
+    fav_id = f"misc_fav_idem_{run}"
     await reducer_succeeds(
-        http_client, http_base, "add_favorite",
-        ["misc_owner", shared_data["page_id"]],
+        http_client, http_base, "toggle_favorite",
+        [fav_id, shared_data["owner_id"], shared_data["page_id"]],
     )
     ok = await reducer_succeeds(
-        http_client, http_base, "add_favorite",
-        ["misc_owner", shared_data["page_id"]],
+        http_client, http_base, "toggle_favorite",
+        [fav_id, shared_data["owner_id"], shared_data["page_id"]],
     )
-    assert ok, "Idempotent add_favorite failed"
-
-
-async def test_remove_favorite(http_client, http_base, shared_data):
-    """Remove a page from favorites."""
-    await reducer_succeeds(
-        http_client, http_base, "add_favorite",
-        ["misc_owner", shared_data["page_id"]],
-    )
-    ok = await reducer_succeeds(
-        http_client, http_base, "remove_favorite",
-        ["misc_owner", shared_data["page_id"]],
-    )
-    assert ok, "remove_favorite failed"
+    assert ok, "second toggle_favorite failed"
 
     rows = await sql_query(
         http_client, http_base,
-        f"SELECT user_id FROM favorite WHERE user_id = 'misc_owner' AND page_id = '{shared_data['page_id']}'",
+        f"SELECT user_id FROM favorite WHERE user_id = '{shared_data['owner_id']}' AND page_id = '{shared_data['page_id']}'",
+    )
+    # Toggled off — should be gone
+    assert_row_count(rows, 0)
+
+
+async def test_remove_favorite(http_client, http_base, shared_data):
+    """Remove a page from favorites (toggle off)."""
+    run = shared_data["run"]
+    fav_id = f"misc_fav_rm_{run}"
+    await reducer_succeeds(
+        http_client, http_base, "toggle_favorite",
+        [fav_id, shared_data["owner_id"], shared_data["page_id"]],
+    )
+    ok = await reducer_succeeds(
+        http_client, http_base, "toggle_favorite",
+        [fav_id, shared_data["owner_id"], shared_data["page_id"]],
+    )
+    assert ok, "toggle_favorite (remove) failed"
+
+    rows = await sql_query(
+        http_client, http_base,
+        f"SELECT user_id FROM favorite WHERE user_id = '{shared_data['owner_id']}' AND page_id = '{shared_data['page_id']}'",
     )
     assert_row_count(rows, 0)
 
@@ -347,21 +391,37 @@ async def test_remove_favorite(http_client, http_base, shared_data):
 
 async def test_comment_belongs_to_page(http_client, http_base, shared_data):
     """Every comment should reference an existing page."""
-    orphans = await sql_query(
+    # STDB v2.6.1 /sql rejects non-inner joins — do two queries instead.
+    comments = await sql_query(
         http_client, http_base,
-        "SELECT c.id FROM page_comment c "
-        "LEFT JOIN page p ON c.page_id = p.id "
-        "WHERE p.id IS NULL",
+        "SELECT page_id FROM comment",
     )
-    assert_row_count(orphans, 0)
+    if not comments:
+        return
+    page_ids = list({r[0] for r in comments})
+    pages = await sql_query(
+        http_client, http_base,
+        "SELECT id FROM page",
+    )
+    existing = {r[0] for r in pages}
+    orphans = [pid for pid in page_ids if pid not in existing]
+    assert not orphans, f"Comments reference missing pages: {orphans}"
 
 
 async def test_favorite_belongs_to_user(http_client, http_base, shared_data):
     """Every favorite should reference an existing user."""
-    orphans = await sql_query(
+    # STDB v2.6.1 /sql rejects non-inner joins — do two queries instead.
+    favorites = await sql_query(
         http_client, http_base,
-        "SELECT f.user_id FROM favorite f "
-        "LEFT JOIN user u ON f.user_id = u.id "
-        "WHERE u.id IS NULL",
+        "SELECT user_id FROM favorite",
     )
-    assert_row_count(orphans, 0)
+    if not favorites:
+        return
+    user_ids = list({r[0] for r in favorites})
+    users = await sql_query(
+        http_client, http_base,
+        "SELECT id FROM \"user\"",
+    )
+    existing = {r[0] for r in users}
+    orphans = [uid for uid in user_ids if uid not in existing]
+    assert not orphans, f"Favorites reference missing users: {orphans}"

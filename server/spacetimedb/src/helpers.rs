@@ -11,7 +11,14 @@ pub(crate) fn now_ms(ctx: &ReducerContext) -> u64 {
 pub(crate) fn make_id(prefix: &str, ctx: &ReducerContext) -> String {
     let ts = now_ms(ctx);
     let rand: u32 = (ts as u32).wrapping_mul(1103515245).wrapping_add(12345);
-    format!("{}_{:x}", prefix, rand)
+    // The pure-LCG of the timestamp alone collides when a reducer inserts
+    // several rows within the same millisecond (e.g. search_pages writing a
+    // SearchResult per matching page in one call) → insert panic. Add a
+    // per-process monotonic counter so IDs are unique even within one ms.
+    use std::sync::atomic::{AtomicU32, Ordering};
+    static COUNTER: AtomicU32 = AtomicU32::new(0);
+    let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!("{}_{:x}_{:x}", prefix, rand, seq)
 }
 
 /// Hash a password using Argon2id (PHC string format).
