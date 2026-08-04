@@ -20,6 +20,13 @@
 
 ### Fixed
 
+- **Frontend double-brace sqlInt leak** — the sqlInt hardening sweep emitted
+  `{{sqlInt(limit)}}` (double braces) in audit.ts (4 sites) and settings.ts
+  (2 sites). In a template literal `{{` renders literally, so the built SQL
+  was `LIMIT {{100}}` — invalid on STDB. The type checker silently accepted
+  it. Fixed to `${sqlInt(limit)}` and added `sql-template-hygiene.test.ts`
+  which mocks fetch and asserts the actual SQL bytes sent (single-brace,
+  no `{{`). Verified the emitted statement against live STDB.
 - **STDB v2.6.1 SQL-compat + pagination repairs (API server + MCP server)** —
   exercising the MCP server against a _live_ STDB (its unit tests mock the
   HTTP client) surfaced four systemic bugs: ① MCP `_build_safe_sql` lacked the
