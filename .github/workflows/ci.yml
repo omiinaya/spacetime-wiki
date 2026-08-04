@@ -135,7 +135,8 @@ jobs:
             --ignore=tests/test_page_metadata_and_settings.py \
             --ignore=tests/test_collection_permission_search.py \
             --ignore=tests/test_collection_permission_reducers.py \
-            --ignore=tests/test_misc_reducers.py
+            --ignore=tests/test_misc_reducers.py \
+            --ignore=tests/test_mcp_live_stdb.py
 
       - name: Run MCP server unit tests
         run: |
@@ -196,6 +197,7 @@ jobs:
             tests/test_page_metadata_and_settings.py \
             tests/test_collection_permission_reducers.py \
             tests/test_collection_permission_search.py \
+            tests/test_mcp_live_stdb.py \
             --tb=short -q
 
   e2e:
