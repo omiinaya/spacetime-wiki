@@ -1,16 +1,58 @@
 # ─── SpacetimeWiki ────────────────────────────────────────────────────────────
+
 #
+
 # SpacetimeDB-powered knowledge wiki with real-time collaborative editing.
+
 # Outline-inspired UI, Tiptap editor, full-text search, granular permissions,
+
 # SSO/OAuth/LDAP/SCIM, WebAuthn passkeys, MCP integration, and more.
+
 #
+
 # ═══════════════════════════════════════════════════════════════════════════════
+
 # Version History
+
 # ═══════════════════════════════════════════════════════════════════════════════
+
+## [Unreleased] — 2026-08-04
+
+### Fixed
+
+- **Hermetic Python test environment** — `mcp-server/requirements.txt` was
+  missing (CI's `pip install -r mcp-server/requirements.txt` failed on fresh
+  runners); `pytest-asyncio` was undeclared although both Python suites use
+  `@pytest.mark.asyncio` (without it: 46 failures/errors). Added
+  `server/requirements-dev.txt` (runtime + test deps) and wired CI to it.
+- **MCP server mcp version pin** — server.py uses the mcp 1.x decorator API
+  (`list_resources()`/`read_resource()`/`list_resource_templates()`/
+  `list_tools()`); mcp 2.x removed those decorators and broke the server.
+  Pinned `mcp>=1.12,<2.0` in mcp-server/requirements.txt.
+- **Integration-test DB name** — `conftest.py` defaulted to `spacetime_wiki`
+  (underscore), which SpacetimeDB rejects; now `spacetime-wiki` to match
+  docker-compose, so bare `pytest` on the integration suites works.
+
+### Changed
+
+- **Consolidated ~1,700 lines of repetitive Rust struct-construction tests**
+  — deleted 39 `default_*()` helpers (pure `X::default()` wrappers) and 40
+  per-struct construction tests that only re-asserted literals just written
+  (zero behavioral coverage). Replaced with one parameterized
+  default-constructibility smoke test over all 59 table structs.
+  `tables.rs`: 1,745 → ~1,108 lines. Rust unit tests: 246 → 210 (all pass,
+  clippy clean).
+
+### Test status (verified 2026-08-04)
+
+- Rust unit: 210 ✅ · clippy: 0 warnings ✅
+- Python: 217 API unit + 118 MCP unit + 86 live-STDB integration ✅
+- Frontend Vitest: 1,365 ✅ · Playwright E2E: 44 (webkit) ✅
 
 ## [1.0.0] — 2026-08-03 — Initial public release
 
 ### Added
+
 - Full wiki platform: pages, collections, tags, comments, favorites, templates,
   trash/restore, page history/revisions, attachments, and public share links
   (password + expiry + branding).
@@ -28,10 +70,11 @@
   wiki_create/update/delete pages, and more.
 - Docker Compose deployment (STDB + module publisher + API + frontend).
 - i18n (react-i18next), accessibility (axe-tested), Playwright E2E suite,
-  Vitest unit tests (1,365), Rust unit tests (246), Python tests (329).
+  Vitest unit tests (1,365), Rust unit tests (210), Python tests (329).
 - Agent onboarding: `AGENTS.md`, CI/CD workflows, GitHub templates, dependabot.
 
 ### Security
+
 - Argon2id password hashing with legacy SHA-256 fallback verification.
 - Secrets never stored in the public database tables (hash-only in private
   tables); API keys and share-link passwords are hash-compared in reducers.

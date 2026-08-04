@@ -56,7 +56,7 @@ spacetime-wiki/
 │   │   ├── auth.py               # Bearer + API key auth
 │   │   └── config.py             # Env-based config
 │   ├── spacetimedb/              # Rust module — tables + reducers
-│   │   ├── src/lib.rs            # 2703 lines: tables, reducers, logic
+│   │   ├── src/lib.rs            # 2782 lines: tables, reducers, logic
 │   │   ├── src/tables.rs         # Table schemas (pages, collections, users...)
 │   │   ├── src/pages.rs          # Page CRUD reducers
 │   │   ├── src/users.rs          # User management reducers
@@ -276,7 +276,7 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | **STDB Reducers**     | 152 (72 in `lib.rs`, 80 across 17 module files)                                                                                               |
 | **STDB Tables**       | 59 (credential split: 14 private tables + secret bridges; public read-bridge pattern)                                                         |
-| **Rust Tests**        | 246 unit ✅                                                                                                                                   |
+| **Rust Tests**        | 210 unit ✅                                                                                                                                   |
 | **Python Unit Tests** | 329 (211 API server + 118 MCP server) ✅                                                                                                      |
 |                       | **Frontend Test Files**                                                                                                                       | **71** (65 component + 6 Tiptap extension test files)                                              |
 |                       | **Frontend Tests**                                                                                                                            | **1,365** ✅ (1,296 component + 69 extension/helper tests) — 0 flaky, 0 skipped, 0 soft assertions |     |
@@ -299,8 +299,8 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 
 | File                    | Lines | Purpose                                                                      |
 | ----------------------- | ----- | ---------------------------------------------------------------------------- |
-| `lib.rs`                | 2703  | Crate root, reducer functions, init, table definitions                       |
-| `tables.rs`             | 1745  | Table schemas & struct definitions                                           |
+| `lib.rs`                | 2782  | Crate root, reducer functions, init, table definitions                       |
+| `tables.rs`             | 1108  | Table schemas & struct definitions                                           |
 | `sso.rs`                | 890   | SSO/OAuth/OIDC/SAML/LDAP identity linking                                    |
 | `helpers.rs`            | 610   | Auth hashing (argon2, sha2 0.11, hmac 0.13, sha1 0.11), slug generation, IDs |
 | `read_bridge.rs`        | 477   | Private-table read bridge: `bridge_read` reducer + safe-column whitelist     |
@@ -318,7 +318,7 @@ MCP tools exposed: `wiki_search`, `wiki_read_page`, `wiki_list_collections`,
 | `favorites.rs`          | 85    | Favorite/unfavorite toggle                                                   |
 | `tags.rs`               | 72    | Tag add/remove, batch operations                                             |
 
-**Total lines of Rust:** 9,023
+**Total lines of Rust:** 8,498
 
 ## Module Map
 
