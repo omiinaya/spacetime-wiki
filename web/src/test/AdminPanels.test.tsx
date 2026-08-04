@@ -276,8 +276,8 @@ describe('AdminPanels', () => {
 
   it("calls navigate('/') when close button is clicked", () => {
     renderAdmin();
-    const closeBtn = screen.getByRole('button', { name: '' });
-    // The close button is the X icon button inside the dialog header
+    // The close button is the X icon button in the dialog header (now
+    // labelled "Close dialog" for accessibility)
     const xButtons = document.querySelectorAll('button');
     let found = false;
     xButtons.forEach((btn) => {
@@ -286,6 +286,7 @@ describe('AdminPanels', () => {
         found = true;
       }
     });
+    expect(found).toBe(true);
     // Also clicking the overlay calls navigate('/')
     expect(mockNavigate).toHaveBeenCalledWith('/');
   });

@@ -217,8 +217,12 @@ export function Sidebar(props: SidebarProps) {
             notifications={props.notificationList}
             onRefresh={props.refreshNotifications}
           />
-          <button className="md:hidden p-1" onClick={() => setSidebarOpen(false)}>
-            <X className="h-4 w-4" />
+          <button
+            className="md:hidden p-1"
+            aria-label="Close sidebar"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
       </div>

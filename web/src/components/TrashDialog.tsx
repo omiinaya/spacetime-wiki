@@ -32,8 +32,12 @@ export function TrashDialog({
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <Trash2 className="h-4 w-4 text-red-400" /> Trash
           </h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-muted">
-            <X className="h-4 w-4" />
+          <button
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="p-1 rounded hover:bg-muted"
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
         {trashLoading ? (

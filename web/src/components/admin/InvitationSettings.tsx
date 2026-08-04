@@ -188,7 +188,11 @@ export function InvitationSettings({ userId }: { userId: string | null }) {
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" /> Invite User
               </h3>
-              <button onClick={() => setInviteOpen(false)} className="p-1 rounded hover:bg-muted">
+              <button
+                onClick={() => setInviteOpen(false)}
+                aria-label="Close dialog"
+                className="p-1 rounded hover:bg-muted"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
