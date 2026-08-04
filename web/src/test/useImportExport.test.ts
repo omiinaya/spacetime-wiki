@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { showToast } from '../components/Toast';
 import { api } from '../lib/api';
 
@@ -359,13 +359,15 @@ describe('useImportExport', () => {
       result.current.handleImportMD(event);
     });
 
-    // Should be importing now - need a small delay for the microtask
-    await new Promise((r) => setTimeout(r, 50));
+    // Should be importing now - wait for the async chain to settle
+    await waitFor(() => {
+      expect(result.current.importing).toBe(true);
+    });
 
     resolveCreate?.({});
-    await new Promise((r) => setTimeout(r, 50));
-
-    expect(result.current.importing).toBe(false);
+    await waitFor(() => {
+      expect(result.current.importing).toBe(false);
+    });
   });
 
   it('handles Notion HTML import', async () => {
