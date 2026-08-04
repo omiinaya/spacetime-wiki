@@ -110,13 +110,11 @@
 - **File:** `web/vite.config.ts`
 - **Status:** ✅ DONE — `manualChunks` already includes `if (id.includes(\"node_modules/katex\")) { return \"katex\"; }` at line 40-42.
 
-### P3 — AGENTS.md is stale
+### P3 — AGENTS.md is stale ✅ DONE
 
 - **File:** `AGENTS.md`
-- **Status:** ⚠️ Known
-- **Issue:** References outdated line counts and doesn't document `collaboration.rs` module
-- **Fix:** Run codebase scan and update file stats + module map
-- **Effort:** 30 min
+- **Status:** ✅ DONE (2026-08-04) — AGENTS.md was already refreshed (2026-08-04): documents `collaboration.rs` and `read_bridge.rs`, and its stats match reality (Rust 8,498 lines / lib.rs 2,782; 210 Rust tests; 71 frontend test files / 1,365 tests; 79 E2E cases; 14 spec files). Corrected a stale lib.rs count (2703 → 2782) in section 3.
+- **Effort:** done
 
 ### P3 — Add pagination to MCP list tools ✅ DONE
 

@@ -20,6 +20,14 @@
 
 ### Fixed
 
+- **Pre-commit Python gate silently skipped** — `.husky/pre-commit` called
+  `python -m pytest`, but only `python3` exists on Debian hosts (PEP-668).
+  The `PYTHON_CHANGED` branch never actually ran. Now uses `python3`,
+  matching CI. Also fixed the lint-staged vitest invocation: it used the
+  stale ROOT vitest hoist (`node ../node_modules/.bin/vitest`) which boots
+  but cannot load jest-dom matchers (`Invalid Chai property:
+toBeInTheDocument`) — every commit touching `web/src` failed the hook.
+  Now points at web's own local binary.
 - **Hermetic Python test environment** — `mcp-server/requirements.txt` was
   missing (CI's `pip install -r mcp-server/requirements.txt` failed on fresh
   runners); `pytest-asyncio` was undeclared although both Python suites use
