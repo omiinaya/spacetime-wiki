@@ -7,7 +7,7 @@
 #
 # Environment:
 #   STDB_HOST     — default: localhost:3001
-#   STDB_DATABASE — default: spacetime-wiki
+#   STDB_DATABASE — default: spacetime-wiki-e2e
 #   API_PORT      — default: 8711
 set -euo pipefail
 
@@ -16,7 +16,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PATH="$HOME/.cargo/bin:$HOME/.local/share/spacetime/bin/2.6.1:$PATH"
 
 # ── Configuration ────────────────────────────────────────────────────────────
-DB_NAME="${STDB_DATABASE:-spacetime-wiki}"
+DB_NAME="${STDB_DATABASE:-spacetime-wiki-e2e}"
 STDB_HOST="${STDB_HOST:-localhost:3001}"
 API_PORT="${API_PORT:-8711}"
 API_PID=""

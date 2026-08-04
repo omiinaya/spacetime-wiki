@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PATH="$HOME/.cargo/bin:$HOME/.local/share/spacetime/bin/2.6.1:$PATH"
 
-DB_NAME="${STDB_DATABASE:-spacetime-wiki}"
+DB_NAME="${STDB_DATABASE:-spacetime-wiki-e2e}"
 STDB_HOST="${STDB_HOST:-localhost:3001}"
 
 echo "[e2e-cleanup] Cleaning up E2E test dependencies..."

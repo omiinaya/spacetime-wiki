@@ -8,11 +8,11 @@
  *
  * Environment variables:
  *   STDB_HOST      — default: localhost:3001
- *   STDB_DATABASE  — default: spacetime-wiki (URL-safe name, see docker-compose)
+ *   STDB_DATABASE  — default: spacetime-wiki-e2e (URL-safe name, see docker-compose)
  *   STDB_DB        — alias for STDB_DATABASE (legacy)
  *
  * The database name MUST be URL-safe — STDB 2.x rejects underscores in paths.
- * Both docker-compose and this fixture default to "spacetime-wiki".
+ * Both docker-compose and this fixture default to "spacetime-wiki-e2e". The E2E database is a dedicated test DB — the E2E lifecycle deletes it, so it must never collide with the integration-test DB "spacetime-wiki".
  *
  * IMPORTANT: In CI mode, seeding is deferred to webServer (setup-e2e-deps.sh)
  * because this globalSetup runs before webServer processes start. The
@@ -23,7 +23,7 @@
 import type { FullConfig } from '@playwright/test';
 
 const STDB_HOST = process.env.STDB_HOST || 'localhost:3001';
-const DB_NAME = process.env.STDB_DATABASE || process.env.STDB_DB || 'spacetime-wiki';
+const DB_NAME = process.env.STDB_DATABASE || process.env.STDB_DB || 'spacetime-wiki-e2e';
 
 function genId(prefix: string): string {
   const ts = Date.now();

@@ -178,6 +178,18 @@ jobs:
           # deps (pytest, pytest-asyncio) the reducer suites need.
           /tmp/stw-ci-venv/bin/pip install -r requirements-dev.txt
 
+      - name: Publish module to live STDB
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cd spacetimedb
+          cargo build --release --target=wasm32-unknown-unknown
+          # Prefer the newest wasm artifact (avoid stale .opt.wasm).
+          WASM=$(ls -t target/wasm32-unknown-unknown/release/spacetime_wiki*.wasm | head -1)
+          echo "Publishing ${WASM}"
+          # Non-destructive publish — NO --delete-data, ever. If spacetime-wiki
+          # doesn't exist it is created; if it exists the schema migrates.
+          spacetime publish -b "$WASM" --yes spacetime-wiki
+
       - name: Run reducer integration tests against live STDB
         run: |
           /tmp/stw-ci-venv/bin/python -m pytest tests/test_core_reducers.py \
@@ -200,9 +212,12 @@ jobs:
     env:
       CI: 'true'
       STDB_HOST: localhost:3001
-      STDB_DATABASE: spacetime-wiki
+      # Dedicated E2E database — the E2E setup/cleanup scripts DELETE and
+      # republish it, so it must never share a name with the DB the
+      # python-integration job runs its reducer tests against.
+      STDB_DATABASE: spacetime-wiki-e2e
       VITE_STDB_HOST: localhost:3001
-      VITE_STDB_DB: spacetime-wiki
+      VITE_STDB_DB: spacetime-wiki-e2e
       VITE_API_BASE: http://localhost:8711
 
     steps:

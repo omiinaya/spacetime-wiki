@@ -58,7 +58,7 @@ export default defineConfig({
         // Frontend: builds + serves Vite preview
         {
           command:
-            'VITE_STDB_HOST=${VITE_STDB_HOST:-localhost:3001} VITE_STDB_DB=${VITE_STDB_DB:-spacetime-wiki} VITE_API_BASE=${VITE_API_BASE:-http://localhost:8711} npm run build && npx vite preview --port 5184 --strictPort',
+            'VITE_STDB_HOST=${VITE_STDB_HOST:-localhost:3001} VITE_STDB_DB=${VITE_STDB_DB:-spacetime-wiki-e2e} VITE_API_BASE=${VITE_API_BASE:-http://localhost:8711} npm run build && npx vite preview --port 5184 --strictPort',
           port: 5184,
           timeout: 120000,
           reuseExistingServer: false,
