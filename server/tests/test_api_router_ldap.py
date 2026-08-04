@@ -11,18 +11,33 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, "api-server")
 
-from routers.ldap_auth import _map_ldap_provider, _map_user, _str, _int, _bool
+from routers.ldap_auth import _map_ldap_provider_dict, _map_user, _str, _int, _bool
 
 
 class TestLdapRowMapping:
     def test_map_ldap_provider_full(self):
-        row = [
-            "l1", "MyLDAP", "my-ldap", "ldap.example.com", 389,
-            True, "cn=admin,dc=example", "secret",
-            "dc=example,dc=com", "(uid={{username}})",
-            "uid", "mail", "cn", "member", True, True, "u1", 1000, 2000,
-        ]
-        p = _map_ldap_provider(row)
+        row = {
+            "id": "l1",
+            "name": "MyLDAP",
+            "slug": "my-ldap",
+            "host": "ldap.example.com",
+            "port": 389,
+            "is_secure": True,
+            "bind_dn": "cn=admin,dc=example",
+            "bind_password": "secret",
+            "base_dn": "dc=example,dc=com",
+            "user_filter": "(uid={{username}})",
+            "username_attribute": "uid",
+            "email_attribute": "mail",
+            "name_attribute": "cn",
+            "default_role": "member",
+            "auto_register": True,
+            "is_active": True,
+            "created_by": "u1",
+            "created_at": 1000,
+            "updated_at": 2000,
+        }
+        p = _map_ldap_provider_dict(row)
         assert p is not None
         assert p["id"] == "l1"
         assert p["name"] == "MyLDAP"
@@ -31,13 +46,15 @@ class TestLdapRowMapping:
         assert p["is_secure"] is True
         assert p["base_dn"] == "dc=example,dc=com"
         assert p["user_filter"] == "(uid={{username}})"
+        # bind_password is never echoed (secrets stay in the private table)
+        assert p["bind_password"] == ""
 
     def test_map_ldap_provider_empty(self):
-        assert _map_ldap_provider([]) is None
-        assert _map_ldap_provider(None) is None
+        assert _map_ldap_provider_dict({})["id"] == ""
+        assert _map_ldap_provider_dict(None)["id"] == ""
 
     def test_map_ldap_provider_short_row(self):
-        p = _map_ldap_provider(["l1"])
+        p = _map_ldap_provider_dict({"id": "l1"})
         assert p is not None
         assert p["id"] == "l1"
         assert p["name"] == ""

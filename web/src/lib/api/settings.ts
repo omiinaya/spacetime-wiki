@@ -20,6 +20,7 @@ import type {
   CollectionGroupPermission,
 } from './types';
 import { tableQuery, tableQueryOne, sqlQuery, callReducer, genId } from './client';
+import { bridgeQueryAll, bridgeQueryOne } from './bridge';
 import {
   mapAiConfig,
   mapAiChatSession,
@@ -332,15 +333,37 @@ export async function recordInvitationView(token: string): Promise<void> {
 }
 
 export async function getInvitations(): Promise<Invitation[]> {
-  return tableQuery('SELECT * FROM invitation', mapInvitation);
+  // invitation is PRIVATE — read through the bridge
+  const rows = await bridgeQueryAll<Record<string, unknown>>('invitation', {});
+  return rows.map(mapInvitationJson);
 }
 
 export async function getInvitation(id: string): Promise<Invitation | null> {
-  return tableQueryOne(`SELECT * FROM invitation WHERE id = '${id}'`, mapInvitation);
+  const row = await bridgeQueryOne<Record<string, unknown>>('invitation', { id });
+  return row ? mapInvitationJson(row) : null;
 }
 
 export async function getInvitationByToken(token: string): Promise<Invitation | null> {
-  return tableQueryOne(`SELECT * FROM invitation WHERE token = '${token}'`, mapInvitation);
+  const row = await bridgeQueryOne<Record<string, unknown>>('invitation', { token });
+  return row ? mapInvitationJson(row) : null;
+}
+
+function mapInvitationJson(o: Record<string, unknown>): Invitation {
+  return {
+    id: String(o.id ?? ''),
+    email: String(o.email ?? ''),
+    invited_by: String(o.invited_by ?? ''),
+    role: String(o.role ?? ''),
+    page_ids: String(o.page_ids ?? ''),
+    collection_ids: String(o.collection_ids ?? ''),
+    token: String(o.token ?? ''),
+    status: String(o.status ?? ''),
+    message: String(o.message ?? ''),
+    expires_at: Number(o.expires_at) || 0,
+    view_count: Number(o.view_count) || 0,
+    created_at: Number(o.created_at) || 0,
+    updated_at: Number(o.updated_at) || 0,
+  };
 }
 
 // ─── Watch / Toggle ───────────────────────────────────────────────────────────

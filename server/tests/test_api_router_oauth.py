@@ -91,8 +91,13 @@ class TestOAuthRouter:
         assert resp.status_code == 400
 
     def test_list_user_links(self, client):
-        with patch("routers.oauth.sql_query", new_callable=AsyncMock) as mock_sql:
-            mock_sql.side_effect = [[[1]], [["ou1", "u1", "o1", "ext1", "ext_user", "e@m.com", "", "", "", 2000, 1000, 2000, 3000]]]
+        with patch("routers.oauth.bridge_read", new_callable=AsyncMock) as mock_bridge:
+            mock_bridge.return_value = [
+                {"id": "ou1", "user_id": "u1", "provider_id": "o1",
+                 "external_id": "ext1", "external_name": "ext_user",
+                 "email": "e@m.com", "avatar_url": "", "scopes": "",
+                 "access_token": "", "created_at": 2000, "updated_at": 1000}
+            ]
             resp = client.get("/api/v1/auth/oauth/user-links/u1")
             assert resp.status_code == 200
             assert resp.json()["total"] == 1

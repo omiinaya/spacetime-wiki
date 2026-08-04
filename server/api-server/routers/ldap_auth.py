@@ -55,8 +55,9 @@ def _bool(row: list, idx: int) -> bool:
 
 # ─── LDAP Auth ────────────────────────────────────────────────────────────────
 
-def _map_ldap_provider_dict(o: dict) -> dict:
+def _map_ldap_provider_dict(o: dict | None) -> dict:
     """Map a bridged ldap_provider row (dict; bind_password never present)."""
+    o = o or {}
     return {
         "id": str(o.get("id", "")),
         "name": str(o.get("name", "")),

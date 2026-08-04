@@ -329,10 +329,19 @@ export async function deleteLdapProvider(id: string): Promise<void> {
 }
 
 export async function linkLdapUser(providerId: string): Promise<LdapUser[]> {
-  return tableQuery(
-    `SELECT * FROM ldap_user WHERE ldap_provider_id = '${providerId}'`,
-    mapLdapUser,
-  );
+  // ldap_user is PRIVATE — read through the bridge
+  const rows = await bridgeQueryAll<Record<string, unknown>>('ldap_user', {
+    ldap_provider_id: providerId,
+  });
+  return rows.map((r) => ({
+    id: String(r.id ?? ''),
+    user_id: String(r.user_id ?? ''),
+    ldap_provider_id: String(r.ldap_provider_id ?? ''),
+    dn: String(r.dn ?? ''),
+    external_id: String(r.external_id ?? ''),
+    last_synced_at: Number(r.last_synced_at) || 0,
+    created_at: Number(r.created_at) || 0,
+  }));
 }
 
 // ─── API Keys ──────────────────────────────────────────────────────────────────
