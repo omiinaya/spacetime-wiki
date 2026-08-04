@@ -423,7 +423,7 @@ export async function getNotifications(
   limit: number = 50,
 ): Promise<Notification[]> {
   return tableQuery(
-    `SELECT * FROM notification WHERE user_id = ${sqlLit(userId)} LIMIT {{sqlInt(limit)}}`,
+    `SELECT * FROM notification WHERE user_id = ${sqlLit(userId)} LIMIT ${sqlInt(limit)}`,
     mapNotification,
   );
 }
@@ -433,7 +433,7 @@ export async function getUnreadNotifications(
   limit: number = 50,
 ): Promise<Notification[]> {
   return tableQuery(
-    `SELECT * FROM notification WHERE user_id = ${sqlLit(userId)} AND is_read = false LIMIT {{sqlInt(limit)}}`,
+    `SELECT * FROM notification WHERE user_id = ${sqlLit(userId)} AND is_read = false LIMIT ${sqlInt(limit)}`,
     mapNotification,
   );
 }
