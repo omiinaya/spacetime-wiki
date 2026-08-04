@@ -3,7 +3,7 @@
 > **Generated 2026-07-10 by full codebase audit.** Every item verified against actual source. All prior roadmap claims re-checked — many were stale; this replaces them.
 
 **Repository:** https://github.com/omiinaya/spacetime-wiki
-**Tech Stack:** React 19 + TypeScript 7.0 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
+**Tech Stack:** React 19 + TypeScript 5.9 / Vite 8 / Tailwind 4 / FastAPI / SpacetimeDB 2.6 (Rust WASM)
 **Stats (verified 2026-08-04):** 59 tables, 18 Rust files (9,023 LOC), ~3,690 LOC API server, 1,715 LOC MCP server, ~170 hand-written TS/TSX files, 210 Rust unit tests ✅, 300 Python API tests ✅ (214 unit + 86 live-STDB integration) + 118 MCP server tests ✅, **1,365 frontend tests** ✅, 0 remaining `any` types ✅, 0 Rust warnings ✅, covering all 15 Tiptap extensions ✅
 
 ---

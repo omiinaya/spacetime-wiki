@@ -107,20 +107,23 @@ jobs:
 
       # actions/setup-python@v5 cannot provision prebuilt runtimes on
       # Debian-based self-hosted runners ("version '3.11' ... was not found
-      # for Debian 12"). The runner carries system Python 3.11 — use it.
-      - name: Use system Python 3.11
+      # for Debian 12"). The runner carries system Python 3.11 — use it in a
+      # venv (Debian's system pip is PEP-668 externally-managed and refuses
+      # installs into the system site-packages).
+      - name: Create venv
         run: |
           python3 --version
-          python3 -m pip --version
+          python3 -m venv /tmp/stw-ci-venv
+          /tmp/stw-ci-venv/bin/python -m pip --version
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip
+          /tmp/stw-ci-venv/bin/python -m pip install --upgrade pip
           # requirements-dev.txt pulls in both runtime requirements files
           # (api-server + mcp-server) plus the declared test deps
           # (pytest, pytest-asyncio, pytest-cov, pytest-timeout). This keeps
           # the job hermetic instead of relying on preinstalled runner packages.
-          python3 -m pip install -r requirements-dev.txt
+          /tmp/stw-ci-venv/bin/pip install -r requirements-dev.txt
 
       - name: Run API server unit tests
         run: |
@@ -128,7 +131,7 @@ jobs:
           # test_page_metadata_and_settings, test_collection_permission_*)
           # require a live STDB with the module published — they run in the
           # dedicated `python-integration` job below (self-hosted runner).
-          python3 -m pytest tests/ \
+          /tmp/stw-ci-venv/bin/python -m pytest tests/ \
             --tb=short -q \
             --ignore=tests/test_core_reducers.py \
             --ignore=tests/test_page_metadata_and_settings.py \
@@ -138,7 +141,7 @@ jobs:
 
       - name: Run MCP server unit tests
         run: |
-          cd mcp-server && python3 -m pytest tests/ --tb=short -q
+          cd mcp-server && /tmp/stw-ci-venv/bin/python -m pytest tests/ --tb=short -q
 
   python-integration:
     name: Python integration (live STDB)
@@ -159,22 +162,25 @@ jobs:
 
       # actions/setup-python@v5 cannot provision prebuilt runtimes on
       # Debian-based self-hosted runners ("version '3.11' ... was not found
-      # for Debian 12"). The runner carries system Python 3.11 — use it.
-      - name: Use system Python 3.11
+      # for Debian 12"). The runner carries system Python 3.11 — use it in a
+      # venv (Debian's system pip is PEP-668 externally-managed and refuses
+      # installs into the system site-packages).
+      - name: Create venv
         run: |
           python3 --version
-          python3 -m pip --version
+          python3 -m venv /tmp/stw-ci-venv
+          /tmp/stw-ci-venv/bin/python -m pip --version
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip
+          /tmp/stw-ci-venv/bin/python -m pip install --upgrade pip
           # requirements-dev.txt pulls in the API runtime deps plus the test
           # deps (pytest, pytest-asyncio) the reducer suites need.
-          python3 -m pip install -r requirements-dev.txt
+          /tmp/stw-ci-venv/bin/pip install -r requirements-dev.txt
 
       - name: Run reducer integration tests against live STDB
         run: |
-          python3 -m pytest tests/test_core_reducers.py \
+          /tmp/stw-ci-venv/bin/python -m pytest tests/test_core_reducers.py \
             tests/test_misc_reducers.py \
             tests/test_page_metadata_and_settings.py \
             tests/test_collection_permission_reducers.py \
