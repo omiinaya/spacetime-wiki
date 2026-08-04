@@ -40,6 +40,13 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+      # The Vite production build catches export-resolution failures that tsc
+      # misses (e.g. MISSING_EXPORT "sqlLit" from the api barrel — tsc/vitest
+      # resolved it, the build failed). Run it here so the breakage never
+      # reaches the E2E webServer step.
+      - name: Production build
+        run: npm run build
+
       - name: Lint
         run: npm run lint
 

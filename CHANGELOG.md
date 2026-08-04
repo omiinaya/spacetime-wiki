@@ -20,6 +20,13 @@
 
 ### Fixed
 
+- **Missing sqlLit/sqlInt barrel exports broke production build** — the
+  `src/lib/api/index.ts` barrel re-exports client utilities via an explicit
+  `export { ... } from './client'` but omitted `sqlLit`/`sqlInt`. Components
+  importing them from `'../lib/api'` compiled under tsc and passed vitest
+  (different resolution) but failed the Vite production build with
+  `MISSING_EXPORT "sqlLit"`. Caught by the E2E webServer build step; fixed
+  the barrel. Verified `npm run build` + E2E 21/21 pass.
 - **Remaining raw-SQL interpolation outside lib/api closed** — the sqlLit
   sweep covered `src/lib/api/*.ts` but missed direct SQL builders in
   `AccessRequestPanel.tsx` (unescaped page_id/requester_id) and
