@@ -31,11 +31,11 @@ const sampleShareLink = [
   'sl_abc123', // id
   'page_xyz789', // page_id
   'token_abc123', // token
-  '', // password_hash (empty = no password)
   'user_a1', // created_by
   0, // expires_at (0 = never)
   1000, // created_at
   5, // visit_count
+  false, // has_password
   null, // brand_title
   null, // brand_logo_url
 ];
@@ -44,11 +44,11 @@ const passwordProtectedLink = [
   'sl_secured',
   'page_secured',
   'token_secured',
-  'hashed_' + Math.random().toString(36).substring(2, 8),
   'user_a1',
   0,
   1000,
   0,
+  true, // has_password
   null,
   null,
 ];
@@ -96,7 +96,7 @@ describe('SharedPageView', () => {
 
   it('shows error when share link has expired', async () => {
     const expired = [...sampleShareLink];
-    expired[5] = 1; // expires_at = 1ms after epoch — definitely expired
+    expired[4] = 1; // expires_at = 1ms after epoch — definitely expired
     mockSqlQuery.mockResolvedValue([expired]);
     renderShared('expired_link');
     await waitFor(() => {

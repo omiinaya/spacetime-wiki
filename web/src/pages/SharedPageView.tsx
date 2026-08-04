@@ -9,11 +9,11 @@ interface ShareLinkFromQuery {
   id: string;
   page_id: string;
   token: string;
-  password_hash: string;
   created_by: string;
   expires_at: number;
   created_at: number;
   visit_count: number;
+  has_password: boolean;
   brand_title: string | null;
   brand_logo_url: string | null;
 }
@@ -25,11 +25,11 @@ function mapShareLink(row: unknown[]): ShareLinkFromQuery {
     id: String(row[0] ?? ''),
     page_id: String(row[1] ?? ''),
     token: String(row[2] ?? ''),
-    password_hash: String(row[3] ?? ''),
-    created_by: String(row[4] ?? ''),
-    expires_at: Number(row[5]) || 0,
-    created_at: Number(row[6]) || 0,
-    visit_count: Number(row[7]) || 0,
+    created_by: String(row[3] ?? ''),
+    expires_at: Number(row[4]) || 0,
+    created_at: Number(row[5]) || 0,
+    visit_count: Number(row[6]) || 0,
+    has_password: Boolean(row[7]),
     brand_title: row[8] ? String(row[8]) : null,
     brand_logo_url: row[9] ? String(row[9]) : null,
   };

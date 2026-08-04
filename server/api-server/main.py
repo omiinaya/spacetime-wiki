@@ -88,17 +88,26 @@ app = FastAPI(
     docs_url="/docs",
 )
 
-# hermes-id agent authentication (env: HERMES_AUTH_SERVER_URL / HERMES_AUTH_PROJECT / HERMES_AUTH_VERIFY)
-from hermes_id.fastapi_plugin import install_agent_auth
+# Global exception handler — logs and returns clean 500 for unhandled errors
+logger = logging.getLogger("spacetime-wiki-api")
 
-install_agent_auth(app)
+# hermes-id agent authentication (optional — enabled when HERMES_AUTH_SERVER_URL is set)
+# Env: HERMES_AUTH_SERVER_URL / HERMES_AUTH_PROJECT / HERMES_AUTH_VERIFY
+if os.environ.get("HERMES_AUTH_SERVER_URL"):
+    try:
+        from hermes_id.fastapi_plugin import install_agent_auth
+
+        install_agent_auth(app)
+    except Exception as exc:  # noqa: BLE001 — hermes-id is optional; never block app startup
+        logger.warning("hermes-id agent auth disabled (%s: %s)", type(exc).__name__, exc)
+else:
+    logger.info("hermes-id agent auth disabled (HERMES_AUTH_SERVER_URL not set)")
 
 # Rate-limit handler
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Global exception handler — logs and returns clean 500 for unhandled errors
-logger = logging.getLogger("spacetime-wiki-api")
 
 
 @app.exception_handler(Exception)

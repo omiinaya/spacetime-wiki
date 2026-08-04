@@ -1,15 +1,34 @@
 // SPDX-License-Identifier: ISC
 
 import type { Webhook, WebhookEvent } from './types';
-import { tableQuery, tableQueryOne, callReducer, genId } from './client';
-import { mapWebhook, mapWebhookEvent } from './mappers';
+import { tableQuery, callReducer, genId } from './client';
+import { bridgeQueryAll, bridgeQueryOne } from './bridge';
+import { mapWebhookEvent } from './mappers';
+
+// webhook is PRIVATE — reads go through the bridge (secret never bridged).
+
+function mapWebhookJson(o: Record<string, unknown>): Webhook {
+  return {
+    id: String(o.id ?? ''),
+    name: String(o.name ?? ''),
+    url: String(o.url ?? ''),
+    events: String(o.events ?? ''),
+    secret: String(o.secret ?? ''),
+    is_active: Boolean(o.is_active),
+    created_by: String(o.created_by ?? ''),
+    created_at: Number(o.created_at) || 0,
+    updated_at: Number(o.updated_at) || 0,
+  };
+}
 
 export async function listWebhooks(): Promise<Webhook[]> {
-  return tableQuery('SELECT * FROM webhook', mapWebhook);
+  const rows = await bridgeQueryAll<Record<string, unknown>>('webhook', {});
+  return rows.map(mapWebhookJson);
 }
 
 export async function getWebhook(id: string): Promise<Webhook | null> {
-  return tableQueryOne(`SELECT * FROM webhook WHERE id = '${id}'`, mapWebhook);
+  const row = await bridgeQueryOne<Record<string, unknown>>('webhook', { id });
+  return row ? mapWebhookJson(row) : null;
 }
 
 export async function createWebhook(

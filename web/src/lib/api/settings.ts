@@ -72,7 +72,9 @@ export async function setAiConfig(key: string, value: string): Promise<void> {
 // no secrets in these tables).
 
 export async function getAiChatSessions(userId: string): Promise<AiChatSession[]> {
-  const rows = await bridgeQueryAll<Record<string, unknown>>('ai_chat_session', { user_id: userId });
+  const rows = await bridgeQueryAll<Record<string, unknown>>('ai_chat_session', {
+    user_id: userId,
+  });
   return rows.map((r) => ({
     id: String(r.id ?? ''),
     user_id: String(r.user_id ?? ''),
@@ -112,7 +114,9 @@ export async function deleteAiChatSession(id: string): Promise<void> {
 // ─── AI Chat Messages ─────────────────────────────────────────────────────────
 
 export async function getAiChatMessages(sessionId: string): Promise<AiChatMessage[]> {
-  const rows = await bridgeQueryAll<Record<string, unknown>>('ai_chat_message', { session_id: sessionId });
+  const rows = await bridgeQueryAll<Record<string, unknown>>('ai_chat_message', {
+    session_id: sessionId,
+  });
   return rows.map((r) => ({
     id: String(r.id ?? ''),
     session_id: String(r.session_id ?? ''),

@@ -17,6 +17,11 @@ const __mockApi = vi.hoisted(() => ({
 
 vi.mock('../../lib/api', () => ({ api: __mockApi }));
 
+const mockFetchOidcClientSecret = vi.hoisted(() => vi.fn().mockResolvedValue(''));
+vi.mock('../../lib/api/bridge', () => ({
+  fetchOidcClientSecret: mockFetchOidcClientSecret,
+}));
+
 const mockCallReducer = vi.hoisted(() => vi.fn());
 vi.mock('../../lib/helpers', () => ({
   callReducerLocal: mockCallReducer,

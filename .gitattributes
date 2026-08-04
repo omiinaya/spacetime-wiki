@@ -1,0 +1,37 @@
+# Text files — normalize line endings to LF
+* text=auto
+
+# Source
+*.py    text diff=python
+*.rs    text diff=rust
+*.ts    text diff=ts
+*.tsx   text diff=ts
+*.js    text
+*.jsx   text
+*.css   text
+*.scss  text
+*.json  text
+*.md    text
+*.yml   text
+*.yaml  text
+*.toml  text
+*.sh    text eol=lf
+
+# Binaries
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+
+# License files — keep LF
+LICENSE text eol=lf
+
+# Diff drivers
+*.py    diff=python
+*.rs    diff=rust

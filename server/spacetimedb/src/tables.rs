@@ -7,7 +7,7 @@ use spacetimedb::*;
 
 /// Records administrative and security events in the wiki.
 /// Used for audit trails — tracks who did what and when.
-#[table(accessor = audit_event)]
+#[table(accessor = audit_event, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct AuditEvent {
@@ -57,7 +57,7 @@ pub struct GroupMember {
     pub created_at: u64,
 }
 
-#[table(accessor = collection_group_permission)]
+#[table(accessor = collection_group_permission, public)]
 #[derive(Debug, Clone)]
 /// Permissions granted to a group for a specific collection.
 #[cfg_attr(test, derive(Default))]
@@ -83,11 +83,21 @@ pub struct User {
     pub name: String,
     #[index(btree)]
     pub email: String,
-    pub password_hash: String,
     pub role: String,
     pub avatar_url: String,
     pub created_at: u64,
     pub updated_at: u64,
+}
+
+/// Password credentials for a user — PRIVATE table so the password hash is
+/// never SQL-queryable. Reducers (register_user, login_user) access it directly.
+#[table(accessor = user_credential)]
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct UserCredential {
+    #[primary_key]
+    pub user_id: String,
+    pub password_hash: String,
 }
 
 // ─── Collections ─────────────────────────────────────────────────────────────
@@ -115,7 +125,7 @@ pub struct Collection {
 }
 
 /// Membership linking a user to a collection with a specific role.
-#[table(accessor = collection_member)]
+#[table(accessor = collection_member, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct CollectionMember {
@@ -241,7 +251,7 @@ pub struct PageTag {
 
 // ─── Favorites ───────────────────────────────────────────────────────────────
 
-#[table(accessor = favorite)]
+#[table(accessor = favorite, public)]
 #[derive(Debug, Clone)]
 /// A bookmarked/favorited page for a user.
 #[cfg_attr(test, derive(Default))]
@@ -257,7 +267,7 @@ pub struct Favorite {
 
 // ─── Comment Reactions ───────────────────────────────────────────────────────
 
-#[table(accessor = comment_reaction)]
+#[table(accessor = comment_reaction, public)]
 #[derive(Debug, Clone)]
 /// An emoji reaction on a comment.
 #[cfg_attr(test, derive(Default))]
@@ -284,13 +294,23 @@ pub struct ShareLink {
     pub page_id: String,
     #[index(btree)]
     pub token: String,
-    pub password_hash: String,
     pub created_by: String,
     pub expires_at: u64,
     pub created_at: u64,
     pub visit_count: u32,
+    pub has_password: bool,
     pub brand_title: Option<String>,
     pub brand_logo_url: Option<String>,
+}
+
+/// Share link password hash — PRIVATE table so hashes are never SQL-queryable.
+#[table(accessor = share_link_credential)]
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct ShareLinkCredential {
+    #[primary_key]
+    pub share_link_id: String,
+    pub password_hash: String,
 }
 
 // ─── Page Permissions ────────────────────────────────────────────────────────
@@ -322,7 +342,6 @@ pub struct ApiKey {
     #[index(btree)]
     pub user_id: String,
     pub name: String,
-    pub key_hash: String,
     pub key_prefix: String,
     pub last_used_at: u64,
     pub created_at: u64,
@@ -330,12 +349,23 @@ pub struct ApiKey {
     pub is_revoked: bool,
 }
 
+/// API key hash — PRIVATE table so key hashes are never SQL-queryable.
+#[table(accessor = api_key_credential)]
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct ApiKeyCredential {
+    #[primary_key]
+    pub api_key_id: String,
+    pub key_hash: String,
+}
+
 // ─── Webhooks ────────────────────────────────────────────────────────────────
 
 #[table(accessor = webhook)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 /// A configured webhook that fires on wiki events.
 #[cfg_attr(test, derive(Default))]
+
 pub struct Webhook {
     #[primary_key]
     pub id: String,
@@ -349,7 +379,7 @@ pub struct Webhook {
     pub updated_at: u64,
 }
 
-#[table(accessor = webhook_event)]
+#[table(accessor = webhook_event, public)]
 #[derive(Debug, Clone)]
 /// A single webhook delivery attempt.
 #[cfg_attr(test, derive(Default))]
@@ -371,7 +401,7 @@ pub struct WebhookEvent {
 
 // ─── Collection Sort Rules ───────────────────────────────────────────────────
 
-#[table(accessor = collection_sort_rule)]
+#[table(accessor = collection_sort_rule, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct CollectionSortRule {
@@ -386,7 +416,7 @@ pub struct CollectionSortRule {
 
 // ─── Search Results ──────────────────────────────────────────────────────────
 
-#[table(accessor = search_result)]
+#[table(accessor = search_result, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct SearchResult {
@@ -404,8 +434,9 @@ pub struct SearchResult {
 // ─── SAML Providers ──────────────────────────────────────────────────────────
 
 #[table(accessor = saml_provider)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[cfg_attr(test, derive(Default))]
+
 pub struct SamlProvider {
     #[primary_key]
     pub id: String,
@@ -426,7 +457,7 @@ pub struct SamlProvider {
 // ─── OIDC Providers ──────────────────────────────────────────────────────────
 
 #[table(accessor = oidc_provider)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[cfg_attr(test, derive(Default))]
 pub struct OidcProvider {
     #[primary_key]
@@ -446,8 +477,9 @@ pub struct OidcProvider {
 // ─── LDAP Providers ────────────────────────────────────────────────���─────────
 
 #[table(accessor = ldap_provider)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[cfg_attr(test, derive(Default))]
+
 pub struct LdapProvider {
     #[primary_key]
     pub id: String,
@@ -472,8 +504,9 @@ pub struct LdapProvider {
 }
 
 #[table(accessor = ldap_user)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[cfg_attr(test, derive(Default))]
+
 pub struct LdapUser {
     #[primary_key]
     pub id: String,
@@ -489,7 +522,7 @@ pub struct LdapUser {
 
 // ─── Page Views ──────────────────────────────────────────────────────────────
 
-#[table(accessor = page_view)]
+#[table(accessor = page_view, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct PageView {
@@ -504,7 +537,7 @@ pub struct PageView {
 
 // ─── App Settings ────────────────────────────────────────────────────────────
 
-#[table(accessor = app_setting)]
+#[table(accessor = app_setting, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct AppSetting {
@@ -516,7 +549,7 @@ pub struct AppSetting {
 
 // ─── Collab (Yjs) ────────────────────────────────────────────────────────────
 
-#[table(accessor = collab_update)]
+#[table(accessor = collab_update, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct CollabUpdate {
@@ -529,7 +562,7 @@ pub struct CollabUpdate {
     pub created_at: u64,
 }
 
-#[table(accessor = collab_session)]
+#[table(accessor = collab_session, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct CollabSession {
@@ -547,7 +580,7 @@ pub struct CollabSession {
 
 // ─── AI ──────────────────────────────────────────────────────────────────────
 
-#[table(accessor = ai_config)]
+#[table(accessor = ai_config, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct AiConfig {
@@ -557,8 +590,8 @@ pub struct AiConfig {
     pub updated_at: u64,
 }
 
-#[table(accessor = ai_chat_session)]
-#[derive(Debug, Clone)]
+#[table(accessor = ai_chat_session, public)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[cfg_attr(test, derive(Default))]
 pub struct AiChatSession {
     #[primary_key]
@@ -570,8 +603,8 @@ pub struct AiChatSession {
     pub updated_at: u64,
 }
 
-#[table(accessor = ai_chat_message)]
-#[derive(Debug, Clone)]
+#[table(accessor = ai_chat_message, public)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[cfg_attr(test, derive(Default))]
 pub struct AiChatMessage {
     #[primary_key]
@@ -593,7 +626,6 @@ pub struct ScimProvider {
     pub id: String,
     pub name: String,
     pub slug: String,
-    pub api_token_hash: String,
     pub is_active: bool,
     pub default_role: String,
     pub auto_register: bool,
@@ -604,7 +636,17 @@ pub struct ScimProvider {
     pub updated_at: u64,
 }
 
-#[table(accessor = scim_event)]
+/// SCIM provider API token hash — PRIVATE table so tokens are never SQL-queryable.
+#[table(accessor = scim_provider_credential)]
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct ScimProviderCredential {
+    #[primary_key]
+    pub scim_provider_id: String,
+    pub api_token_hash: String,
+}
+
+#[table(accessor = scim_event, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct ScimEvent {
@@ -654,7 +696,7 @@ pub struct PasskeyChallenge {
 
 // ─── Database (inline tables in pages) ───────────────────────────────────────
 
-#[table(accessor = db_base)]
+#[table(accessor = db_base, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct DbBase {
@@ -669,7 +711,7 @@ pub struct DbBase {
     pub updated_at: u64,
 }
 
-#[table(accessor = db_column)]
+#[table(accessor = db_column, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct DbColumn {
@@ -685,7 +727,7 @@ pub struct DbColumn {
     pub updated_at: u64,
 }
 
-#[table(accessor = db_row)]
+#[table(accessor = db_row, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct DbRow {
@@ -699,7 +741,7 @@ pub struct DbRow {
     pub updated_at: u64,
 }
 
-#[table(accessor = db_cell)]
+#[table(accessor = db_cell, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct DbCell {
@@ -717,9 +759,10 @@ pub struct DbCell {
 // ─── Invitations ─────────────────────────────────────────────────────────────
 
 #[table(accessor = invitation)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 /// An email invitation to join the wiki.
 #[cfg_attr(test, derive(Default))]
+
 pub struct Invitation {
     #[primary_key]
     pub id: String,
@@ -741,7 +784,7 @@ pub struct Invitation {
 
 // ─── Synced Blocks ───────────────────────────────────────────────────────────
 
-#[table(accessor = synced_block)]
+#[table(accessor = synced_block, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct SyncedBlock {
@@ -755,7 +798,7 @@ pub struct SyncedBlock {
     pub updated_by: String,
 }
 
-#[table(accessor = synced_block_ref)]
+#[table(accessor = synced_block_ref, public)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct SyncedBlockRef {
@@ -772,7 +815,7 @@ pub struct SyncedBlockRef {
 // ─── MFA ─────────────────────────────────────────────────────────────────────
 
 #[table(accessor = mfa_method)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[cfg_attr(test, derive(Default))]
 pub struct MfaMethod {
     #[primary_key]
@@ -787,7 +830,7 @@ pub struct MfaMethod {
 }
 
 #[table(accessor = mfa_backup_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[cfg_attr(test, derive(Default))]
 pub struct MfaBackupCode {
     #[primary_key]
@@ -801,8 +844,8 @@ pub struct MfaBackupCode {
 
 // ─── Watch / Notifications ───────────────────────────────────────────────────
 
-#[table(accessor = watch)]
-#[derive(Debug, Clone)]
+#[table(accessor = watch, public)]
+#[derive(Debug, Clone, serde::Serialize)]
 /// A user subscription to notifications for a page or collection.
 #[cfg_attr(test, derive(Default))]
 pub struct Watch {
@@ -816,8 +859,8 @@ pub struct Watch {
     pub created_at: u64,
 }
 
-#[table(accessor = notification)]
-#[derive(Debug, Clone)]
+#[table(accessor = notification, public)]
+#[derive(Debug, Clone, serde::Serialize)]
 /// A notification event sent to a user.
 #[cfg_attr(test, derive(Default))]
 pub struct Notification {
@@ -838,8 +881,8 @@ pub struct Notification {
 
 // ─── Access Requests ─────────────────────────────────────────────────────────
 
-#[table(accessor = access_request)]
-#[derive(Debug, Clone)]
+#[table(accessor = access_request, public)]
+#[derive(Debug, Clone, serde::Serialize)]
 /// A user request to access a restricted page.
 #[cfg_attr(test, derive(Default))]
 pub struct AccessRequest {
@@ -872,7 +915,6 @@ pub struct OauthProvider {
     pub scope: String,
     #[index(btree)]
     pub client_id: String,
-    pub client_secret: String,
     pub icon: String,
     pub is_active: bool,
     pub auto_register: bool,
@@ -882,9 +924,75 @@ pub struct OauthProvider {
     pub updated_at: u64,
 }
 
-#[table(accessor = oauth_user)]
+/// OAuth provider client secret — PRIVATE table so secrets are never
+/// SQL-queryable.
+#[table(accessor = oauth_provider_credential)]
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Default))]
+pub struct OauthProviderCredential {
+    #[primary_key]
+    pub oauth_provider_id: String,
+    pub client_secret: String,
+}
+
+/// Transient bridge for the Python API server to fetch a client secret.
+#[table(accessor = oauth_secret_bridge, public)]
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct OauthSecretBridge {
+    #[primary_key]
+    pub request_id: String,
+    pub oauth_provider_id: String,
+    pub client_secret: String,
+    pub created_at: u64,
+}
+
+/// Generic read bridge for PRIVATE tables (frontend reads).
+#[table(accessor = read_bridge, public)]
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct ReadBridge {
+    #[primary_key]
+    pub request_id: String,
+    pub source_table: String,
+    pub row_json: String,
+    pub created_at: u64,
+}
+
+/// Transient bridge for the frontend OIDC callback to fetch a client secret.
+/// Mirrors oauth_secret_bridge: the secret is written here ONLY on demand
+/// (get_oidc_provider_secret) keyed by a random request_id and cleared after
+/// the callback exchange. Without the request_id the row is unreachable.
+#[table(accessor = oidc_secret_bridge, public)]
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct OidcSecretBridge {
+    #[primary_key]
+    pub request_id: String,
+    pub oidc_provider_id: String,
+    pub client_secret: String,
+    pub created_at: u64,
+}
+
+/// Transient bridge for the Python API server LDAP flow to fetch a bind
+/// password. Mirrors oauth_secret_bridge: written ONLY on demand
+/// (get_ldap_bind_secret) keyed by a random request_id and cleared after
+/// use. Without the request_id the row is unreachable.
+#[table(accessor = ldap_bind_bridge, public)]
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct LdapBindBridge {
+    #[primary_key]
+    pub request_id: String,
+    pub ldap_provider_id: String,
+    pub bind_password: String,
+    pub created_at: u64,
+}
+
+#[table(accessor = oauth_user)]
+#[derive(Debug, Clone, serde::Serialize)]
+#[cfg_attr(test, derive(Default))]
+
 pub struct OauthUser {
     #[primary_key]
     pub id: String,
@@ -910,45 +1018,198 @@ pub struct OauthUser {
 /// override only the fields they care about via `..default_*()`.
 
 // We define each helper individually so IDE go-to-definition works.
-#[cfg(test)] fn default_group() -> Group { Group::default() }
-#[cfg(test)] fn default_collection() -> Collection { Collection::default() }
-#[cfg(test)] fn default_page() -> Page { Page::default() }
-#[cfg(test)] fn default_page_revision() -> PageRevision { PageRevision::default() }
-#[cfg(test)] fn default_comment() -> Comment { Comment::default() }
-#[cfg(test)] fn default_attachment() -> Attachment { Attachment::default() }
-#[cfg(test)] fn default_page_tag() -> PageTag { PageTag::default() }
-#[cfg(test)] fn default_favorite() -> Favorite { Favorite::default() }
-#[cfg(test)] fn default_share_link() -> ShareLink { ShareLink::default() }
-#[cfg(test)] fn default_page_permission() -> PagePermission { PagePermission::default() }
-#[cfg(test)] fn default_api_key() -> ApiKey { ApiKey::default() }
-#[cfg(test)] fn default_webhook() -> Webhook { Webhook::default() }
-#[cfg(test)] fn default_webhook_event() -> WebhookEvent { WebhookEvent::default() }
-#[cfg(test)] fn default_collection_sort_rule() -> CollectionSortRule { CollectionSortRule::default() }
-#[cfg(test)] fn default_search_result() -> SearchResult { SearchResult::default() }
-#[cfg(test)] fn default_saml_provider() -> SamlProvider { SamlProvider::default() }
-#[cfg(test)] fn default_oidc_provider() -> OidcProvider { OidcProvider::default() }
-#[cfg(test)] fn default_ldap_provider() -> LdapProvider { LdapProvider::default() }
-#[cfg(test)] fn default_ldap_user() -> LdapUser { LdapUser::default() }
-#[cfg(test)] fn default_page_view() -> PageView { PageView::default() }
-#[cfg(test)] fn default_app_setting() -> AppSetting { AppSetting::default() }
-#[cfg(test)] fn default_collab_update() -> CollabUpdate { CollabUpdate::default() }
-#[cfg(test)] fn default_collab_session() -> CollabSession { CollabSession::default() }
-#[cfg(test)] fn default_ai_config() -> AiConfig { AiConfig::default() }
-#[cfg(test)] fn default_ai_chat_message() -> AiChatMessage { AiChatMessage::default() }
-#[cfg(test)] fn default_scim_provider() -> ScimProvider { ScimProvider::default() }
-#[cfg(test)] fn default_passkey_credential() -> PasskeyCredential { PasskeyCredential::default() }
-#[cfg(test)] fn default_passkey_challenge() -> PasskeyChallenge { PasskeyChallenge::default() }
-#[cfg(test)] fn default_db_base() -> DbBase { DbBase::default() }
-#[cfg(test)] fn default_db_column() -> DbColumn { DbColumn::default() }
-#[cfg(test)] fn default_db_cell() -> DbCell { DbCell::default() }
-#[cfg(test)] fn default_invitation() -> Invitation { Invitation::default() }
-#[cfg(test)] fn default_synced_block() -> SyncedBlock { SyncedBlock::default() }
-#[cfg(test)] fn default_mfa_method() -> MfaMethod { MfaMethod::default() }
-#[cfg(test)] fn default_watch() -> Watch { Watch::default() }
-#[cfg(test)] fn default_notification() -> Notification { Notification::default() }
-#[cfg(test)] fn default_access_request() -> AccessRequest { AccessRequest::default() }
-#[cfg(test)] fn default_oauth_provider() -> OauthProvider { OauthProvider::default() }
-#[cfg(test)] fn default_oauth_user() -> OauthUser { OauthUser::default() }
+#[cfg(test)]
+fn default_group() -> Group {
+    Group::default()
+}
+#[cfg(test)]
+fn default_collection() -> Collection {
+    Collection::default()
+}
+#[cfg(test)]
+fn default_page() -> Page {
+    Page::default()
+}
+#[cfg(test)]
+fn default_page_revision() -> PageRevision {
+    PageRevision::default()
+}
+#[cfg(test)]
+fn default_comment() -> Comment {
+    Comment::default()
+}
+#[cfg(test)]
+fn default_attachment() -> Attachment {
+    Attachment::default()
+}
+#[cfg(test)]
+fn default_page_tag() -> PageTag {
+    PageTag::default()
+}
+#[cfg(test)]
+fn default_favorite() -> Favorite {
+    Favorite::default()
+}
+#[cfg(test)]
+fn default_share_link() -> ShareLink {
+    ShareLink::default()
+}
+#[cfg(test)]
+fn default_page_permission() -> PagePermission {
+    PagePermission::default()
+}
+#[cfg(test)]
+fn default_api_key() -> ApiKey {
+    ApiKey::default()
+}
+#[cfg(test)]
+fn default_webhook() -> Webhook {
+    Webhook::default()
+}
+#[cfg(test)]
+fn default_webhook_event() -> WebhookEvent {
+    WebhookEvent::default()
+}
+#[cfg(test)]
+fn default_collection_sort_rule() -> CollectionSortRule {
+    CollectionSortRule::default()
+}
+#[cfg(test)]
+fn default_search_result() -> SearchResult {
+    SearchResult::default()
+}
+#[cfg(test)]
+fn default_saml_provider() -> SamlProvider {
+    SamlProvider::default()
+}
+#[cfg(test)]
+fn default_oidc_provider() -> OidcProvider {
+    OidcProvider::default()
+}
+#[cfg(test)]
+fn default_ldap_provider() -> LdapProvider {
+    LdapProvider::default()
+}
+#[cfg(test)]
+fn default_ldap_user() -> LdapUser {
+    LdapUser::default()
+}
+#[cfg(test)]
+fn default_page_view() -> PageView {
+    PageView::default()
+}
+#[cfg(test)]
+fn default_app_setting() -> AppSetting {
+    AppSetting::default()
+}
+#[cfg(test)]
+fn default_collab_update() -> CollabUpdate {
+    CollabUpdate::default()
+}
+#[cfg(test)]
+fn default_collab_session() -> CollabSession {
+    CollabSession::default()
+}
+#[cfg(test)]
+fn default_ai_config() -> AiConfig {
+    AiConfig::default()
+}
+#[cfg(test)]
+fn default_ai_chat_message() -> AiChatMessage {
+    AiChatMessage::default()
+}
+#[cfg(test)]
+fn default_scim_provider() -> ScimProvider {
+    ScimProvider::default()
+}
+#[cfg(test)]
+fn default_passkey_credential() -> PasskeyCredential {
+    PasskeyCredential::default()
+}
+#[cfg(test)]
+fn default_passkey_challenge() -> PasskeyChallenge {
+    PasskeyChallenge::default()
+}
+#[cfg(test)]
+fn default_db_base() -> DbBase {
+    DbBase::default()
+}
+#[cfg(test)]
+fn default_db_column() -> DbColumn {
+    DbColumn::default()
+}
+#[cfg(test)]
+fn default_db_cell() -> DbCell {
+    DbCell::default()
+}
+#[cfg(test)]
+fn default_invitation() -> Invitation {
+    Invitation::default()
+}
+#[cfg(test)]
+fn default_synced_block() -> SyncedBlock {
+    SyncedBlock::default()
+}
+#[cfg(test)]
+fn default_mfa_method() -> MfaMethod {
+    MfaMethod::default()
+}
+#[cfg(test)]
+fn default_watch() -> Watch {
+    Watch::default()
+}
+#[cfg(test)]
+fn default_notification() -> Notification {
+    Notification::default()
+}
+#[cfg(test)]
+fn default_access_request() -> AccessRequest {
+    AccessRequest::default()
+}
+#[cfg(test)]
+fn default_oauth_provider() -> OauthProvider {
+    OauthProvider::default()
+}
+#[cfg(test)]
+fn default_oauth_user() -> OauthUser {
+    OauthUser::default()
+}
+#[cfg(test)]
+fn default_user_credential() -> UserCredential {
+    UserCredential::default()
+}
+#[cfg(test)]
+fn default_api_key_credential() -> ApiKeyCredential {
+    ApiKeyCredential::default()
+}
+#[cfg(test)]
+fn default_share_link_credential() -> ShareLinkCredential {
+    ShareLinkCredential::default()
+}
+#[cfg(test)]
+fn default_scim_provider_credential() -> ScimProviderCredential {
+    ScimProviderCredential::default()
+}
+#[cfg(test)]
+fn default_oauth_provider_credential() -> OauthProviderCredential {
+    OauthProviderCredential::default()
+}
+#[cfg(test)]
+fn default_oauth_secret_bridge() -> OauthSecretBridge {
+    OauthSecretBridge::default()
+}
+#[cfg(test)]
+fn default_oidc_secret_bridge() -> OidcSecretBridge {
+    OidcSecretBridge::default()
+}
+#[cfg(test)]
+fn default_ldap_bind_bridge() -> LdapBindBridge {
+    LdapBindBridge::default()
+}
+#[cfg(test)]
+fn default_read_bridge() -> ReadBridge {
+    ReadBridge::default()
+}
 
 #[cfg(test)]
 mod tests {
@@ -1130,7 +1391,6 @@ mod tests {
         let key = ApiKey {
             user_id: "u_1".into(),
             name: "CI Token".into(),
-            key_hash: "sha256hash".into(),
             key_prefix: "sw_".into(),
             is_revoked: false,
             ..default_api_key()

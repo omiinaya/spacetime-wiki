@@ -74,3 +74,33 @@ export async function bridgeQueryAll<T>(
     })
     .filter((x): x is T => x !== null);
 }
+
+/**
+ * Fetch an OIDC provider's client secret via the transient
+ * get_oidc_provider_secret reducer bridge (oidc_provider is PRIVATE; the
+ * secret is never SQL-queryable). The secret is written to the public
+ * oidc_secret_bridge keyed by a random request_id, read back here, then
+ * cleared. Returns '' if the provider is secretless (PKCE flow).
+ */
+export async function fetchOidcClientSecret(providerId: string): Promise<string> {
+  const requestId = `oidc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  try {
+    await callReducer('get_oidc_provider_secret', [providerId, requestId]);
+  } catch {
+    // Provider has no secret configured (PKCE-only) — fine
+    return '';
+  }
+  try {
+    const rows = (await sqlQuery(
+      `SELECT * FROM oidc_secret_bridge WHERE request_id = '${requestId.replace(/'/g, "''")}'`,
+    )) as unknown[][];
+    if (rows.length === 0) return '';
+    return String(rows[0][2] ?? '');
+  } finally {
+    try {
+      await callReducer('clear_oidc_secret_bridge', [requestId]);
+    } catch {
+      // best-effort cleanup
+    }
+  }
+}

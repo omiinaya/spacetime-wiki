@@ -62,6 +62,24 @@ function mapOidcProviderJson(o: Record<string, unknown>): OidcProvider {
   };
 }
 
+function mapSamlProviderJson(o: Record<string, unknown>): SamlProvider {
+  return {
+    id: String(o.id ?? ''),
+    name: String(o.name ?? ''),
+    slug: String(o.slug ?? ''),
+    entity_id: String(o.entity_id ?? ''),
+    sso_url: String(o.sso_url ?? ''),
+    certificate: String(o.certificate ?? ''),
+    name_id_format: String(o.name_id_format ?? ''),
+    attribute_mapping: String(o.attribute_mapping ?? ''),
+    auto_register: Boolean(o.auto_register),
+    is_active: Boolean(o.is_active),
+    created_by: String(o.created_by ?? ''),
+    created_at: Number(o.created_at) || 0,
+    updated_at: Number(o.updated_at) || 0,
+  };
+}
+
 export async function addOidcProvider(
   name: string,
   slug: string,
@@ -113,15 +131,18 @@ export async function deleteOidcProvider(id: string): Promise<void> {
 // ─── SAML Providers ─────────────────────────���──────────────────────────────────
 
 export async function getSamlProviders(): Promise<SamlProvider[]> {
-  return tableQuery('SELECT * FROM saml_provider', mapSamlProvider);
+  const rows = await bridgeQueryAll<Record<string, unknown>>('saml_provider', {});
+  return rows.map(mapSamlProviderJson);
 }
 
 export async function getSamlProvider(id: string): Promise<SamlProvider | null> {
-  return tableQueryOne(`SELECT * FROM saml_provider WHERE id = '${id}'`, mapSamlProvider);
+  const row = await bridgeQueryOne<Record<string, unknown>>('saml_provider', { id });
+  return row ? mapSamlProviderJson(row) : null;
 }
 
 export async function listActiveSamlProviders(): Promise<SamlProvider[]> {
-  return tableQuery('SELECT * FROM saml_provider WHERE is_active = true', mapSamlProvider);
+  const rows = await bridgeQueryAll<Record<string, unknown>>('saml_provider', { is_active: true });
+  return rows.map(mapSamlProviderJson);
 }
 
 export async function addSamlProvider(
@@ -181,17 +202,46 @@ export async function deleteSamlProvider(id: string): Promise<void> {
 }
 
 // ─── LDAP Providers ────────────────────────────────────────────────────────────
+// ldap_provider is PRIVATE — reads go through the bridge (bind_password never
+// bridged).
+
+function mapLdapProviderJson(o: Record<string, unknown>): LdapProvider {
+  return {
+    id: String(o.id ?? ''),
+    name: String(o.name ?? ''),
+    slug: String(o.slug ?? ''),
+    host: String(o.host ?? ''),
+    port: Number(o.port) || 0,
+    is_secure: Boolean(o.is_secure),
+    bind_dn: String(o.bind_dn ?? ''),
+    bind_password: String(o.bind_password ?? ''),
+    base_dn: String(o.base_dn ?? ''),
+    user_filter: String(o.user_filter ?? ''),
+    username_attribute: String(o.username_attribute ?? ''),
+    email_attribute: String(o.email_attribute ?? ''),
+    name_attribute: String(o.name_attribute ?? ''),
+    default_role: String(o.default_role ?? ''),
+    auto_register: Boolean(o.auto_register),
+    is_active: Boolean(o.is_active),
+    created_by: String(o.created_by ?? ''),
+    created_at: Number(o.created_at) || 0,
+    updated_at: Number(o.updated_at) || 0,
+  };
+}
 
 export async function getLdapProviders(): Promise<LdapProvider[]> {
-  return tableQuery('SELECT * FROM ldap_provider', mapLdapProvider);
+  const rows = await bridgeQueryAll<Record<string, unknown>>('ldap_provider', {});
+  return rows.map(mapLdapProviderJson);
 }
 
 export async function listActiveLdapProviders(): Promise<LdapProvider[]> {
-  return tableQuery('SELECT * FROM ldap_provider WHERE is_active = true', mapLdapProvider);
+  const rows = await bridgeQueryAll<Record<string, unknown>>('ldap_provider', { is_active: true });
+  return rows.map(mapLdapProviderJson);
 }
 
 export async function getLdapProvider(id: string): Promise<LdapProvider | null> {
-  return tableQueryOne(`SELECT * FROM ldap_provider WHERE id = '${id}'`, mapLdapProvider);
+  const row = await bridgeQueryOne<Record<string, unknown>>('ldap_provider', { id });
+  return row ? mapLdapProviderJson(row) : null;
 }
 
 export async function addLdapProvider(
@@ -405,7 +455,9 @@ export async function getMfaMethod(userId: string): Promise<MfaMethod | null> {
 
 export async function getMfaBackupCodes(userId: string): Promise<MfaBackupCode[]> {
   // mfa_backup_code is PRIVATE — read through the bridge (code_hash never bridged)
-  const rows = await bridgeQueryAll<Record<string, unknown>>('mfa_backup_code', { user_id: userId });
+  const rows = await bridgeQueryAll<Record<string, unknown>>('mfa_backup_code', {
+    user_id: userId,
+  });
   return rows.map((r) => ({
     id: String(r.id ?? ''),
     user_id: String(r.user_id ?? ''),

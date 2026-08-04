@@ -72,6 +72,85 @@ fn safe_json(table: &str, row_json: &str) -> Option<String> {
             "status",
             "created_at",
         ],
+        "oauth_user" => &[
+            "id",
+            "user_id",
+            "provider_id",
+            "external_id",
+            "external_username",
+            "external_email",
+            "last_synced_at",
+            "created_at",
+            "updated_at",
+        ],
+        "ldap_provider" => &[
+            "id",
+            "name",
+            "slug",
+            "host",
+            "port",
+            "is_secure",
+            "bind_dn",
+            "base_dn",
+            "user_filter",
+            "username_attribute",
+            "email_attribute",
+            "name_attribute",
+            "default_role",
+            "auto_register",
+            "is_active",
+            "created_by",
+            "created_at",
+            "updated_at",
+        ],
+        "saml_provider" => &[
+            "id",
+            "name",
+            "slug",
+            "entity_id",
+            "sso_url",
+            "name_id_format",
+            "attribute_mapping",
+            "auto_register",
+            "is_active",
+            "created_by",
+            "created_at",
+            "updated_at",
+        ],
+        "ldap_user" => &[
+            "id",
+            "user_id",
+            "ldap_provider_id",
+            "dn",
+            "external_id",
+            "last_synced_at",
+            "created_at",
+        ],
+        "webhook" => &[
+            "id",
+            "name",
+            "url",
+            "events",
+            "is_active",
+            "created_by",
+            "created_at",
+            "updated_at",
+        ],
+        "invitation" => &[
+            "id",
+            "email",
+            "invited_by",
+            "role",
+            "page_ids",
+            "collection_ids",
+            "token",
+            "status",
+            "message",
+            "expires_at",
+            "view_count",
+            "created_at",
+            "updated_at",
+        ],
         _ => return None,
     };
     let mut out = serde_json::Map::new();
@@ -266,6 +345,107 @@ pub fn bridge_read(
                         ctx.db.read_bridge().insert(ReadBridge {
                             request_id: request_id.clone(),
                             source_table: "access_request".into(),
+                            row_json: json,
+                            created_at: now,
+                        });
+                    }
+                }
+            }
+        }
+        "oauth_user" => {
+            for row in ctx.db.oauth_user().iter() {
+                if let Some(json) = safe_json(
+                    "oauth_user",
+                    &serde_json::to_string(&row).unwrap_or_default(),
+                ) {
+                    if row_matches("oauth_user", &json, &filters) {
+                        ctx.db.read_bridge().insert(ReadBridge {
+                            request_id: request_id.clone(),
+                            source_table: "oauth_user".into(),
+                            row_json: json,
+                            created_at: now,
+                        });
+                    }
+                }
+            }
+        }
+        "ldap_provider" => {
+            for row in ctx.db.ldap_provider().iter() {
+                if let Some(json) = safe_json(
+                    "ldap_provider",
+                    &serde_json::to_string(&row).unwrap_or_default(),
+                ) {
+                    if row_matches("ldap_provider", &json, &filters) {
+                        ctx.db.read_bridge().insert(ReadBridge {
+                            request_id: request_id.clone(),
+                            source_table: "ldap_provider".into(),
+                            row_json: json,
+                            created_at: now,
+                        });
+                    }
+                }
+            }
+        }
+        "saml_provider" => {
+            for row in ctx.db.saml_provider().iter() {
+                if let Some(json) = safe_json(
+                    "saml_provider",
+                    &serde_json::to_string(&row).unwrap_or_default(),
+                ) {
+                    if row_matches("saml_provider", &json, &filters) {
+                        ctx.db.read_bridge().insert(ReadBridge {
+                            request_id: request_id.clone(),
+                            source_table: "saml_provider".into(),
+                            row_json: json,
+                            created_at: now,
+                        });
+                    }
+                }
+            }
+        }
+        "ldap_user" => {
+            for row in ctx.db.ldap_user().iter() {
+                if let Some(json) = safe_json(
+                    "ldap_user",
+                    &serde_json::to_string(&row).unwrap_or_default(),
+                ) {
+                    if row_matches("ldap_user", &json, &filters) {
+                        ctx.db.read_bridge().insert(ReadBridge {
+                            request_id: request_id.clone(),
+                            source_table: "ldap_user".into(),
+                            row_json: json,
+                            created_at: now,
+                        });
+                    }
+                }
+            }
+        }
+        "webhook" => {
+            for row in ctx.db.webhook().iter() {
+                if let Some(json) =
+                    safe_json("webhook", &serde_json::to_string(&row).unwrap_or_default())
+                {
+                    if row_matches("webhook", &json, &filters) {
+                        ctx.db.read_bridge().insert(ReadBridge {
+                            request_id: request_id.clone(),
+                            source_table: "webhook".into(),
+                            row_json: json,
+                            created_at: now,
+                        });
+                    }
+                }
+            }
+        }
+        "invitation" => {
+            for row in ctx.db.invitation().iter() {
+                if let Some(json) = safe_json(
+                    "invitation",
+                    &serde_json::to_string(&row).unwrap_or_default(),
+                ) {
+                    if row_matches("invitation", &json, &filters) {
+                        ctx.db.read_bridge().insert(ReadBridge {
+                            request_id: request_id.clone(),
+                            source_table: "invitation".into(),
                             row_json: json,
                             created_at: now,
                         });

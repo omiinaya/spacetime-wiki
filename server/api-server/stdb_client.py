@@ -166,7 +166,43 @@ def _int(row: list, idx: int) -> int:
 
 
 def _bool(row: list, idx: int) -> bool:
-    return bool(row[idx]) if idx < len(row) else False
+    val = row[idx] if idx < len(row) else None
+    return bool(val) if val is not None else False
+
+
+async def bridge_read(table: str, filters: dict, request_id: str | None = None) -> list[dict]:
+    """Read rows from a PRIVATE STDB table through the read_bridge reducer.
+
+    Reducers cannot return values, so bridge_read copies SAFE (whitelisted)
+    columns of matching rows into the public `read_bridge` table keyed by a
+    random request_id, reads them back here, then clears them. Only columns
+    whitelisted in the module's safe_json() are ever returned — secret
+    columns (password hashes, tokens, client secrets) are never bridged.
+
+    Returns a list of parsed row dicts.
+    """
+    import json as _json
+    import random as _random
+
+    rid = request_id or f"br_{int(__import__('time').time() * 1000):x}_{_random.randrange(16**8):08x}"
+    try:
+        await call_reducer("bridge_read", [rid, table, _json.dumps(filters)])
+        rows = await sql_query(
+            "SELECT * FROM read_bridge WHERE request_id = ?", rid
+        )
+        out = []
+        for r in rows:
+            payload = r[2] if len(r) > 2 else ""
+            try:
+                out.append(_json.loads(payload))
+            except Exception:
+                continue
+        return out
+    finally:
+        try:
+            await call_reducer("clear_read_bridge", [rid])
+        except Exception:
+            pass
 
 
 def map_page(row: list) -> dict:
@@ -209,8 +245,8 @@ def map_collection(row: list) -> dict:
 def map_user(row: list) -> dict:
     return {
         "id": _str(row, 0), "name": _str(row, 1), "email": _str(row, 2),
-        "role": _str(row, 3), "avatar_url": _str(row, 4),
-        "created_at": _int(row, 5),
+        "role": _str(row, 4), "avatar_url": _str(row, 5),
+        "created_at": _int(row, 6),
     }
 
 
@@ -250,16 +286,16 @@ def map_attachment(row: list) -> dict:
 def map_share_link(row: list) -> dict:
     return {
         "id": _str(row, 0), "page_id": _str(row, 1),
-        "token": _str(row, 2),
-        "created_by": _str(row, 3), "expires_at": _int(row, 4),
-        "created_at": _int(row, 5), "visit_count": _int(row, 6),
+        "token": _str(row, 2), "password_hash": _str(row, 3),
+        "created_by": _str(row, 4), "expires_at": _int(row, 5),
+        "created_at": _int(row, 6), "visit_count": _int(row, 7),
     }
 
 
 def map_api_key(row: list) -> dict:
     return {
         "id": _str(row, 0), "user_id": _str(row, 1), "name": _str(row, 2),
-        "key_prefix": _str(row, 3),
-        "last_used_at": _int(row, 4), "created_at": _int(row, 5),
-        "expires_at": _int(row, 6), "is_revoked": _bool(row, 7),
+        "key_hash": _str(row, 3), "key_prefix": _str(row, 4),
+        "last_used_at": _int(row, 5), "created_at": _int(row, 6),
+        "expires_at": _int(row, 7), "is_revoked": _bool(row, 8),
     }

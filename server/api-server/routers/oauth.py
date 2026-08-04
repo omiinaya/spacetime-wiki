@@ -13,7 +13,7 @@ from models import (
     OAuthLoginResponse,
     PaginatedResponse,
 )
-from stdb_client import call_reducer, sql_query
+from stdb_client import bridge_read, call_reducer, sql_query
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,22 @@ def _map_oauth_user(row: list) -> dict | None:
     }
 
 
+def _map_oauth_user_dict(o: dict) -> dict:
+    """Map a bridged oauth_user row (dict; tokens never present)."""
+    return {
+        "id": str(o.get("id", "")),
+        "user_id": str(o.get("user_id", "")),
+        "provider_id": str(o.get("provider_id", "")),
+        "external_id": str(o.get("external_id", "")),
+        "external_username": str(o.get("external_username", "")),
+        "external_email": str(o.get("external_email", "")),
+        "token_expires_at": 0,
+        "last_synced_at": int(o.get("last_synced_at", 0) or 0),
+        "created_at": int(o.get("created_at", 0) or 0),
+        "updated_at": int(o.get("updated_at", 0) or 0),
+    }
+
+
 @router.get("/providers", response_model=PaginatedResponse)
 async def list_providers(
     offset: int = Query(0, ge=0, description="Zero-based offset"),
@@ -129,16 +145,18 @@ async def list_user_links(
     offset: int = Query(0, ge=0, description="Zero-based offset"),
     limit: int = Query(50, le=100, description="Max results"),
 ):
-    """List all OAuth provider links for a user."""
-    count_rows = await sql_query(
-        "SELECT COUNT(*) FROM oauth_user WHERE user_id = ?", user_id
-    )
-    total = count_rows[0][0] if count_rows else 0
-    rows = await sql_query(
-        "SELECT * FROM oauth_user WHERE user_id = ? LIMIT ?i OFFSET ?i", user_id, limit, offset
-    )
+    """List all OAuth provider links for a user.
+
+    oauth_user is a PRIVATE table — reads go through the read bridge so
+    access/refresh tokens are never exposed via SQL.
+    """
+    rows = await bridge_read("oauth_user", {"user_id": user_id})
+    # Paginate in Python (bridge returns the full matching set; totals are
+    # small per user)
+    total = len(rows)
+    paged = rows[offset : offset + limit]
     return {
-        "data": [_map_oauth_user(r) for r in rows if _map_oauth_user(r)],
+        "data": [_map_oauth_user_dict(r) for r in paged],
         "total": total,
         "offset": offset,
         "limit": limit,
@@ -319,16 +337,17 @@ async def oauth_callback(body: dict):
     if not external_id:
         raise HTTPException(status_code=401, detail="Could not determine user identity from provider")
 
-    # 5. Check if this OAuth user is already linked
-    link_rows = await sql_query(
-        "SELECT * FROM oauth_user WHERE external_id = ? AND provider_id = ?", external_id, provider_id
+    # 5. Check if this OAuth user is already linked (oauth_user is PRIVATE —
+    #    read through the bridge; tokens never exposed via SQL)
+    link_rows = await bridge_read(
+        "oauth_user", {"external_id": external_id, "provider_id": provider_id}
     )
 
     if link_rows:
         # User already linked — return their wiki user
-        oauth_user = _map_oauth_user(link_rows[0])
+        oauth_user = link_rows[0]
         user_rows = await sql_query(
-            "SELECT * FROM \"user\" WHERE id = ?", oauth_user["user_id"]
+            "SELECT * FROM \"user\" WHERE id = ?", oauth_user.get("user_id", "")
         )
         if user_rows:
             return {"user": _map_user(user_rows[0])}

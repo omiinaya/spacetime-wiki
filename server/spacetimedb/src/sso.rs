@@ -248,6 +248,60 @@ pub fn delete_oidc_provider(ctx: &ReducerContext, id: String) -> Result<(), Stri
     Ok(())
 }
 
+/// Fetch an OIDC provider's client secret for the frontend callback flow.
+/// Reducers cannot return values, so this writes the secret into the
+/// PUBLIC oidc_secret_bridge table keyed by a random request_id the caller
+/// generated. The caller reads it back with the request_id, then clears it
+/// via clear_oidc_secret_bridge. Without the request_id the row is
+/// unreachable; the window is a single callback exchange.
+#[reducer]
+pub fn get_oidc_provider_secret(
+    ctx: &ReducerContext,
+    provider_id: String,
+    request_id: String,
+) -> Result<(), String> {
+    let provider = ctx
+        .db
+        .oidc_provider()
+        .id()
+        .find(&provider_id)
+        .ok_or_else(|| "OIDC provider not found".to_string())?;
+    if !provider.is_active {
+        return Err("OIDC provider is inactive".into());
+    }
+    let secret = if provider.client_secret.is_empty() {
+        return Err("OIDC client secret is empty".into());
+    } else {
+        provider.client_secret.clone()
+    };
+    // Remove any stale bridge row with the same request_id (idempotent)
+    if let Some(old) = ctx.db.oidc_secret_bridge().request_id().find(&request_id) {
+        ctx.db
+            .oidc_secret_bridge()
+            .request_id()
+            .delete(&old.request_id);
+    }
+    ctx.db.oidc_secret_bridge().insert(OidcSecretBridge {
+        request_id,
+        oidc_provider_id: provider_id,
+        client_secret: secret,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+/// Clear a consumed OIDC secret bridge row after the callback exchange.
+#[reducer]
+pub fn clear_oidc_secret_bridge(ctx: &ReducerContext, request_id: String) -> Result<(), String> {
+    if let Some(row) = ctx.db.oidc_secret_bridge().request_id().find(&request_id) {
+        ctx.db
+            .oidc_secret_bridge()
+            .request_id()
+            .delete(&row.request_id);
+    }
+    Ok(())
+}
+
 // ─── LDAP Authentication ───────────────────────────────────────────────────────
 
 #[reducer]
@@ -381,6 +435,60 @@ pub fn delete_ldap_provider(ctx: &ReducerContext, id: String) -> Result<(), Stri
         ctx.db.ldap_user().id().delete(&u);
     }
     ctx.db.ldap_provider().id().delete(&id);
+    Ok(())
+}
+
+/// Fetch an LDAP provider's bind password for the Python login flow.
+/// Reducers cannot return values, so this writes the password into the
+/// PUBLIC ldap_bind_bridge table keyed by a random request_id the caller
+/// generated. The caller reads it back with the request_id, then clears it
+/// via clear_ldap_bind_bridge. Without the request_id the row is
+/// unreachable; the window is a single login attempt.
+#[reducer]
+pub fn get_ldap_bind_secret(
+    ctx: &ReducerContext,
+    provider_id: String,
+    request_id: String,
+) -> Result<(), String> {
+    let provider = ctx
+        .db
+        .ldap_provider()
+        .id()
+        .find(&provider_id)
+        .ok_or_else(|| "LDAP provider not found".to_string())?;
+    if !provider.is_active {
+        return Err("LDAP provider is inactive".into());
+    }
+    let secret = if provider.bind_password.is_empty() {
+        return Err("LDAP bind password is empty".into());
+    } else {
+        provider.bind_password.clone()
+    };
+    // Remove any stale bridge row with the same request_id (idempotent)
+    if let Some(old) = ctx.db.ldap_bind_bridge().request_id().find(&request_id) {
+        ctx.db
+            .ldap_bind_bridge()
+            .request_id()
+            .delete(&old.request_id);
+    }
+    ctx.db.ldap_bind_bridge().insert(LdapBindBridge {
+        request_id,
+        ldap_provider_id: provider_id,
+        bind_password: secret,
+        created_at: now_ms(ctx),
+    });
+    Ok(())
+}
+
+/// Clear a consumed LDAP bind bridge row after the login attempt.
+#[reducer]
+pub fn clear_ldap_bind_bridge(ctx: &ReducerContext, request_id: String) -> Result<(), String> {
+    if let Some(row) = ctx.db.ldap_bind_bridge().request_id().find(&request_id) {
+        ctx.db
+            .ldap_bind_bridge()
+            .request_id()
+            .delete(&row.request_id);
+    }
     Ok(())
 }
 

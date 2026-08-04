@@ -1,0 +1,19 @@
+# Default reviewers for the whole repo
+* @omiinaya
+
+# CI/CD workflows — reviewed with extra care
+.github/workflows/* @omiinaya
+
+# Security-sensitive modules
+server/api-server/auth.py @omiinaya
+server/api-server/routers/auth.py @omiinaya
+server/api-server/routers/webauthn.py @omiinaya
+server/api-server/routers/oauth.py @omiinaya
+server/api-server/routers/ldap_auth.py @omiinaya
+server/api-server/routers/scim.py @omiinaya
+server/api-server/routers/hermes_id_agents.py @omiinaya
+server/spacetimedb/src/auth* @omiinaya
+server/spacetimedb/src/sso.rs @omiinaya
+server/spacetimedb/src/api_keys.rs @omiinaya
+server/spacetimedb/src/share_links.rs @omiinaya
+server/spacetimedb/src/read_bridge.rs @omiinaya

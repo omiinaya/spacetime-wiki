@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { callReducerLocal } from '../lib/helpers';
+import { fetchOidcClientSecret } from '../lib/api/bridge';
 import { Loader2 } from 'lucide-react';
 
 export default function OidcCallback() {
@@ -35,6 +36,10 @@ export default function OidcCallback() {
           return;
         }
 
+        // Fetch the client secret via the transient secret bridge — the
+        // oidc_provider table is PRIVATE so the secret never comes from SQL.
+        const clientSecret = await fetchOidcClientSecret(providerId);
+
         const issuer = provider.issuer_url.replace(/\/$/, '');
         const redirectUri = `${window.location.origin}/oauth/oidc/callback`;
 
@@ -52,8 +57,8 @@ export default function OidcCallback() {
           grant_type: 'authorization_code',
           redirect_uri: redirectUri,
         });
-        if (provider.client_secret) {
-          body.append('client_secret', provider.client_secret);
+        if (clientSecret) {
+          body.append('client_secret', clientSecret);
         }
 
         const tokenRes = await fetch(tokenUrl, {
