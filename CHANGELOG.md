@@ -20,6 +20,20 @@
 
 ### Fixed
 
+- **STDB v2.6.1 SQL-compat + pagination repairs (API server + MCP server)** —
+  exercising the MCP server against a _live_ STDB (its unit tests mock the
+  HTTP client) surfaced four systemic bugs: ① MCP `_build_safe_sql` lacked the
+  typed `?i/?f/?b` placeholders used by every paginated query (numeric LIMIT
+  became a string literal → malformed SQL); ② STDB rejects OFFSET, and both
+  servers' strip-then-slice handling returned **empty pages for any offset > 0** —
+  new shared `resolve_statement_offset()` rewrites `LIMIT n OFFSET m` →
+  `LIMIT n+m` then slices `[m:]`, fixing page 2/3/… everywhere; ③ MCP
+  `get_backlinks`/`get_linked_pages` used rejected `text_content LIKE ?` →
+  now filter in Python; ④ MCP `_validate_id` rejected `_` but every real genId
+  is `prefix_<hex>` — ID-based tools were dead on real data. Also fixed MCP
+  `wiki_health` (`SELECT 1` projection) and API search tag-filter
+  (`SELECT 1 FROM page_tag`). Verified live: pagination returns distinct pages
+  with no overlap; 129 MCP + 308 API tests pass.
 - **Pre-commit Python gate silently skipped** — `.husky/pre-commit` called
   `python -m pytest`, but only `python3` exists on Debian hosts (PEP-668).
   The `PYTHON_CHANGED` branch never actually ran. Now uses `python3`,
