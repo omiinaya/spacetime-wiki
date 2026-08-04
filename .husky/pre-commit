@@ -37,12 +37,12 @@ fi
 PYTHON_CHANGED=$(git diff --cached --name-only | grep -c '\.py$' || true)
 if [ "$PYTHON_CHANGED" -gt 0 ]; then
   echo "⟦pre-commit⟧ Python files changed — running API server unit tests..."
-  (cd server && python -m pytest tests/ --tb=short -q \
+  (cd server && python3 -m pytest tests/ --tb=short -q \
     --ignore=tests/test_page_metadata_and_settings.py \
     --ignore=tests/test_core_reducers.py \
     --ignore=tests/test_collection_permission_search.py \
     --ignore=tests/test_collection_permission_reducers.py \
     --ignore=tests/test_misc_reducers.py 2>&1 | tail -5)
   echo "⟦pre-commit⟧ Running MCP server unit tests..."
-  (cd server/mcp-server && python -m pytest tests/ --tb=short -q 2>&1 | tail -3)
+  (cd server/mcp-server && python3 -m pytest tests/ --tb=short -q 2>&1 | tail -3)
 fi
