@@ -234,7 +234,10 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
+        # No --with-deps: the self-hosted runner has no passwordless sudo
+        # (playwright's apt step fails with 'sudo: a password is required').
+        # The browsers + system libs are already provisioned on the runner.
+        run: npx playwright install chromium firefox webkit
 
       - name: Run E2E tests
         run: npx playwright test

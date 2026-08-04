@@ -22,6 +22,18 @@ vi.mock('../../lib/helpers', () => ({
   callReducerLocal: mockCallReducer,
 }));
 
+// SamlCallback does `await import('pako')` and only uses it when the response
+// is DEFLATE-compressed. Every test here sends plain base64 XML, so pako's
+// result is never used — but the heavy dynamic import made first render slow
+// under full-suite parallel load, occasionally blowing waitFor's 1s timeout
+// (flaky: 2 of 11 tests failed intermittently). Mock it to force the
+// TextDecoder fallback path deterministically.
+vi.mock('pako', () => ({
+  inflate: vi.fn(() => {
+    throw new Error('not deflated');
+  }),
+}));
+
 let store: Record<string, string> = {};
 let setItemSpy: Mock;
 
