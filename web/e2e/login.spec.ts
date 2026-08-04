@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 /**
  * Login and registration flow E2E tests.
@@ -48,7 +48,11 @@ test.describe('Registration flow', () => {
 
   test('can register a new user with valid credentials', async ({ page }) => {
     const testEmail = `e2e_test_${Date.now()}@example.com`;
-    const testPassword = process.env.TEST_PASSWORD || '';
+    // Hermetic default — TEST_PASSWORD may be unset locally; the registration
+    // form has a required-password field, so an empty value blocks submission
+    // and the test hangs on /login. Use a stable default so the flow works
+    // with zero environment setup.
+    const testPassword = process.env.TEST_PASSWORD || 'e2e-test-password-123';
 
     await page.getByRole('button', { name: 'Register' }).click();
     await expect(page.getByRole('heading', { name: 'Create account' })).toBeVisible();

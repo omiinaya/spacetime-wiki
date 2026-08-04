@@ -65,12 +65,23 @@ def sql_exists(sql: str) -> bool:
 
 
 def wait_for_stdb(max_attempts: int = 15, delay: int = 2) -> bool:
-    """Wait until STDB is reachable and the database/module exists."""
+    """Wait until STDB is reachable and the database/module exists.
+
+    NOTE: Uses ``SELECT COUNT(*) FROM "user"`` as the liveness probe rather
+    than ``SELECT 1`` — the latter is rejected by STDB v2.6.x with
+    ``Unsupported projection expression: 1`` (bare constants are not valid
+    projection expressions). The ``user`` table always exists after publish,
+    so this is a robust readiness check.
+    """
     print(f"[seed] Waiting for STDB at {STDB_HOST} (db: {DB_NAME})...")
     for attempt in range(1, max_attempts + 1):
         try:
             url = f"http://{STDB_HOST}/v1/database/{DB_NAME}/sql"
-            req = urllib.request.Request(url, data=b"SELECT 1", method="POST")
+            req = urllib.request.Request(
+                url,
+                data='SELECT COUNT(*) AS c FROM "user"'.encode("utf-8"),
+                method="POST",
+            )
             req.add_header("Content-Type", "text/plain")
             with urllib.request.urlopen(req, timeout=5):
                 print(f"[seed] STDB ready after {attempt * delay}s")

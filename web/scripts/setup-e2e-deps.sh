@@ -59,12 +59,21 @@ echo "[e2e-setup] Building and publishing SpacetimeDB module to '${DB_NAME}'..."
 cd "$ROOT_DIR/server/spacetimedb"
 spacetimedb-cli publish --server "http://${STDB_HOST}" "$DB_NAME"
 
-# ── Start API server (background) ────────────────────────────────────────────
+# ── Start API server (background, in a venv) ────────────────────────────────
+# The runner's system Python is PEP-668 externally-managed and its PATH may
+# lack the API server's deps — create a dedicated venv to make the API server
+# hermetic.
+echo "[e2e-setup] Installing API server deps into venv..."
+API_VENV=/tmp/e2e-api-venv
+python3 -m venv "$API_VENV"
+"$API_VENV/bin/pip" install --upgrade pip -q
+"$API_VENV/bin/pip" install -q -r "$ROOT_DIR/server/api-server/requirements.txt"
+
 echo "[e2e-setup] Starting API server on port ${API_PORT}..."
 cd "$ROOT_DIR/server/api-server"
 STDB_HOST="${STDB_HOST}" \
 STDB_DATABASE="${DB_NAME}" \
-  uvicorn main:app --host 0.0.0.0 --port "${API_PORT}" > /tmp/e2e-api-server.log 2>&1 &
+  "$API_VENV/bin/uvicorn" main:app --host 0.0.0.0 --port "$API_PORT" > /tmp/e2e-api-server.log 2>&1 &
 API_PID=$!
 echo "[e2e-setup] API server PID: ${API_PID}"
 echo "$API_PID" > /tmp/e2e-api-server.pid
@@ -87,7 +96,8 @@ done
 # global-setup.ts can't do this because it runs before webServer starts;
 # seeding here after module publish + API server is more reliable.
 echo "[e2e-setup] Seeding E2E test data..."
-python3 "$SCRIPT_DIR/seed-e2e-data.py" || echo "[e2e-setup] WARNING: Seeding failed — E2E tests may have issues."
+STDB_HOST="${STDB_HOST}" STDB_DATABASE="${DB_NAME}" \
+  python3 "$SCRIPT_DIR/seed-e2e-data.py" || echo "[e2e-setup] WARNING: Seeding failed — E2E tests may have issues."
 
 echo "[e2e-setup] All dependencies ready — E2E tests can proceed"
 # Stay alive — Playwright webServer will SIGTERM this process when tests finish
