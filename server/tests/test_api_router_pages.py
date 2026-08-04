@@ -36,11 +36,17 @@ class TestPagesRouter:
                 [[5]],
                 [["p1", "Test", "test", "", "", "", "", "active", "", "", False, False, False, "", 0, "u1", "u1", 1000, 2000, 0, 0]],
             ]
-            resp = client.get("/api/v1/pages")
-            assert resp.status_code == 200
-            data = resp.json()
-            assert data["total"] == 5
-            assert len(data["data"]) == 1
+            # Visibility is covered by test_api_permissions.py — here the
+            # caller is authenticated and all rows pass the filter.
+            async def _fake_filter(request, rows, min_role="viewer"):
+                return rows
+            with patch("routers.pages.filter_visible_pages", new_callable=AsyncMock) as mock_f:
+                mock_f.side_effect = _fake_filter
+                resp = client.get("/api/v1/pages")
+                assert resp.status_code == 200
+                data = resp.json()
+                assert data["total"] == 1
+                assert len(data["data"]) == 1
 
     def test_list_pages_empty(self, client):
         with patch("routers.pages.sql_query", new_callable=AsyncMock) as mock_sql:
@@ -48,6 +54,27 @@ class TestPagesRouter:
             resp = client.get("/api/v1/pages")
             assert resp.status_code == 200
             assert resp.json()["total"] == 0
+
+    def test_list_pages_filters_invisible(self, client):
+        """Pages the caller can't view must not appear in the list."""
+        with patch("routers.pages.sql_query", new_callable=AsyncMock) as mock_sql:
+            mock_sql.side_effect = [
+                [[2]],
+                [
+                    ["p1", "Visible", "v", "", "", "", "", "active", "", "", False, False, False, "", 0, "u1", "u1", 1000, 2000, 0, 0],
+                    ["p2", "Secret", "s", "", "", "", "", "active", "", "", False, False, False, "", 0, "u2", "u2", 1000, 2000, 0, 0],
+                ],
+            ]
+            async def _fake_filter(request, rows, min_role="viewer"):
+                # Only p1 passes — p2 belongs to another user with no access
+                return [r for r in rows if r[0] == "p1"]
+            with patch("routers.pages.filter_visible_pages", new_callable=AsyncMock) as mock_f:
+                mock_f.side_effect = _fake_filter
+                resp = client.get("/api/v1/pages")
+                assert resp.status_code == 200
+                data = resp.json()
+                assert data["total"] == 1
+                assert data["data"][0]["id"] == "p1"
 
     def test_get_page_found(self, client):
         with patch("routers.pages.sql_query", new_callable=AsyncMock) as mock_sql:

@@ -1,9 +1,8 @@
 """Search endpoints — uses STDB search_pages reducer with full filter support."""
 
-import time
-
 from fastapi import APIRouter, HTTPException, Query, Request
 from models import PaginatedResponse, SearchResponse
+from permissions import _has_page_access, get_request_user_id
 from rate_limit import limiter
 from stdb_client import call_reducer, sql_query
 
@@ -11,10 +10,13 @@ router = APIRouter(prefix="/api/v1/search", tags=["search"])
 
 
 def _gen_search_token() -> str:
-    """Generate a unique search token."""
-    ts = int(time.time() * 1000)
-    rand = (ts * 1103515245 + 12345) & 0xFFFFFFFF
-    return f"search_{rand:x}"
+    """Generate a unique search token.
+
+    Uses a CSPRNG (not an LCG of the timestamp — the old scheme let any
+    caller compute/replay another user's token and read their result set).
+    """
+    import secrets
+    return f"search_{secrets.token_hex(8)}"
 
 
 @limiter.limit("120/minute")
@@ -143,6 +145,19 @@ async def search(
             "created_at": int(r[7] or 0) if len(r) > 7 else 0,
         })
 
+    # Enforce page visibility: the search_pages reducer indexes ALL non-deleted
+    # pages (including private ones). Drop results the caller can't view so
+    # titles/excerpts of restricted pages don't leak via search.
+    user_id = await get_request_user_id(request)
+    if user_id:
+        visible = []
+        for res in results:
+            if res["page_id"] and await _has_page_access(user_id, res["page_id"], "viewer"):
+                visible.append(res)
+        results = visible
+    else:
+        results = []
+
     return {
         "data": results,
         "query": q,
@@ -153,7 +168,7 @@ async def search(
             "to": to_date or None,
             "tags": tags or None,
         },
-        "total": total,
+        "total": len(results),
         "offset": offset,
         "limit": limit,
     }
@@ -161,6 +176,7 @@ async def search(
 
 @router.get("/autocomplete", response_model=PaginatedResponse)
 async def autocomplete(
+    request: Request,
     q: str = Query(..., min_length=1, description="Search query prefix"),
     limit: int = Query(10, le=25, description="Max suggestions"),
     offset: int = Query(0, ge=0, description="Zero-based offset"),
@@ -195,9 +211,19 @@ async def autocomplete(
             "title": str(r[3] or "") if len(r) > 3 else "",
             "slug": str(r[4] or "") if len(r) > 4 else "",
         })
+    # Enforce page visibility (autocomplete must not leak private page titles).
+    user_id = await get_request_user_id(request)
+    if user_id:
+        visible = []
+        for res in results:
+            if res["page_id"] and await _has_page_access(user_id, res["page_id"], "viewer"):
+                visible.append(res)
+        results = visible
+    else:
+        results = []
     return {
         "data": results,
-        "total": total,
+        "total": len(results),
         "offset": offset,
         "limit": limit,
     }

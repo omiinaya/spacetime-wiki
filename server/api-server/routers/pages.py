@@ -10,7 +10,7 @@ from models import (
     ShareLinkCreateResponse,
     TagCreateResponse,
 )
-from permissions import check_page_access
+from permissions import check_page_access, filter_visible_pages
 from rate_limit import limiter
 from stdb_client import (
     call_reducer,
@@ -28,12 +28,18 @@ router = APIRouter(prefix="/api/v1/pages", tags=["pages"])
 
 @router.get("", response_model=PaginatedResponse)
 async def list_pages(
+    request: Request,
     collection_id: str | None = Query(None, description="Filter by collection ID"),
     status: str = Query("active", description="Page status filter"),
     offset: int = Query(0, ge=0, description="Zero-based offset"),
     limit: int = Query(50, le=100, description="Max results"),
 ):
-    """List pages, optionally filtered by collection."""
+    """List pages, optionally filtered by collection.
+
+    Results are filtered to pages the authenticated user can view (per-page
+    and per-collection permissions are enforced; private pages don't leak
+    titles/excerpts to other users).
+    """
     where = "status = ?"
     args: list[str] = [status]
     if collection_id:
@@ -44,9 +50,10 @@ async def list_pages(
     total = count_rows[0][0] if count_rows else 0
 
     rows = await sql_query("SELECT * FROM page WHERE " + where + " LIMIT ?i OFFSET ?i", *args, limit, offset)
+    rows = await filter_visible_pages(request, rows, "viewer")
     return {
         "data": [map_page(r) for r in rows],
-        "total": total,
+        "total": len(rows),
         "offset": offset,
         "limit": limit,
     }

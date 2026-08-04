@@ -36,16 +36,18 @@ class TestGetRequestUserId:
 
 class TestCheckPageAccess:
     @pytest.mark.asyncio
-    async def test_unauthenticated_allowed(self):
-        """Unauthenticated requests (no user_id) should be allowed."""
+    async def test_unauthenticated_denied(self):
+        """Unauthenticated requests (no user_id) must be DENIED (fail-closed)."""
         from permissions import check_page_access
+        from fastapi import HTTPException
 
         class MockRequest:
             state = MagicMock(spec=[])
         request = MockRequest()
 
-        result = await check_page_access(request, "p1", "viewer")
-        assert result is True
+        with pytest.raises(HTTPException) as excinfo:
+            await check_page_access(request, "p1", "viewer")
+        assert excinfo.value.status_code == 403
 
     @pytest.mark.asyncio
     async def test_direct_permission_grants(self):
@@ -117,3 +119,41 @@ class TestCheckPageAccess:
 
         # Check that require_page_permission calls check_page_access
         assert callable(require_page_permission)
+
+    @pytest.mark.asyncio
+    async def test_filter_visible_pages_keeps_only_accessible(self):
+        """filter_visible_pages returns only pages the user can view."""
+        from permissions import filter_visible_pages
+
+        class MockRequest:
+            state = MagicMock(api_user_id="u1")
+        request = MockRequest()
+
+        rows = [
+            ["p1", "Visible", "v", "", "", "", "", "active", "", "", False, False, False, "", 0, "u1", "u1", 1000, 2000, 0, 0],
+            ["p2", "Secret", "s", "", "", "", "", "active", "", "", False, False, False, "", 0, "u2", "u2", 1000, 2000, 0, 0],
+        ]
+        with patch("permissions.sql_query", new_callable=AsyncMock) as mock_sql:
+            # p1: creator check hits immediately; p2: creator != u1, no grants
+            mock_sql.side_effect = [
+                # p1 -> page_permission (none), collection_id, group_members (none),
+                #      collection_member (none), created_by (u1 -> True)
+                [], [["c1"]], [], [], [["u1"]],
+                # p2 -> page_permission (none), collection_id, group_members (none),
+                #      collection_member (none), created_by (u2 -> False)
+                [], [["c1"]], [], [], [["u2"]],
+            ]
+            result = await filter_visible_pages(request, rows, "viewer")
+        assert [r[0] for r in result] == ["p1"]
+
+    @pytest.mark.asyncio
+    async def test_filter_visible_pages_fail_closed(self):
+        """filter_visible_pages returns [] for unauthenticated requests."""
+        from permissions import filter_visible_pages
+
+        class MockRequest:
+            state = MagicMock(spec=[])
+        request = MockRequest()
+
+        result = await filter_visible_pages(request, [["p1", "x"]], "viewer")
+        assert result == []
