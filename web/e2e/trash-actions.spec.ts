@@ -80,8 +80,10 @@ test.describe('Trash — restore lifecycle', () => {
     await page.getByRole('button', { name: 'Restore', exact: true }).first().click();
     await page.waitForTimeout(1500);
 
-    // The page leaves the trash list
-    await expect(page.getByText('Restore Me From Trash')).not.toBeVisible({ timeout: 10000 });
+    // The page leaves the TRASH DIALOG list. (The title also reappears in
+    // the sidebar tree after restore — scope the assertion to the dialog.)
+    const dialog = page.locator('div.fixed.inset-0').filter({ hasText: /Trash/ }).first();
+    await expect(dialog.getByText('Restore Me From Trash')).not.toBeVisible({ timeout: 10000 });
 
     // And is back in the sidebar tree (draft status) from home
     await page.goto('/');
@@ -109,7 +111,9 @@ test.describe('Trash — restore lifecycle', () => {
     await page.getByRole('button', { name: 'Delete', exact: true }).first().click();
     await page.waitForTimeout(1500);
 
-    // Gone from trash
-    await expect(page.getByText('Permanent Delete Me')).not.toBeVisible({ timeout: 10000 });
+    // Gone from trash — scope to the trash dialog (the title may also exist
+    // elsewhere if a parallel spec re-created it)
+    const dialog = page.locator('div.fixed.inset-0').filter({ hasText: /Trash/ }).first();
+    await expect(dialog.getByText('Permanent Delete Me')).not.toBeVisible({ timeout: 10000 });
   });
 });

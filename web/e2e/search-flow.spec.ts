@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { signInAsAdmin, isVisible, createPage } from './helpers';
+import { signInAsAdmin, isVisible } from './helpers';
 
 /**
  * Search results flow E2E tests.
@@ -7,7 +7,43 @@ import { signInAsAdmin, isVisible, createPage } from './helpers';
  * Typing in the sidebar search box filters the sidebar tree live and shows
  * content snippets; clicking a matched page navigates to it. Also covers the
  * SearchFilters toggle (collection/status/date/tags filters).
+ *
+ * Test pages are created via DIRECT STDB reducer calls (fast + hermetic) —
+ * the UI createPage flow is too slow for search tests and the seed pages may
+ * be deleted/moved by trash/lifecycle specs.
  */
+
+const STDB_HOST = process.env.STDB_HOST || 'localhost:3001';
+const DB_NAME = process.env.STDB_DATABASE || process.env.STDB_DB || 'spacetime-wiki-e2e';
+
+async function createPageFast(title: string, content: string): Promise<string> {
+  const collId = 'col_seed_search';
+  const pageId = `page_search_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+  const adminId = 'user_admin_seed';
+  const stdb = `http://${STDB_HOST}/v1/database/${DB_NAME}/call`;
+  const call = async (reducer: string, args: unknown[]) => {
+    const res = await fetch(`${stdb}/${reducer}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
+    });
+    if (!res.ok) throw new Error(`${reducer} failed (${res.status}): ${await res.text()}`);
+  };
+  await call('create_collection', [collId, 'Search Seed', 'seed', '', '🔍', '#888888', adminId]);
+  await call('create_page', [
+    pageId,
+    title,
+    JSON.stringify({
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: content }] }],
+    }),
+    collId,
+    '',
+    adminId,
+  ]);
+  await call('set_page_status', [pageId, 'published']);
+  return pageId;
+}
 
 test.describe('Search — results flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -18,36 +54,34 @@ test.describe('Search — results flow', () => {
   });
 
   test('typing a query filters the sidebar tree to matching pages', async ({ page }) => {
-    // Hermetic: create a unique page, then search for it (seed pages may be
-    // deleted/moved by other specs).
-    const targetTitle = `Search Filter ${Date.now()}`;
-    await createPage(page, targetTitle, 'search filter target content');
-    await page.goto('/');
+    const title = `Search Filter ${Date.now()}`;
+    await createPageFast(title, 'search filter target content');
+    await page.reload();
     await page.waitForLoadState('load');
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
 
     const searchInput = page.getByPlaceholder('Search...');
-    await expect(searchInput).toBeVisible();
-    await searchInput.fill(targetTitle);
+    await searchInput.fill(title);
     await page.waitForTimeout(1500);
 
     // The created page should filter into the tree
-    await expect(page.getByText(targetTitle).first()).toBeVisible({
+    await expect(page.getByText(title).first()).toBeVisible({
       timeout: 10000,
     });
   });
 
   test('matching page filters into the search results and shows a snippet', async ({ page }) => {
-    // Create a page with distinctive content so the match is hermetic (the
-    // seed pages may be deleted by trash/lifecycle specs).
-    await createPage(page, 'Snippet Source Page', 'zebra uniquely collaborative snippet content');
-    await page.goto('/');
+    const title = `Snippet Source ${Date.now()}`;
+    await createPageFast(title, 'zebra uniquely collaborative snippet content');
+    await page.reload();
     await page.waitForLoadState('load');
     await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
-    await page.getByPlaceholder('Search...').fill('Snippet Source');
+
+    await page.getByPlaceholder('Search...').fill(title);
     await page.waitForTimeout(1500);
 
     // The page filters into the tree (this is the reliable search behavior).
-    await expect(page.getByText('Snippet Source Page').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(title).first()).toBeVisible({ timeout: 10000 });
 
     // Snippets render from text_content, which drafts may not populate yet —
     // if it's present, assert it; the core filter assertion above is the
@@ -59,22 +93,20 @@ test.describe('Search — results flow', () => {
   });
 
   test('clicking a search result navigates to the page view', async ({ page }) => {
-    // Hermetic: create a unique page and search for it (seed pages may be
-    // deleted/moved by trash/lifecycle specs).
-    const targetTitle = `Search Nav ${Date.now()}`;
-    await createPage(page, targetTitle, 'Search navigation target content');
-    await page.goto('/');
+    const title = `Search Nav ${Date.now()}`;
+    await createPageFast(title, 'Search navigation target content');
+    await page.reload();
     await page.waitForLoadState('load');
     await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
 
     const searchInput = page.getByPlaceholder('Search...');
-    await searchInput.fill(targetTitle);
+    await searchInput.fill(title);
     await page.waitForTimeout(1500);
 
-    const result = page.getByText(targetTitle).first();
+    const result = page.getByText(title).first();
     await result.click();
     await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/, { timeout: 20000 });
-    await expect(page.getByRole('heading', { name: new RegExp(targetTitle, 'i') })).toBeVisible({
+    await expect(page.getByRole('heading', { name: new RegExp(title, 'i') })).toBeVisible({
       timeout: 10000,
     });
   });
@@ -106,6 +138,7 @@ test.describe('Search filters — toggle and options', () => {
     await signInAsAdmin(page);
     await page.goto('/');
     await page.waitForLoadState('load');
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
   });
 
   test('Filters button toggles the filter panel', async ({ page }) => {

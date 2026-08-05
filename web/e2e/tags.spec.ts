@@ -53,13 +53,10 @@ test.describe('Page tags', () => {
     await expect(chip).toBeVisible({ timeout: 5000 });
     const removeBtn = chip.locator('button').first();
     await removeBtn.click();
-    await page.waitForTimeout(1200);
 
-    const stillVisible = await page
-      .getByText('remove-me-tag')
-      .first()
-      .isVisible()
-      .catch(() => false);
-    expect(stillVisible).toBe(false);
+    // Auto-retrying: the tag chip disappears after the STDB round trip.
+    await expect(page.locator('span', { hasText: 'remove-me-tag' })).not.toBeVisible({
+      timeout: 10000,
+    });
   });
 });

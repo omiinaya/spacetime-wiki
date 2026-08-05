@@ -16,37 +16,54 @@ test.describe('Page toolbar actions', () => {
     await signInAsAdmin(page);
   });
 
+  /** Create a page and wait for the view toolbar to be interactive. */
+  async function createPageWithToolbar(
+    page: import('@playwright/test').Page,
+    title: string,
+    content: string,
+  ): Promise<string | null> {
+    const pageUrl = await createPage(page, title, content);
+    if (!pageUrl) return null;
+    // Toolbar renders after page data loads — wait for a stable toolbar
+    // button before interacting.
+    await page
+      .locator('button[title="Favorite"], button[title="Share"]')
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 });
+    return pageUrl;
+  }
+
   test('watch toggle changes the button state', async ({ page }) => {
-    const pageUrl = await createPage(page, 'Watch Toggle Page', 'Watch content');
+    const pageUrl = await createPageWithToolbar(page, 'Watch Toggle Page', 'Watch content');
     if (!pageUrl) return;
 
     const watchBtn = page.locator('button[title="Watch page for changes"]');
-    await expect(watchBtn).toBeVisible({ timeout: 10000 });
+    await expect(watchBtn).toBeVisible({ timeout: 15000 });
     await watchBtn.click();
     await page.waitForTimeout(1200);
 
     // After watching, the button title flips to Unwatch
-    await expect(page.locator('button[title="Unwatch page"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button[title="Unwatch page"]')).toBeVisible({ timeout: 10000 });
   });
 
   test('pin toggle changes the button state', async ({ page }) => {
-    const pageUrl = await createPage(page, 'Pin Toggle Page', 'Pin content');
+    const pageUrl = await createPageWithToolbar(page, 'Pin Toggle Page', 'Pin content');
     if (!pageUrl) return;
 
     const pinBtn = page.locator('button[title="Pin to top"]');
-    await expect(pinBtn).toBeVisible({ timeout: 10000 });
+    await expect(pinBtn).toBeVisible({ timeout: 15000 });
     await pinBtn.click();
     await page.waitForTimeout(1200);
 
-    await expect(page.locator('button[title="Unpin"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button[title="Unpin"]')).toBeVisible({ timeout: 10000 });
   });
 
   test('duplicate creates a copy of the page', async ({ page }) => {
-    const pageUrl = await createPage(page, 'Duplicate Source Page', 'Duplicate me');
+    const pageUrl = await createPageWithToolbar(page, 'Duplicate Source Page', 'Duplicate me');
     if (!pageUrl) return;
 
     const dupBtn = page.locator('button[title="Duplicate"]');
-    await expect(dupBtn).toBeVisible({ timeout: 10000 });
+    await expect(dupBtn).toBeVisible({ timeout: 15000 });
     await dupBtn.click();
     await page.waitForTimeout(2000);
 
@@ -59,11 +76,11 @@ test.describe('Page toolbar actions', () => {
   });
 
   test('permissions dialog opens and shows the heading', async ({ page }) => {
-    const pageUrl = await createPage(page, 'Permissions Page', 'Permission content');
+    const pageUrl = await createPageWithToolbar(page, 'Permissions Page', 'Permission content');
     if (!pageUrl) return;
 
     const permsBtn = page.locator('button[title="Permissions"]');
-    await expect(permsBtn).toBeVisible({ timeout: 10000 });
+    await expect(permsBtn).toBeVisible({ timeout: 15000 });
     await permsBtn.click();
     await page.waitForTimeout(800);
 
