@@ -41,10 +41,9 @@ test.describe('Page lifecycle', () => {
     const publishBtn = page.locator('button').filter({ hasText: /^Publish$/ }).first();
     if (await isVisible(publishBtn, 3000)) {
       await publishBtn.click();
-      // Confirm dialog — the SECOND Publish button (toolbar + confirm both
-      // say 'Publish', so use .last() for the dialog confirm).
-      const confirmBtn = page.getByRole('button', { name: /^Publish$/ }).last();
-      await confirmBtn.click();
+      // Wait for the confirm dialog to render, then click ITS Publish button.
+      await expect(page.getByText(/Publish this page/i)).toBeVisible({ timeout: 5000 });
+      await page.getByRole('button', { name: /^Publish$/ }).last().click();
       await page.waitForTimeout(1200);
     }
 
@@ -56,40 +55,30 @@ test.describe('Page lifecycle', () => {
     const pageUrl = await createPage(page, 'Trash Restore Me', 'Trash restore lifecycle');
     if (!pageUrl) return;
 
-    // Walk the real lifecycle: draft → Publish → Archive → Delete (trash)
-    const publishBtn = page.locator('button').filter({ hasText: /^Publish$/ }).first();
-    if (await isVisible(publishBtn, 5000)) {
-      await publishBtn.click();
-      const confirmPublish = page.getByRole('button', { name: /^Publish$/ }).last();
-      if (await isVisible(confirmPublish, 3000)) {
-        await confirmPublish.click();
-        await page.waitForTimeout(1200);
-      }
+    // Move to trash via the sidebar context menu (right-click → Move to
+    // trash → native confirm). The archived-banner trash icon is a PERMANENT
+    // delete and never lands in trash — the context menu is the real flow.
+    await page.goto('/');
+    await page.waitForLoadState('load');
+    const bucket = page
+      .locator('aside button')
+      .filter({ has: page.locator('svg.lucide-hash') })
+      .first();
+    if (await isVisible(bucket, 5000)) {
+      await bucket.click();
+      await page.waitForTimeout(400);
     }
-    const archiveBtn = page.getByRole('button', { name: /^Archive$/ }).first();
-    if (await isVisible(archiveBtn, 5000)) {
-      await archiveBtn.click();
-      const confirmArchive = page.getByRole('button', { name: /^Archive$/ }).last();
-      if (await isVisible(confirmArchive, 3000)) {
-        await confirmArchive.click();
-        await page.waitForTimeout(1200);
-      }
-    }
-    const deleteBtn = page
-      .locator('button')
-      .filter({ has: page.locator('svg.lucide-trash-2, svg.lucide-trash2') })
-      .last();
-    if (await isVisible(deleteBtn, 3000)) {
-      await deleteBtn.click();
-      const confirmDelete = page.getByRole('button', { name: /^Delete$/ }).last();
-      if (await isVisible(confirmDelete, 3000)) {
-        await confirmDelete.click();
-        await page.waitForTimeout(1200);
-      }
-    }
+    const row = page.locator('aside').getByText('Trash Restore Me', { exact: true }).first();
+    await expect(row).toBeVisible({ timeout: 5000 });
+    await row.click({ button: 'right' });
+    await page.waitForTimeout(400);
+
+    page.once('dialog', (d) => d.accept());
+    await page.getByRole('button', { name: 'Move to trash', exact: true }).click();
+    await page.waitForTimeout(1500);
 
     // Open Trash via sidebar — verify the deleted page appears
-    await page.locator('aside').getByRole('button', { name: 'Trash' }).click();
+    await page.locator('aside').getByRole('button', { name: 'Trash', exact: true }).click();
     await page.waitForTimeout(1500);
     const trashEmpty = page.getByText(/Trash is empty/i);
     if (!(await isVisible(trashEmpty, 3000))) {
