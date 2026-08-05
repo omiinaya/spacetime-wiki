@@ -31,14 +31,14 @@ export default function AccessRequestPanel({ userId }: { userId: string | null }
               `SELECT title FROM page WHERE id = ${sqlLit(req.page_id)}`,
             );
             if (pageRows.length > 0)
-              pageTitle = String((pageRows[0] as unknown).title || 'Unknown page');
+              pageTitle = String((pageRows as unknown[][])[0]?.[0] || 'Unknown page');
           } catch {}
           try {
             const userRows = await sqlQuery(
               `SELECT name FROM \`user\` WHERE id = ${sqlLit(req.requester_id)}`,
             );
             if (userRows.length > 0)
-              requesterName = String((userRows[0] as unknown).name || 'Unknown user');
+              requesterName = String((userRows as unknown[][])[0]?.[0] || 'Unknown user');
           } catch {}
           return { ...req, pageTitle, requesterName };
         }),

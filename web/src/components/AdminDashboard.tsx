@@ -142,6 +142,7 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
         delRows,
         storageRows,
         contribRows,
+        userRows2,
       ] = await Promise.all([
         sqlQuery("SELECT COUNT(*) as c FROM page WHERE status != 'deleted'"),
         sqlQuery('SELECT COUNT(*) as c FROM `user`'),
@@ -154,18 +155,36 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
         ),
         sqlQuery("SELECT COUNT(*) as c FROM page WHERE status = 'archived'"),
         sqlQuery("SELECT COUNT(*) as c FROM page WHERE status = 'deleted'"),
-        sqlQuery('SELECT COALESCE(SUM(size_bytes), 0) as total FROM attachment'),
-        sqlQuery(`
-          SELECT p.created_by as user_id, COALESCE(u.name, p.created_by) as user_name, COUNT(*) as page_count
-          FROM page p LEFT JOIN \`user\` u ON p.created_by = u.id
-          WHERE p.status != 'deleted'
-          GROUP BY p.created_by
-          
-        `),
+        sqlQuery('SELECT size_bytes FROM attachment'),
+        sqlQuery("SELECT created_by FROM page WHERE status != 'deleted'"),
+        sqlQuery('SELECT id, name FROM `user`'),
       ]);
 
-      const toNum = (rows: unknown) => Number((rows[0] as unknown)?.c || 0);
-      const toNum2 = (rows: unknown, key: string) => Number((rows[0] as unknown)?.[key] || 0);
+      const toNum = (rows: unknown) => Number((rows as unknown[][])?.[0]?.[0] || 0);
+
+      // STDB v2.6.1 has no SUM/COALESCE/GROUP BY — aggregate client-side.
+      const totalStorageBytes = ((storageRows as unknown[][]) ?? []).reduce(
+        (acc, r) => acc + (Number(r[0]) || 0),
+        0,
+      );
+      const contribCounts = new Map<string, number>();
+      for (const r of (contribRows as unknown[][]) ?? []) {
+        const uid = String(r[0] ?? '');
+        contribCounts.set(uid, (contribCounts.get(uid) ?? 0) + 1);
+      }
+      const userNameById = new Map<string, string>();
+      for (const r of (userRows2 as unknown[][]) ?? []) {
+        userNameById.set(String(r[0] ?? ''), String(r[1] ?? ''));
+      }
+      setTopContributors(
+        [...contribCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([user_id, page_count]) => ({
+            user_id,
+            user_name: userNameById.get(user_id) || user_id,
+            page_count,
+          })),
+      );
 
       setStats({
         totalPages: toNum(pageRows),
@@ -177,16 +196,8 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
         pagesDraft: toNum(draftRows),
         pagesArchived: toNum(archRows),
         pagesDeleted: toNum(delRows),
-        totalStorageBytes: toNum2(storageRows, 'total'),
+        totalStorageBytes,
       });
-
-      setTopContributors(
-        (contribRows as unknown[]).map((r: unknown) => ({
-          user_id: String(r.user_id || ''),
-          user_name: String(r.user_name || 'Unknown'),
-          page_count: Number(r.page_count || 0),
-        })),
-      );
     } catch (e: unknown) {
       console.error('Failed to load stats:', e);
       setError('Failed to load wiki statistics. Make sure the database is connected.');
@@ -200,15 +211,15 @@ export default function AdminDashboard({ userId }: { userId: string | null }) {
     setActivityLoading(true);
     try {
       const rows = await sqlQuery(
-        'SELECT id, event_type, actor_id, target_name, created_at FROM audit_event ',
+        'SELECT id, event_type, actor_id, target_name, created_at FROM audit_event',
       );
       setRecentActivity(
-        (rows as unknown[]).map((r: unknown) => ({
-          id: String(r.id || ''),
-          event_type: String(r.event_type || ''),
-          actor_id: String(r.actor_id || ''),
-          target_name: String(r.target_name || ''),
-          created_at: Number(r.created_at || 0),
+        ((rows as unknown[][]) ?? []).map((r) => ({
+          id: String(r[0] || ''),
+          event_type: String(r[1] || ''),
+          actor_id: String(r[2] || ''),
+          target_name: String(r[3] || ''),
+          created_at: Number(r[4] || 0),
         })),
       );
     } catch (e) {

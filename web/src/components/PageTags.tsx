@@ -56,19 +56,21 @@ export function PageTags({ pageId, editable = false, userId }: Props) {
     if (!editable) return;
     // Get all unique tag names across all pages
     api.tags.list(pageId).then(() => {
-      // We need a query to get all distinct tag names
-      // Use generic STDB query
+      // Get all unique tag names across all pages
+      // STDB v2.6.1 has no DISTINCT — fetch rows and dedupe client-side.
       fetch(
         `http://${import.meta.env.VITE_STDB_HOST || 'localhost:3001'}/v1/database/${import.meta.env.VITE_STDB_DB || 'spacetime-wiki'}/sql`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
-          body: 'SELECT DISTINCT name FROM page_tag',
+          body: 'SELECT name FROM page_tag',
         },
       )
         .then((res) => res.json())
         .then((data) => {
-          const names = ((data[0]?.rows || []) as unknown[][]).map((r) => String(r[0]));
+          const names = [
+            ...new Set(((data[0]?.rows || []) as unknown[][]).map((r) => String(r[0]))),
+          ];
           setAllTags(names);
         })
         .catch((err) => console.error('API error:', err));

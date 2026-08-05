@@ -84,13 +84,13 @@ describe('AccessRequestPanel', () => {
     // Use implementation that inspects SQL to handle interleaved parallel calls
     mockSqlQuery.mockImplementation((sql: string) => {
       if (sql.includes('My Document') || (sql.includes('title FROM') && sql.includes('page1')))
-        return Promise.resolve([{ title: 'My Document' }]);
+        return Promise.resolve([['My Document']]);
       if (sql.includes('Other Page') || (sql.includes('title FROM') && sql.includes('page2')))
-        return Promise.resolve([{ title: 'Other Page' }]);
+        return Promise.resolve([['Other Page']]);
       if (sql.includes('Alice') || (sql.includes('name FROM') && sql.includes('u1')))
-        return Promise.resolve([{ name: 'Alice' }]);
+        return Promise.resolve([['Alice']]);
       if (sql.includes('Bob') || (sql.includes('name FROM') && sql.includes('u2')))
-        return Promise.resolve([{ name: 'Bob' }]);
+        return Promise.resolve([['Bob']]);
       return Promise.resolve([]);
     });
     render(<AccessRequestPanel userId="admin1" />);
@@ -108,8 +108,8 @@ describe('AccessRequestPanel', () => {
     mockAccessRequestApi.listPending.mockResolvedValue([pendingRequests[0]]);
     mockAccessRequestApi.approve.mockResolvedValue(undefined);
     mockSqlQuery.mockImplementation((sql: string) => {
-      if (sql.includes('page1')) return Promise.resolve([{ title: 'Doc' }]);
-      if (sql.includes('u1')) return Promise.resolve([{ name: 'Alice' }]);
+      if (sql.includes('page1')) return Promise.resolve([['Doc']]);
+      if (sql.includes('u1')) return Promise.resolve([['Alice']]);
       return Promise.resolve([]);
     });
     render(<AccessRequestPanel userId="admin1" />);
@@ -124,8 +124,8 @@ describe('AccessRequestPanel', () => {
     mockAccessRequestApi.listPending.mockResolvedValue([pendingRequests[0]]);
     mockAccessRequestApi.deny.mockResolvedValue(undefined);
     mockSqlQuery.mockImplementation((sql: string) => {
-      if (sql.includes('page1')) return Promise.resolve([{ title: 'Doc' }]);
-      if (sql.includes('u1')) return Promise.resolve([{ name: 'Alice' }]);
+      if (sql.includes('page1')) return Promise.resolve([['Doc']]);
+      if (sql.includes('u1')) return Promise.resolve([['Alice']]);
       return Promise.resolve([]);
     });
     render(<AccessRequestPanel userId="admin1" />);
@@ -139,8 +139,8 @@ describe('AccessRequestPanel', () => {
   it('shows approved status without action buttons', async () => {
     mockAccessRequestApi.listPending.mockResolvedValue([approvedRequest]);
     mockSqlQuery.mockImplementation((sql: string) => {
-      if (sql.includes('page3')) return Promise.resolve([{ title: 'Approved Doc' }]);
-      if (sql.includes('u3')) return Promise.resolve([{ name: 'Charlie' }]);
+      if (sql.includes('page3')) return Promise.resolve([['Approved Doc']]);
+      if (sql.includes('u3')) return Promise.resolve([['Charlie']]);
       return Promise.resolve([]);
     });
     render(<AccessRequestPanel userId="admin1" />);
@@ -154,8 +154,8 @@ describe('AccessRequestPanel', () => {
     mockAccessRequestApi.listPending.mockResolvedValue([pendingRequests[0]]);
     mockAccessRequestApi.approve.mockRejectedValue(new Error('Reducer failed'));
     mockSqlQuery.mockImplementation((sql: string) => {
-      if (sql.includes('page1')) return Promise.resolve([{ title: 'Doc' }]);
-      if (sql.includes('u1')) return Promise.resolve([{ name: 'Alice' }]);
+      if (sql.includes('page1')) return Promise.resolve([['Doc']]);
+      if (sql.includes('u1')) return Promise.resolve([['Alice']]);
       return Promise.resolve([]);
     });
     render(<AccessRequestPanel userId="admin1" />);
@@ -196,8 +196,8 @@ describe('AccessRequestPanel', () => {
     await waitFor(() => expect(screen.getByText('No pending access requests')).toBeInTheDocument());
     mockAccessRequestApi.listPending.mockResolvedValue([pendingRequests[0]]);
     mockSqlQuery.mockImplementation((sql: string) => {
-      if (sql.includes('page1')) return Promise.resolve([{ title: 'Doc' }]);
-      if (sql.includes('u1')) return Promise.resolve([{ name: 'Alice' }]);
+      if (sql.includes('page1')) return Promise.resolve([['Doc']]);
+      if (sql.includes('u1')) return Promise.resolve([['Alice']]);
       return Promise.resolve([]);
     });
     fireEvent.click(screen.getByText('Refresh'));

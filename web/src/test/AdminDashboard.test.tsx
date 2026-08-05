@@ -54,21 +54,23 @@ describe('AdminDashboard', () => {
 
   it('renders with populated stats', async () => {
     mockSqlQuery
-      .mockResolvedValueOnce([{ c: 42 }])
-      .mockResolvedValueOnce([{ c: 8 }])
-      .mockResolvedValueOnce([{ c: 3 }])
-      .mockResolvedValueOnce([{ c: 156 }])
-      .mockResolvedValueOnce([{ c: 27 }])
-      .mockResolvedValueOnce([{ c: 30 }])
-      .mockResolvedValueOnce([{ c: 10 }])
-      .mockResolvedValueOnce([{ c: 2 }])
-      .mockResolvedValueOnce([{ c: 5 }])
-      .mockResolvedValueOnce([{ total: 10485760 }])
+      .mockResolvedValueOnce([[42]])
+      .mockResolvedValueOnce([[8]])
+      .mockResolvedValueOnce([[3]])
+      .mockResolvedValueOnce([[156]])
+      .mockResolvedValueOnce([[27]])
+      .mockResolvedValueOnce([[30]])
+      .mockResolvedValueOnce([[10]])
+      .mockResolvedValueOnce([[2]])
+      .mockResolvedValueOnce([[5]])
+      .mockResolvedValueOnce([[10485760]])
+      .mockResolvedValueOnce([['u1'], ['u2'], ['u3']])
       .mockResolvedValueOnce([
-        { user_id: 'u1', user_name: 'Alice', page_count: 15 },
-        { user_id: 'u2', user_name: 'Bob', page_count: 10 },
-        { user_id: 'u3', user_name: 'Charlie', page_count: 5 },
-      ]);
+        ['u1', 'Alice'],
+        ['u2', 'Bob'],
+        ['u3', 'Charlie'],
+      ])
+      .mockResolvedValueOnce([]);
     render(<AdminDashboard userId="admin1" />);
     await waitFor(() => {
       expect(screen.getByText('42')).toBeInTheDocument();
@@ -90,16 +92,18 @@ describe('AdminDashboard', () => {
 
   it("shows 'No pages created yet' when contributors empty", async () => {
     mockSqlQuery
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 1 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ total: 0 }])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[1]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
     render(<AdminDashboard userId="admin1" />);
     await waitFor(() => {
@@ -109,16 +113,18 @@ describe('AdminDashboard', () => {
 
   it("shows 'No activity recorded yet' when activity empty", async () => {
     mockSqlQuery
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 1 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ total: 0 }])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[1]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
     render(<AdminDashboard userId="admin1" />);
     await waitFor(() => {
@@ -128,32 +134,21 @@ describe('AdminDashboard', () => {
 
   it('renders recent activity items', async () => {
     mockSqlQuery
-      .mockResolvedValueOnce([{ c: 5 }])
-      .mockResolvedValueOnce([{ c: 1 }])
-      .mockResolvedValueOnce([{ c: 2 }])
-      .mockResolvedValueOnce([{ c: 3 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 4 }])
-      .mockResolvedValueOnce([{ c: 1 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ c: 0 }])
-      .mockResolvedValueOnce([{ total: 0 }])
+      .mockResolvedValueOnce([[5]])
+      .mockResolvedValueOnce([[1]])
+      .mockResolvedValueOnce([[2]])
+      .mockResolvedValueOnce([[3]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[4]])
+      .mockResolvedValueOnce([[1]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([[0]])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
-        {
-          id: 'e1',
-          event_type: 'page.create',
-          actor_id: 'u1',
-          target_name: 'My Page',
-          created_at: 1700000000,
-        },
-        {
-          id: 'e2',
-          event_type: 'comment.create',
-          actor_id: 'u2',
-          target_name: 'Other Page',
-          created_at: 1699900000,
-        },
+        ['e1', 'page.create', 'u1', 'My Page', 1700000000],
+        ['e2', 'comment.create', 'u2', 'Other Page', 1699900000],
       ]);
     render(<AdminDashboard userId="admin1" />);
     await waitFor(() => {
