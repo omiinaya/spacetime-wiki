@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: ISC
 
 import { useSubscription } from '../subscriptions';
+import { sqlLit } from './client';
 import {
   mapPage,
   mapCollection,
