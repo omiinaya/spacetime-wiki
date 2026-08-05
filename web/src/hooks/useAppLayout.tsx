@@ -17,6 +17,12 @@ import { useImportExport } from './useImportExport';
 import { useDragDrop } from './useDragDrop';
 import { useBatchSelect } from './useBatchSelect';
 import {
+  groupPagesByCollection,
+  buildCollectionTree,
+  isActivePage,
+  pageIdFromPath,
+} from './appLayoutUtils';
+import {
   FileText as FileTextIcon,
   BookOpen as BookOpenIcon,
   Plus as PlusIcon,
@@ -362,51 +368,17 @@ export function useAppLayout() {
   const batch = useBatchSelect(refreshData);
 
   // ─── Computed values ────────────────────────────────────────────────────
-  const pagesByCollection: Record<string, Page[]> = (() => {
-    const byCol: Record<string, Page[]> = {};
-    for (const page of pages.filter(
-      (p) => p.status !== 'deleted' && search.filteredPages.includes(p),
-    )) {
-      const cid = page.collection_id || 'uncategorized';
-      if (!byCol[cid]) byCol[cid] = [];
-      byCol[cid].push(page);
-    }
-    for (const cid of Object.keys(byCol)) {
-      const sortMode = collectionSortModes[cid] || 'manual';
-      byCol[cid].sort((a, b) => {
-        if (a.is_pinned && !b.is_pinned) return -1;
-        if (!a.is_pinned && b.is_pinned) return 1;
-        if (sortMode === 'title-asc') return a.title.localeCompare(b.title);
-        if (sortMode === 'title-desc') return b.title.localeCompare(a.title);
-        if (sortMode === 'created-asc') return a.created_at - b.created_at;
-        if (sortMode === 'created-desc') return b.created_at - a.created_at;
-        if (sortMode === 'updated-asc') return a.updated_at - b.updated_at;
-        if (sortMode === 'updated-desc') return b.updated_at - a.updated_at;
-        return a.sort_order - b.sort_order;
-      });
-    }
-    return byCol;
-  })();
+  const pagesByCollection: Record<string, Page[]> = groupPagesByCollection(
+    pages,
+    collectionSortModes,
+    (p) => search.filteredPages.includes(p),
+  );
 
-  const collectionTree = (() => {
-    const colChildren = new Map<string, Collection[]>();
-    for (const col of collections) {
-      const parentId = col.parent_id || '';
-      if (!colChildren.has(parentId)) colChildren.set(parentId, []);
-      colChildren.get(parentId)!.push(col);
-    }
-    const getTree = (parentId: string): (Collection & { children: Collection[] })[] => {
-      return (colChildren.get(parentId) || [])
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map((col) => ({ ...col, children: getTree(col.id) }));
-    };
-    return getTree('');
-  })();
+  const collectionTree = buildCollectionTree(collections);
 
-  const isActive = (pageId: string) =>
-    location.pathname === `/page/${pageId}` || location.pathname.startsWith(`/page/${pageId}`);
+  const isActive = (pageId: string) => isActivePage(location.pathname, pageId);
 
-  const currentPageId = location.pathname.match(/^\/page\/([^\/]+)(?:\/edit)?$/)?.[1] || '';
+  const currentPageId = pageIdFromPath(location.pathname);
   const currentPageTitle = currentPageId
     ? pages.find((p) => p.id === currentPageId)?.title || ''
     : '';
