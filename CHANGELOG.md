@@ -121,6 +121,19 @@ toBeInTheDocument`) — every commit touching `web/src` failed the hook.
   `TABLE_NAMES`) also listed the wrong name. Fixed queries + allowlists +
   the allowlist unit test. Systematic audits now verify every frontend SQL
   table and all 31 public-table mappers against the live STDB schema.
+- **Reducer-drift bug fix (3 reducers)** — an audit cross-checking every
+  `callReducer`/`call_reducer` name + arg count against the Rust
+  `#[reducer]` signatures found three real runtime bugs: ① API
+  `add_page_tag` → reducer is `add_tag` (wrong name + wrong arity);
+  ② `create_webhook` fn had no `#[reducer]` attribute, so webhook
+  creation was never registered; ③ API `add_comment` (3 args vs 6) and
+  `create_share_link` (2 args vs 6) passed wrong arg shapes. All fixed;
+  endpoint tests now assert exact reducer names + args.
+- **New `scripts/audit_reducer_drift.py`** — cross-checks frontend + Python
+  reducer calls (name AND arg count, bracket-aware scanner) against Rust
+  signatures and verifies frontend SQL table names against live STDB.
+  Wired into the pre-commit hook for `.rs` changes. Caught 7 real bugs
+  total this session.
 - **Consolidated ~1,700 lines of repetitive Rust struct-construction tests**
   — deleted 39 `default_*()` helpers (pure `X::default()` wrappers) and 40
   per-struct construction tests that only re-asserted literals just written
