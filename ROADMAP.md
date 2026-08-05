@@ -272,9 +272,10 @@ webhooks, ZIP import/export, AI assistant chat — all built and wired up.
 
 Open follow-ups (defensive depth, not blockers): route the API server's raw-SQL reads
 through STDB reducers to centralize permission logic (P1 architectural refactor,
-12-20h); expand the 45 positional mappers' contract tests to the remaining ~27
-mappers; add unit tests to the largest untested frontend surfaces (useAppLayout 1,090
-lines, DatabaseBase 798, LoginView 529, RichEmbed 567).
+12-20h); add unit tests to the largest untested frontend surfaces (useAppLayout 1,090
+lines, DatabaseBase 798, LoginView 529, RichEmbed 567). Mapper contract tests now
+cover 16 cases across the 31 public-table mappers, all verified against live STDB
+schema (2026-08-04 audit caught and fixed a mapScimProvider off-by-one drift).
 
 ---
 
