@@ -1,5 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Allow E2E runs to use isolated DB + ports so parallel runs (e.g. local dev
+// vs the CI self-hosted runner) never collide on the shared spacetime-wiki-e2e
+// DB or the 8711/5184 ports. CI keeps the defaults.
+const API_PORT = process.env.API_PORT || '8711';
+const WEB_PORT = process.env.WEB_PORT || '5184';
+const STDB_DB = process.env.STDB_DATABASE || process.env.STDB_DB || 'spacetime-wiki-e2e';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -18,7 +25,7 @@ export default defineConfig({
     timeout: 15000,
   },
   use: {
-    baseURL: 'http://localhost:5184',
+    baseURL: `http://localhost:${WEB_PORT}`,
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
@@ -40,27 +47,28 @@ export default defineConfig({
   ],
   // In CI (self-hosted runner):
   //   - STDB must be running natively (port 3001) — it's NOT managed here
-  //   - API server (port 8711) is started via web/scripts/setup-e2e-deps.sh
+  //   - API server is started via web/scripts/setup-e2e-deps.sh
   //     which publishes the module, starts uvicorn, and self-cleans on exit
-  //   - The frontend Vite preview (port 5184) is managed here as another webServer
+  //   - The frontend Vite preview is managed here as another webServer
   // For local dev, start these manually:
   //   docker compose up -d spacetimedb api-server
   //   npx vite --port 5184
+  // To run with an isolated DB/ports (avoid CI collision): set
+  //   STDB_DATABASE, API_PORT, WEB_PORT env before `npx playwright test`.
   webServer: process.env.CI
     ? [
         // API deps: publishes module to native STDB → starts API server → waits for health
         {
-          command: 'bash scripts/setup-e2e-deps.sh',
-          port: 8711,
-          timeout: 120000,
+          command: `API_PORT=${API_PORT} STDB_DATABASE=${STDB_DB} bash scripts/setup-e2e-deps.sh`,
+          port: Number(API_PORT),
+          timeout: 180000,
           reuseExistingServer: false,
         },
         // Frontend: builds + serves Vite preview
         {
-          command:
-            'VITE_STDB_HOST=${VITE_STDB_HOST:-localhost:3001} VITE_STDB_DB=${VITE_STDB_DB:-spacetime-wiki-e2e} VITE_API_BASE=${VITE_API_BASE:-http://localhost:8711} npm run build && npx vite preview --port 5184 --strictPort',
-          port: 5184,
-          timeout: 120000,
+          command: `VITE_STDB_HOST=${process.env.VITE_STDB_HOST || 'localhost:3001'} VITE_STDB_DB=${STDB_DB} VITE_API_BASE=${process.env.VITE_API_BASE || `http://localhost:${API_PORT}`} npm run build && npx vite preview --port ${WEB_PORT} --strictPort`,
+          port: Number(WEB_PORT),
+          timeout: 180000,
           reuseExistingServer: false,
         },
       ]

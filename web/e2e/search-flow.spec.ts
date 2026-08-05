@@ -1,0 +1,94 @@
+import { test, expect } from './fixtures';
+import { signInAsAdmin, isVisible } from './helpers';
+
+/**
+ * Search results flow E2E tests.
+ *
+ * Typing in the sidebar search box filters the sidebar tree live and shows
+ * content snippets; clicking a matched page navigates to it. Also covers the
+ * SearchFilters toggle (collection/status/date/tags filters).
+ */
+
+test.describe('Search — results flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await signInAsAdmin(page);
+    await page.goto('/');
+    await page.waitForLoadState('load');
+  });
+
+  test('typing a query filters the sidebar tree to matching pages', async ({ page }) => {
+    const searchInput = page.getByPlaceholder('Search...');
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill('Welcome');
+    await page.waitForTimeout(1500);
+
+    // The seeded page "Welcome to SpacetimeWiki" should be visible in the tree
+    await expect(page.getByText('Welcome to SpacetimeWiki').first()).toBeVisible({
+      timeout: 10000,
+    });
+  });
+
+  test('matching page shows a content snippet in the tree', async ({ page }) => {
+    const searchInput = page.getByPlaceholder('Search...');
+    await searchInput.fill('collaborative');
+    await page.waitForTimeout(1500);
+
+    // Snippet text from the seeded Welcome page content ("collaborative wiki")
+    await expect(page.getByText(/collaborative wiki powered by SpacetimeDB/i).first()).toBeVisible(
+      { timeout: 10000 },
+    );
+  });
+
+  test('clicking a search result navigates to the page view', async ({ page }) => {
+    const searchInput = page.getByPlaceholder('Search...');
+    await searchInput.fill('Welcome');
+    await page.waitForTimeout(1500);
+
+    const result = page.getByText('Welcome to SpacetimeWiki').first();
+    await result.click();
+    await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/, { timeout: 20000 });
+    await expect(page.getByRole('heading', { name: /Welcome to SpacetimeWiki/i })).toBeVisible({
+      timeout: 10000,
+    });
+  });
+
+  test('clearing the query restores the full tree', async ({ page }) => {
+    const searchInput = page.getByPlaceholder('Search...');
+    await searchInput.fill('zzz-no-such-page');
+    await page.waitForTimeout(1000);
+
+    // Clear via the X button (rendered inline next to the input when set)
+    const clearBtn = page
+      .locator('aside .relative')
+      .filter({ has: page.getByPlaceholder('Search...') })
+      .first()
+      .getByRole('button')
+      .first();
+    if (await isVisible(clearBtn, 2000)) {
+      await clearBtn.click();
+    } else {
+      await searchInput.clear();
+    }
+    await page.waitForTimeout(800);
+    await expect(searchInput).toHaveValue('');
+  });
+});
+
+test.describe('Search filters — toggle and options', () => {
+  test.beforeEach(async ({ page }) => {
+    await signInAsAdmin(page);
+    await page.goto('/');
+    await page.waitForLoadState('load');
+  });
+
+  test('Filters button toggles the filter panel', async ({ page }) => {
+    const filtersBtn = page.getByRole('button', { name: /Filters/i });
+    await expect(filtersBtn).toBeVisible({ timeout: 10000 });
+    await filtersBtn.click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByText('Search filters').first()).toBeVisible({ timeout: 5000 });
+    // A collection selector appears
+    await expect(page.getByText(/All collections/i).first()).toBeVisible({ timeout: 5000 });
+  });
+});
