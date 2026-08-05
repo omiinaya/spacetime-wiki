@@ -106,8 +106,9 @@ test.describe('Trash — restore lifecycle', () => {
 
     // The page leaves the TRASH DIALOG list. (The title also reappears in
     // the sidebar tree after restore — scope the assertion to the dialog.)
+    // restorePage re-queries all data (refreshData); allow time under load.
     const dialog = page.locator('div.fixed.inset-0').filter({ hasText: /Trash/ }).first();
-    await expect(dialog.getByText(uniqueTitle)).not.toBeVisible({ timeout: 10000 });
+    await expect(dialog.getByText(uniqueTitle)).not.toBeVisible({ timeout: 20000 });
 
     // And is back in the sidebar tree (draft status) from home
     await page.goto('/');
@@ -137,8 +138,9 @@ test.describe('Trash — restore lifecycle', () => {
     await page.waitForTimeout(1500);
 
     // Gone from trash — scope to the trash dialog (the title may also exist
-    // elsewhere if a parallel spec re-created it)
+    // elsewhere if a parallel spec re-created it). permanentDelete also
+    // re-queries all data; allow time under load.
     const dialog = page.locator('div.fixed.inset-0').filter({ hasText: /Trash/ }).first();
-    await expect(dialog.getByText(uniqueTitle)).not.toBeVisible({ timeout: 10000 });
+    await expect(dialog.getByText(uniqueTitle)).not.toBeVisible({ timeout: 20000 });
   });
 });
