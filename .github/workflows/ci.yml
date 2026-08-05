@@ -169,7 +169,7 @@ jobs:
 
       - name: Start SpacetimeDB (service container)
         run: |
-          docker run -d --name stdb -p 3001:3001 -p 3000:3000 clockworklabs/spacetime start
+          docker run -d --name stdb -p 3001:3001 clockworklabs/spacetime start --listen-addr 0.0.0.0:3001
           for i in $(seq 1 60); do
             if curl -sf http://localhost:3001/v1/health >/dev/null 2>&1; then
               echo "STDB ready after ${i}s"
