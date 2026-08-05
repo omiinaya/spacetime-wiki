@@ -132,10 +132,17 @@ class TestPagesRouter:
                 assert resp.status_code == 200
 
     def test_add_tag(self, client):
-        with patch("routers.pages.call_reducer", new_callable=AsyncMock, return_value=None):
+        with patch("routers.pages.call_reducer", new_callable=AsyncMock, return_value=None) as mock_reducer:
             with patch("routers.pages.check_page_access", new_callable=AsyncMock, return_value=True):
                 resp = client.post("/api/v1/pages/p1/tags?name=status&value=done")
                 assert resp.status_code == 200
+                # reducer is add_tag (not add_page_tag) with (id, page_id, name, value)
+                mock_reducer.assert_awaited_once()
+                call = mock_reducer.await_args
+                assert call.args[0] == "add_tag"
+                assert len(call.args[1]) == 4
+                assert call.args[1][0].startswith("tag_")
+                assert call.args[1][1:] == ["p1", "status", "done"]
 
     def test_list_attachments(self, client):
         with patch("routers.pages.sql_query", new_callable=AsyncMock) as mock_sql:

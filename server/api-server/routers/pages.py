@@ -1,4 +1,5 @@
 """Page CRUD endpoints."""
+import uuid
 from fastapi import APIRouter, HTTPException, Query, Request
 from models import (
     CommentCreateResponse,
@@ -188,7 +189,9 @@ async def list_tags(
 async def add_tag(request: Request, page_id: str, name: str, value: str = ""):
     """Add a tag to a page."""
     await check_page_access(request, page_id, "editor")
-    result = await call_reducer("add_page_tag", [page_id, name, value])
+    # add_tag reducer signature: (id, page_id, name, value)
+    tag_id = f"tag_{uuid.uuid4().hex[:12]}"
+    result = await call_reducer("add_tag", [tag_id, page_id, name, value])
     return result or {"status": "created"}
 
 
