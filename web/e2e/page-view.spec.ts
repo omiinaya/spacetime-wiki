@@ -8,12 +8,15 @@ test.describe('Page view', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('load');
-    // Navigate to first available page or create one
+    // Wait for the app shell, then navigate to the first available page or
+    // create one. Guest home may show the landing on a fresh DB — wait longer
+    // for the 'Updated' recent-pages buttons under accumulated data.
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
     const firstPage = page
       .locator('main button')
       .filter({ hasText: /Updated/ })
       .first();
-    await expect(firstPage).toBeVisible({ timeout: 5000 });
+    await expect(firstPage).toBeVisible({ timeout: 15000 });
     await firstPage.click();
     await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/);
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });

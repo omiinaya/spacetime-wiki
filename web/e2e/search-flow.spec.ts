@@ -35,6 +35,18 @@ test.describe('Search — results flow', () => {
     await createPage(page, 'Snippet Source Page', 'zebra uniquely collaborative snippet content');
     await page.goto('/');
     await page.waitForLoadState('load');
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
+
+    // Snippets only render inside EXPANDED collection buckets — expand the
+    // 'Uncategorized' (hash-icon) bucket so the created page's row renders.
+    const bucket = page
+      .locator('aside button')
+      .filter({ has: page.locator('svg.lucide-hash') })
+      .first();
+    if (await isVisible(bucket, 5000)) {
+      await bucket.click();
+      await page.waitForTimeout(500);
+    }
 
     const searchInput = page.getByPlaceholder('Search...');
     await searchInput.fill('Snippet Source');

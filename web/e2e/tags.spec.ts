@@ -47,11 +47,11 @@ test.describe('Page tags', () => {
     await page.waitForTimeout(1200);
     await expect(page.getByText('remove-me-tag').first()).toBeVisible({ timeout: 8000 });
 
-    // Remove via the tag chip's × button (an X icon button next to the tag)
-    const removeBtn = page
-      .locator('button')
-      .filter({ has: page.locator('svg.lucide-x') })
-      .first();
+    // Remove via the tag chip's × button — scope to the chip row (the span
+    // containing the tag text) to avoid matching the sidebar Close button.
+    const chip = page.locator('span', { hasText: 'remove-me-tag' }).first();
+    await expect(chip).toBeVisible({ timeout: 5000 });
+    const removeBtn = chip.locator('button').first();
     await removeBtn.click();
     await page.waitForTimeout(1200);
 

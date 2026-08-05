@@ -51,12 +51,11 @@ test.describe('Page toolbar actions', () => {
     await page.waitForTimeout(2000);
 
     // Duplicate navigates to the COPY's EDITOR route (/page/{id}/edit) with
-    // the title bearing a ' (copy)' suffix.
+    // the title bearing a ' (copy)' suffix (in the editor title input).
     await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+(?:\/edit)?$/, { timeout: 20000 });
     await expect(page.locator('.ProseMirror')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText(/Duplicate Source Page.*copy/i).first()).toBeVisible({
-      timeout: 10000,
-    });
+    const titleInput = page.getByPlaceholder('Untitled');
+    await expect(titleInput).toHaveValue(/Duplicate Source Page.*copy/i, { timeout: 10000 });
   });
 
   test('permissions dialog opens and shows the heading', async ({ page }) => {
