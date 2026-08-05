@@ -227,17 +227,27 @@ def main() -> int:
     # 3. Frontend SQL table names vs live STDB (best-effort)
     tables = sql_tables()
     try:
-        bad = [t for t in sorted(tables) if not live_table_exists(t, args.live_stdb)]
+        # probe connectivity once — if STDB is unreachable, skip this check
+        # entirely rather than reporting every table as missing
+        probe = urllib.request.Request(
+            f"http://{args.live_stdb}/v1/database/spacetime-wiki/sql",
+            data=b"SELECT COUNT(*) AS n FROM \"user\"",
+            headers={"Content-Type": "text/plain"},
+        )
+        urllib.request.urlopen(probe, timeout=5).read()
+        stdb_up = True
     except Exception as e:
-        bad = []
-        print(f"⚠️  Live STDB check skipped ({e})")
-    if bad:
-        errors += len(bad)
-        print("❌ SQL table names that don't resolve on live STDB:")
-        for t in bad:
-            print(f"   {t}")
-    else:
-        print("✅ All frontend SQL table names resolve on live STDB" if not bad else "")
+        stdb_up = False
+        print(f"⚠️  Live STDB check skipped (unreachable: {e})")
+    if stdb_up:
+        bad = [t for t in sorted(tables) if not live_table_exists(t, args.live_stdb)]
+        if bad:
+            errors += len(bad)
+            print("❌ SQL table names that don't resolve on live STDB:")
+            for t in bad:
+                print(f"   {t}")
+        else:
+            print("✅ All frontend SQL table names resolve on live STDB")
 
     print(f"\n{'❌ FAILED' if errors else '✅ PASSED'} — {errors} issue(s)")
     return 1 if errors else 0

@@ -24,6 +24,8 @@ RUST_CHANGED=$(git diff --cached --name-only | grep -c '\.rs$' || true)
 if [ "$RUST_CHANGED" -gt 0 ]; then
   echo "⟦pre-commit⟧ Rust files changed — running cargo check..."
   (cd server/spacetimedb && cargo check 2>&1)
+  echo "⟦pre-commit⟧ Rust changed — running reducer-drift audit (static checks)..."
+  (cd "$(git rev-parse --show-toplevel)" && python3 scripts/audit_reducer_drift.py 2>&1 | tail -8)
 fi
 
 # Check if any web/src files changed → quick type check
