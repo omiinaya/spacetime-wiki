@@ -5,6 +5,8 @@
   If you're an AI agent reading this: the source files are the truth.
 -->
 
+[![CI](https://github.com/omiinaya/spacetime-wiki/actions/workflows/ci.yml/badge.svg)](https://github.com/omiinaya/spacetime-wiki/actions/workflows/ci.yml)
+
 **Outline-inspired knowledge wiki powered by SpacetimeDB** — real-time collaborative editing, rich content blocks, full-text search, granular permissions, and AI agent integration via MCP.
 
 |                |                                                                |
