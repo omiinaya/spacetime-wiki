@@ -48,7 +48,9 @@ export function useSearch(
               .replace(/"/g, '')
               .trim();
             const found = allUsers.find(
-              (u) => (u.name || u.email).toLowerCase() === name.toLowerCase(),
+              (u) =>
+                u.name.toLowerCase() === name.toLowerCase() ||
+                (u.email || '').toLowerCase() === name.toLowerCase(),
             );
             if (found) authId = found.id;
             return '';
@@ -59,7 +61,9 @@ export function useSearch(
           apply: (match: string) => {
             const name = match.replace(/^by:/i, '').replace(/"/g, '').trim();
             const found = allUsers.find(
-              (u) => (u.name || u.email).toLowerCase() === name.toLowerCase(),
+              (u) =>
+                u.name.toLowerCase() === name.toLowerCase() ||
+                (u.email || '').toLowerCase() === name.toLowerCase(),
             );
             if (found) authId = found.id;
             return '';
