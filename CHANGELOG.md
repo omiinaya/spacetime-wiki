@@ -104,6 +104,16 @@ toBeInTheDocument`) — every commit touching `web/src` failed the hook.
 - **author:/by: search now matches name OR email** — previously only
   `u.name || u.email` (name wins), so `by:alice@x.io` never matched a user
   named "Alice". Now matches either field.
+- **mapScimProvider off-by-one drift (SCIM provider list corrupted)** —
+  the mapper read row[3] as `api_token_hash`, but the credential split
+  moved the token hash into the PRIVATE `scim_provider_credential` table;
+  the public `scim_provider` row is `(id, name, slug, is_active, ...)`.
+  Every field after position 2 mapped off-by-one, so `getScimProviders()`
+  returned corrupt provider data in the admin panel. Mapper now reads the
+  live column order; the `ScimProvider` TS type drops `api_token_hash`
+  (never SQL-queryable). Audited all 31 public-table mappers against live
+  STDB schema — SCIM was the only drift. Mapper contract tests expanded
+  11 → 16 cases.
 - **Consolidated ~1,700 lines of repetitive Rust struct-construction tests**
   — deleted 39 `default_*()` helpers (pure `X::default()` wrappers) and 40
   per-struct construction tests that only re-asserted literals just written
