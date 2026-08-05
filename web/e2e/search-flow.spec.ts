@@ -95,7 +95,11 @@ test.describe('Search filters — toggle and options', () => {
     await page.waitForTimeout(500);
 
     await expect(page.getByText('Search filters').first()).toBeVisible({ timeout: 5000 });
-    // A collection selector appears
-    await expect(page.getByText(/All collections/i).first()).toBeVisible({ timeout: 5000 });
+    // A collection selector appears (options are never 'visible' — assert the
+    // select's option text instead)
+    const collSelect = page.locator('select').first();
+    await expect(collSelect).toBeVisible({ timeout: 5000 });
+    const opts = await collSelect.locator('option').allTextContents();
+    expect(opts.some((o) => /All collections/i.test(o))).toBe(true);
   });
 });

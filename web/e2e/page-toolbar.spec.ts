@@ -50,8 +50,10 @@ test.describe('Page toolbar actions', () => {
     await dupBtn.click();
     await page.waitForTimeout(2000);
 
-    // Duplicate navigates to the copy (title gets ' (copy)' suffix)
-    await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/, { timeout: 20000 });
+    // Duplicate navigates to the COPY's EDITOR route (/page/{id}/edit) with
+    // the title bearing a ' (copy)' suffix.
+    await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+(?:\/edit)?$/, { timeout: 20000 });
+    await expect(page.locator('.ProseMirror')).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(/Duplicate Source Page.*copy/i).first()).toBeVisible({
       timeout: 10000,
     });

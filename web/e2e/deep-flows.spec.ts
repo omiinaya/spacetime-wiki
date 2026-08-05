@@ -97,11 +97,12 @@ test.describe('Import — Markdown', () => {
     const importBtn = page.locator('aside').getByRole('button', { name: 'Import MD' });
     await expect(importBtn).toBeVisible({ timeout: 10000 });
 
-    // Set the file on the hidden input (accept=".md"). setInputFiles works
-    // on hidden inputs — click the button first so the input exists.
+    // Set the file on the hidden .md input (accept=".md,.txt"). setInputFiles
+    // works on hidden inputs — click the button first so the input exists,
+    // then target it precisely (the sidebar has image/zip inputs too).
     await importBtn.click();
     await page.waitForTimeout(300);
-    const input = page.locator('input[type="file"]').first();
+    const input = page.locator('input[type="file"][accept=".md,.txt"]').first();
     await input.setInputFiles({
       name: 'e2e-import.md',
       mimeType: 'text/markdown',
@@ -109,8 +110,11 @@ test.describe('Import — Markdown', () => {
     });
     await page.waitForTimeout(3000);
 
-    // The import navigates to the new page or the editor
-    const imported = page.getByText(/Imported E2E Page/i).first();
-    await expect(imported).toBeVisible({ timeout: 15000 });
+    // The import shows a success toast and the page appears in the sidebar
+    // tree (no navigation — the handler creates the page in place).
+    await expect(page.getByText(/imported from Markdown/i).first()).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.getByText('Imported E2E Page').first()).toBeVisible({ timeout: 15000 });
   });
 });
