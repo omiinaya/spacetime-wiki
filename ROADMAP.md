@@ -208,50 +208,73 @@
 
 ---
 
-## 📊 Overall Assessment (Fresh, 2026-07-10)
+## 📊 Overall Assessment (Fresh, 2026-08-04)
 
 ### By Layer
 
-| Layer           | Files    | LOC   | Tests                 | Status                                         |
-| --------------- | -------- | ----- | --------------------- | ---------------------------------------------- |
-| **Rust module** | 17 `.rs` | 7,232 | 201 unit ✅, 14 integ | 🟡 35/50 tables private, 4 clippy, 5 dead code |
+| Layer           | Files    | LOC    | Tests                 | Status                                                        |
+| --------------- | -------- | ------ | --------------------- | ------------------------------------------------------------- |
+| **Rust module** | 18 `.rs` | 9,023  | 210 unit ✅, 86 integ | 15 private tables (credential split), clippy clean            |
+| **API server**  | 19 `.py` | ~3,690 | 308 unit + 5 live ✅  | STDB v2.6.1-compatible (OFFSET rewrite, `?i` params)          |
+| **MCP server**  | 3 `.py`  | ~1,715 | 129 unit + 8 live ✅  | STDB v2.6.1-compatible (typed placeholders, in-Python search) |
+| **Frontend**    | ~170 TS  | —      | 1,391 unit ✅         | tsc clean, build clean, sqlLit/sqlInt on all SQL              |
+| **E2E**         | 14 specs | —      | 79 cases, 3 browsers  | error-capturing fixture, cross-browser validated              |
 
 ### Overall Scores
 
-### Overall Scores
+| Metric                          | Value                                                           | Score                                   |
+| ------------------------------- | --------------------------------------------------------------- | --------------------------------------- |
+| **Feature completeness**        | ~30 features, only i18n partial                                 | **95%**                                 |
+| **Rust tests**                  | 210/210 ✅                                                      | **100%**                                |
+| **Frontend tests**              | **1,391/1,391** ✅                                              | **100%**                                |
+| **E2E tests**                   | 79 cases, error-capturing fixture, 3 browsers                   | **95%**                                 |
+| **Integration tests**           | 86 across 5 suites + 13 live (MCP 8, API 5) vs live STDB        | **95%**                                 |
+| **STDB table security**         | 15 private tables hold all secrets; read_bridge whitelist       | **95%** ✅                              |
+| **CORS correctness**            | No `*` — env var defaults to specific origins                   | **100%** ✅                             |
+| **Other security**              | CSP, HSTS, headers done; SQL injection hardened (sqlLit/sqlInt) | **95%**                                 |
+| **TypeScript errors**           | 0 ✅                                                            | **100%**                                |
+| **Security vulns**              | 0 ✅                                                            | **100%**                                |
+| **`any` usages**                | 273→0                                                           | ✅ Zero in production, 55 in test mocks |
+| **`console.log` in production** | 22 (all structured logging)                                     | ✅ **Acceptable**                       |
+| **TODO/FIXME markers**          | 0                                                               | ✅ **Clean**                            |
+| **API endpoints**               | 51, all paginated (`LIMIT ?i OFFSET ?i` → OFFSET rewrite)       | ✅ **Paginated**                        |
+| **MCP tools**                   | 6, error handling + retries + pagination                        | ✅ **Complete**                         |
+| **i18n locales**                | 4 (en, es, fr, de)                                              | ✅ No missing refs                      |
+| **CI jobs**                     | Frontend (tsc+lint+tests+coverage+build) + Rust + Python + E2E  | ✅ **Complete**                         |
 
-| Metric                          | Value                                               | Score                                               |
-| ------------------------------- | --------------------------------------------------- | --------------------------------------------------- |
-| **Feature completeness**        | ~30 features, only i18n partial                     | **95%**                                             |
-| **Rust tests**                  | 201/201 ✅                                          | **100%**                                            |
-| **Frontend tests**              | **1,316/1,316** ✅                                  | **100%**                                            |
-| **E2E tests**                   | 79 tests, uneven quality                            | **60%**                                             |
-| **Integration tests**           | 86 tests across 5 suites, passing against live STDB | **95%**                                             |
-| **STDB table security**         | 35/50 tables private (sensitive fields)             | **70%** 🟡                                          |
-| **CORS correctness**            | No `*` — env var defaults to specific origins       | **100%** ✅                                         |
-| **Other security**              | CSP, HSTS, headers done                             | **90%**                                             |
-| **TypeScript errors**           | 0 ✅                                                | **100%**                                            |
-| **Security vulns**              | 0 ✅                                                | **100%**                                            |
-| **`any` usages**                | 273→0                                               | ✅ DONE — Zero in production code, 55 in test mocks |
-| **`console.log` in production** | 22 (all structured logging)                         | ✅ **Acceptable**                                   |
-| **TODO/FIXME markers**          | 0                                                   | ✅ **Clean**                                        |
-| **API endpoints**               | 51                                                  | ❌ **Not paginated**                                |
-| **MCP tools**                   | 6                                                   | ❌ **No error handling**                            |
-| **i18n locales**                | 4 (en, es, fr, de)                                  | 2 more referenced but missing                       |
-| **CI jobs**                     | 3 (Frontend + Rust + E2E)                           | ✅ **Complete**                                     |
+### Security Posture (updated 2026-08-04)
 
-### The Two Things That Would Get You Pwned
-
-1. **STDB tables not all private** — 35/50 made private, but 15 remain public because API server calls raw SQL (`SELECT * FROM ...`) directly instead of using STDB reducers. If you close STDB ports to the internet (correct!) those 15 tables break. If you don't close them, sensitive data (MFA seeds, OAuth tokens) is exposed.
-2. **CORS is spec-invalid** — `allow_origins=["*"]` with `allow_credentials=True`. Browsers reject this. The `@router.options("/{path:path}")` preflight handler has the same problem. Firefox works but Chromium and Safari correctly block credentialed requests with wildcard origins.
+1. **Secrets → private tables (done).** Every table carrying secret material (password
+   hashes, TOTP seeds, OAuth/LDAP/SAML client secrets, API key hashes, share-link
+   password hashes, SCIM tokens, webhook secrets) was split into a private
+   `*_credential`/secret table (15 private). Reducers access them directly; the
+   `read_bridge` reducer exposes only whitelisted non-secret columns. The 44 public
+   tables stay public deliberately — STDB subscriptions (`SELECT * FROM page` over
+   `/subscribe`) require public tables and are the product's real-time core.
+2. **CORS is spec-valid (done).** `allow_origins` never `*` with credentials; a
+   `cors_origins_safe` property validates/rejects unsafe config, with safe defaults.
+3. **SQL injection hardening (done, 2026-08-04).** All 68 string + 7 numeric SQL
+   interpolations across the frontend use `sqlLit()`/`sqlInt()`; repo-wide scans
+   show zero raw interpolations. Python servers use parameterized `?`/`?i` with
+   escaping. MCP + API live-STDB tests cover the SQL layer.
 
 ### Everything Else
 
-The repository is surprisingly solid for a solo dev project. The Rust backend is idiomatic — no `unwrap()`, proper error handling with `Result<(), String>`, well-tested helpers, and functional patterns. The frontend tests are comprehensive (1,194 passing). The CI pipeline runs all checks. The security headers (CSP, HSTS, etc.) are correctly configured on both nginx and the API server.
+The repository is solid for a solo dev project. The Rust backend is idiomatic — no
+`unwrap()`, proper error handling with `Result<(), String>`, well-tested helpers, and
+functional patterns. The frontend tests are comprehensive (1,391 passing) including
+mapper contract tests pinning STDB positional-array column order. The CI pipeline runs
+all checks including the production build and E2E across three browsers.
 
-The features are genuinely implemented — this isn't a skeleton. Tiptap editor extensions, Yjs real-time collaboration, SSO/OAuth/LDAP, WebAuthn passkeys, MFA, SCIM provisioning, webhooks, ZIP import/export, AI assistant chat — all built and wired up.
+Features are genuinely implemented — not a skeleton. Tiptap editor extensions, Yjs
+real-time collaboration, SSO/OAuth/LDAP, WebAuthn passkeys, MFA, SCIM provisioning,
+webhooks, ZIP import/export, AI assistant chat — all built and wired up.
 
-The E2E tests exist in number (79) but ~1/3 use soft assertions that won't catch regressions. The MCP server already has pagination on all list/search tools. The AGENTS.md needs updating. But those are polish items compared to the two critical security issues.
+Open follow-ups (defensive depth, not blockers): route the API server's raw-SQL reads
+through STDB reducers to centralize permission logic (P1 architectural refactor,
+12-20h); expand the 45 positional mappers' contract tests to the remaining ~27
+mappers; add unit tests to the largest untested frontend surfaces (useAppLayout 1,090
+lines, DatabaseBase 798, LoginView 529, RichEmbed 567).
 
 ---
 
