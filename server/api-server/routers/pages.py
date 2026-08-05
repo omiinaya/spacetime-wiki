@@ -158,7 +158,11 @@ async def list_comments(
 async def create_comment(request: Request, page_id: str, body: str, user_id: str = ""):
     """Add a comment to a page."""
     await check_page_access(request, page_id, "editor")
-    result = await call_reducer("add_comment", [page_id, body, user_id])
+    # add_comment reducer signature: (id, page_id, parent_comment_id, user_id, body, text_anchor)
+    comment_id = f"cm_{uuid.uuid4().hex[:12]}"
+    result = await call_reducer(
+        "add_comment", [comment_id, page_id, "", user_id, body, ""]
+    )
     return result or {"status": "created"}
 
 
@@ -242,8 +246,17 @@ async def list_share_links(
 
 
 @router.post("/{page_id}/share-links", response_model=ShareLinkCreateResponse)
-async def create_share_link(request: Request, page_id: str, expires_at: int = 0):
+async def create_share_link(request: Request, page_id: str, expires_days: int = 0):
     """Create a share link for a page."""
     await check_page_access(request, page_id, "editor")
-    result = await call_reducer("create_share_link", [page_id, expires_at])
+    # create_share_link reducer signature:
+    # (id, page_id, token, password, created_by, expires_days)
+    share_id = f"share_{uuid.uuid4().hex[:12]}"
+    token = str(uuid.uuid4())
+    created_by = getattr(request.state, "user_id", "") or ""
+    result = await call_reducer(
+        "create_share_link", [share_id, page_id, token, "", created_by, expires_days]
+    )
+    if result is None:
+        return {"status": "created", "id": share_id, "token": token}
     return result or {"status": "created"}

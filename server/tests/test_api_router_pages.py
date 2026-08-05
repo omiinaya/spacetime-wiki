@@ -119,10 +119,17 @@ class TestPagesRouter:
                 assert resp.json()["total"] == 1
 
     def test_create_comment(self, client):
-        with patch("routers.pages.call_reducer", new_callable=AsyncMock, return_value=None):
+        with patch("routers.pages.call_reducer", new_callable=AsyncMock, return_value=None) as mock_reducer:
             with patch("routers.pages.check_page_access", new_callable=AsyncMock, return_value=True):
-                resp = client.post("/api/v1/pages/p1/comments?body=Great!")
+                resp = client.post("/api/v1/pages/p1/comments?body=Great!&user_id=u1")
                 assert resp.status_code == 200
+                # add_comment signature: (id, page_id, parent_comment_id, user_id, body, text_anchor)
+                mock_reducer.assert_awaited_once()
+                call = mock_reducer.await_args
+                assert call.args[0] == "add_comment"
+                assert len(call.args[1]) == 6
+                assert call.args[1][1] == "p1"
+                assert call.args[1][4] == "Great!"
 
     def test_list_tags(self, client):
         with patch("routers.pages.sql_query", new_callable=AsyncMock) as mock_sql:
@@ -159,7 +166,14 @@ class TestPagesRouter:
                 assert resp.status_code == 200
 
     def test_create_share_link(self, client):
-        with patch("routers.pages.call_reducer", new_callable=AsyncMock, return_value=None):
+        with patch("routers.pages.call_reducer", new_callable=AsyncMock, return_value=None) as mock_reducer:
             with patch("routers.pages.check_page_access", new_callable=AsyncMock, return_value=True):
-                resp = client.post("/api/v1/pages/p1/share-links")
-                assert resp.status_code == 200
+                with patch("routers.pages.uuid.uuid4", return_value=type("U", (), {"hex": "abc123"})()) as mock_uuid:
+                    resp = client.post("/api/v1/pages/p1/share-links")
+                    assert resp.status_code == 200
+                    # create_share_link signature: (id, page_id, token, password, created_by, expires_days)
+                    mock_reducer.assert_awaited_once()
+                    call = mock_reducer.await_args
+                    assert call.args[0] == "create_share_link"
+                    assert len(call.args[1]) == 6
+                    assert call.args[1][1] == "p1"

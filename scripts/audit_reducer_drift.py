@@ -95,6 +95,57 @@ def python_calls() -> set[str]:
     return calls
 
 
+def python_call_counts() -> dict[str, set[int]]:
+    """reducer name -> set of arg counts for call_reducer('name', [list]) in Python.
+
+    Uses a bracket-aware scanner (not regex) so multi-line arrays, nested
+    lists, and dict literals inside the array are counted correctly. A
+    regex `\(.*?\]\)` with re.S over-captures across statements.
+    """
+    calls: dict[str, set[int]] = {}
+    for base in (API_DIR, MCP_DIR):
+        for f in base.rglob("*.py"):
+            if ".venv" in str(f) or "__pycache__" in str(f):
+                continue
+            text = f.read_text(errors="ignore")
+            idx = 0
+            while True:
+                m = re.search(r'call_reducer\(\s*["\']([a-z_0-9]+)["\']\s*,\s*\[', text[idx:])
+                if not m:
+                    break
+                name = m.group(1)
+                start = idx + m.end() - 1  # position of the '['
+                # scan forward counting brackets until depth returns to 0
+                depth = 0
+                i = start
+                count = 1
+                seen_content = False
+                last_meaningful = None
+                while i < len(text):
+                    ch = text[i]
+                    if ch in "[({":
+                        depth += 1
+                    elif ch in "])}":
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    elif ch == "," and depth == 1:
+                        count += 1
+                    if ch not in " \t\n":
+                        seen_content = True
+                        last_meaningful = ch
+                    i += 1
+                # Python allows a trailing comma in array literals — it is
+                # NOT an extra argument (e.g. [a, b,] == 2 args)
+                if last_meaningful == ",":
+                    count -= 1
+                if not seen_content:
+                    count = 0
+                calls.setdefault(name, set()).add(count)
+                idx = start + 1
+    return calls
+
+
 def sql_tables() -> set[str]:
     """Every table name referenced in frontend SQL (FROM/JOIN)."""
     tables: set[str] = set()
@@ -158,6 +209,20 @@ def main() -> int:
             print(f"   {m}")
     else:
         print("✅ All Python call_reducer names exist in Rust")
+
+    # 2b. Python arg-count drift
+    py_counts = python_call_counts()
+    py_mismatch = [
+        (name, counts) for name, counts in sorted(py_counts.items())
+        if name in sigs and len(sigs[name]) not in counts
+    ]
+    if py_mismatch:
+        errors += len(py_mismatch)
+        print("❌ Python call_reducer arg-count mismatches:")
+        for name, counts in py_mismatch:
+            print(f"   {name}: python {sorted(counts)} vs rust {len(sigs[name])} ({sigs[name]})")
+    else:
+        print("✅ Python call_reducer arg counts match Rust signatures")
 
     # 3. Frontend SQL table names vs live STDB (best-effort)
     tables = sql_tables()
