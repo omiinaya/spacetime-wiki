@@ -12,6 +12,38 @@ import { expect } from '@playwright/test';
  * - Waiting for STDB sync
  */
 
+/**
+ * STDB endpoint for direct SQL probes from specs. Mirrors playwright.config.ts
+ * env handling — Vite-only `import.meta.env` is undefined in Playwright's Node
+ * runtime, so specs must use `process.env` (never import from src/lib/api).
+ */
+export const E2E_STDB_HOST = process.env.STDB_HOST || 'localhost:3001';
+export const E2E_STDB_DB =
+  process.env.STDB_DATABASE || process.env.STDB_DB || 'spacetime-wiki-e2e';
+
+/**
+ * Run a raw SQL query against STDB from a spec. Rows come back as positional
+ * arrays (`unknown[][]`), indexed by column position in the SELECT clause.
+ */
+export async function sqlQuery(sql: string): Promise<unknown[][]> {
+  const res = await fetch(
+    `http://${E2E_STDB_HOST}/v1/database/${E2E_STDB_DB}/sql`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: sql,
+    },
+  );
+  if (!res.ok) throw new Error(`STDB query failed: ${res.status}`);
+  const data = await res.json();
+  return (data[0]?.rows || []) as unknown[][];
+}
+
+/** Render a string as a SQL literal for safe interpolation. */
+export function sqlLit(value: string): string {
+  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "''")}'`;
+}
+
 /** Default admin credentials from global seed */
 export const ADMIN_EMAIL = 'admin@spacetimewiki.local';
 // Default matches the password used by global-setup.ts / seed-e2e-data.py so

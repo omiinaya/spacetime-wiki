@@ -1,18 +1,33 @@
 import { test, expect } from './fixtures';
-import { signInAsAdmin, isVisible } from './helpers';
-import { sqlQuery, sqlLit } from '../src/lib/api/client';
+import { signInAsAdmin } from './helpers';
 
 /**
  * Image upload E2E test.
  *
  * Uploads a real image into the editor via the file input, then verifies the
- * attachment was persisted by querying the attachment table (the stable,
+ * attachment was persisted by querying the STDB attachment table (the stable,
  * deterministic signal — the success toast only lasts 3s and the editor
  * stores attachment:// URLs that resolve to <img> at view time only).
  */
 
 const PNG_1PX =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+const STDB_HOST = process.env.STDB_HOST || 'localhost:3001';
+const DB_NAME = process.env.STDB_DATABASE || process.env.STDB_DB || 'spacetime-wiki-e2e';
+
+/** Query STDB for an attachment row with the given filename. */
+async function attachmentExists(filename: string): Promise<boolean> {
+  const res = await fetch(`http://${STDB_HOST}/v1/database/${DB_NAME}/sql`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: `SELECT id FROM attachment WHERE filename = '${filename.replace(/'/g, "''")}'`,
+  });
+  if (!res.ok) return false;
+  const data = (await res.json()) as Array<{ rows?: unknown[][] }>;
+  const rows = data[0]?.rows || [];
+  return rows.length > 0;
+}
 
 test.describe('Editor — image upload', () => {
   test.beforeEach(async ({ page }) => {
@@ -37,22 +52,15 @@ test.describe('Editor — image upload', () => {
       buffer: Buffer.from(PNG_1PX, 'base64'),
     });
 
-    // The upload pipeline persists an attachment row. Poll the attachment
-    // table (via the app's own sqlQuery) until the row appears — this is the
-    // deterministic proof the reducer + insert path worked end-to-end.
+    // The upload pipeline persists an attachment row. Poll STDB until the
+    // row appears — the deterministic proof the reducer + insert path worked
+    // end-to-end.
     let found = false;
     for (let i = 0; i < 20; i++) {
       await page.waitForTimeout(1000);
-      try {
-        const rows = (await sqlQuery(
-          `SELECT id, filename FROM attachment WHERE filename = ${sqlLit(marker)}`,
-        )) as unknown[][];
-        if (rows.length > 0) {
-          found = true;
-          break;
-        }
-      } catch {
-        // STDB query may race the insert — retry
+      if (await attachmentExists(marker)) {
+        found = true;
+        break;
       }
     }
     expect(found).toBe(true);
