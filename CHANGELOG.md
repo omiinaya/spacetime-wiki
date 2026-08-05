@@ -37,6 +37,33 @@
   (cold-start race); guest-context tests fixed (landing vs dashboard);
   palette Enter-select; lucide-ellipsis class; lazy-PageView timeouts.
 
+### Fixed (real bugs caught by the E2E error-capturing fixture)
+
+- **`subscriptions.ts` used `sqlLit` without importing it** — the app crashed
+  on mount for every parameterized STDB subscription (comments, favorites,
+  tags, notifications, watch). Added the missing import.
+- **`getOauthProviders` / `getOauthUsers` returned raw `r.json()`** — the login
+  page crashed with "j.map is not a function" when the OAuth endpoint returned
+  an error object (e.g. missing API key). Both now guard with `Array.isArray`.
+- **vite dev/preview proxy hardcoded `127.0.0.1:8711`** — isolated E2E runs on
+  any other API port got ECONNREFUSED on every `/api/*` call. The proxy target
+  now honors `VITE_API_BASE` (falls back to 8711 for CI/docker).
+- **`setup-e2e-deps.sh` broke when `~/.cargo/bin/rustup` was missing** (cargo is
+  a symlink to it → dangling → "wasm32 target not installed"). The script now
+  auto-restores rustup from a cached rustup-init.sh and installs wasm32.
+
+### Final hardening (full-suite verification)
+
+- 162 tests across 35 spec files green on an isolated run; remaining
+  failures resolved: trash/page-lifecycle row locator matches the
+  **"Title Draft" prefix** (not exact title — rows carry a status suffix),
+  the **hash-icon 'uncategorized' bucket** (createPage uses
+  `collection_id=''` → mapped to the hash bucket, not the 📄 collection).
+- Search specs create hermetic pages via direct STDB reducer calls; image
+  upload asserts the persisted attachment row; editor specs sign in first.
+- Test timeout 60s→90s, expect timeout 15s→20s for slow cold-starts under
+  accumulated test data.
+
 ## [Unreleased] — 2026-08-04
 
 ### Fixed
