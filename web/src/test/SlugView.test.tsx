@@ -50,9 +50,15 @@ describe('SlugView', () => {
   it('redirects to /page/:id when page is found by slug', async () => {
     mockGetBySlug.mockResolvedValue({ id: 'page-abc-123', title: 'Test Page' });
     renderSlug('my-page');
-    await waitFor(() => {
-      expect(screen.queryByTestId('page-view')).toBeInTheDocument();
-    });
+    // Explicit timeout (same class as FeatureFlags): the redirect only fires
+    // after the mocked slug lookup resolves. Under parallel CI load the
+    // default 1s waitFor can elapse first — flaked once on this box.
+    await waitFor(
+      () => {
+        expect(screen.queryByTestId('page-view')).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   // ─── Error state ────────────────────────────────────────────────────────────

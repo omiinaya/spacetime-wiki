@@ -267,7 +267,12 @@ describe('SsoPanel', () => {
 
   it('opens OIDC edit dialog with pre-filled data', async () => {
     renderSsoPanel();
-    await waitFor(() => expect(screen.getByText('Keycloak')).toBeInTheDocument());
+    // Explicit timeout: provider names render only after the mocked providers
+    // GET resolves. Under parallel CI load the default 1s waitFor can elapse
+    // first — flaked once on this box.
+    await waitFor(() => expect(screen.getByText('Keycloak')).toBeInTheDocument(), {
+      timeout: 5000,
+    });
     const editBtns = document.querySelectorAll('[class*="rounded"][class*="hover:bg-muted"]');
     // Find the pencil buttons
     const pencilBtns = document.querySelectorAll('button svg[class*="lucide-pencil"]');
