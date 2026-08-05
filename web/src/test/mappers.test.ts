@@ -18,6 +18,19 @@ import {
   mapDbCell,
   mapWebhook,
   mapAccessRequest,
+  mapScimProvider,
+  mapScimEvent,
+  mapWebhookEvent,
+  mapCollectionSortRule,
+  mapWatch,
+  mapGroup,
+  mapGroupMember,
+  mapCollectionGroupPermission,
+  mapSyncedBlock,
+  mapSyncedBlockRef,
+  mapAppSetting,
+  mapCollabSession,
+  mapCollabUpdate,
 } from '../lib/api/mappers';
 
 /**
@@ -296,5 +309,141 @@ describe('mappers — positional-array column contract', () => {
     expect(ar.status).toBe('pending');
     expect(ar.responded_by).toBe('');
     expect(ar.created_at).toBe(1700000);
+  });
+
+  it('mapScimProvider reads the live public column order (token hash is private)', () => {
+    // Live schema (verified vs STDB): id, name, slug, is_active, default_role,
+    // auto_register, deprovision_behavior, sync_groups, created_by, created_at,
+    // updated_at. api_token_hash lives in the PRIVATE scim_provider_credential
+    // table — never SQL-queryable — so the mapper must NOT read it at row[3].
+    // (Regression guard for the 2026-08-04 off-by-one drift where row[3] was
+    // read as api_token_hash, shifting every subsequent field.)
+    const s = mapScimProvider([
+      'scim1',
+      'Okta',
+      'okta',
+      true,
+      'member',
+      true,
+      'deactivate',
+      true,
+      'u1',
+      1000,
+      2000,
+    ]);
+    expect(s.id).toBe('scim1');
+    expect(s.name).toBe('Okta');
+    expect(s.slug).toBe('okta');
+    expect(s.is_active).toBe(true);
+    expect(s.default_role).toBe('member');
+    expect(s.auto_register).toBe(true);
+    expect(s.deprovision_behavior).toBe('deactivate');
+    expect(s.sync_groups).toBe(true);
+    expect(s.created_by).toBe('u1');
+    expect(s.created_at).toBe(1000);
+    expect(s.updated_at).toBe(2000);
+  });
+
+  it('mapScimEvent / mapWebhookEvent / mapCollectionSortRule / mapWatch readers', () => {
+    const e = mapScimEvent([
+      'evt1',
+      'scim1',
+      'User',
+      'provision',
+      'ext1',
+      'usr1',
+      'success',
+      'ok',
+      1000,
+    ]);
+    expect(e.id).toBe('evt1');
+    expect(e.provider_id).toBe('scim1');
+    expect(e.resource_type).toBe('User');
+    expect(e.operation).toBe('provision');
+    expect(e.status).toBe('success');
+
+    const we = mapWebhookEvent([
+      'we1',
+      'w1',
+      'page.create',
+      'p1',
+      '{}',
+      'success',
+      200,
+      'ok',
+      1000,
+      1001,
+    ]);
+    expect(we.id).toBe('we1');
+    expect(we.webhook_id).toBe('w1');
+    expect(we.event_type).toBe('page.create');
+    expect(we.status).toBe('success');
+    expect(we.response_code).toBe(200);
+
+    const sr = mapCollectionSortRule(['c1', 'title', 'asc', true, 'u1', 1000]);
+    expect(sr.collection_id).toBe('c1');
+    expect(sr.sort_field).toBe('title');
+    expect(sr.sort_direction).toBe('asc');
+    expect(sr.auto_apply).toBe(true);
+
+    const w = mapWatch(['w1', 'u1', 'page', 'p1', 1000]);
+    expect(w.id).toBe('w1');
+    expect(w.user_id).toBe('u1');
+    expect(w.target_type).toBe('page');
+    expect(w.target_id).toBe('p1');
+  });
+
+  it('mapGroup / mapGroupMember / mapCollectionGroupPermission readers', () => {
+    const g = mapGroup(['g1', 'Editors', 'can edit', 'u1', 1000, 1001]);
+    expect(g.id).toBe('g1');
+    expect(g.name).toBe('Editors');
+    expect(g.description).toBe('can edit');
+    expect(g.created_by).toBe('u1');
+
+    const gm = mapGroupMember(['gm1', 'g1', 'u1', 'admin', 'u2', 1000]);
+    expect(gm.id).toBe('gm1');
+    expect(gm.group_id).toBe('g1');
+    expect(gm.user_id).toBe('u1');
+    expect(gm.role).toBe('admin');
+
+    const cgp = mapCollectionGroupPermission(['cgp1', 'c1', 'g1', 'editor', 1000]);
+    expect(cgp.id).toBe('cgp1');
+    expect(cgp.collection_id).toBe('c1');
+    expect(cgp.group_id).toBe('g1');
+    expect(cgp.role).toBe('editor');
+  });
+
+  it('mapSyncedBlock / mapSyncedBlockRef readers', () => {
+    const sb = mapSyncedBlock(['sb1', 'Block', 'content', 'u1', 1000, 1001, 'u2']);
+    expect(sb.id).toBe('sb1');
+    expect(sb.title).toBe('Block');
+    expect(sb.created_by).toBe('u1');
+    expect(sb.updated_by).toBe('u2');
+
+    const sbr = mapSyncedBlockRef(['sbr1', 'sb1', 'p1', 'u1', 1000]);
+    expect(sbr.id).toBe('sbr1');
+    expect(sbr.block_id).toBe('sb1');
+    expect(sbr.page_id).toBe('p1');
+    expect(sbr.created_by).toBe('u1');
+  });
+
+  it('mapAppSetting / mapCollabSession / mapCollabUpdate readers', () => {
+    const as = mapAppSetting(['key1', 'val', 1000]);
+    expect(as.key).toBe('key1');
+    expect(as.value).toBe('val');
+    expect(as.updated_at).toBe(1000);
+
+    const cs = mapCollabSession(['cs1', 'p1', 'u1', 'Alice', '#ff0000', '{}', 1000, 900]);
+    expect(cs.id).toBe('cs1');
+    expect(cs.page_id).toBe('p1');
+    expect(cs.user_name).toBe('Alice');
+    expect(cs.color).toBe('#ff0000');
+    expect(cs.last_seen_at).toBe(1000);
+
+    const cu = mapCollabUpdate(['cu1', 'p1', 'update-data', 'u1', 1000]);
+    expect(cu.id).toBe('cu1');
+    expect(cu.page_id).toBe('p1');
+    expect(cu.update_data).toBe('update-data');
+    expect(cu.user_id).toBe('u1');
   });
 });

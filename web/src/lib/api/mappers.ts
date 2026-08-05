@@ -298,15 +298,16 @@ export function mapScimProvider(row: unknown[]): ScimProvider {
     id: String(row[0] ?? ''),
     name: String(row[1] ?? ''),
     slug: String(row[2] ?? ''),
-    api_token_hash: String(row[3] ?? ''),
-    is_active: Boolean(row[4]),
-    default_role: String(row[5] ?? ''),
-    auto_register: Boolean(row[6]),
-    deprovision_behavior: String(row[7] ?? ''),
-    sync_groups: Boolean(row[8]),
-    created_by: String(row[9] ?? ''),
-    created_at: Number(row[10]) || 0,
-    updated_at: Number(row[11]) || 0,
+    // api_token_hash lives in the PRIVATE scim_provider_credential table —
+    // never SQL-queryable, so it is not part of the public row.
+    is_active: Boolean(row[3]),
+    default_role: String(row[4] ?? ''),
+    auto_register: Boolean(row[5]),
+    deprovision_behavior: String(row[6] ?? ''),
+    sync_groups: Boolean(row[7]),
+    created_by: String(row[8] ?? ''),
+    created_at: Number(row[9]) || 0,
+    updated_at: Number(row[10]) || 0,
   };
 }
 export function mapScimEvent(row: unknown[]): ScimEvent {

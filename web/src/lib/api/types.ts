@@ -229,7 +229,7 @@ export interface ScimProvider {
   id: string;
   name: string;
   slug: string;
-  api_token_hash: string;
+  // api_token_hash is private (scim_provider_credential) — never readable via SQL
   is_active: boolean;
   default_role: string;
   auto_register: boolean;
