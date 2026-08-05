@@ -50,7 +50,9 @@ test.describe('Page lifecycle', () => {
     }
 
     // The page view still renders (post-publish)
-    await expect(page.locator('.ProseMirror, article, main')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.ProseMirror, article, main').first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test('delete a page, see it in trash, restore it', async ({ page }) => {
