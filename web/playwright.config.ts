@@ -61,7 +61,9 @@ export default defineConfig({
         {
           command: `API_PORT=${API_PORT} STDB_DATABASE=${STDB_DB} bash scripts/setup-e2e-deps.sh`,
           port: Number(API_PORT),
-          timeout: 180000,
+          // Cold module build (wasm-opt) + seed can exceed 3 min on the first
+          // run after a module change — allow 5 min.
+          timeout: 300000,
           reuseExistingServer: false,
         },
         // Frontend: builds + serves Vite preview
