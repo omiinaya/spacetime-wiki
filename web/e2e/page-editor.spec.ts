@@ -1,10 +1,14 @@
 import { test, expect } from './fixtures';
+import { signInAsAdmin } from './helpers';
 
 /**
  * Page editor E2E tests — work with any DB state.
  */
 test.describe('Page editor — new page', () => {
   test.beforeEach(async ({ page }) => {
+    // The editor requires an authenticated session — guest /new shows a
+    // loading/login state and never mounts the title input.
+    await signInAsAdmin(page);
     await page.goto('/new');
   });
 
