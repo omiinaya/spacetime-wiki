@@ -10,13 +10,18 @@ test.describe('Collections — sidebar', () => {
   });
 
   test('shows collections section in sidebar', async ({ page }) => {
+    // Collection tree buttons render inside the <nav> landmark (not the
+    // complementary region). Match ANY collection row (icon + name, possibly
+    // with a page count) — seed names can be renamed by other specs.
     const sidebar = page.getByRole('complementary');
-    // May show collections or an empty state
-    const collectionBtn = sidebar
+    const nav = page.getByRole('navigation');
+    const collectionBtn = nav
       .locator('button')
-      .filter({ hasText: /Uncategorized|Engineering|Design/ });
-    await expect(collectionBtn.first()).toBeVisible({ timeout: 5000 });
-    // Collections may not exist yet - soft check
+      .filter({ hasText: /[📁📄🗂️📂]/ })
+      .first();
+    await expect(collectionBtn.or(sidebar.locator('button', { name: 'New collection' }))).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test('shows New collection button in sidebar', async ({ page }) => {

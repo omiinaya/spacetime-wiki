@@ -50,19 +50,24 @@ test.describe('Collection management — CRUD', () => {
 
   test('sidebar shows collection section', async ({ page }) => {
     const sidebar = page.locator('aside');
-    // Look for collection-like text in the sidebar
+    // Look for any collection-like row in the sidebar tree (icon + name) —
+    // seed names may be renamed by other specs, so match generically.
     const collectionBtn = sidebar
       .locator('button')
-      .filter({ hasText: /Uncategorized|Engineering|Design|Marketing|Research/i });
-    await expect(collectionBtn.first()).toBeVisible({ timeout: 5000 });
+      .filter({ hasText: /[📁📄🗂️📂]/ })
+      .first();
+    await expect(collectionBtn).toBeVisible({ timeout: 5000 });
   });
 
   test('collection shows page count in sidebar', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('load');
     const sidebar = page.locator('aside');
-    const collectionBtn = sidebar.locator('button').filter({ hasText: /Uncategorized/ });
-    // Collection with page count should be visible
+    // Any collection row with a page count (digits in the row)
+    const collectionBtn = sidebar
+      .locator('button')
+      .filter({ hasText: /[📁📄🗂️📂]/ })
+      .first();
     await expect(collectionBtn).toBeVisible({ timeout: 5000 });
     const text = await collectionBtn.textContent();
     const countMatch = text?.match(/(\d+)/);

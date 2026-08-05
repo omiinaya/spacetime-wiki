@@ -2,21 +2,27 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// The API server port. Defaults to 8711 (docker-compose / CI); override with
+// VITE_API_PORT or VITE_API_BASE when running E2E with an isolated API port.
+const API_TARGET =
+  process.env.VITE_API_BASE ||
+  `http://127.0.0.1:${process.env.VITE_API_PORT || process.env.API_PORT || '8711'}`;
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5184,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8711',
+        target: API_TARGET,
         changeOrigin: true,
       },
       '/docs': {
-        target: 'http://127.0.0.1:8711',
+        target: API_TARGET,
         changeOrigin: true,
       },
       '/openapi.json': {
-        target: 'http://127.0.0.1:8711',
+        target: API_TARGET,
         changeOrigin: true,
       },
     },

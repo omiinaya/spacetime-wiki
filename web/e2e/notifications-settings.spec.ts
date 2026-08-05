@@ -50,7 +50,8 @@ test.describe('Admin Settings panel — language switcher', () => {
     // Language switcher select with aria-label from i18n
     const langSelect = page.locator('select[aria-label]').first();
     await expect(langSelect).toBeVisible({ timeout: 10000 });
-    // It offers at least English
-    await expect(langSelect.locator('option', { hasText: /English/i })).toBeVisible();
+    // It offers at least English (options are not 'visible' — assert value)
+    const options = await langSelect.locator('option').allTextContents();
+    expect(options.some((o) => /English/i.test(o))).toBe(true);
   });
 });

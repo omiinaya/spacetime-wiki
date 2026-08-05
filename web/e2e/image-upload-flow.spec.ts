@@ -24,14 +24,8 @@ test.describe('Editor — image upload', () => {
     // Editor loads
     await expect(page.locator('.ProseMirror')).toBeVisible({ timeout: 20000 });
 
-    // The editor exposes a hidden file input for images (accept=image/*)
-    const fileInput = page.locator('input[type="file"][accept*="image"]').first();
-    if (!(await isVisible(fileInput, 5000))) {
-      // Fallback: some builds use a generic file input
-      const anyFileInput = page.locator('input[type="file"]').first();
-      await expect(anyFileInput).toBeVisible({ timeout: 5000 });
-    }
-
+    // The editor exposes a hidden file input for images (accept=image/*).
+    // setInputFiles works on hidden inputs — do NOT assert visibility.
     const input = page.locator('input[type="file"]').first();
     await input.setInputFiles({
       name: 'e2e-pixel.png',
