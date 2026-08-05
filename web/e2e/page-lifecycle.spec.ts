@@ -56,13 +56,34 @@ test.describe('Page lifecycle', () => {
     const pageUrl = await createPage(page, 'Trash Restore Me', 'Trash restore lifecycle');
     if (!pageUrl) return;
 
-    // Delete via toolbar (Trash2 icon, title="Delete" or similar)
-    const deleteBtn = page.locator('button[title="Delete"]');
+    // Walk the real lifecycle: draft → Publish → Archive → Delete (trash)
+    const publishBtn = page.locator('button').filter({ hasText: /^Publish$/ }).first();
+    if (await isVisible(publishBtn, 5000)) {
+      await publishBtn.click();
+      const confirmPublish = page.getByRole('button', { name: /^Publish$/ }).last();
+      if (await isVisible(confirmPublish, 3000)) {
+        await confirmPublish.click();
+        await page.waitForTimeout(1200);
+      }
+    }
+    const archiveBtn = page.getByRole('button', { name: /^Archive$/ }).first();
+    if (await isVisible(archiveBtn, 5000)) {
+      await archiveBtn.click();
+      const confirmArchive = page.getByRole('button', { name: /^Archive$/ }).last();
+      if (await isVisible(confirmArchive, 3000)) {
+        await confirmArchive.click();
+        await page.waitForTimeout(1200);
+      }
+    }
+    const deleteBtn = page
+      .locator('button')
+      .filter({ has: page.locator('svg.lucide-trash-2, svg.lucide-trash2') })
+      .last();
     if (await isVisible(deleteBtn, 3000)) {
       await deleteBtn.click();
-      const confirmBtn = page.getByRole('button', { name: /delete/i }).last();
-      if (await isVisible(confirmBtn, 3000)) {
-        await confirmBtn.click();
+      const confirmDelete = page.getByRole('button', { name: /^Delete$/ }).last();
+      if (await isVisible(confirmDelete, 3000)) {
+        await confirmDelete.click();
         await page.waitForTimeout(1200);
       }
     }

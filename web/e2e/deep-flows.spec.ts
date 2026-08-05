@@ -111,10 +111,11 @@ test.describe('Import — Markdown', () => {
     await page.waitForTimeout(3000);
 
     // The import shows a success toast and the page appears in the sidebar
-    // tree (no navigation — the handler creates the page in place).
+    // tree (no navigation — the handler creates the page in place, titled
+    // from the filename 'e2e-import.md' → 'e2e-import').
     await expect(page.getByText(/imported from Markdown/i).first()).toBeVisible({
       timeout: 15000,
     });
-    await expect(page.getByText('Imported E2E Page').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('e2e-import').first()).toBeVisible({ timeout: 15000 });
   });
 });
