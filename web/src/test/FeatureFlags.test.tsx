@@ -40,9 +40,15 @@ describe('FeatureFlags', () => {
   it('renders the section header', async () => {
     mockSettingsGet.mockResolvedValue(JSON.stringify({ callouts: true, mermaid: true }));
     renderFeatureFlags();
-    await waitFor(() => {
-      expect(screen.getByText('Editor Extensions')).toBeInTheDocument();
-    });
+    // Explicit timeout: the header only renders after the mocked settings GET
+    // resolves + loading flips false. Under parallel CI load the default 1s
+    // waitFor can elapse before the async effect settles — flaked once.
+    await waitFor(
+      () => {
+        expect(screen.getByText('Editor Extensions')).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   it('calls api.settings.get on mount', () => {
