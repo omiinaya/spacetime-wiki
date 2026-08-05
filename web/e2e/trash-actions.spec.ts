@@ -15,18 +15,20 @@ import type { Page } from '@playwright/test';
  * context menu is the correct "move to trash" path.
  */
 
-/** Expand the "Uncategorized" collection bucket in the sidebar tree. */
+/** Expand the special hash-icon 'uncategorized' bucket in the sidebar tree. */
 async function expandUncategorized(page: Page): Promise<void> {
-  // createPage puts pages in the seeded 'Uncategorized' COLLECTION (📄 icon),
-  // not the special hash-icon 'uncategorized' bucket. Click the collection
-  // row so its pages render.
-  const collection = page
+  // createPage creates pages with collection_id='' which the app maps to the
+  // special 'uncategorized' bucket (Hash icon, 'Uncategorized' label) — NOT
+  // the seeded 'Uncategorized' COLLECTION (📄 icon). The bucket may already
+  // be expanded; clicking toggles, so moveToTrash retries until the target
+  // row is visible.
+  const bucket = page
     .locator('aside button')
-    .filter({ hasText: /📄 Uncategorized|Uncategorized/ })
+    .filter({ has: page.locator('svg.lucide-hash') })
     .first();
-  if (await isVisible(collection, 5000)) {
-    await collection.click();
-    await page.waitForTimeout(400);
+  if (await isVisible(bucket, 5000)) {
+    await bucket.click();
+    await page.waitForTimeout(500);
   }
 }
 
@@ -36,7 +38,19 @@ async function moveToTrash(page: Page, title: string): Promise<void> {
   await page.waitForLoadState('load');
   await expandUncategorized(page);
 
+  // Guarantee the target row is rendered before right-click. expand is a
+  // toggle, so click the hash bucket until the row appears (bounded).
   const row = page.locator('aside').getByText(title, { exact: true }).first();
+  for (let i = 0; i < 5 && !(await isVisible(row, 1500)); i++) {
+    const bucket = page
+      .locator('aside button')
+      .filter({ has: page.locator('svg.lucide-hash') })
+      .first();
+    if (await isVisible(bucket, 2000)) {
+      await bucket.click();
+      await page.waitForTimeout(600);
+    }
+  }
   if (!(await isVisible(row, 5000))) {
     throw new Error(`Page row not found in sidebar tree: ${title}`);
   }

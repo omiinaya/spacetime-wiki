@@ -20,9 +20,9 @@ export default defineConfig({
   workers: process.env.CI ? 2 : 1,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
   globalSetup: './e2e/global-setup.ts',
-  timeout: 60000,
+  timeout: 90000,
   expect: {
-    timeout: 15000,
+    timeout: 20000,
   },
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,

@@ -64,17 +64,24 @@ test.describe('Page lifecycle', () => {
     // delete and never lands in trash — the context menu is the real flow.
     await page.goto('/');
     await page.waitForLoadState('load');
-    // Expand the 'Uncategorized' COLLECTION (createPage puts pages there) so
-    // the page row renders.
-    const collection = page
+    // Expand the special hash-icon 'uncategorized' bucket (createPage uses
+    // collection_id='' → the hash bucket), then right-click the page row.
+    const bucket = page
       .locator('aside button')
-      .filter({ hasText: /📄 Uncategorized|Uncategorized/ })
+      .filter({ has: page.locator('svg.lucide-hash') })
       .first();
-    if (await isVisible(collection, 5000)) {
-      await collection.click();
+    if (await isVisible(bucket, 5000)) {
+      await bucket.click();
       await page.waitForTimeout(400);
     }
     const row = page.locator('aside').getByText('Trash Restore Me', { exact: true }).first();
+    // Toggle-safe: click the bucket until the row appears (it may auto-expand).
+    for (let i = 0; i < 5 && !(await isVisible(row, 1500)); i++) {
+      if (await isVisible(bucket, 2000)) {
+        await bucket.click();
+        await page.waitForTimeout(600);
+      }
+    }
     await expect(row).toBeVisible({ timeout: 5000 });
     await row.click({ button: 'right' });
     await page.waitForTimeout(400);

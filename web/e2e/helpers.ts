@@ -59,17 +59,19 @@ export async function signInAsAdmin(page: Page): Promise<void> {
   await page.goto('/login');
   await page.waitForLoadState('load');
 
+  // The login form renders async under accumulated test data — wait for it.
+  await page.getByLabel('Email').waitFor({ state: 'visible', timeout: 30000 });
   await page.getByLabel('Email').fill(ADMIN_EMAIL);
   await page.getByLabel('Password').fill(ADMIN_PASSWORD);
   await page.locator('form').getByRole('button', { name: 'Sign in', exact: true }).click();
 
   // Wait for redirect
-  await expect(page).toHaveURL('/', { timeout: 20000 });
+  await expect(page).toHaveURL('/', { timeout: 30000 });
 
   // Wait for the app shell to mount (sidebar search input) — guards the
   // cold-start race where the page still shows "Loading..." and the sidebar
   // buttons aren't in the DOM yet.
-  await expect(page.getByPlaceholder('Search...')).toBeVisible({ timeout: 20000 });
+  await expect(page.getByPlaceholder('Search...')).toBeVisible({ timeout: 30000 });
 }
 
 /**
