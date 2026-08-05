@@ -86,6 +86,24 @@ toBeInTheDocument`) — every commit touching `web/src` failed the hook.
   terms) was concatenated raw into SQL strings — a SQL injection surface
   the Python backend had already closed with parameterized queries. New
   `src/test/sql-safety.test.ts` (12 tests) locks in the escaping.
+- **AdminDashboard/PageTags/AccessRequestPanel fixed against STDB v2.6.1**
+  — three real user-facing bugs where frontend components used SQL or row
+  shapes STDB rejects: ① AdminDashboard's `COALESCE(SUM(...))` and
+  `LEFT JOIN`+`GROUP BY`+backtick queries were rejected, and it read
+  `rows[0].c` off positional arrays — every stat card rendered error/all-
+  zero on real data. Now aggregates client-side (storage sum, contributor
+  counts, user-name map) and reads `rows[0]?.[0]`. ② PageTags'
+  `SELECT DISTINCT` is rejected — tag autocomplete was always empty; now
+  dedupes client-side. ③ AccessRequestPanel read `pageRows[0].title` off
+  positional arrays — labels were always "Unknown page/user"; now reads
+  `[0]?.[0]`. Tests updated to mock realistic positional shapes (the old
+  object-shaped mocks masked the contract mismatch).
+- **auditApi.list offset pagination implemented** — the `_offset` param was
+  silently ignored (fetched only `LIMIT limit`, dropped the offset). Now
+  fetches `LIMIT limit+offset` and slices client-side (STDB has no OFFSET).
+- **author:/by: search now matches name OR email** — previously only
+  `u.name || u.email` (name wins), so `by:alice@x.io` never matched a user
+  named "Alice". Now matches either field.
 - **Consolidated ~1,700 lines of repetitive Rust struct-construction tests**
   — deleted 39 `default_*()` helpers (pure `X::default()` wrappers) and 40
   per-struct construction tests that only re-asserted literals just written
@@ -94,11 +112,21 @@ toBeInTheDocument`) — every commit touching `web/src` failed the hook.
   `tables.rs`: 1,745 → ~1,108 lines. Rust unit tests: 246 → 210 (all pass,
   clippy clean).
 
+### Added (2026-08-04)
+
+- **mapper positional-array contract tests** — `src/test/mappers.test.ts`
+  (11 cases) pins the exact column order the 18 core mappers read off STDB
+  positional rows, so index drift is caught at the mapper (the
+  AdminDashboard/AccessRequestPanel class of bug).
+- **hook unit tests** — `useSearch` (11; +1 fix), `useBatchSelect` (11),
+  `useCollectionManagement` (10), `useShareManagement` (9), `useTrash` (7),
+  `useCommandPalette` (13).
+
 ### Test status (verified 2026-08-04)
 
 - Rust unit: 210 ✅ · clippy: 0 warnings ✅
-- Python: 217 API unit + 118 MCP unit + 303 API-server router/unit tests + 86 live-STDB integration ✅
-- Frontend Vitest: 1,377 ✅ (72 files) · tsc clean ✅
+- Python: 217 API unit + 118 MCP unit + 308 API-server router/unit tests + 86 live-STDB integration ✅ (MCP 129 unit + 8 live, API 5 live)
+- Frontend Vitest: 1,452 ✅ (80 files) · tsc clean ✅ · production build clean ✅
 - Playwright E2E: runs chromium/firefox/webkit with an error-capturing
   fixture — chromium full suite green, cross-browser verified on the
   previously-flaky specs ✅
