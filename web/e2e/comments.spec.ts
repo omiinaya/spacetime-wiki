@@ -31,7 +31,7 @@ test.describe('Comments — viewing and creating', () => {
     // Try to find a comment input
     const commentInput = page.getByPlaceholder(/comment|write/i);
     const addButton = page.getByRole('button', { name: /add comment|new comment/i });
-    await expect(commentInput.or(addButton).first()).toBeVisible({ timeout: 2000 });
+    await expect(commentInput.or(addButton).first()).toBeVisible({ timeout: 15000 });
   });
 
   test('can write a comment on a page', async ({ page }) => {

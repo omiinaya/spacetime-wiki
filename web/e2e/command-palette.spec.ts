@@ -49,9 +49,11 @@ test.describe('Command palette', () => {
     await paletteInput.fill('Welcome');
     await page.waitForTimeout(1200);
 
-    const result = page.getByText('Welcome to SpacetimeWiki').first();
-    await result.click();
-    await page.waitForTimeout(1200);
+    // Keyboard selection: Enter executes the highlighted (first) result.
+    // This avoids backdrop click interception and exercises the palette's
+    // documented ArrowDown/Enter navigation.
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(1500);
 
     await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/, { timeout: 20000 });
     await expect(page.getByRole('heading', { name: /Welcome to SpacetimeWiki/i })).toBeVisible({

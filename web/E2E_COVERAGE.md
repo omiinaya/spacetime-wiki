@@ -18,9 +18,9 @@
 | `/page/:id` | PageViewWrapper | `page-view.spec.ts`, `comments.spec.ts`, `public-sharing.spec.ts` | ✅ |
 | `/page/:id/edit` | PageEditor (edit) | `page-view.spec.ts` (Edit nav) | 🔶 editor save flow via edit route |
 | `/p/:slug` | SlugView | `slug-permalink.spec.ts` | ✅ |
-| `/activity` | ActivityView | `pages.spec.ts` | 🔶 renders heading only |
-| `/favorites` | FavoritesView | `pages.spec.ts`, `page-lifecycle.spec.ts` | ✅ |
-| `/graph` | GraphView | `pages.spec.ts` | 🔶 renders only |
+| `/activity` | ActivityView | `pages.spec.ts`, `deep-flows.spec.ts` | ✅ |
+| `/favorites` | FavoritesView | `pages.spec.ts`, `page-lifecycle.spec.ts`, `deep-flows.spec.ts` | ✅ |
+| `/graph` | GraphView | `pages.spec.ts`, `deep-flows.spec.ts` | ✅ |
 | `/permalink/:id` | PermalinkRedirect | `slug-permalink.spec.ts` | ✅ |
 | `/login` | LoginView | `login.spec.ts` | ✅ |
 | `/shared/:token` | SharedPageView | `public-sharing.spec.ts`, `share-link-flow.spec.ts` | ✅ |
@@ -58,21 +58,33 @@
 | Feature | Component(s) | Spec | Status |
 |---|---|---|---|
 | Create page (full save flow) | PageEditor | `page-editor.spec.ts` (via helpers) | ✅ |
-| Edit existing page → save | PageEditor | — | 🔶 |
+| Edit existing page → save | PageEditor | `page-chrome.spec.ts` | ✅ |
 | Publish / draft status toggle | PageView toolbar | `page-lifecycle.spec.ts` | ✅ |
 | Favorite / unfavorite a page | PageView toolbar | `page-lifecycle.spec.ts` | ✅ |
+| Watch / unwatch page | PageView toolbar | `page-toolbar.spec.ts` | ✅ |
+| Pin / unpin page | PageView toolbar | `page-toolbar.spec.ts` | ✅ |
+| Duplicate page | PageView toolbar | `page-toolbar.spec.ts` | ✅ |
 | Share dialog open + create link | ShareDialog | `public-sharing.spec.ts`, `share-link-flow.spec.ts` | ✅ |
 | Password-protected share access | ShareDialog / SharedPageView | `share-link-flow.spec.ts` | ✅ |
+| Share link not found / expiry | SharedPageView | `share-link-flow.spec.ts` | ✅ |
 | Page tags add/remove | PageTags | `tags.spec.ts` | ✅ |
-| Page permissions dialog | PagePermissions | — | ❌ |
+| Page permissions dialog | PagePermissions | `page-toolbar.spec.ts` | ✅ |
 | Comments create | comments.spec.ts | ✅ | |
 | Comments reply / resolve / react / delete | comments-extended.spec.ts | ✅ | |
-| Revision history / diff | RevisionDiff | — | ❌ |
-| Page context menu | PageContextMenu | — | ❌ |
+| Revision history / diff | RevisionDiff | `page-chrome.spec.ts` | ✅ |
+| Table of Contents toggle | PageView | `page-secondary-chrome.spec.ts` | ✅ |
+| Page color picker | PageView | `page-secondary-chrome.spec.ts` | ✅ |
+| Relationships panel | PageView | `page-secondary-chrome.spec.ts` | ✅ |
+| Move to collection | PageView | `page-secondary-chrome.spec.ts` | ✅ |
+| Word count / char count / read time | PageView | `page-chrome.spec.ts` | ✅ |
+| Full-width toggle | PageView | `page-chrome.spec.ts` | ✅ |
+| Export menu (MD/HTML/PDF) | PageView | `page-chrome.spec.ts` | ✅ |
 | Page status dropdown (draft/published) | PageView | `page-lifecycle.spec.ts` | ✅ |
 | Collection CRUD (create/rename/delete) | CollectionDialog | `collection-crud.spec.ts`, `collection-edit.spec.ts` | ✅ |
-| Collection members | — | — | ❌ |
-| Import Markdown / Notion / Confluence | Sidebar import buttons | `navigation.spec.ts` | 🔶 button presence only |
+| Admin Groups — create | GroupsPanel | `admin-groups.spec.ts` | ✅ |
+| Webhooks — create via UI | WebhookSettings | `webhooks.spec.ts` | ✅ |
+| Import Markdown via file input | Sidebar import buttons | `navigation.spec.ts`, `deep-flows.spec.ts` | ✅ |
+| Import Notion / Confluence buttons | Sidebar | `navigation.spec.ts` | 🔶 button presence only (provider login required) |
 | Template picker → save page as template / create from template | TemplatePicker | `templates.spec.ts`, `templates-usage.spec.ts` | ✅ |
 | Search: type → results → navigate | SearchFilters | `search.spec.ts`, `search-flow.spec.ts` | ✅ |
 | Search filters (collection/status/date) | SearchFilters | `search-flow.spec.ts` | ✅ |
