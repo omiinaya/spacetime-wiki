@@ -101,7 +101,17 @@ test.describe('Trash — restore lifecycle', () => {
     await expect(page.getByText(uniqueTitle).first()).toBeVisible({ timeout: 10000 });
 
     // ── 3. Restore the page ────────────────────────────────────────────────
-    await page.getByRole('button', { name: 'Restore', exact: true }).first().click();
+    // Scope the Restore click to the ROW containing our unique title — the
+    // trash list accumulates pages from other specs/attempts, and .first()
+    // Restore may target a different row.
+    const row = page
+      .locator('div.fixed.inset-0')
+      .filter({ hasText: /Trash/ })
+      .first()
+      .locator('div')
+      .filter({ hasText: uniqueTitle })
+      .last();
+    await row.getByRole('button', { name: 'Restore', exact: true }).click();
     await page.waitForTimeout(1500);
 
     // The page leaves the TRASH DIALOG list. (The title also reappears in
@@ -134,7 +144,16 @@ test.describe('Trash — restore lifecycle', () => {
 
     // Native confirm('Permanently delete this page? ...') — must accept it.
     page.once('dialog', (d) => d.accept());
-    await page.getByRole('button', { name: 'Delete', exact: true }).first().click();
+    // Scope the Delete click to the ROW containing our unique title — the
+    // trash list accumulates pages from other specs/attempts.
+    const row = page
+      .locator('div.fixed.inset-0')
+      .filter({ hasText: /Trash/ })
+      .first()
+      .locator('div')
+      .filter({ hasText: uniqueTitle })
+      .last();
+    await row.getByRole('button', { name: 'Delete', exact: true }).click();
     await page.waitForTimeout(1500);
 
     // Gone from trash — scope to the trash dialog (the title may also exist
