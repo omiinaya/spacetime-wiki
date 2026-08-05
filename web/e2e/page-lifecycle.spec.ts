@@ -38,11 +38,12 @@ test.describe('Page lifecycle', () => {
 
     // A freshly created page may be draft; attempt the publish flow. If the
     // publish button isn't present (already published), skip gracefully.
-    const publishBtn = page.locator('button').filter({ hasText: /^Publish$/ });
-    if (await isVisible(publishBtn.first(), 3000)) {
-      await publishBtn.first().click();
-      // Confirm dialog
-      const confirmBtn = page.getByRole('button', { name: /^Publish$/ });
+    const publishBtn = page.locator('button').filter({ hasText: /^Publish$/ }).first();
+    if (await isVisible(publishBtn, 3000)) {
+      await publishBtn.click();
+      // Confirm dialog — the SECOND Publish button (toolbar + confirm both
+      // say 'Publish', so use .last() for the dialog confirm).
+      const confirmBtn = page.getByRole('button', { name: /^Publish$/ }).last();
       await confirmBtn.click();
       await page.waitForTimeout(1200);
     }

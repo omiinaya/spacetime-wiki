@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { signInAsAdmin, isVisible } from './helpers';
+import { signInAsAdmin, isVisible, createPage } from './helpers';
 
 /**
  * Search results flow E2E tests.
@@ -30,12 +30,18 @@ test.describe('Search — results flow', () => {
   });
 
   test('matching page shows a content snippet in the tree', async ({ page }) => {
+    // Create a page with distinctive content so the snippet match is hermetic
+    // (the seed pages may be deleted by trash/lifecycle specs).
+    await createPage(page, 'Snippet Source Page', 'zebra uniquely collaborative snippet content');
+    await page.goto('/');
+    await page.waitForLoadState('load');
+
     const searchInput = page.getByPlaceholder('Search...');
-    await searchInput.fill('collaborative');
+    await searchInput.fill('Snippet Source');
     await page.waitForTimeout(1500);
 
-    // Snippet text from the seeded Welcome page content ("collaborative wiki")
-    await expect(page.getByText(/collaborative wiki powered by SpacetimeDB/i).first()).toBeVisible(
+    // Snippet text from the created page content
+    await expect(page.getByText(/uniquely collaborative snippet content/i).first()).toBeVisible(
       { timeout: 10000 },
     );
   });

@@ -10,18 +10,15 @@ test.describe('Collections — sidebar', () => {
   });
 
   test('shows collections section in sidebar', async ({ page }) => {
-    // Collection tree buttons render inside the <nav> landmark (not the
-    // complementary region). Match ANY collection row (icon + name, possibly
-    // with a page count) — seed names can be renamed by other specs.
-    const sidebar = page.getByRole('complementary');
+    // Collection tree buttons render inside the <nav> landmark. Match ANY
+    // collection row (icon + name) — seed names can be renamed by other
+    // specs. Use .first() to avoid strict-mode violations.
     const nav = page.getByRole('navigation');
     const collectionBtn = nav
       .locator('button')
       .filter({ hasText: /[📁📄🗂️📂]/ })
       .first();
-    await expect(collectionBtn.or(sidebar.locator('button', { name: 'New collection' }))).toBeVisible({
-      timeout: 10000,
-    });
+    await expect(collectionBtn).toBeVisible({ timeout: 10000 });
   });
 
   test('shows New collection button in sidebar', async ({ page }) => {

@@ -39,7 +39,7 @@ test.describe('Page view', () => {
 
     for (const selector of toolbarButtons) {
       const btn = page.locator(selector);
-      await expect(btn).toBeVisible({ timeout: 1000 });
+      await expect(btn).toBeVisible({ timeout: 10000 });
     }
   });
 

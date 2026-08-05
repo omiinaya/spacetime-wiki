@@ -270,6 +270,8 @@ test.describe('Shared page — expiry', () => {
     await expect(page.getByRole('heading', { name: /Expired Shared Page/i })).toBeVisible({
       timeout: 15000,
     });
-    await expect(page.getByText(/expired/i)).not.toBeVisible();
+    // The specific expired-link error must NOT appear (title contains
+    // 'Expired', so match the exact error sentence).
+    await expect(page.getByText(/this share link has expired/i)).not.toBeVisible();
   });
 });

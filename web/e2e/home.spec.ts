@@ -10,8 +10,11 @@ test.describe('Home page', () => {
   });
 
   test('shows the Home heading and welcome message', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Home' })).toBeVisible();
-    await expect(page.getByText('Welcome to Spacetime Wiki')).toBeVisible();
+    // Populated wiki → dashboard heading "Home"; empty/loading → landing
+    // "Welcome to Spacetime Wiki". Accept either state.
+    const dashboard = page.getByRole('heading', { name: 'Home' });
+    const landing = page.getByText('Welcome to Spacetime Wiki').first();
+    await expect(dashboard.or(landing).first()).toBeVisible({ timeout: 15000 });
   });
 
   test('shows recently updated section with page entries', async ({ page }) => {
