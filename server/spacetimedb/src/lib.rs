@@ -309,6 +309,7 @@ pub fn apply_collection_auto_sort(
 
 // ─── Groups / Teams ──────────────────────────────────────────────────────────
 // ─── Webhooks ────────────────────────────────────────────────────────────────
+#[reducer]
 pub fn create_webhook(
     ctx: &ReducerContext,
     id: String,
