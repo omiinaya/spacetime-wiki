@@ -114,6 +114,13 @@ toBeInTheDocument`) — every commit touching `web/src` failed the hook.
   (never SQL-queryable). Audited all 31 public-table mappers against live
   STDB schema — SCIM was the only drift. Mapper contract tests expanded
   11 → 16 cases.
+- **API/MCP revisions endpoint queried nonexistent `revision` table** —
+  `GET /api/v1/pages/{id}/revisions` ran `SELECT * FROM revision`, but the
+  STDB module table is `page_revision` — the endpoint returned an error
+  ("no such table"). Both server table allowlists (`_TABLE_NAMES` /
+  `TABLE_NAMES`) also listed the wrong name. Fixed queries + allowlists +
+  the allowlist unit test. Systematic audits now verify every frontend SQL
+  table and all 31 public-table mappers against the live STDB schema.
 - **Consolidated ~1,700 lines of repetitive Rust struct-construction tests**
   — deleted 39 `default_*()` helpers (pure `X::default()` wrappers) and 40
   per-struct construction tests that only re-asserted literals just written
