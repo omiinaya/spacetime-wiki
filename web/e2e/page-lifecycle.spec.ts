@@ -41,9 +41,11 @@ test.describe('Page lifecycle', () => {
     const publishBtn = page.locator('button').filter({ hasText: /^Publish$/ }).first();
     if (await isVisible(publishBtn, 3000)) {
       await publishBtn.click();
-      // Wait for the confirm dialog to render, then click ITS Publish button.
-      await expect(page.getByText(/Publish this page/i)).toBeVisible({ timeout: 5000 });
-      await page.getByRole('button', { name: /^Publish$/ }).last().click();
+      // Wait for the confirm dialog to render, then click ITS Publish button
+      // (scoped to the dialog — the toolbar button shares the label).
+      const dialog = page.locator('div.fixed.inset-0').filter({ hasText: /Publish this page/i });
+      await expect(dialog).toBeVisible({ timeout: 5000 });
+      await dialog.getByRole('button', { name: /^Publish$/ }).click();
       await page.waitForTimeout(1200);
     }
 

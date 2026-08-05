@@ -1,12 +1,14 @@
 import { test, expect } from './fixtures';
 import { signInAsAdmin, isVisible } from './helpers';
+import { sqlQuery, sqlLit } from '../src/lib/api/client';
 
 /**
- * Image upload + lightbox E2E tests.
+ * Image upload E2E test.
  *
- * Uploads a real image into the editor via the file input / drop path, then
- * verifies it renders as an <img> in the editor (proving the upload → blob →
- * insert pipeline works against live STDB).
+ * Uploads a real image into the editor via the file input, then verifies the
+ * attachment was persisted by querying the attachment table (the stable,
+ * deterministic signal — the success toast only lasts 3s and the editor
+ * stores attachment:// URLs that resolve to <img> at view time only).
  */
 
 const PNG_1PX =
@@ -17,7 +19,7 @@ test.describe('Editor — image upload', () => {
     await signInAsAdmin(page);
   });
 
-  test('uploading an image via the editor file input inserts an <img>', async ({ page }) => {
+  test('uploading an image via the editor file input persists an attachment', async ({ page }) => {
     await page.goto('/new');
     await page.waitForLoadState('load');
 
@@ -28,19 +30,31 @@ test.describe('Editor — image upload', () => {
     // 'Upload image'). setInputFiles works on hidden inputs — target it
     // precisely (the sidebar has other file inputs for imports).
     const input = page.locator('input[type="file"][accept="image/*"]').first();
+    const marker = `e2e-pixel-${Date.now()}.png`;
     await input.setInputFiles({
-      name: 'e2e-pixel.png',
+      name: marker,
       mimeType: 'image/png',
       buffer: Buffer.from(PNG_1PX, 'base64'),
     });
-    // The success toast lasts only 3s (duration:3000) — assert it promptly.
-    // Either the toast OR an in-editor <img> proves the pipeline succeeded;
-    // attachment:// URLs may also be inserted (resolved at view time).
-    const toast = page.getByText(/Image uploaded/i).first();
-    const img = page.locator('.ProseMirror img').first();
-    const toastVisible = (await toast.isVisible().catch(() => false)) ||
-      (await toast.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false));
-    const imgVisible = await img.isVisible().catch(() => false);
-    expect(toastVisible || imgVisible).toBe(true);
+
+    // The upload pipeline persists an attachment row. Poll the attachment
+    // table (via the app's own sqlQuery) until the row appears — this is the
+    // deterministic proof the reducer + insert path worked end-to-end.
+    let found = false;
+    for (let i = 0; i < 20; i++) {
+      await page.waitForTimeout(1000);
+      try {
+        const rows = (await sqlQuery(
+          `SELECT id, filename FROM attachment WHERE filename = ${sqlLit(marker)}`,
+        )) as unknown[][];
+        if (rows.length > 0) {
+          found = true;
+          break;
+        }
+      } catch {
+        // STDB query may race the insert — retry
+      }
+    }
+    expect(found).toBe(true);
   });
 });
