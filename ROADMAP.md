@@ -276,6 +276,9 @@ through STDB reducers to centralize permission logic (P1 architectural refactor,
 lines, DatabaseBase 798, LoginView 529, RichEmbed 567). Mapper contract tests now
 cover 16 cases across the 31 public-table mappers, all verified against live STDB
 schema (2026-08-04 audit caught and fixed a mapScimProvider off-by-one drift).
+`scripts/audit_reducer_drift.py` cross-checks frontend/Python reducer calls against
+Rust #[reducer] signatures + SQL table names vs live STDB — run it after any reducer
+or table rename (it caught 3 real bugs incl. a missing #[reducer] attr).
 
 ---
 
