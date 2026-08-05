@@ -98,7 +98,7 @@ class TestTableNames:
         assert "page" in _TABLE_NAMES
         assert "collection" in _TABLE_NAMES
         assert "user" in _TABLE_NAMES
-        assert "revision" in _TABLE_NAMES
+        assert "page_revision" in _TABLE_NAMES
         assert "comment" in _TABLE_NAMES
         assert "page_tag" in _TABLE_NAMES
         assert "attachment" in _TABLE_NAMES

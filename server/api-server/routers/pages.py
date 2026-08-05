@@ -119,9 +119,9 @@ async def list_revisions(
     limit: int = Query(50, le=100, description="Max results"),
 ):
     """List page revision history."""
-    count_rows = await sql_query("SELECT COUNT(*) AS n FROM revision WHERE page_id = ?", page_id)
+    count_rows = await sql_query("SELECT COUNT(*) AS n FROM page_revision WHERE page_id = ?", page_id)
     total = count_rows[0][0] if count_rows else 0
-    rows = await sql_query("SELECT * FROM revision WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
+    rows = await sql_query("SELECT * FROM page_revision WHERE page_id = ? LIMIT ?i OFFSET ?i", page_id, limit, offset)
     return {
         "data": [map_revision(r) for r in rows],
         "total": total,

@@ -186,7 +186,7 @@ class STDBError(Exception):
 
 
 TABLE_NAMES = frozenset({
-    "page", "collection", "revision", "comment", "page_tag", "attachment",
+    "page", "collection", "page_revision", "comment", "page_tag", "attachment",
     "share_link", "user", "api_key", "search_result", "oauth_provider",
     "oauth_user", "passkey_credential", "ldap_provider", "scim_provider",
     "group", "group_member",
