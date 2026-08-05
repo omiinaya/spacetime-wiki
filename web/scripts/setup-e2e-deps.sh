@@ -92,8 +92,18 @@ spacetimedb-cli publish --server "http://${STDB_HOST}" "$DB_NAME"
 # hermetic.
 echo "[e2e-setup] Installing API server deps into venv..."
 API_VENV=/tmp/e2e-api-venv
-python3 -m venv "$API_VENV"
-"$API_VENV/bin/pip" install --upgrade pip -q
+# Reuse an existing working venv (recreating it can fail on ensurepip when the
+# system python is externally managed); recreate only if the binary is missing.
+if [ ! -x "$API_VENV/bin/uvicorn" ]; then
+  echo "[e2e-setup] Creating API venv..."
+  python3 -m venv --without-pip "$API_VENV" 2>/dev/null || python3 -m venv "$API_VENV"
+  # bootstrap pip without ensurepip
+  if [ ! -x "$API_VENV/bin/pip" ]; then
+    curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py 2>/dev/null \
+      && "$API_VENV/bin/python" /tmp/get-pip.py -q || true
+  fi
+fi
+"$API_VENV/bin/pip" install --upgrade pip -q 2>/dev/null || true
 "$API_VENV/bin/pip" install -q -r "$ROOT_DIR/server/api-server/requirements.txt"
 
 echo "[e2e-setup] Starting API server on port ${API_PORT}..."
