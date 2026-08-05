@@ -32,15 +32,22 @@ async function expandUncategorized(page: Page): Promise<void> {
   }
 }
 
-/** Move a page to trash via the sidebar context menu (right-click → Move to trash). */
+/** Escape regex special chars in a literal title for prefix matching. */
+function rowRegex(title: string): RegExp {
+  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped}`);
+}
+
+/**
+ * Move a page to trash via the sidebar context menu (right-click → Move to
+ * trash). Rows render as "Title Draft"/"Title Published" — match by prefix.
+ */
 async function moveToTrash(page: Page, title: string): Promise<void> {
   await page.goto('/');
   await page.waitForLoadState('load');
   await expandUncategorized(page);
 
-  // Guarantee the target row is rendered before right-click. expand is a
-  // toggle, so click the hash bucket until the row appears (bounded).
-  const row = page.locator('aside').getByText(title, { exact: true }).first();
+  const row = page.locator('aside').getByText(rowRegex(title)).first();
   for (let i = 0; i < 5 && !(await isVisible(row, 1500)); i++) {
     const bucket = page
       .locator('aside button')

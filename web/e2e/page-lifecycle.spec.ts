@@ -74,7 +74,7 @@ test.describe('Page lifecycle', () => {
       await bucket.click();
       await page.waitForTimeout(400);
     }
-    const row = page.locator('aside').getByText('Trash Restore Me', { exact: true }).first();
+    const row = page.locator('aside').getByText(/^Trash Restore Me/).first();
     // Toggle-safe: click the bucket until the row appears (it may auto-expand).
     for (let i = 0; i < 5 && !(await isVisible(row, 1500)); i++) {
       if (await isVisible(bucket, 2000)) {
