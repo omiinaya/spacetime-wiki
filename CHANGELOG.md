@@ -16,10 +16,45 @@
 
 # ═══════════════════════════════════════════════════════════════════════════════
 
+## [E2E] — 2026-08-05
+
+### Added
+
+- **E2E coverage expanded 79 → 161 tests** across 25 spec files (chromium).
+  New specs cover every route + page feature + all 16 admin tabs:
+  `slug-permalink`, `auth-callbacks`, `share-link-flow`, `page-lifecycle`,
+  `trash-actions`, `search-flow`, `comments-extended`, `tags`, `page-toolbar`,
+  `page-chrome`, `page-secondary-chrome`, `admin-panels`, `admin-groups`,
+  `command-palette`, `ai-assistant`, `templates-usage`, `collection-edit`,
+  `notifications-settings`, `webhooks`, `deep-flows`, `image-upload-flow`.
+- **`E2E_COVERAGE.md`** — route/feature → spec matrix defining what "100%
+  coverage" means and tracking status per row.
+- **Isolated-run support in playwright.config.ts** — `STDB_DATABASE`,
+  `API_PORT`, `WEB_PORT` env overrides so local runs never collide with the
+  CI self-hosted runner (which shares the `spacetime-wiki-e2e` DB and
+  8711/5184 ports).
+- **Flake hardening** — `signInAsAdmin` waits for the app shell
+  (cold-start race); guest-context tests fixed (landing vs dashboard);
+  palette Enter-select; lucide-ellipsis class; lazy-PageView timeouts.
+
 ## [Unreleased] — 2026-08-04
 
 ### Fixed
 
+- **subscriptions.ts used `sqlLit` without importing it — app crashed on mount** —
+  every parameterized STDB subscription (comments, favorites, tags, collab,
+  notifications, watch, db cells) referenced the `sqlLit()` helper without
+  importing it from `./client`. At runtime this threw
+  `ReferenceError: sqlLit is not defined` inside the notifications subscription
+  builder, tripping the React error boundary and blanking the whole app.
+  Caught by the E2E error-capturing fixture.
+- **OAuth provider endpoints crashed the login page when unauthenticated** —
+  `getOauthProviders`/`getAllOauthProviders`/`getOauthUsers` returned raw
+  `r.json()`; the `/api/v1/auth/oauth/providers` endpoint responds
+  `{"detail":"Missing API key..."}` (an object) without an API key, and
+  LoginView maps over the value → `TypeError: x.map is not a function`,
+  breaking the guest login page. All three listers now guard with
+  `Array.isArray` and coerce to `[]`.
 - **Missing sqlLit/sqlInt barrel exports broke production build** — the
   `src/lib/api/index.ts` barrel re-exports client utilities via an explicit
   `export { ... } from './client'` but omitted `sqlLit`/`sqlInt`. Components
