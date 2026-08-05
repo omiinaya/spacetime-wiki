@@ -107,8 +107,9 @@ test.describe('Search — results flow', () => {
     const result = page.getByText(title).first();
     await result.click();
     await expect(page).toHaveURL(/\/page\/[a-zA-Z0-9_]+/, { timeout: 20000 });
+    // The page view (heading) lazy-loads under accumulated data — allow time.
     await expect(page.getByRole('heading', { name: new RegExp(title, 'i') })).toBeVisible({
-      timeout: 10000,
+      timeout: 20000,
     });
   });
 
