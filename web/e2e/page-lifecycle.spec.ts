@@ -56,7 +56,10 @@ test.describe('Page lifecycle', () => {
   });
 
   test('delete a page, see it in trash, restore it', async ({ page }) => {
-    const pageUrl = await createPage(page, 'Trash Restore Me', 'Trash restore lifecycle');
+    // Unique title per run — retries otherwise accumulate same-titled pages
+    // in trash and the assertion matches stale rows.
+    const uniqueTitle = `Trash Restore ${Date.now()}`;
+    const pageUrl = await createPage(page, uniqueTitle, 'Trash restore lifecycle');
     if (!pageUrl) return;
 
     // Move to trash via the sidebar context menu (right-click → Move to
@@ -74,7 +77,8 @@ test.describe('Page lifecycle', () => {
       await bucket.click();
       await page.waitForTimeout(400);
     }
-    const row = page.locator('aside').getByText(/^Trash Restore Me/).first();
+    // Rows render as "Trash Restore 123... Draft" — prefix match without $.
+    const row = page.locator('aside').getByText(/^Trash Restore \d+/).first();
     // Toggle-safe: click the bucket until the row appears (it may auto-expand).
     for (let i = 0; i < 5 && !(await isVisible(row, 1500)); i++) {
       if (await isVisible(bucket, 2000)) {
@@ -95,7 +99,7 @@ test.describe('Page lifecycle', () => {
     await page.waitForTimeout(1500);
     const trashEmpty = page.getByText(/Trash is empty/i);
     if (!(await isVisible(trashEmpty, 3000))) {
-      await expect(page.getByText('Trash Restore Me').first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(uniqueTitle).first()).toBeVisible({ timeout: 10000 });
     }
   });
 });
