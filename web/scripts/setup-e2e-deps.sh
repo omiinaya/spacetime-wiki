@@ -51,6 +51,33 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
+# ── Ensure the Rust toolchain is usable ───────────────────────────────────────
+# ~/.cargo/bin/{cargo,rustc,...} are SYMLINKS to `rustup`; if the rustup binary
+# is missing (observed twice on this host — a cleanup job removes it), cargo
+# resolves to a dangling symlink and `spacetimedb-cli publish` fails with
+# "wasm32 target is not installed". Detect and restore rustup via rustup-init.
+echo "[e2e-setup] Checking Rust toolchain (cargo + wasm32)..."
+# Locate a rustup-init installer (preferred stable copy, then /tmp cache).
+RUSTUP_INIT=""
+for cand in "$HOME/.hermes/scripts/bin/rustup-init.sh" /tmp/rustup-init.sh; do
+  [ -f "$cand" ] && RUSTUP_INIT="$cand" && break
+done
+if [ ! -x "$HOME/.cargo/bin/rustup" ] && [ -n "$RUSTUP_INIT" ]; then
+  echo "[e2e-setup] rustup missing — restoring via $RUSTUP_INIT"
+  RUSTUP_HOME="$HOME/.rustup" CARGO_HOME="$HOME/.cargo" \
+    sh "$RUSTUP_INIT" -y --no-modify-path --default-toolchain stable >/dev/null 2>&1 \
+    || echo "[e2e-setup] WARNING: rustup restore failed"
+fi
+export RUSTUP_HOME="$HOME/.rustup" CARGO_HOME="$HOME/.cargo"
+if ! command -v cargo >/dev/null 2>&1 || ! cargo --version >/dev/null 2>&1; then
+  echo "[e2e-setup] ERROR: cargo unavailable — cannot publish module"
+  exit 1
+fi
+if ! rustup target list --installed 2>/dev/null | grep -q wasm32-unknown-unknown; then
+  echo "[e2e-setup] Installing wasm32-unknown-unknown target..."
+  rustup target add wasm32-unknown-unknown || echo "[e2e-setup] WARNING: wasm32 add failed"
+fi
+
 # ── Clean slate + publish module ─────────────────────────────────────────────
 echo "[e2e-setup] Ensuring clean database..."
 spacetimedb-cli delete -y --server "http://${STDB_HOST}" "$DB_NAME" 2>/dev/null || true
