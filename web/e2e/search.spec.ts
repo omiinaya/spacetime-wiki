@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { signInAsAdmin } from './helpers';
 
 /**
  * Search E2E tests.
@@ -7,8 +8,12 @@ import { test, expect } from './fixtures';
 
 test.describe('Search — sidebar search bar', () => {
   test.beforeEach(async ({ page }) => {
+    // The sidebar (with the search input) renders for authenticated users;
+    // sign in + wait for the shell to mount (cold-start guard).
+    await signInAsAdmin(page);
     await page.goto('/');
     await page.waitForLoadState('load');
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 30000 });
   });
 
   test('shows search input in sidebar', async ({ page }) => {
