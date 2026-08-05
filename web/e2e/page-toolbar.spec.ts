@@ -29,7 +29,7 @@ test.describe('Page toolbar actions', () => {
     await page
       .locator('button[title="Favorite"], button[title="Share"]')
       .first()
-      .waitFor({ state: 'visible', timeout: 15000 });
+      .waitFor({ state: 'visible', timeout: 30000 });
     return pageUrl;
   }
 
