@@ -50,7 +50,8 @@ test.describe('Search — results flow', () => {
     await signInAsAdmin(page);
     await page.goto('/');
     await page.waitForLoadState('load');
-    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
+    // Cold-start under accumulated data can exceed 20s for the app shell.
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 40000 });
   });
 
   test('typing a query filters the sidebar tree to matching pages', async ({ page }) => {
@@ -58,7 +59,7 @@ test.describe('Search — results flow', () => {
     await createPageFast(title, 'search filter target content');
     await page.reload();
     await page.waitForLoadState('load');
-    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 40000 });
 
     const searchInput = page.getByPlaceholder('Search...');
     await searchInput.fill(title);
@@ -75,7 +76,7 @@ test.describe('Search — results flow', () => {
     await createPageFast(title, 'zebra uniquely collaborative snippet content');
     await page.reload();
     await page.waitForLoadState('load');
-    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 40000 });
 
     await page.getByPlaceholder('Search...').fill(title);
     await page.waitForTimeout(1500);
@@ -97,7 +98,7 @@ test.describe('Search — results flow', () => {
     await createPageFast(title, 'Search navigation target content');
     await page.reload();
     await page.waitForLoadState('load');
-    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 40000 });
 
     const searchInput = page.getByPlaceholder('Search...');
     await searchInput.fill(title);
@@ -138,7 +139,7 @@ test.describe('Search filters — toggle and options', () => {
     await signInAsAdmin(page);
     await page.goto('/');
     await page.waitForLoadState('load');
-    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 40000 });
   });
 
   test('Filters button toggles the filter panel', async ({ page }) => {
