@@ -33,11 +33,14 @@ test.describe('Editor — image upload', () => {
       mimeType: 'image/png',
       buffer: Buffer.from(PNG_1PX, 'base64'),
     });
-    await page.waitForTimeout(4000);
-
-    // The upload pipeline completed — assert the success toast. (The editor
-    // stores attachment:// URLs which resolve to real <img> at VIEW time, so
-    // an <img> in the editor session is not guaranteed.)
-    await expect(page.getByText(/Image uploaded/i).first()).toBeVisible({ timeout: 15000 });
+    // The success toast lasts only 3s (duration:3000) — assert it promptly.
+    // Either the toast OR an in-editor <img> proves the pipeline succeeded;
+    // attachment:// URLs may also be inserted (resolved at view time).
+    const toast = page.getByText(/Image uploaded/i).first();
+    const img = page.locator('.ProseMirror img').first();
+    const toastVisible = (await toast.isVisible().catch(() => false)) ||
+      (await toast.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false));
+    const imgVisible = await img.isVisible().catch(() => false);
+    expect(toastVisible || imgVisible).toBe(true);
   });
 });

@@ -15,14 +15,17 @@ import type { Page } from '@playwright/test';
  * context menu is the correct "move to trash" path.
  */
 
-/** Expand the "Uncategorized" (hash-icon) bucket in the sidebar tree. */
+/** Expand the "Uncategorized" collection bucket in the sidebar tree. */
 async function expandUncategorized(page: Page): Promise<void> {
-  const bucket = page
+  // createPage puts pages in the seeded 'Uncategorized' COLLECTION (📄 icon),
+  // not the special hash-icon 'uncategorized' bucket. Click the collection
+  // row so its pages render.
+  const collection = page
     .locator('aside button')
-    .filter({ has: page.locator('svg.lucide-hash') })
+    .filter({ hasText: /📄 Uncategorized|Uncategorized/ })
     .first();
-  if (await isVisible(bucket, 5000)) {
-    await bucket.click();
+  if (await isVisible(collection, 5000)) {
+    await collection.click();
     await page.waitForTimeout(400);
   }
 }
