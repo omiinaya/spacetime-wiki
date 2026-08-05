@@ -13,6 +13,10 @@ test.describe('Command palette', () => {
     await signInAsAdmin(page);
     await page.goto('/');
     await page.waitForLoadState('load');
+    // Wait for React to mount + attach the keydown listener (Ctrl+K handler
+    // lives in useAppLayout's useEffect). The sidebar search input proves the
+    // app is interactive; pressing Ctrl+K before this races the effect.
+    await expect(page.getByPlaceholder('Search...')).toBeVisible({ timeout: 15000 });
   });
 
   test('opens with Ctrl+K and shows the search input', async ({ page }) => {

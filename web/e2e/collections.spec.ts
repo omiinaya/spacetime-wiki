@@ -1,9 +1,12 @@
 import { test, expect } from './fixtures';
+import { signInAsAdmin } from './helpers';
 
 test.describe('Collections — sidebar', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('load');
+    // Collections render in the sidebar for authenticated users; guest mode
+    // shows the landing page without the sidebar tree.
+    await signInAsAdmin(page);
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
   });
 
   test('shows collections section in sidebar', async ({ page }) => {

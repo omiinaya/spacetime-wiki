@@ -33,6 +33,11 @@ export async function signInAsAdmin(page: Page): Promise<void> {
 
   // Wait for redirect
   await expect(page).toHaveURL('/', { timeout: 20000 });
+
+  // Wait for the app shell to mount (sidebar search input) — guards the
+  // cold-start race where the page still shows "Loading..." and the sidebar
+  // buttons aren't in the DOM yet.
+  await expect(page.getByPlaceholder('Search...')).toBeVisible({ timeout: 20000 });
 }
 
 /**

@@ -4,6 +4,7 @@ test.describe('Sidebar navigation', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('load');
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
   });
 
   test('shows sidebar with app title', async ({ page }) => {

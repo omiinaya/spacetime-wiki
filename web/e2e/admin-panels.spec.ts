@@ -33,6 +33,8 @@ const TABS: { label: string; probe: RegExp | string }[] = [
 async function openAdmin(page: import('@playwright/test').Page): Promise<void> {
   await page.goto('/');
   await page.waitForLoadState('load');
+  // Wait for the app shell (sidebar) to mount — guards the cold-start race.
+  await expect(page.getByPlaceholder('Search...')).toBeVisible({ timeout: 20000 });
   const adminBtn = page.locator('aside').getByRole('button', { name: 'Admin' });
   await expect(adminBtn).toBeVisible({ timeout: 10000 });
   await adminBtn.click();

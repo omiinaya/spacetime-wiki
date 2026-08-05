@@ -486,11 +486,18 @@ export async function isMfaEnabled(userId: string): Promise<boolean> {
 // ─── OAuth Providers ───────────────────────────────────────────────────────────
 
 export async function getOauthProviders(): Promise<OauthProvider[]> {
-  return fetch(`/api/v1/auth/oauth/providers`).then((r) => r.json());
+  const res = await fetch(`/api/v1/auth/oauth/providers`);
+  const data = await res.json();
+  // The endpoint returns {"detail": ...} when unauthenticated; the login view
+  // maps over this array, so a non-array response would crash it with
+  // 'x.map is not a function'. Defensively coerce to an empty array.
+  return Array.isArray(data) ? (data as OauthProvider[]) : [];
 }
 
 export async function getAllOauthProviders(): Promise<OauthProvider[]> {
-  return fetch(`/api/v1/auth/oauth/providers/all`).then((r) => r.json());
+  const res = await fetch(`/api/v1/auth/oauth/providers/all`);
+  const data = await res.json();
+  return Array.isArray(data) ? (data as OauthProvider[]) : [];
 }
 
 export async function addOauthProvider(
@@ -568,7 +575,9 @@ export async function deleteOauthProvider(id: string): Promise<void> {
 }
 
 export async function getOauthUsers(userId: string): Promise<OauthUser[]> {
-  return fetch(`/api/v1/auth/oauth/user-links/${userId}`).then((r) => r.json());
+  const res = await fetch(`/api/v1/auth/oauth/user-links/${userId}`);
+  const data = await res.json();
+  return Array.isArray(data) ? (data as OauthUser[]) : [];
 }
 
 export async function linkOauthUser(id: string): Promise<void> {

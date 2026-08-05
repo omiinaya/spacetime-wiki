@@ -14,16 +14,13 @@ test.describe('Collection — edit and delete', () => {
     await signInAsAdmin(page);
     await page.goto('/');
     await page.waitForLoadState('load');
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
   });
 
   test('rename a collection via the ⋯ edit button', async ({ page }) => {
-    // Find the ⋯ button next to the Uncategorized collection (hover may be
-    // needed for visibility; the button exists in DOM regardless).
-    const moreBtn = page.locator('aside button[title="Edit collection"], aside button').filter({
-      has: page.locator('svg.lucide-more-horizontal'),
-    });
-    // Fallback: the MoreHorizontal icon button next to each collection name
-    const moreHorizontal = page.locator('aside svg.lucide-more-horizontal').first();
+    // Find the ⋯ button next to the collection (lucide v1.24 renders
+    // MoreHorizontal with class 'lucide-ellipsis').
+    const moreHorizontal = page.locator('aside svg.lucide-ellipsis').first();
     await expect(moreHorizontal).toBeVisible({ timeout: 10000 });
     await moreHorizontal.click();
     await page.waitForTimeout(800);

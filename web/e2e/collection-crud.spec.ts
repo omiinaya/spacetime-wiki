@@ -11,6 +11,9 @@ test.describe('Collection management — CRUD', () => {
     await signInAsAdmin(page);
     await page.goto('/');
     await page.waitForLoadState('load');
+    // Wait for the app shell to mount (sidebar search input) — guards the
+    // cold-start race where the page is still showing "Loading...".
+    await expect(page.getByPlaceholder('Search...')).toBeVisible({ timeout: 20000 });
   });
 
   test('New collection button exists', async ({ page }) => {

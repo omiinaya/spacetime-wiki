@@ -13,6 +13,7 @@ test.describe('Notification bell', () => {
     await signInAsAdmin(page);
     await page.goto('/');
     await page.waitForLoadState('load');
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
   });
 
   test('bell button is visible in the sidebar', async ({ page }) => {

@@ -14,6 +14,7 @@ test.describe('Search — results flow', () => {
     await signInAsAdmin(page);
     await page.goto('/');
     await page.waitForLoadState('load');
+    await page.getByPlaceholder('Search...').waitFor({ state: 'visible', timeout: 20000 });
   });
 
   test('typing a query filters the sidebar tree to matching pages', async ({ page }) => {
