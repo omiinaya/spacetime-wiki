@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as d3Force from 'd3-force';
 import * as d3Selection from 'd3-selection';
+import { buildGraph } from './graphUtils';
 import { api } from '../lib/api';
 import { Loader2, Share2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
@@ -23,28 +24,6 @@ interface GraphLink {
   source: string;
   target: string;
   type: 'parent-child' | 'collection' | 'backlink';
-}
-
-const COLORS: string[] = [
-  '#3b82f6',
-  '#ef4444',
-  '#22c55e',
-  '#f59e0b',
-  '#8b5cf6',
-  '#06b6d4',
-  '#ec4899',
-  '#84cc16',
-  '#14b8a6',
-  '#f97316',
-  '#6366f1',
-  '#d946ef',
-  '#00FFFF',
-  '#a855f7',
-  '#eab308',
-];
-
-function getColor(i: number): string {
-  return COLORS[i % COLORS.length];
 }
 
 export default function GraphView() {
@@ -75,70 +54,7 @@ export default function GraphView() {
         ]);
         if (cancelled) return;
 
-        const gNodes: GraphNode[] = [];
-        const nodeIds = new Set<string>();
-        const colColor = new Map<string, string>();
-        allCollections.forEach((col, i) => colColor.set(col.id, col.color || getColor(i)));
-
-        allCollections.forEach((col) => {
-          const n: GraphNode = {
-            id: `col:${col.id}`,
-            title: col.name,
-            icon: col.icon || '\uD83D\uDCC1',
-            color: colColor.get(col.id) || getColor(allCollections.indexOf(col)),
-            collectionId: col.id,
-            collectionName: col.name,
-            isCollection: true,
-          };
-          gNodes.push(n);
-          nodeIds.add(n.id);
-        });
-
-        const active = allPages.filter((p) => p.status !== 'deleted');
-        active.forEach((page) => {
-          const col = allCollections.find((c) => c.id === page.collection_id);
-          const n: GraphNode = {
-            id: page.id,
-            title: page.title,
-            icon: page.icon || '\uD83D\uDCC4',
-            color: colColor.get(page.collection_id) || '#666',
-            collectionId: page.collection_id,
-            collectionName: col?.name || 'Uncategorized',
-            isCollection: false,
-          };
-          gNodes.push(n);
-          nodeIds.add(n.id);
-        });
-
-        const gLinks: GraphLink[] = [];
-
-        active.forEach((page) => {
-          if (page.parent_page_id && nodeIds.has(page.parent_page_id)) {
-            gLinks.push({ source: page.id, target: page.parent_page_id, type: 'parent-child' });
-          }
-        });
-
-        active.forEach((page) => {
-          const cid = `col:${page.collection_id}`;
-          if (nodeIds.has(cid)) {
-            gLinks.push({ source: page.id, target: cid, type: 'collection' });
-          }
-        });
-
-        active.forEach((page) => {
-          if (!page.text_content) return;
-          const re = /\/page\/([a-zA-Z0-9_-]+)/g;
-          let m: RegExpExecArray | null;
-          while ((m = re.exec(page.text_content)) !== null) {
-            const tid = m[1];
-            if (tid !== page.id && nodeIds.has(tid)) {
-              const exists = gLinks.some(
-                (l) => l.source === page.id && l.target === tid && l.type === 'backlink',
-              );
-              if (!exists) gLinks.push({ source: page.id, target: tid, type: 'backlink' });
-            }
-          }
-        });
+        const { nodes: gNodes, links: gLinks } = buildGraph(allPages, allCollections);
 
         setGraphNodes(gNodes);
         setGraphLinks(gLinks);
