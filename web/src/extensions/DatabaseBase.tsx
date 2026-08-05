@@ -3,6 +3,17 @@ import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
 import { api, DbBase, DbColumn, DbRow, DbCell } from '../lib/api';
+import {
+  renderCellValue,
+  parseSelectOptions,
+  selectInitialValues,
+  toggleMultiChoice,
+  joinMultiChoice,
+  getCellValue as getCellValueAt,
+  applyCellWrite,
+  kanbanGroupRows,
+  orderKanbanGroups,
+} from './databaseUtils';
 
 // ─── Options ─────────────────────────────────────────────────────────────────
 
@@ -87,15 +98,7 @@ const CellEditor: React.FC<{
 
 // ─── Render cell value based on field type ───────────────────────────────────
 
-function renderCellValue(value: string, fieldType: string): React.ReactNode {
-  if (fieldType === 'checkbox') {
-    return value === 'true' ? '✓' : '';
-  }
-  if (fieldType === 'number') {
-    return value || '—';
-  }
-  return value || '';
-}
+// renderCellValue imported from databaseUtils.
 
 // ─── Select field editor ─────────────────────────────────────────────────────
 
@@ -106,29 +109,20 @@ const SelectCellEditor: React.FC<{
   onSave: (val: string) => void;
   onCancel: () => void;
 }> = ({ value, options, multi, onSave, onCancel }) => {
-  let choices: string[] = [];
-  try {
-    const parsed = JSON.parse(options);
-    choices = parsed.choices || [];
-  } catch {
-    /* ignore */
-  }
-
-  const selectedValues = value ? (multi ? value.split(',').map((v) => v.trim()) : [value]) : [];
+  const choices = parseSelectOptions(options);
+  const selectedValues = selectInitialValues(value, multi);
   const [localSelected, setLocalSelected] = useState<string[]>(selectedValues);
 
   const toggle = (choice: string) => {
     if (multi) {
-      setLocalSelected((prev) =>
-        prev.includes(choice) ? prev.filter((c) => c !== choice) : [...prev, choice],
-      );
+      setLocalSelected((prev) => toggleMultiChoice(prev, choice));
     } else {
       onSave(choice);
     }
   };
 
   const handleDone = () => {
-    onSave(multi ? localSelected.join(', ') : localSelected[0] || '');
+    onSave(multi ? joinMultiChoice(localSelected) : localSelected[0] || '');
   };
 
   return (
@@ -231,33 +225,14 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
 
   // ─── Cell helpers ────────────────────────────────────────────────────────────
 
-  const getCellValue = (rowId: string, colId: string): string => {
-    return cells.find((c) => c.row_id === rowId && c.column_id === colId)?.value || '';
-  };
+  const getCellValue = (rowId: string, colId: string): string =>
+    getCellValueAt(cells, rowId, colId);
 
   const handleCellSave = async (rowId: string, colId: string, value: string) => {
     try {
       await api.databases.cells.update(rowId, colId, value);
       // Optimistic update
-      setCells((prev) => {
-        const idx = prev.findIndex((c) => c.row_id === rowId && c.column_id === colId);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = { ...updated[idx], value, updated_at: Date.now() };
-          return updated;
-        }
-        return [
-          ...prev,
-          {
-            id: '',
-            row_id: rowId,
-            column_id: colId,
-            value,
-            created_at: Date.now(),
-            updated_at: Date.now(),
-          },
-        ];
-      });
+      setCells((prev) => applyCellWrite(prev, rowId, colId, value));
     } catch (err: unknown) {
       setError(String(err));
     }
@@ -535,31 +510,10 @@ const DatabaseBaseNodeView: React.FC<NodeViewProps> = ({
     }
 
     // Group rows by the kanban column's value
-    const groups: Record<string, DbRow[]> = {};
-    for (const row of rows) {
-      const val = getCellValue(row.id, kanbanCol.id) || 'No status';
-      if (!groups[val]) groups[val] = [];
-      groups[val].push(row);
-    }
-
-    // Get choices from column options for ordering
-    let columnOrder: string[] = [];
-    try {
-      const opts = JSON.parse(kanbanCol.options);
-      columnOrder = opts.choices || [];
-    } catch {
-      /* ignore */
-    }
+    const groups = kanbanGroupRows(rows, cells, kanbanCol);
 
     // Sort groups by the column order, then alphabetically
-    const sortedGroups = Object.entries(groups).sort(([a], [b]) => {
-      const ai = columnOrder.indexOf(a);
-      const bi = columnOrder.indexOf(b);
-      if (ai >= 0 && bi >= 0) return ai - bi;
-      if (ai >= 0) return -1;
-      if (bi >= 0) return 1;
-      return a.localeCompare(b);
-    });
+    const sortedGroups = orderKanbanGroups(groups, kanbanCol);
 
     return (
       <div className="flex gap-4 overflow-x-auto pb-4">
