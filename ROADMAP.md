@@ -164,7 +164,6 @@
 | P2 — Bare `except Exception:` blocks | Narrowed to specific types with logging across all files | ✅ DONE |
 | P2 — Deploy/release workflows | deploy.yml + release.yml created | ✅ DONE |
 | P2 — API server multi-stage Dockerfile | Multi-stage with HEALTHCHECK, non-root user | ✅ DONE |
-| P2 — Auto-star config flag | Behind `AUTO_STAR_REPO` env var (default false) | ✅ DONE |
 | P3 — App.tsx refactored | Was ~2,000 lines, now 31 lines | ✅ DONE |
 | P3 — 273→0 `any` types | Full migration: all catch(err: any)→unknown, all : any/as any removed from production code | ✅ DONE |
 | P3 — Clippy warnings | All 4 clippy warnings fixed (cargo clippy passes clean) | ✅ DONE |
