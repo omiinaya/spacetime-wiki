@@ -1,5 +1,5 @@
 # ─── Source stage ───────────────────────────────────────────────────────────
-FROM rust:1.97-alpine AS source
+FROM rust:1.98-alpine AS source
 
 WORKDIR /module
 
@@ -11,7 +11,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY src/ src/
 
 # ─── CLI + Publish stage ────────────────────────────────────────────────────
-FROM rust:1.97-alpine
+FROM rust:1.98-alpine
 
 RUN apk add --no-cache musl-dev pkgconfig openssl-dev curl bash
 
